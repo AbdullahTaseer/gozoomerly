@@ -22,11 +22,11 @@ const StartYourFirstCelebration = () => {
           className="absolute inset-0 w-full h-full object-cover pointer-events-none"
         />
 
-        <Image src={Avatar_1} alt="1" height={150} width={150} className="absolute top-10 right-10" />
-        <Image src={Avatar_2} alt="1" height={70} width={70} className="absolute top-10 left-10" />
-        <Image src={Avatar_3} alt="1" height={120} width={120} className="absolute bottom-10 left-10" />
+        <Image src={Avatar_1} alt="1" className="h-[150px] w-[150px] max-[1140px]:h-[100px] max-[1140px]:w-[100px] absolute top-10 max-[1100px]:top-3 right-10 max-[1100px]:right-3" />
+        <Image src={Avatar_2} alt="1" height={60} width={60} className="absolute top-5 left-5" />
+        <Image src={Avatar_3} alt="1" height={80} width={80} className="absolute bottom-5 left-5" />
 
-        <h2 className="text-[60px] max-[600px]:text-[24px] font-bold mb-4 max-w-[800px] mx-auto">
+        <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] max-[600px]:text-[24px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
           Start Your First Celebration Board Today
         </h2>
 
