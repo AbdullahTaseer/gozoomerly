@@ -40,7 +40,7 @@ const WhyZoomerlyExists = () => {
       <div className='grid md:grid-cols-2 max-md:gap-6 mt-12'>
         <div className='space-y-6 max-md:order-1'>
           {data.map((item, i) => (
-            <div className='flex items-start gap-3'>
+            <div key={i} className='flex items-start gap-3'>
               <Image src={item.icon} alt='icon' height={60} width={60} />
               <div>
                 <p className='font-semibold text-[20px] max-[1200px]:text-[16px]'>{item.heading}</p>

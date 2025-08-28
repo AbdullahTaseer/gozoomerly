@@ -61,7 +61,7 @@ const Navbar = () => {
 
   return (
     <>
-      <div className='flex justify-between items-center gap-3 px-[4%] max-[769px]:px-6 py-4 max-[1024px]:py-3 bg-white sticky top-0 z-[100]'>
+      <div className='flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 py-4 max-[1024px]:py-3 bg-white sticky top-0 z-[100]'>
         <Image
           className='hidden max-[900px]:block cursor-pointer'
           src={MenuIcon}
