@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 import Img1 from "@/assets/svgs/as-simple-as-wishing.svg";
@@ -16,7 +16,7 @@ const steps = [
   },
   {
     title: "Invite People",
-    desc: `Share your board by link, SMS, or email. Control privacy settings. Add co admins if needed.`,
+    desc: "Share your board by link, SMS, or email. Control privacy settings. Add co admins if needed.",
     img: Img2,
   },
   {
@@ -36,39 +36,71 @@ const steps = [
   },
 ];
 
-const SCROLL_INTERVAL = 2000;
-
 const HowZoomerlyWorks = () => {
   const [activeStep, setActiveStep] = useState(0);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const stepIndex = Math.min(
-        Math.floor(scrollY / SCROLL_INTERVAL),
+    const onScroll = () => {
+      const el = wrapRef.current;
+      if (!el) return;
+
+      // wrapper ke document me absolute start/end
+      const start = el.offsetTop;
+      const totalScrollable = el.offsetHeight - window.innerHeight;
+
+      // agar wrapper ki height screen se chhoti ho to first step par hi raho
+      if (totalScrollable <= 0) {
+        setActiveStep(0);
+        return;
+      }
+
+      // current scroll ko wrapper ki range me clamp karo
+      const y = Math.min(Math.max(window.scrollY, start), start + totalScrollable);
+
+      // 0..1 progress
+      const progress = (y - start) / totalScrollable;
+
+      // progress ko 0..(steps-1) me map karo
+      const idx = Math.min(
+        Math.floor(progress * steps.length), // 0 inclusive, last exclusive
         steps.length - 1
       );
-      setActiveStep(stepIndex);
+
+      setActiveStep(idx);
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    // initial call taake first step immediately active rahe
+    onScroll();
+
+    // passive for perf, resize par bhi recalc
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
   }, []);
 
   return (
-    <div className="relative h-[10000px] bg-gray-50 py-10">
-
+    // Har step ke liye ~200vh scroll space (responsive). Chaho to 150/250 kar sakte ho.
+    <div
+      ref={wrapRef}
+      className="relative bg-gray-50 py-10"
+      style={{ height: `${steps.length * 200}vh` }}
+    >
       <section className="sticky top-0 h-screen flex flex-col items-center justify-center px-[5%] max-[769px]:px-4">
-        <h2 className='text-center text-[30px] max-[600px]:text-[24px] font-bold'>
+        <h2 className="text-center text-[30px] max-[600px]:text-[24px] font-bold">
           How Zoomerly Works
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
+          {/* LEFT IMAGE (desktop) */}
           <div className="col-span-2 flex justify-center max-lg:hidden">
             <Image
               src={steps[activeStep].img}
               alt="Step Image"
-              className="rounded-[20px] w-full h-auto object-cover transition-all duration-700 ease-in-out"
+              className="rounded-[20px] w-full h-auto object-cover transition-opacity duration-500 ease-in-out"
             />
           </div>
 
