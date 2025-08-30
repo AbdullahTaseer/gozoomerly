@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import ArrowRight from "@/assets/svgs/ArrowRight.svg";
 import GlobalButton from '../buttons/GlobalButton';
 
+type props = {
+  goToLiveBoard: () => void;
+}
 
-const WhoCanJoin = () => {
+const WhoCanJoin = ({ goToLiveBoard }: props) => {
 
   const [join, setJoin] = useState("1");
   const data = [
@@ -40,6 +43,7 @@ const WhoCanJoin = () => {
         icon={ArrowRight}
         height="44px"
         className="flex-row-reverse mt-6"
+        onClick={goToLiveBoard}
       />
 
     </div>

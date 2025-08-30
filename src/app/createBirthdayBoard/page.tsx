@@ -14,6 +14,7 @@ import AddFilesModal from "@/components/modals/AddFilesModal";
 import AddGift from "@/components/compaignSections/AddGift";
 import ContinuePayment from "@/components/compaignSections/ContinuePayment";
 import WhoCanJoin from "@/components/compaignSections/WhoCanJoin";
+import YourBoardIsLive from "@/components/compaignSections/YourBoardIsLive";
 
 const CreateBirthdayBoard = () => {
 
@@ -30,7 +31,9 @@ const CreateBirthdayBoard = () => {
           : step === 5
             ? 80
             : step === 6
-              ? 90 : 0
+              ? 90
+              : step === 7
+                ? 99 : 0
 
   return (
 
@@ -79,8 +82,11 @@ const CreateBirthdayBoard = () => {
             {step === 5 &&
               <ContinuePayment continuePayment={() => setStep(6)} />
             }
-             {step === 6 &&
-              <WhoCanJoin />
+            {step === 6 &&
+              <WhoCanJoin goToLiveBoard={() => setStep(7)} />
+            }
+            {step === 7 &&
+              <YourBoardIsLive />
             }
           </div>
         </div>
