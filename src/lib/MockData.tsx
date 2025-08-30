@@ -21,3 +21,26 @@ export const compaignMainScreenData = [
   { imgSrc: Compaign_8, text: "Sports victories" },
   { imgSrc: Compaign_9, text: "Diwali" },
 ];
+
+// music list 
+
+interface MusicItem {
+  id: number;
+  title: string;
+  subtitle: string;
+}
+
+export const musicList: MusicItem[] = [
+  { id: 1, title: "No Music", subtitle: "Keep it quiet and peaceful" },
+  { id: 2, title: "Happy Birthday", subtitle: "Classic celebration tune" },
+  { id: 3, title: "Upbeat Celebration", subtitle: "Energetic and fun vibes" },
+  { id: 4, title: "Soft Ambient", subtitle: "Gentle background melody" },
+  { id: 5, title: "No Music", subtitle: "Keep it quiet and peaceful" },
+  { id: 6, title: "Happy Birthday", subtitle: "Classic celebration tune" },
+  { id: 7, title: "Upbeat Celebration", subtitle: "Energetic and fun vibes" },
+  { id: 8, title: "Soft Ambient", subtitle: "Gentle background melody" },
+  { id: 9, title: "No Music", subtitle: "Keep it quiet and peaceful" },
+  { id: 10, title: "Happy Birthday", subtitle: "Classic celebration tune" },
+  { id: 11, title: "Upbeat Celebration", subtitle: "Energetic and fun vibes" },
+  { id: 12, title: "Soft Ambient", subtitle: "Gentle background melody" },
+];

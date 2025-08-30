@@ -1,6 +1,14 @@
-import React from 'react'
+import React from 'react';
+import Image from 'next/image';
+import GlobalButton from '../buttons/GlobalButton';
+import AddWishImg from "@/assets/svgs/add-wish.svg";
+import CloudUpload from "@/assets/svgs/upload-cloud.svg";
 
-const AddYourWish = () => {
+type props = {
+  uploaderModalClick: () => void;
+}
+
+const AddYourWish = ({ uploaderModalClick }: props) => {
   return (
     <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto space-y-4">
       <div>
@@ -11,6 +19,11 @@ const AddYourWish = () => {
           Make it personal your photos, videos, and voice will be part of their forever memory Photos
         </p>
       </div>
+      <div className='mt-16'>
+        <Image src={AddWishImg} alt='' className='mx-auto' />
+        <p className="text-sm text-center mt-3">Drag photos and videos here</p>
+      </div>
+      <GlobalButton onClick={uploaderModalClick} title="Upload Media" icon={CloudUpload} height='44px' className='mt-10 w-[240px] mx-auto' />
     </div>
   );
 };
