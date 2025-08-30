@@ -44,3 +44,29 @@ export const musicList: MusicItem[] = [
   { id: 11, title: "Upbeat Celebration", subtitle: "Energetic and fun vibes" },
   { id: 12, title: "Soft Ambient", subtitle: "Gentle background melody" },
 ];
+
+
+// compaign 4th step gift data 
+import gift_one from "@/assets/svgs/gifts/gift-1.svg";
+import gift_two from "@/assets/svgs/gifts/gift-2.svg";
+import gift_three from "@/assets/svgs/gifts/gift-3.svg";
+import gift_four from "@/assets/svgs/gifts/gift-4.svg";
+import gift_five from "@/assets/svgs/gifts/gift-5.svg";
+import gift_six from "@/assets/svgs/gifts/gift-6.svg";
+import gift_seven from "@/assets/svgs/gifts/gift-7.svg";
+import gift_eight from "@/assets/svgs/gifts/gift-8.svg";
+import gift_nine from "@/assets/svgs/gifts/gift-9.svg";
+import gift_ten from "@/assets/svgs/gifts/gift-10.svg";
+
+export const giftsData = [
+  { id: 1, label: "Cake Treat", price: 10, icon: gift_one },
+  { id: 2, label: "Balloon Surprise", price: 20, icon: gift_two },
+  { id: 3, label: "Coffee Date", price: 30, icon: gift_three },
+  { id: 4, label: "Sweet Treat", price: 50, icon: gift_four },
+  { id: 5, label: "Music Vibes", price: 75, icon: gift_five },
+  { id: 6, label: "Spa Day", price: 150, icon: gift_six },
+  { id: 7, label: "Movie Night", price: 200, icon: gift_seven },
+  { id: 8, label: "Big Wish", price: 300, icon: gift_eight },
+  { id: 9, label: "Boss Boost", price: 500, icon: gift_nine },
+  { id: 10, label: "Dream Builder", price: 750, icon: gift_ten },
+];

@@ -11,6 +11,8 @@ import PickThemeForm from "@/components/compaignSections/PickThemeForm";
 import MakeWishTrueForm from "@/components/compaignSections/MakeWishTrueForm";
 import GlobalModal from "@/components/modals/GlobalModal";
 import AddFilesModal from "@/components/modals/AddFilesModal";
+import AddGift from "@/components/compaignSections/AddGift";
+import ContinuePayment from "@/components/compaignSections/ContinuePayment";
 
 const CreateBirthdayBoard = () => {
 
@@ -22,7 +24,10 @@ const CreateBirthdayBoard = () => {
       ? 40
       : step === 3
         ? 60
-        : 0;
+        : step === 4
+          ? 70
+          : step === 5
+            ? 80 : 0
 
   return (
 
@@ -52,9 +57,25 @@ const CreateBirthdayBoard = () => {
           </div>
 
           <div className="mt-4">
-            {step === 1 && <PickThemeForm nextClick={() => setStep(2)} />}
-            {step === 2 && <MakeWishTrueForm skipClick={() => setStep(3)} nextClick={() => setStep(3)} />}
-            {step === 3 && <AddYourWish uploaderModalClick={() => setModalOpen(true)} />}
+            {step === 1 &&
+              <PickThemeForm
+                nextClick={() => setStep(2)} />
+            }
+            {step === 2 &&
+              <MakeWishTrueForm
+                skipClick={() => setStep(3)}
+                nextClick={() => setStep(3)} />
+            }
+            {step === 3 &&
+              <AddYourWish
+                uploaderModalClick={() => setModalOpen(true)} />
+            }
+            {step === 4 &&
+              <AddGift goToPayment={() => setStep(5)} />
+            }
+            {step === 5 &&
+              <ContinuePayment />
+            }
           </div>
         </div>
       </div>
@@ -64,7 +85,11 @@ const CreateBirthdayBoard = () => {
         onClose={() => setModalOpen(false)}
         modalHeader={false}
         className="w-[600px] max-[768px]:w-[90vw]">
-        <AddFilesModal />
+        <AddFilesModal doneOnclick={() => {
+          setStep(4)
+          setModalOpen(false)
+        }}
+        />
       </GlobalModal>
     </>
   );

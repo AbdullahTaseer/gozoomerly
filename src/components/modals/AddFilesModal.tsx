@@ -1,18 +1,33 @@
 "use client";
+
 import React, { useState } from "react";
 import Image from "next/image";
-import { ArrowLeft, Music, Pause, Play, Plus, X } from "lucide-react";
-import GlobalButton from "../buttons/GlobalButton";
-import ArrowRight from "@/assets/svgs/ArrowRight.svg";
-import { Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Music,
+  Pause,
+  Play,
+  Plus,
+  X,
+  Search
+} from "lucide-react";
+
 import { musicList } from "@/lib/MockData";
+import GlobalButton from "../buttons/GlobalButton";
+
+import NoFileImg from "@/assets/svgs/add-wish.svg";
+import ArrowRight from "@/assets/svgs/ArrowRight.svg";
 
 interface FileItem {
   id: number;
   src: string;
 }
 
-const AddFilesModal = () => {
+type props = {
+  doneOnclick: () => void;
+}
+
+const AddFilesModal = ({ doneOnclick }: props) => {
   const [step, setStep] = useState<"files" | "music">("files");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -62,9 +77,12 @@ const AddFilesModal = () => {
                 />
               </div>
             ) : (
-              <div className="w-full h-[400px] flex items-center justify-center text-gray-500">
-                No file selected
-              </div>
+              <>
+                <div className="w-full h-[400px] flex flex-col gap-3 items-center justify-center text-gray-600">
+                  <Image src={NoFileImg} alt='' className='mx-auto' />
+                  <p> No file selected</p>
+                </div>
+              </>
             )}
           </div>
 
@@ -124,7 +142,7 @@ const AddFilesModal = () => {
           <div className="flex justify-between items-center mb-4 p-2">
             <ArrowLeft onClick={() => setStep("files")} className="cursor-pointer" />
             <h2 className="font-semibold text-lg">Add Music</h2>
-            <button className="bg-gradient-to-r from-[#F43C83] to-[#845CBA] font-bold text-transparent bg-clip-text">
+            <button onClick={doneOnclick} className="bg-gradient-to-r cursor-pointer from-[#F43C83] to-[#845CBA] font-bold text-transparent bg-clip-text">
               Done
             </button>
           </div>
@@ -142,7 +160,7 @@ const AddFilesModal = () => {
           </div>
 
 
-          <div className="max-h-[70vh] overflow-y-auto p-2">
+          <div className="h-[70vh] overflow-y-auto p-2">
             {musicList
               .filter((m) =>
                 m.title.toLowerCase().includes(search.toLowerCase())
