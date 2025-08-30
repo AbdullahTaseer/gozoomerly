@@ -81,7 +81,7 @@ const Navbar = () => {
               {option}
             </p>
           ))}
-          <GlobalButton title='Create a Board' width='120px' />
+          <GlobalButton onClick={() => router.push("/compaign")} title='Create a Board' width='120px' />
         </div>
         <GlobalButton onClick={() => router.push("/signin")} title='Sign in' width='80px' className='hidden max-[900px]:flex' />
       </div>
@@ -111,7 +111,7 @@ const Navbar = () => {
               {option}
             </p>
           ))}
-          <GlobalButton title='Create a Board' />
+          <GlobalButton onClick={() => router.push("/compaign")} title='Create a Board' />
         </div>
 
       </div>

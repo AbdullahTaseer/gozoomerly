@@ -1,3 +1,5 @@
+import Footer from "@/components/footer/Footer";
+import Navbar from "@/components/navbar/Navbar";
 import DifferentBoardCarousel from "@/components/sections/DifferentBoardCarousel";
 import Faqs from "@/components/sections/Faqs";
 import HeroSection from "@/components/sections/HeroSection";
@@ -10,6 +12,7 @@ import WhyZoomerlyExists from "@/components/sections/WhyZoomerlyExists";
 export default function Home() {
   return (
     <div>
+      <Navbar/>
       <HeroSection/>
       <WhyZoomerlyExists/>
       <DifferentBoardCarousel/>
@@ -18,6 +21,7 @@ export default function Home() {
       <HowZoomerlyWorks />
       <StartYourFirstCelebration />
       <Faqs />
+      <Footer/>
     </div>
   );
 }
