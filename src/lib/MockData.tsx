@@ -11,7 +11,7 @@ import Compaign_8 from "@/assets/svgs/compaign/compaign-8.svg";
 import Compaign_9 from "@/assets/svgs/compaign/compaign-9.svg";
 
 export const compaignMainScreenData = [
-  { imgSrc: Compaign_1, text: "Birthday", path: "/" },
+  { imgSrc: Compaign_1, text: "Birthday", path: "/createBirthdayBoard" },
   { imgSrc: Compaign_2, text: "Eid Celebration" },
   { imgSrc: Compaign_3, text: "Wedding" },
   { imgSrc: Compaign_4, text: "Graduation" },

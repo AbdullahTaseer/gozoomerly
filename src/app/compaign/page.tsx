@@ -20,7 +20,7 @@ const Compaign = () => {
       <Image src={Particles} alt="" className="absolute top-10 left-10" />
       <Image src={Particles} alt="" className="absolute bottom-10 right-10" />
 
-      <h2 className="mt-4 sm:mt-12 text-center text-[32px] max-[600px]:text-[24px] font-bold">
+      <h2 className="mt-4 sm:mt-12 text-center text-[32px] max-[700px]:text-[24px] font-bold">
         What Are You Celebrating?
       </h2>
 
