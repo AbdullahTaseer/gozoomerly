@@ -20,7 +20,7 @@ const AddGift = ({ goToPayment }: props) => {
   const progress = Math.min((raised / goal) * 100, 100);
 
   return (
-    <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto space-y-6 max-w-xl">
+    <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto space-y-6">
 
       <div>
         <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">
@@ -36,7 +36,7 @@ const AddGift = ({ goToPayment }: props) => {
         <div className="flex justify-between text-sm mb-1">
           <span>{progress.toFixed(0)}%</span>
         </div>
-        <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-[#D9D9D9] rounded-full overflow-hidden">
           <div
             className="h-full bg-[#F43C83]"
             style={{ width: `${progress}%` }}

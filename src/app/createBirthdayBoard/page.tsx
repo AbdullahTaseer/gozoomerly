@@ -13,6 +13,7 @@ import GlobalModal from "@/components/modals/GlobalModal";
 import AddFilesModal from "@/components/modals/AddFilesModal";
 import AddGift from "@/components/compaignSections/AddGift";
 import ContinuePayment from "@/components/compaignSections/ContinuePayment";
+import WhoCanJoin from "@/components/compaignSections/WhoCanJoin";
 
 const CreateBirthdayBoard = () => {
 
@@ -27,7 +28,9 @@ const CreateBirthdayBoard = () => {
         : step === 4
           ? 70
           : step === 5
-            ? 80 : 0
+            ? 80
+            : step === 6
+              ? 90 : 0
 
   return (
 
@@ -74,7 +77,10 @@ const CreateBirthdayBoard = () => {
               <AddGift goToPayment={() => setStep(5)} />
             }
             {step === 5 &&
-              <ContinuePayment />
+              <ContinuePayment continuePayment={() => setStep(6)} />
+            }
+             {step === 6 &&
+              <WhoCanJoin />
             }
           </div>
         </div>
