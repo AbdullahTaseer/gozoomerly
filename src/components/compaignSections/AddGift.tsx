@@ -20,7 +20,7 @@ const AddGift = ({ goToPayment }: props) => {
   const progress = Math.min((raised / goal) * 100, 100);
 
   return (
-    <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto space-y-6">
+    <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto space-y-6">
 
       <div>
         <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">

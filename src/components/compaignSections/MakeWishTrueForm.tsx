@@ -10,7 +10,7 @@ type props = {
 
 const MakeWishTrueForm = ({ nextClick, skipClick }: props) => {
   return (
-    <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto space-y-4">
+    <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto space-y-4">
 
       <div>
         <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">

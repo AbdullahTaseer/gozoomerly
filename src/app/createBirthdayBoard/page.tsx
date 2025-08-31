@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
@@ -20,6 +21,7 @@ const CreateBirthdayBoard = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [step, setStep] = useState(1);
+  const router = useRouter();
   const progress = step === 1
     ? 0
     : step === 2
@@ -40,7 +42,7 @@ const CreateBirthdayBoard = () => {
     <>
       <div className="relative min-h-screen overflow-x-clip bg-[#F7F7F7] p-4">
         <div className="flex justify-between gap-3 max-md:flex-col items-center">
-          <Image src={AppLogo} alt="App Logo" />
+          <Image onClick={() => router.push("/")} className="cursor-pointer relative z-10" src={AppLogo} alt="App Logo" />
           <h2 className="text-center text-[32px] max-[700px]:text-[24px] font-bold">
             Create Birthday Board
           </h2>

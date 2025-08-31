@@ -16,7 +16,7 @@ const Compaign = () => {
   return (
     <div className="relative min-h-screen overflow-x-clip bg-white p-6">
 
-      <Image src={AppLogo} alt="App Logo" />
+      <Image onClick={() => router.push("/")} src={AppLogo} alt="App Logo" className="cursor-pointer relative z-10" />
       <Image src={Particles} alt="" className="absolute top-10 left-10" />
       <Image src={Particles} alt="" className="absolute bottom-10 right-10" />
 

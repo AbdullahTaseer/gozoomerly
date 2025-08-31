@@ -30,7 +30,7 @@ const PickThemeForm = ({ nextClick }: props) => {
   };
 
   return (
-    <div className="bg-white border border-pink-200 rounded-2xl p-6 mx-auto">
+    <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto">
 
       <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">
         Let's make someone's birthday unforgettable 🎉
