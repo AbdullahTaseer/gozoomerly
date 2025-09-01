@@ -103,6 +103,7 @@ const CreateBirthdayBoard = () => {
           setStep(4)
           setModalOpen(false)
         }}
+          onClose={() => setModalOpen(false)}
         />
       </GlobalModal>
     </>

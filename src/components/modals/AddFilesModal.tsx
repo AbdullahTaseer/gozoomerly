@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import {
-  ArrowLeft,
+  ChevronLeft,
   Music,
   Pause,
   Play,
   Plus,
   X,
-  Search
+  Search,
+  ArrowLeft
 } from "lucide-react";
 
 import { musicList } from "@/lib/MockData";
@@ -25,9 +26,10 @@ interface FileItem {
 
 type props = {
   doneOnclick: () => void;
+  onClose: () => void;
 }
 
-const AddFilesModal = ({ doneOnclick }: props) => {
+const AddFilesModal = ({ doneOnclick, onClose }: props) => {
   const [step, setStep] = useState<"files" | "music">("files");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -66,9 +68,18 @@ const AddFilesModal = ({ doneOnclick }: props) => {
       {step === "files" && (
         <>
 
-          <div className="rounded-lg overflow-hidden">
+          <div className="rounded-lg overflow-hidden relative">
+            <div onClick={onClose} className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 absolute top-4 left-4 rounded-full">
+              <ChevronLeft />
+            </div>
+            <div onClick={() => setStep("music")} className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 absolute top-4 right-4 rounded-full">
+              <Music />
+            </div>
+            <div className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 font-bold absolute top-4 right-18 rounded-full">
+              Aa
+            </div>
             {files.length > 0 && selectedIndex !== null ? (
-              <div className="h-[400px] w-full relative">
+              <div className="h-[420px] w-full relative">
                 <Image
                   src={files[selectedIndex].src}
                   alt="preview"
@@ -78,7 +89,7 @@ const AddFilesModal = ({ doneOnclick }: props) => {
               </div>
             ) : (
               <>
-                <div className="w-full h-[400px] flex flex-col gap-3 items-center justify-center text-gray-600">
+                <div className="w-full h-[420px] flex flex-col gap-3 items-center justify-center text-gray-600">
                   <Image src={NoFileImg} alt='' className='mx-auto' />
                   <p> No file selected</p>
                 </div>
