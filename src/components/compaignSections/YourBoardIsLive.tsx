@@ -8,6 +8,7 @@ import Avatar from "@/assets/svgs/Sam.svg";
 import FarahImg from "@/assets/svgs/Farah.svg";
 import BoardBgImg from "@/assets/pngs/live-board-bg.png";
 import LiveBoardBoys from "@/assets/pngs/live-board-boys.png";
+import Link from 'next/link';
 
 const YourBoardIsLive = () => {
 
@@ -85,16 +86,18 @@ const YourBoardIsLive = () => {
               </div>
             </div>
           </div>
-          
+
         </div>
 
       </div>
 
-      <GlobalButton
-        title="Invite More People"
-        height="44px"
-        className="mt-6"
-      />
+      <Link href="/posts">
+        <GlobalButton
+          title="Invite More People"
+          height="44px"
+          className="mt-6"
+        />
+      </Link>
     </div>
   );
 };
