@@ -98,7 +98,7 @@ const CreateBirthdayBoard = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         modalHeader={false}
-        className="w-[600px] max-[768px]:w-[90vw]">
+        className="w-[600px] max-[768px]:w-[90vw] max-h-[90vh]">
         <AddFilesModal doneOnclick={() => {
           setStep(4)
           setModalOpen(false)

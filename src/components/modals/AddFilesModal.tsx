@@ -1,27 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
-import Image from "next/image";
+import React, { useMemo, useState } from "react";
 import {
-  ChevronLeft,
   Music,
   Pause,
   Play,
-  Plus,
-  X,
   Search,
   ArrowLeft
 } from "lucide-react";
 
 import { musicList } from "@/lib/MockData";
-import GlobalButton from "../buttons/GlobalButton";
+import ImageEditorSection from "./ImageEditorSection";
 
-import NoFileImg from "@/assets/svgs/add-wish.svg";
-import ArrowRight from "@/assets/svgs/ArrowRight.svg";
-
-interface FileItem {
+export interface FileItem {
   id: number;
   src: string;
+}
+
+export type FontStyle = "modern" | "classic" | "signature";
+
+export interface FileEditSettings {
+  caption: string;
+  captionColor: string;
+  captionBg: string;
+  fontStyle: FontStyle;
+  fontSize: number; // in px
+  textAlign: "left" | "center" | "right";
+  zoom: number; // 1.0 - 3.0
 }
 
 type props = {
@@ -37,12 +42,22 @@ const AddFilesModal = ({ doneOnclick, onClose }: props) => {
   const [selectedMusic, setSelectedMusic] = useState<number | null>(null);
   const [search, setSearch] = useState("");
 
+  // Per-file edit settings keyed by file id
+  const [editSettingsById, setEditSettingsById] = useState<Record<number, FileEditSettings>>({});
+  const [showEditor, setShowEditor] = useState<boolean>(false);
+
   const handleRemove = (id: number) => {
     setFiles((prev) => prev.filter((file) => file.id !== id));
 
     if (files[selectedIndex ?? 0]?.id === id) {
       setSelectedIndex(null);
     }
+
+    setEditSettingsById((prev) => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
   };
 
   const handleAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,90 +76,60 @@ const AddFilesModal = ({ doneOnclick, onClose }: props) => {
       }
       return updated;
     });
+
+    setEditSettingsById((prev) => {
+      const next = { ...prev };
+      newFiles.forEach((f) => {
+        if (!next[f.id]) {
+          next[f.id] = {
+            caption: "",
+            captionColor: "#ffffff",
+            captionBg: "#E23F87",
+            fontStyle: "classic",
+            fontSize: 22,
+            textAlign: "center",
+            zoom: 1.0,
+          };
+        }
+      });
+      return next;
+    });
+  };
+
+  const selectedFile = useMemo(() => {
+    if (selectedIndex === null) return undefined;
+    return files[selectedIndex];
+  }, [files, selectedIndex]);
+
+  const selectedSettings: FileEditSettings | undefined = useMemo(() => {
+    if (!selectedFile) return undefined;
+    return editSettingsById[selectedFile.id];
+  }, [editSettingsById, selectedFile]);
+
+  const updateSelectedSettings = (partial: Partial<FileEditSettings>) => {
+    if (!selectedFile) return;
+    setEditSettingsById((prev) => ({
+      ...prev,
+      [selectedFile.id]: { ...prev[selectedFile.id], ...partial },
+    }));
   };
 
   return (
-    <div>
+    <div className={`${showEditor ? "pb-4" : "pb-0"}`}>
       {step === "files" && (
-        <>
-
-          <div className="rounded-lg overflow-hidden relative">
-            <div onClick={onClose} className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 absolute top-4 left-4 rounded-full">
-              <ChevronLeft />
-            </div>
-            <div onClick={() => setStep("music")} className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 absolute top-4 right-4 rounded-full">
-              <Music />
-            </div>
-            <div className="bg-black/50 text-white flex justify-center items-center cursor-pointer h-10 z-10 w-10 shrink-0 font-bold absolute top-4 right-18 rounded-full">
-              Aa
-            </div>
-            {files.length > 0 && selectedIndex !== null ? (
-              <div className="h-[420px] w-full relative">
-                <Image
-                  src={files[selectedIndex].src}
-                  alt="preview"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            ) : (
-              <>
-                <div className="w-full h-[420px] flex flex-col gap-3 items-center justify-center text-gray-600">
-                  <Image src={NoFileImg} alt='' className='mx-auto' />
-                  <p> No file selected</p>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center overflow-x-auto h-20 gap-2 mt-5">
-            {files.map((file, index) => (
-              <div
-                key={file.id}
-                className={`relative w-16 h-16 rounded-md flex-shrink-0 cursor-pointer border-2 ${selectedIndex === index
-                  ? "border-blue-500"
-                  : "border-transparent"
-                  }`}
-                onClick={() => setSelectedIndex(index)}
-              >
-                <Image
-                  src={file.src}
-                  alt="thumbnail"
-                  width={64}
-                  height={64}
-                  className="object-cover rounded-sm w-full h-full"
-                />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemove(file.id);
-                  }}
-                  className="absolute -top-2 -right-2 bg-black text-white border border-white rounded-full p-1"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
-
-            <label className="w-16 h-16 flex items-center justify-center bg-[#e0dddd] rounded-md cursor-pointer flex-shrink-0">
-              <Plus />
-              <input
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleAdd}
-              />
-            </label>
-          </div>
-
-          <GlobalButton
-            title="Next"
-            icon={ArrowRight}
-            height="44px"
-            className="flex-row-reverse mt-6"
-            onClick={() => setStep("music")}
-          />
-        </>
+        <ImageEditorSection
+          files={files}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
+          onRemove={handleRemove}
+          onAdd={handleAdd}
+          onClose={onClose}
+          onNext={() => setStep("music")}
+          showEditor={showEditor}
+          onToggleEditor={() => setShowEditor((s) => !s)}
+          selectedSettings={selectedSettings}
+          updateSelectedSettings={updateSelectedSettings}
+        />
       )}
 
       {step === "music" && (
