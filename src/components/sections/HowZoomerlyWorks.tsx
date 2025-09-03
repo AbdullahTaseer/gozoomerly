@@ -89,14 +89,14 @@ const HowZoomerlyWorks = () => {
       className="relative bg-gray-50 py-10"
       style={{ height: `${steps.length * 200}vh` }}
     >
-      <section className="sticky top-0 h-screen flex flex-col items-center justify-center px-[5%] max-[769px]:px-4">
+      <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center px-[5%] max-[769px]:px-4">
         <h2 className="text-center text-[30px] max-[600px]:text-[24px] font-bold">
           How Zoomerly Works
         </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
-          {/* LEFT IMAGE (desktop) */}
-          <div className="col-span-2 flex justify-center max-lg:hidden">
+        <div className="grid max-[700px]:grid-cols-1 max-[1024px]:grid-cols-2 grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
+          
+          <div className="col-span-2 flex justify-center max-lg:col-span-1">
             <Image
               src={steps[activeStep].img}
               alt="Step Image"
@@ -104,11 +104,11 @@ const HowZoomerlyWorks = () => {
             />
           </div>
 
-          <div className="col-span-3 max-lg:col-span-1 space-y-3">
+          <div className="col-span-3 max-lg:col-span-1 space-y-3 max-[1024px]:space-y-1">
             {steps.map((step, index) => (
               <div
                 key={index}
-                className={`py-3 transition-all duration-500`}
+                className={`py-3 max-[1024px]:py-1 transition-all duration-500`}
               >
                 <h3
                   className={`font-semibold text-[24px] max-[1200px]:text-[18px] border-l-2 border-[#D9D9D9] pl-3 duration-300 ${index === activeStep ? "text-pink-600 border-pink-600" : "text-gray-700"
@@ -116,7 +116,7 @@ const HowZoomerlyWorks = () => {
                 >
                   {step.title}
                 </h3>
-                <p className="text-gray-600 border-l-2 border-[#D9D9D9] pt-2 pl-3 line-clamp-2">{step.desc}</p>
+                <p className="text-gray-600 border-l-2 border-[#D9D9D9] pt-2 pl-3 line-clamp-2 max-md:text-sm">{step.desc}</p>
               </div>
             ))}
           </div>
