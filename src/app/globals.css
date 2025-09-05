@@ -1,19 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Custom scrollbar utilities */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  /* IE and Edge */
-  scrollbar-width: none;
-  /* Firefox */
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-  /* Chrome, Safari and Opera */
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -133,6 +120,15 @@
   }
 }
 
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 
 body {
   font-family: var(--font-jost)
@@ -178,22 +174,4 @@ body {
 
 .sparkle3 {
   animation: pulseStar 1.5s infinite 0.6s;
-}
-
-@keyframes slideTextOnce {
-  0% {
-    transform: translateY(200%);
-  }
-
-  50% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(-200%);
-  }
-}
-
-.text-slide-once {
-  animation: slideTextOnce 1s ease-in-out;
 }

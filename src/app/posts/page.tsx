@@ -5,10 +5,10 @@ import { Heart, MessageCircle } from 'lucide-react';
 import Avatar from "@/assets/svgs/Sam.svg";
 import FarahImg from "@/assets/svgs/Farah.svg";
 import BoardBgImg from "@/assets/pngs/live-board-bg.png";
-import GlobalButton from '@/components/buttons/GlobalButton';
 import PostsTopContributorsCard from '@/components/cards/PostsTopContributorsCard';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
+import AnimatedButton from '@/components/buttons/AnimatedButton';
 
 const Posts = () => {
 
@@ -27,7 +27,7 @@ const Posts = () => {
                 <p className='text-xs'>Miami, FL • 03/12</p>
               </div>
             </div>
-            <GlobalButton height='36px' width='115px' title='Add wish' />
+            <AnimatedButton height='36px' width='115px' title='Add wish' />
           </div>
 
           <div className='rounded-lg overflow-clip mt-4'>
@@ -88,7 +88,7 @@ const Posts = () => {
       <div className='max-w-[745px] mx-auto px-4 py-6 space-y-6'>
         <PostsTopContributorsCard />
         <PostsImagesCarouselCard />
-        <PostsVideoCard/>
+        <PostsVideoCard />
         <PostsImagesCarouselCard />
       </div>
 

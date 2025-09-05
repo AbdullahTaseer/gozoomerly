@@ -58,14 +58,13 @@ const AnimatedButton: React.FC<AnimatedButtonProps> = ({
       className={`relative overflow-hidden flex rounded-full items-center cursor-pointer justify-center transition-colors duration-300 ${className}`}
       style={{ width, height, background }}
     >
-      <div className="relative h-full flex items-center overflow-hidden">
-        <span
-          className={`block text-white ${
-            animate ? "text-slide-once" : ""
-          }`}
-        >
+      <div className="relative flex items-center text-sm flex-col overflow-hidden">
+        <p className={`block text-white ${animate ? "-translate-y-10 duration-500" : "translate-y-2.5"}`}>
           {title}
-        </span>
+        </p>
+        <p className={`block text-white ${animate ? "-translate-y-2.5 duration-500" : "translate-y-10"}`}>
+          {title}
+        </p>
       </div>
 
       <span className="absolute left-2 top-2 text-white sparkle1">✦</span>
