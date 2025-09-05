@@ -3,11 +3,15 @@
 
 /* Custom scrollbar utilities */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
+
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none;
+  /* Chrome, Safari and Opera */
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -123,6 +127,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -134,15 +139,61 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 4px; 
-  height: 4px; 
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent; 
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background-color: black;
   border-radius: 10px;
+}
+
+/* animated button  */
+
+@keyframes pulseStar {
+
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sparkle1 {
+  animation: pulseStar 1.5s infinite;
+}
+
+.sparkle2 {
+  animation: pulseStar 1.5s infinite 0.3s;
+}
+
+.sparkle3 {
+  animation: pulseStar 1.5s infinite 0.6s;
+}
+
+@keyframes slideTextOnce {
+  0% {
+    transform: translateY(200%);
+  }
+
+  50% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-200%);
+  }
+}
+
+.text-slide-once {
+  animation: slideTextOnce 1s ease-in-out;
 }
