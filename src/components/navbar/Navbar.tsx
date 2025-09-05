@@ -6,10 +6,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import MenuIcon from "@/assets/svgs/menu-icon.svg";
-import GlobalButton from '../buttons/GlobalButton';
+import AnimatedButton from '../buttons/AnimatedButton';
 
-const mobileOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign in"];
-const desktopOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign in"];
+const mobileOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up"];
+const desktopOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up"];
 
 const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -81,9 +81,9 @@ const Navbar = () => {
               {option}
             </p>
           ))}
-          <GlobalButton onClick={() => router.push("/compaign")} title='Create a Board' width='120px' />
+          <AnimatedButton onClick={() => router.push("/compaign")} height='42px' title='Create a Board' width='150px' className='text-sm' />
         </div>
-        <GlobalButton onClick={() => router.push("/signin")} title='Sign in' width='80px' className='hidden max-[900px]:flex' />
+        <AnimatedButton onClick={() => router.push("/signup")} title='Sign up' height='42px' width='120px' className='hidden max-[900px]:flex' />
       </div>
 
       <div className={`fixed inset-0 bg-black transition-opacity duration-300 ${isSidebarOpen ? 'opacity-50 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
@@ -111,7 +111,7 @@ const Navbar = () => {
               {option}
             </p>
           ))}
-          <GlobalButton onClick={() => router.push("/compaign")} title='Create a Board' />
+          <AnimatedButton onClick={() => router.push("/compaign")} title='Create a Board' />
         </div>
 
       </div>
