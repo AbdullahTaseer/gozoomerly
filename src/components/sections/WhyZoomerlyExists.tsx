@@ -33,7 +33,7 @@ const data = [
 const WhyZoomerlyExists = () => {
   return (
     <div className='px-[5%] max-[769px]:px-4 py-10'>
-      <p className='text-center text-[30px] max-[600px]:text-[24px] font-bold'>Why Zoomerly Exists</p>
+      <p className='text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>Why Zoomerly Exists</p>
       <p className="text-center max-w-2xl mx-auto text-sm text-black mt-2">
         We believe celebrations shouldn't be limited to one day or one place. People are often spread across the world, and moments slip away in private chats or scattered photos.
       </p>

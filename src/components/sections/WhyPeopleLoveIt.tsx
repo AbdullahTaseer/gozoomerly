@@ -57,7 +57,7 @@ const WhyPeopleLove = () => {
           }}
         /> */}
 
-        <h2 className='text-center text-[30px] max-[600px]:text-[24px] font-bold'>
+        <h2 className='text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>
           Why People Love It
         </h2>
         <p className='text-sm text-center mt-4'>Real stories from our community</p>

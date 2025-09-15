@@ -27,17 +27,19 @@ const StartYourFirstCelebration = () => {
         <Image src={Avatar_3} alt="1" height={80} width={80} className="absolute bottom-5 left-5" />
 
         <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] max-[600px]:text-[24px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
-          Start Your First Celebration Board Today
+          Create Your First Board Today
         </h2>
 
-        <p className="max-w-3xl mx-auto text-[16px] leading-relaxed mb-6">
-          It only takes a minute to create a board. Bring people together, share memories, and make celebrations unforgettable.
+        <p className="max-w-3xl mx-auto text-[20px] leading-relaxed mb-6">
+          🎉 It only takes a minute to create a board. Bring people together, share memories, give gifts, and now connect.
         </p>
 
-        <div className="flex flex-wrap justify-center gap-4 mb-16">
+        {/* <div className="flex flex-wrap justify-center gap-4 mb-16">
           <GlobalButton title="Explore Spotlight Birthdays" bgColor="white" color="#000000" width="220px" hover={{ bgColor: 'white' }} />
           <GlobalButton title="Create a Public Birthday Board" bgColor="transparent" borderColor="white" borderWidth="1px" width="220px" hover={{ bgColor: 'transparent' }} />
-        </div>
+        </div> */}
+
+        <GlobalButton title='Create Your Board' bgColor="white" color="black" width="200px" className="mx-auto  mb-16" hover={{ bgColor: 'white' }} />
       </div>
     </section>
   );

@@ -10,28 +10,33 @@ import Img5 from "@/assets/svgs/as-simple-as-wishing-5.svg";
 
 const steps = [
   {
+    number: '01',
     title: "Create Your Board",
-    desc: "Choose an event type (birthday, wedding, concert, graduation, family gathering, or surprise). Add the celebrated person or star.",
+    desc: "Pick the event type and add the celebrated star.",
     img: Img1,
   },
   {
+    number: '02',
     title: "Invite People",
-    desc: "Share your board by link, SMS, or email. Control privacy settings. Add co admins if needed.",
+    desc: "Share the link by SMS, email, or QR. Control privacy.",
     img: Img2,
   },
   {
+    number: '03',
     title: "Collect Memories",
-    desc: "Friends and family add wishes, photos, videos, captions, and even voice notes. Every contribution becomes part of the story.",
+    desc: "Guests post wishes, media, and comments.",
     img: Img3,
   },
   {
+    number: '04',
     title: "Wish + Gift",
-    desc: "Contributors can write a heartfelt wish, attach media, and add a gift if they like. Goals update live with fun gift stickers.",
+    desc: "Contributors send meaningful gifts alongside their messages.",
     img: Img4,
   },
   {
+    number: '05',
     title: "Celebrate & Relive",
-    desc: "Surprise boards deliver on a chosen day, while event boards are live and collaborative. Either way, your memories are saved forever.",
+    desc: "Surprise boards deliver on the big day; event boards stay live and collaborative.",
     img: Img5,
   },
 ];
@@ -90,33 +95,34 @@ const HowZoomerlyWorks = () => {
       style={{ height: `${steps.length * 200}vh` }}
     >
       <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center px-[5%] max-[769px]:px-4">
-        <h2 className="text-center text-[30px] max-[600px]:text-[24px] font-bold">
+        <h2 className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
           How Zoomerly Works
         </h2>
 
-        <div className="grid max-[700px]:grid-cols-1 max-[1024px]:grid-cols-2 grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
-          
+        <div className="grid w-full max-[700px]:grid-cols-1 max-[1024px]:grid-cols-2 grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
+
           <div className="col-span-2 flex justify-center max-lg:col-span-1">
             <Image
               src={steps[activeStep].img}
               alt="Step Image"
-              className="rounded-[20px] w-full h-auto object-cover transition-opacity duration-500 ease-in-out"
+              className="rounded-[20px] w-full h-full object-cover transition-opacity duration-500 ease-in-out"
             />
           </div>
 
-          <div className="col-span-3 max-lg:col-span-1 space-y-3 max-[1024px]:space-y-1">
+
+          <div className="col-span-3 max-lg:col-span-1">
             {steps.map((step, index) => (
               <div
                 key={index}
-                className={`py-3 max-[1024px]:py-1 transition-all duration-500`}
+                className={`py-2 max-[1024px]:py-1 transition-all duration-500`}
               >
-                <h3
-                  className={`font-semibold text-[24px] max-[1200px]:text-[18px] border-l-2 border-[#D9D9D9] pl-3 duration-300 ${index === activeStep ? "text-pink-600 border-pink-600" : "text-gray-700"
-                    }`}
-                >
+                <div className={`border-l-2 pl-4 ${index === activeStep ? "border-pink-600" : ""}`}>
+                  <p className="bg-[#EBEBEB] rounded-full font-semibold inline text-[12px] px-3 py-[2px]">Step {step.number}</p>
+                </div>
+                <h3 className={`font-semibold text-[24px] max-[1200px]:text-[18px] border-l-2 pt-1 border-[#D9D9D9] pl-4 duration-300 ${index === activeStep ? "text-pink-600 border-pink-600" : "text-gray-700"}`}>
                   {step.title}
                 </h3>
-                <p className="text-gray-600 border-l-2 border-[#D9D9D9] pt-2 pl-3 line-clamp-2 max-md:text-sm">{step.desc}</p>
+                <p className="text-gray-600 border-l-2 border-[#D9D9D9] pt-2 pl-4 line-clamp-2 max-md:text-sm">{step.desc}</p>
               </div>
             ))}
           </div>
