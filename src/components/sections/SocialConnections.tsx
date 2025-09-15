@@ -79,7 +79,7 @@ const SocialConnections = () => {
                     <p className="font-semibold text-[24px] max-[1150px]:text-[18px]">{item.title}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600 mt-1 pl-10">{item.desc}</p>
+                    <p className="text-gray-600 mt-1 pl-13">{item.desc}</p>
                   </div>
                 </div>
               </div>
@@ -115,7 +115,7 @@ const SocialConnections = () => {
 
           <div className="text-center mt-10">
             <p className="font-bold text-[24px] max-[600px]:text-[20px]">Personalized Social Experience</p>
-            <p className="text-gray-600 text-sm mt-2 max-w-2xl mx-auto">
+            <p className="text-gray-600 font-medium mt-2 max-w-2xl mx-auto">
               Filter whose posts, stories, and wishes you want to see. Show posts
               to one circle, but not others. Focus on what matters most to you.
             </p>

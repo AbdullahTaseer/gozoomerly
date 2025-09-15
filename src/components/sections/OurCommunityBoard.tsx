@@ -113,9 +113,9 @@ const BoardCard = ({ board }: { board: (typeof boards)[0] }) => {
         <Image
           src={board.avatar}
           alt={board.title}
-          width={40}
-          height={40}
-          className="rounded-full"
+          width={60}
+          height={60}
+          className="rounded-full shrink-0"
         />
         <div>
           <p className="font-medium text-xl">{board.name}</p>

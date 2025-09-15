@@ -26,11 +26,11 @@ const StartYourFirstCelebration = () => {
         <Image src={Avatar_2} alt="1" height={60} width={60} className="absolute top-5 left-5" />
         <Image src={Avatar_3} alt="1" height={80} width={80} className="absolute bottom-5 left-5" />
 
-        <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] max-[600px]:text-[24px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
+        <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
           Create Your First Board Today
         </h2>
 
-        <p className="max-w-3xl mx-auto text-[20px] leading-relaxed mb-6">
+        <p className="max-w-3xl mx-auto text-[22px] leading-relaxed mb-6">
           🎉 It only takes a minute to create a board. Bring people together, share memories, give gifts, and now connect.
         </p>
 
