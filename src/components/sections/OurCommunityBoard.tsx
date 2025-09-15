@@ -104,7 +104,7 @@ const BoardCard = ({ board }: { board: (typeof boards)[0] }) => {
   const progress = Math.round((board.raised / board.target) * 100);
 
   return (
-    <div className="bg-[#18171F] text-white p-6 rounded-2xl shadow-md flex flex-col">
+    <div className="bg-[#18171F] text-white p-6 rounded-2xl shadow-sm flex flex-col">
       {/* Title */}
       <h3 className="text-[24px]">{board.title}</h3>
 

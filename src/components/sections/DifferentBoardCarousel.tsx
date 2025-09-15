@@ -36,7 +36,7 @@ const CarouselCard: React.FC<CarouselCardProps> = ({
 
 const DifferentBoardCarousel = () => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]); 
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const carouselData = [
@@ -109,7 +109,7 @@ const DifferentBoardCarousel = () => {
     cardRefs.current[index]?.scrollIntoView({
       behavior: "smooth",
       inline: "center",
-      block: "nearest", 
+      block: "nearest",
     });
   };
 
@@ -117,10 +117,7 @@ const DifferentBoardCarousel = () => {
     <div className="px-[5%] max-[769px]:px-4">
       <div className="bg-[#F7F7F7] py-10 px-2 rounded-xl">
         <p className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
-          Different Boards for Every Celebration
-        </p>
-        <p className="text-center max-w-2xl mx-auto text-sm text-black">
-          See how Zoomerly works for every type of celebration
+          Types of Boards
         </p>
 
 

@@ -15,10 +15,10 @@ const HeroSection = () => {
           <p className='text-[20px] max-md:text-[18px] mt-6'>Zoomerly lets you create interactive celebration boards for every occasion. From birthdays to weddings, concerts to graduations, collect wishes, photos, videos, and gifts in one place and relive the memories forever.</p>
           <div className='flex justify-center items-center flex-wrap gap-6 mt-6'>
             <div className='w-[200px]'>
-              <GlobalButton title='Create Your Board' />
+              <GlobalButton title='Create Your Board' height='44px' />
             </div>
             <div className='w-[200px]'>
-              <GlobalButton title='Watch a Real Board' bgColor='transparent' borderColor='white' borderWidth='2px' />
+              <GlobalButton title='Watch How It Works' bgColor='transparent' height='44px' borderColor='white' borderWidth='2px' />
             </div>
           </div>
         </div>

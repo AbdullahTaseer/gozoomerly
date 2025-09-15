@@ -1,58 +1,133 @@
-import React from 'react';
-import Image from 'next/image';
+"use client";
+import React from "react";
+import Image from "next/image";
 
-import MapImg from "@/assets/svgs/World-Map.svg";
-import Icon_1 from "@/assets/svgs/why-1.svg";
-import Icon_2 from "@/assets/svgs/why-2.svg";
-import Icon_3 from "@/assets/svgs/why-3.svg";
-import Icon_4 from "@/assets/svgs/why-4.svg";
+import Particles from "@/assets/svgs/why-people-love-particles.svg";
 
-const data = [
-  {
-    icon: Icon_1,
-    heading: "Bring everyone together even across continents",
-    desc: 'Connect family and friends from around the world in one shared celebration space.'
-  },
-  {
-    icon: Icon_2,
-    heading: "Make memories permanent not lost in feeds or inboxes",
-    desc: 'Preserve special moments forever in organized, beautiful collections.'
-  },
-  {
-    icon: Icon_3,
-    heading: "Add meaning to gifting with group goals and personalized contributions",
-    desc: 'Transform gift-giving into collaborative experiences with shared goals and meaningful messages.'
-  },
-  {
-    icon: Icon_4,
-    heading: "Create emotional experiences like surprise boards delivered at midnight",
-    desc: 'Design unforgettable moments with perfectly timed reveals and surprise elements.'
-  },
-]
+import problem_1 from "@/assets/svgs/problem-icon-1.svg";
+import problem_2 from "@/assets/svgs/problem-icon-2.svg";
+import problem_3 from "@/assets/svgs/problem-icon-3.svg"
 
-const WhyZoomerlyExists = () => {
+import solve_1 from "@/assets/svgs/solves-icon-1.svg";
+import solve_2 from "@/assets/svgs/solves-icon-2.svg";
+import solve_3 from "@/assets/svgs/solves-icon-3.svg";
+
+import theProblemText from "@/assets/svgs/The Problems.svg";
+import SolutionText from "@/assets/svgs/Zoomerly solves all of this.svg";
+
+const problems = [
+  {
+    icon: problem_1,
+    title: "Memories get lost across chats, feeds, and phones.",
+    desc: "Important moments scattered across different platforms",
+  },
+  {
+    icon: problem_2,
+    title: "Guests often never get to connect after events.",
+    desc: "Missing opportunities to build lasting relationships",
+  },
+  {
+    icon: problem_3,
+    title: "Gifting feels transactional instead of meaningful.",
+    desc: "Gifts lack personal connection and context",
+  },
+];
+
+const solutions = [
+  {
+    icon: solve_1,
+    title: "One shared space for wishes, photos, videos, and gifts.",
+    desc: "Everything in one beautiful, organized place",
+  },
+  {
+    icon: solve_2,
+    title:
+      "A social layer so people at the same event can connect, follow, and message each other.",
+    desc: "Missing opportunities to build lasting relationships",
+  },
+  {
+    icon: solve_3,
+    title: "Boards that last forever, so celebrations never fade away.",
+    desc: "Preserve precious memories for generations",
+  },
+];
+
+const WhyWeCreatedZoomerly = () => {
   return (
-    <div className='px-[5%] max-[769px]:px-4 py-10'>
-      <p className='text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>Why Zoomerly Exists</p>
-      <p className="text-center max-w-2xl mx-auto text-sm text-black mt-2">
-        We believe celebrations shouldn't be limited to one day or one place. People are often spread across the world, and moments slip away in private chats or scattered photos.
-      </p>
-      <div className='grid md:grid-cols-2 max-md:gap-6 mt-12'>
-        <div className='space-y-6 max-md:order-1'>
-          {data.map((item, i) => (
-            <div key={i} className='flex items-start gap-3'>
-              <Image src={item.icon} alt='icon' height={60} width={60} />
-              <div>
-                <p className='font-semibold text-[20px] max-[1200px]:text-[16px]'>{item.heading}</p>
-                <p className='text-sm mt-1'>{item.desc}</p>
+    <section className="px-[5%] max-[769px]:px-4 py-16 relative">
+
+      <Image src={Particles} alt="particles" className='absolute bottom-28 right-0' />
+
+      <h2 className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
+        Why We Created Zoomerly
+      </h2>
+
+      <div className="grid md:grid-cols-2 gap-6 mt-12 relative">
+
+        <div>
+
+          <Image src={theProblemText} alt="" className="h-6" />
+
+          <div className="space-y-6 mt-6">
+            {problems.map((item, i) => (
+              <div
+                key={i}
+                className="bg-gray-100 rounded-xl p-4 flex gap-3 items-start"
+              >
+                <div className="flex-shrink-0 h-[45px] w-[45px] flex justify-center items-center rounded-full bg-white">
+                  <Image
+                    src={item.icon}
+                    alt={item.title}
+                    width={22}
+                    height={22}
+                  />
+                </div>
+                <div>
+                  <p className="font-semibold text-[20px] max-[900px]:text-[18px]">
+                    {item.title}
+                  </p>
+                  <p className="text-gray-600 mt-1 max-[900px]:text-sm">
+                    {item.desc}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-        <Image src={MapImg} alt='' className='m-auto' />
+
+        <div>
+
+          <Image src={SolutionText} alt="" className="h-8" />
+
+          <div className="space-y-6 mt-4">
+            {solutions.map((item, i) => (
+              <div
+                key={i}
+                className="bg-gray-100 rounded-xl p-4 flex gap-3 items-start"
+              >
+                <div className="flex-shrink-0 h-[45px] w-[45px] flex justify-center items-center rounded-full bg-white">
+                  <Image
+                    src={item.icon}
+                    alt={item.title}
+                    width={22}
+                    height={22}
+                  />
+                </div>
+                <div>
+                  <p className="font-semibold text-[20px] max-[900px]:text-[18px]">
+                    {item.title}
+                  </p>
+                  <p className="text-gray-600 mt-1 max-[900px]:text-sm">
+                    {item.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 
-export default WhyZoomerlyExists;
+export default WhyWeCreatedZoomerly;

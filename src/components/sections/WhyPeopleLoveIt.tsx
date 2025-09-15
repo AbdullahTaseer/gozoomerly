@@ -6,30 +6,31 @@ import Maria from "@/assets/svgs/Maria.svg";
 import Sam from "@/assets/svgs/Sam.svg";
 import Farah from "@/assets/svgs/Farah.svg";
 import Sohail from "@/assets/svgs/Sohail.svg";
+import Background from "@/assets/pngs/why-people-love-it-background.png";
 // import { Confetti } from '../confetti';
 
 const WhyPeopleLove = () => {
   const testimonials = [
     {
-      quote: "My daughter's face when she saw 80+ videos from family across 4 countries... unforgettable.",
+      quote: "“It felt like being in the same room with my family, even though we were on three continents.” ",
       name: "Maria A.",
       image: Maria,
       cardClassName: '-skew-y-1'
     },
     {
-      quote: "My friends helped me hit my dream guitar goal in a day. Best birthday ever.",
+      quote: "“Our wedding board became the most beautiful album we could ever ask for.”",
       name: "Sam K.",
       image: Sam,
       cardClassName: '-skew-y-1'
     },
     {
-      quote: "It felt like my whole family was in the room even though half of them were in another country.",
+      quote: "“Seeing the surprise board at midnight had me in tears.”",
       name: "Farah L.",
       image: Farah,
       cardClassName: 'skew-y-1'
     },
     {
-      quote: "My wife's 50th board made her feel like a celebrity. She laughed, cried, and watched it three times before breakfast.",
+      quote: "“Being part of a concert board made me feel like my voice mattered to the artist.”",
       name: "Sohail R.",
       image: Sohail,
       cardClassName: 'skew-y-1'
@@ -38,7 +39,8 @@ const WhyPeopleLove = () => {
 
   return (
     <div className='px-[5%] max-[769px]:px-4 py-5'>
-      <div className='bg-[#F7F7F7] rounded-xl py-10 px-3 relative'>
+      <div className='bg-[#F7F7F7] rounded-xl overflow-clip py-10 px-3 relative'>
+        <Image src={Background} alt='' className='absolute inset-0' />
         <div className='absolute inset-0 pointer-events-none'>
           <Image src={Particles} alt="particles" className='absolute bottom-0 left-0' />
           <Image src={Particles} alt="particles" className='absolute top-0 right-0' />
@@ -57,12 +59,11 @@ const WhyPeopleLove = () => {
           }}
         /> */}
 
-        <h2 className='text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>
+        <h2 className='text-center relative text-white text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>
           Why People Love It
         </h2>
-        <p className='text-sm text-center mt-4'>Real stories from our community</p>
 
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-5 max-w-6xl mx-auto relative z-10 mt-10'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-5 max-w-6xl mx-auto relative z-10 mt-6'>
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
@@ -70,7 +71,7 @@ const WhyPeopleLove = () => {
             >
               <div className='flex flex-col'>
                 <blockquote className='text-black text-[20px] max-[900px]:text-[16px] leading-relaxed mb-6'>
-                &#34;{testimonial.quote}&#34;
+                  &#34;{testimonial.quote}&#34;
                 </blockquote>
 
                 <div className='flex items-center gap-4'>

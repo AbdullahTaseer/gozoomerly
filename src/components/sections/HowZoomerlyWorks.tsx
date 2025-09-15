@@ -110,7 +110,7 @@ const HowZoomerlyWorks = () => {
           </div>
 
 
-          <div className="col-span-3 max-lg:col-span-1">
+          <div className="col-span-3 max-lg:col-span-1 space-y-2">
             {steps.map((step, index) => (
               <div
                 key={index}
@@ -119,7 +119,7 @@ const HowZoomerlyWorks = () => {
                 <div className={`border-l-2 pl-4 ${index === activeStep ? "border-pink-600" : ""}`}>
                   <p className="bg-[#EBEBEB] rounded-full font-semibold inline text-[12px] px-3 py-[2px]">Step {step.number}</p>
                 </div>
-                <h3 className={`font-semibold text-[24px] max-[1200px]:text-[18px] border-l-2 pt-1 border-[#D9D9D9] pl-4 duration-300 ${index === activeStep ? "text-pink-600 border-pink-600" : "text-gray-700"}`}>
+                <h3 className={`font-semibold text-[24px] max-[1200px]:text-[18px] border-l-2 pt-1 border-[#D9D9D9] pl-4 duration-300 ${index === activeStep ? "bg-gradient-to-r from-[#EA4088] to-[#885CB8] border-pink-600 text-transparent bg-clip-text" : "text-gray-700"}`}>
                   {step.title}
                 </h3>
                 <p className="text-gray-600 border-l-2 border-[#D9D9D9] pt-2 pl-4 line-clamp-2 max-md:text-sm">{step.desc}</p>
