@@ -3,34 +3,54 @@ import Image from 'next/image';
 import { Heart, MessageCircle } from 'lucide-react';
 
 import Avatar from "@/assets/svgs/Sam.svg";
+import ShareNetwork from "@/assets/svgs/ShareNetwork.svg";
 import FarahImg from "@/assets/svgs/Farah.svg";
+import smallAnnaAvatar from "@/assets/pngs/small-anna.png";
 import BoardBgImg from "@/assets/pngs/live-board-bg.png";
-import PostsTopContributorsCard from '@/components/cards/PostsTopContributorsCard';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AnimatedButton from '@/components/buttons/AnimatedButton';
+import FundRaiserCard from '@/components/cards/FundRaiserCard';
 
 const Posts = () => {
 
   return (
     <div className="w-full bg-white">
 
-      <div className='relative w-full min-h-[450px] p-4 max-[420px]:p-3'>
+      <div className='relative w-full min-h-[400px] p-4 max-[420px]:p-3'>
         <Image src={BoardBgImg} alt='' className='inset-0 h-full w-full object-cover absolute' />
 
         <div className='relative z-10 max-w-[860px] mx-auto'>
-          <div className='flex justify-between items-center'>
-            <div className='flex items-center gap-3'>
-              <Image src={Avatar} alt='' height={50} width={50} className='rounded-full border-3 border-pink-100' />
-              <div className='text-white'>
-                <p className='text-sm'>Sean Parker</p>
-                <p className='text-xs'>Miami, FL • 03/12</p>
-              </div>
+          <div className='flex justify-between items-center flex-wrap mt-4'>
+            <p className='text-[42px] max-[768px]:text-[28px] relative text-white'>Sean Parker birthday</p>
+            <div className='flex gap-3 mt-4 items-center'>
+              <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Post Media</p>
+              <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Wish</p>
+              <Image src={ShareNetwork} alt='' height={30} width={30} className='cursor-pointer' />
             </div>
-            <AnimatedButton height='36px' width='115px' title='Add wish' />
           </div>
 
-          <div className='rounded-lg overflow-clip mt-4'>
+          <div className='flex items-center gap-3 mt-4'>
+            <Image src={Avatar} alt='' height={50} width={50} className='rounded-full border-3 border-pink-100' />
+            <div className='text-white'>
+              <p className='text-md'>Sean Parker</p>
+              <p className='text-sm'> <span className='font-bold'>Hometown:</span> Miami, FL • <span className='font-bold'>Birthdate:</span> 03/12</p>
+            </div>
+          </div>
+
+          <p className='text-white pt-4 text-[16px] max-[450px]:text-[14px]'>Happy Birthday, Sean! 🎉 Wishing you a fantastic year ahead filled with health, happiness, and success. May your special day be as amazing as you are. Cheers to many more celebrations! and the goal is $1000</p>
+
+          <div className='flex gap-2 items-center mt-6 text-white'>
+            <span className='text-lg'>Created by</span>
+            <Image src={smallAnnaAvatar} alt='' height={40} width={40} className='rounded-full' />
+            <span>Anna</span>
+          </div>
+          <div className='flex justify-between flex-wrap gap-3 items-center text-white my-5'>
+            <p className='font-bold text-lg'>This surprise board wil be delivered to sean parker on sep,12,2025</p>
+            <p className='text-sm bg-black rounded-full px-3 py-1'>Time left to wish : 00-00-00</p>
+          </div>
+
+          {/* <div className='rounded-lg overflow-clip mt-4'>
             <div className='bg-gradient-to-r from-[#E6408A] to-[#8C5AB6] px-4 pt-4 text-white'>
               <p>Let's send Sean to the Caribbean!</p>
               <div className='flex justify-between gap-4 items-center flex-wrap mt-3'>
@@ -81,12 +101,12 @@ const Posts = () => {
               </div>
             </div>
 
-          </div>
+          </div> */}
         </div>
       </div>
 
       <div className='max-w-[745px] mx-auto px-4 py-6 space-y-6'>
-        <PostsTopContributorsCard />
+        <FundRaiserCard />
         <PostsImagesCarouselCard />
         <PostsVideoCard />
         <PostsImagesCarouselCard />

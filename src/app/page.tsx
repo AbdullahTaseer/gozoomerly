@@ -8,14 +8,14 @@ import OurCommunityBoard from "@/components/sections/OurCommunityBoard";
 import SocialConnections from "@/components/sections/SocialConnections";
 import StartYourFirstCelebration from "@/components/sections/StartYouFirstCelebration";
 import WhyPeopleLove from "@/components/sections/WhyPeopleLoveIt";
-import WhyZoomerlyExists from "@/components/sections/WhyZoomerlyExists";
+import WhyWeCreatedZoomerly from "@/components/sections/WhyWeCreatedZoomerly";
 
 export default function Home() {
   return (
     <div>
       <Navbar/>
       <HeroSection/>
-      <WhyZoomerlyExists/>
+      <WhyWeCreatedZoomerly/>
       <DifferentBoardCarousel/>
       <OurCommunityBoard/>
       <WhyPeopleLove />
