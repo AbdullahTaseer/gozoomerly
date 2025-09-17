@@ -152,7 +152,7 @@ const DifferentBoardCarousel = () => {
                   key={index}
                   onClick={() => handleDotClick(index)}
                   className={`h-2 rounded-full transition-all duration-300 ${index === activeIndex
-                    ? "bg-pink-500 scale-110 w-5"
+                    ? "bg-pink-500 scale-110 w-7"
                     : "bg-gray-300 hover:bg-gray-400 w-2"
                     }`}
                   aria-label={`Go to slide ${index + 1}`}

@@ -70,3 +70,143 @@ export const giftsData = [
   { id: 9, label: "Boss Boost", price: 500, icon: gift_nine },
   { id: 10, label: "Dream Builder", price: 750, icon: gift_ten },
 ];
+
+
+// swiper carousel 
+
+import Community_1_avatar from "@/assets/svgs/community-1.svg";
+import Community_2_avatar from "@/assets/svgs/community-2.svg";
+import Community_3_avatar from "@/assets/svgs/community-3.svg";
+import Community_4_avatar from "@/assets/svgs/community-4.svg";
+
+import BigWish from "@/assets/svgs/big-wish-icon.svg";
+import bossBoost from "@/assets/svgs/boss-boost.svg";
+
+export const boards = [
+  {
+    id: 1,
+    avatar: Community_1_avatar,
+    title: "Sean Parker birthday",
+    name: "Sean Parker",
+    location: "Miami, FL",
+    date: "Sep 12,1988",
+    description: "Let’s make Sean’s 40th unforgettable! Help him buy his dream guitar 🎸",
+    fundTitle: "Goal Progress",
+    target: 3000,
+    raised: 1850,
+    invited: 65,
+    participants: 27,
+    wishes: 27,
+    gifters: 21,
+    media: 92,
+    topContributors: [
+      { label: "Big Wish", amount: 300, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 500, iconSrc: bossBoost },
+    ],
+  },
+  {
+    id: 2,
+    avatar: Community_2_avatar,
+    title: "Asha & David’s Wedding",
+    name: "Asha & David’s",
+    location: "New York, NY",
+    date: "Sep 09,2025",
+    description: "Celebrate Asha & David’s love! Share your moments here.",
+    fundTitle: "Honeymoon Fund",
+    target: 3000,
+    raised: 1850,
+    invited: 250,
+    participants: 112,
+    wishes: 112,
+    gifters: 89,
+    media: '500+',
+    topContributors: [
+      { label: "Big Wish", amount: 300, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 500, iconSrc: bossBoost },
+    ],
+  },
+  {
+    id: 3,
+    avatar: Community_3_avatar,
+    title: "Miami Summer Music Festival",
+    name: "Asha & David’s",
+    location: "Miami, FL",
+    date: "July 2025",
+    description: "Fans from around the world! Share your festival experience here!",
+    fundTitle: "Education Fund",
+    target: 25000,
+    raised: 32000,
+    invited: 65,
+    participants: 27,
+    wishes: 27,
+    gifters: 21,
+    media: 92,
+    topContributors: [
+      { label: "Big Wish", amount: 300, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 500, iconSrc: bossBoost },
+    ],
+  },
+  {
+    id: 4,
+    avatar: Community_4_avatar,
+    title: "Welcoming Baby Khan",
+    name: "Baby Khan",
+    location: "Chicago, IL",
+    date: "May 10,2025",
+    description: "Help us shower Baby Khan with love and blessings.",
+    fundTitle: "Nursery Fund",
+    target: 3000,
+    raised: 2200,
+    invited: 60,
+    participants: 45,
+    wishes: 45,
+    gifters: 30,
+    media: 180,
+    topContributors: [
+      { label: "Big Wish", amount: 300, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 500, iconSrc: bossBoost },
+    ],
+  },
+  {
+    id: 5,
+    avatar: Community_1_avatar,
+    title: "College Graduation Bash",
+    name: "Emily Johnson",
+    location: "Los Angeles, CA",
+    date: "June 20,2025",
+    description: "Emily is graduating! Let’s make her party one to remember 🎉",
+    fundTitle: "Celebration Fund",
+    target: 5000,
+    raised: 4200,
+    invited: 150,
+    participants: 80,
+    wishes: 75,
+    gifters: 60,
+    media: 210,
+    topContributors: [
+      { label: "Big Wish", amount: 400, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 600, iconSrc: bossBoost },
+    ],
+  },
+  {
+    id: 6,
+    avatar: Community_2_avatar,
+    title: "Startup Launch Party",
+    name: "TechNova Team",
+    location: "San Francisco, CA",
+    date: "Aug 15,2025",
+    description: "Join us to celebrate TechNova’s big launch 🚀",
+    fundTitle: "Innovation Fund",
+    target: 10000,
+    raised: 8500,
+    invited: 300,
+    participants: 180,
+    wishes: 140,
+    gifters: 120,
+    media: 500,
+    topContributors: [
+      { label: "Big Wish", amount: 700, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 1000, iconSrc: bossBoost },
+    ],
+  },
+];
