@@ -40,7 +40,7 @@ const WhyPeopleLove = () => {
   return (
     <div className='px-[5%] max-[769px]:px-4 py-5'>
       <div className='bg-[#F7F7F7] rounded-xl overflow-clip py-10 px-3 relative'>
-        <Image src={Background} alt='' className='absolute inset-0' />
+        <Image src={Background} alt='' className='absolute h-full inset-0' />
         <div className='absolute inset-0 pointer-events-none'>
           <Image src={Particles} alt="particles" className='absolute bottom-0 left-0' />
           <Image src={Particles} alt="particles" className='absolute top-0 right-0' />
