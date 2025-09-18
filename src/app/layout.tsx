@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "Xaioz Celebration",
   description: "Birthday Text By Xaioz",
   icons: {
-    icon: '/app-logo.svg',
+    icon: '/Zoomerly.svg',
   }
 };
 
