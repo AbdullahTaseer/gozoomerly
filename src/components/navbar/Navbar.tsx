@@ -61,7 +61,7 @@ const Navbar = () => {
 
   return (
     <>
-      <div className='flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 py-4 max-[1024px]:py-3 bg-white sticky top-0 z-[100]'>
+      <div className='flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-6 max-[1024px]:pb-3 max-[1024px]:pt-4 bg-white sticky top-0 z-[100]'>
         <Image
           className='hidden max-[900px]:block cursor-pointer'
           src={MenuIcon}
@@ -70,7 +70,7 @@ const Navbar = () => {
           width={20}
           onClick={() => setIsSidebarOpen(true)}
         />
-        <Image src={AppLogo} onClick={() => router.push("/")} alt="Logo" className='max-[900px]:w-[120px] cursor-pointer' />
+        <Image src={AppLogo} onClick={() => router.push("/")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
         <div className='flex items-center gap-6 max-[900px]:hidden'>
           {desktopOptions.map((option, i) => (
             <p
