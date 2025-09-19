@@ -104,7 +104,7 @@ const SocialConnections = () => {
             {circles.map((circle, i) => (
               <div
                 key={i}
-                className={`${circle.color} text-white p-6 min-w-[280px] max-[600px]:p-4 rounded-xl shadow-sm`}
+                className={`${circle.color} text-white p-6 max-[768px]:min-w-[280px] max-[600px]:p-4 rounded-xl shadow-sm`}
               >
                 <p className="font-semibold mb-2 px-5 text-[24px] text-center">{circle.title}</p>
                 <p className="text-[16px] text-center">{circle.desc}</p>

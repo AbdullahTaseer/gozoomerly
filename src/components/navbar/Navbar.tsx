@@ -75,7 +75,7 @@ const Navbar = () => {
           {desktopOptions.map((option, i) => (
             <p
               key={i}
-              className={`text-[15px] cursor-pointer transition-all duration-300 ${getActiveStyles(option)}`}
+              className={`text-[16px] cursor-pointer transition-all duration-300 ${getActiveStyles(option)}`}
               onClick={() => handleNavigation(option)}
             >
               {option}

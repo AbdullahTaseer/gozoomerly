@@ -48,8 +48,8 @@ const WhyWeCreatedZoomerly = () => {
         <Image src={Particles} alt="particles" className='absolute bottom-28 -z-10 right-0' />
         <TitleCard title="Why We Created Zoomerly" />
         <div className="grid grid-cols-2 gap-6 mt-12 relative max-[768px]:hidden">
-          <p className="text-transparent font-bold text-[32px] max-[768px]:text-[26px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">The Problem</p>
-          <p className="text-transparent font-bold text-[32px] max-[768px]:text-[26px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">Zoomerly solves all of this</p>
+          <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">The Problem</p>
+          <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">Zoomerly solves all of this</p>
           <Card icon={problem_1} title="Memories get lost across chats, feeds, and phones." desc="Important moments scattered across different platforms" />
           <Card icon={solve_1} title="One shared space for wishes, photos, videos, and gifts." desc="Everything in one beautiful, organized place" />
           <Card icon={problem_2} title="Guests often never get to connect after events." desc="Missing opportunities to build lasting relationships" />
@@ -60,7 +60,7 @@ const WhyWeCreatedZoomerly = () => {
 
         <div className="hidden max-[768px]:block">
           <div className="mt-10">
-            <p className="text-transparent font-bold text-[32px] max-[768px]:text-[26px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">The Problem</p>
+            <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">The Problem</p>
             <div className="flex gap-6 mt-3 overflow-x-auto scrollbar-hide">
               <Card icon={problem_1} title="Memories get lost across chats, feeds, and phones." desc="Important moments scattered across different platforms" />
               <Card icon={solve_1} title="One shared space for wishes, photos, videos, and gifts." desc="Everything in one beautiful, organized place" />
@@ -69,7 +69,7 @@ const WhyWeCreatedZoomerly = () => {
           </div>
 
           <div className="mt-10">
-            <p className="text-transparent font-bold text-[32px] max-[768px]:text-[26px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">Zoomerly solves all of this</p>
+            <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">Zoomerly solves all of this</p>
             <div className="flex gap-6 mt-3 overflow-x-auto scrollbar-hide">
               <Card icon={solve_2} title="A social layer so people at the same event can connect, follow, and message each other." desc="Missing opportunities to build lasting relationships" />
               <Card icon={problem_3} title="Gifting feels transactional instead of meaningful." desc="Gifts lack personal connection and context" />

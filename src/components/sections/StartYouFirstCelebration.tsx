@@ -26,23 +26,18 @@ const StartYourFirstCelebration = () => {
         <Image src={Avatar_2} alt="1" height={60} width={60} className="absolute top-5 left-5" />
         <Image src={Avatar_3} alt="1" height={100} width={100} className="absolute bottom-5 left-5 max-[768px]:hidden" />
 
-        <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
+        <h2 className="text-[70px] max-[1280px]:text-[52px] max-[1100px]:text-[46px] max-[768px]:text-[32px] font-bold mb-4 max-[930px]:mt-14 max-w-[800px] max-[1250px]:max-w-[600px] mx-auto">
           Create Your First Board Today
         </h2>
 
-        <p className="max-w-3xl mx-auto text-[22px] leading-relaxed mb-6">
+        <p className="max-w-3xl mx-auto text-[22px] leading-relaxed mb-6 max-[768px]:mb-0">
           🎉 It only takes a minute to create a board. Bring people together, share memories, give gifts, and now connect.
         </p>
 
         <Image src={Avatar_3} alt="1" height={80} width={80} className="hidden max-[768px]:block" />
 
-        <div className="mb-16 max-[768px]:mb-0 flex justify-center max-[520px]:flex-col items-center gap-6">
-          <div className="w-[350px] max-[520px]:w-full">
-            <GlobalButton title='Create Your Board' height="46px" bgColor="white" color="black" width="100%" className="mx-auto" hover={{ bgColor: 'white' }} />
-          </div>
-          <div className="w-[350px] max-[520px]:w-full hidden max-[768px]:block">
-            <GlobalButton title='Watch a Real Board' height="46px" bgColor="transparent" width="100%" borderColor="white" borderWidth="1px" className="mx-auto" hover={{ bgColor: 'transparent' }} />
-          </div>
+        <div className="w-[350px] max-[520px]:w-full mb-16 max-[768px]:mb-0 mx-auto">
+          <GlobalButton title='Create Your Board' height="48px" bgColor="white" color="black" width="100%" hover={{ bgColor: 'white' }} />
         </div>
 
       </div>
