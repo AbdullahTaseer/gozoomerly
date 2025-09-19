@@ -23,10 +23,10 @@ const CarouselCard: React.FC<CarouselCardProps> = ({
 }) => {
   return (
     <div
-      className={`relative w-[470px] max-[768px]:w-[320px] max-[390px]:w-[280px] shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 ${isActive ? "scale-100" : "scale-100"
+      className={`relative w-[470px] max-[768px]:w-[320px] max-[768px]:h-[400px] shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 ${isActive ? "scale-100" : "scale-100"
         }`}
     >
-      <Image src={imageSrc || image_1} alt={title} />
+      <Image src={imageSrc || image_1} alt={title} className="h-full object-cover" />
       <div className="absolute bottom-4 left-4 text-white">
         <h3 className="font-bold text-lg mb-2">{title}</h3>
         <p className="text-sm leading-relaxed max-w-[90%]">{description}</p>
@@ -115,8 +115,8 @@ const DifferentBoardCarousel = () => {
   };
 
   return (
-    <div className="px-[5%] max-[769px]:px-4">
-      <div className="bg-[#F7F7F7] py-10 px-2 rounded-xl">
+    <div className="px-[5%] max-[769px]:px-4 max-[768px]:px-0">
+      <div className="bg-[#F7F7F7] py-10 px-2 rounded-xl max-[768px]:rounded-none">
 
         <TitleCard title="Types of Boards" />
 
@@ -145,7 +145,7 @@ const DifferentBoardCarousel = () => {
               ))}
             </div>
 
-            <div className="flex justify-center gap-3 mt-6">
+            <div className="flex max-[768px]:hidden justify-center gap-3 mt-6">
               {carouselData.map((_, index) => (
                 <button
                   key={index}

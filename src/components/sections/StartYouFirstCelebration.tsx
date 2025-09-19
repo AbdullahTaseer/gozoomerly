@@ -19,12 +19,12 @@ const StartYourFirstCelebration = () => {
         <Image
           src={Particles}
           alt="Confetti Particles"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute max-[768px]:hidden inset-0 w-full h-full object-cover pointer-events-none"
         />
 
         <Image src={Avatar_1} alt="1" className="h-[150px] w-[150px] max-[1140px]:h-[100px] max-[1140px]:w-[100px] absolute top-10 max-[1100px]:top-3 right-10 max-[1100px]:right-3" />
         <Image src={Avatar_2} alt="1" height={60} width={60} className="absolute top-5 left-5" />
-        <Image src={Avatar_3} alt="1" height={80} width={80} className="absolute bottom-5 left-5" />
+        <Image src={Avatar_3} alt="1" height={100} width={100} className="absolute bottom-5 left-5 max-[768px]:hidden" />
 
         <h2 className="text-[60px] max-[1210px]:text-[52px] max-[1100px]:text-[40px] max-[1024px]:text-[32px] font-bold mb-4 max-[930px]:mt-14 max-w-[700px] mx-auto">
           Create Your First Board Today
@@ -34,7 +34,9 @@ const StartYourFirstCelebration = () => {
           🎉 It only takes a minute to create a board. Bring people together, share memories, give gifts, and now connect.
         </p>
 
-        <div className="mb-16 flex justify-center max-[520px]:flex-col items-center gap-6">
+        <Image src={Avatar_3} alt="1" height={80} width={80} className="hidden max-[768px]:block" />
+
+        <div className="mb-16 max-[768px]:mb-0 flex justify-center max-[520px]:flex-col items-center gap-6">
           <div className="w-[350px] max-[520px]:w-full">
             <GlobalButton title='Create Your Board' height="46px" bgColor="white" color="black" width="100%" className="mx-auto" hover={{ bgColor: 'white' }} />
           </div>
