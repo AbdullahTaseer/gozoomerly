@@ -5,13 +5,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import TitleCard from '../cards/TitleCard';
 
 const Faqs = () => {
   return (
     <div className='px-[5%] max-[769px]:px-4 py-10'>
-      <p className='text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>
-        Frequently asked questions
-      </p>
+      
+      <TitleCard title="Frequently asked questions" />
+      
       <div className='mt-6 space-y-6 max-w-2xl mx-auto'>
         <Accordion className='space-y-6' type="single" collapsible>
           

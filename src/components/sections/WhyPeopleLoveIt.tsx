@@ -7,7 +7,7 @@ import Sam from "@/assets/svgs/Sam.svg";
 import Farah from "@/assets/svgs/Farah.svg";
 import Sohail from "@/assets/svgs/Sohail.svg";
 import Background from "@/assets/pngs/why-people-love-it-background.png";
-// import { Confetti } from '../confetti';
+import TitleCard from '../cards/TitleCard';
 
 const WhyPeopleLove = () => {
   const testimonials = [
@@ -15,59 +15,44 @@ const WhyPeopleLove = () => {
       quote: "“It felt like being in the same room with my family, even though we were on three continents.” ",
       name: "Maria A.",
       image: Maria,
-      cardClassName: '-skew-y-1'
+      cardClassName: '-skew-y-1 max-[768px]:-skew-y-0'
     },
     {
       quote: "“Our wedding board became the most beautiful album we could ever ask for.”",
       name: "Sam K.",
       image: Sam,
-      cardClassName: '-skew-y-1'
+      cardClassName: '-skew-y-1 max-[768px]:-skew-y-0'
     },
     {
       quote: "“Seeing the surprise board at midnight had me in tears.”",
       name: "Farah L.",
       image: Farah,
-      cardClassName: 'skew-y-1'
+      cardClassName: 'skew-y-1 max-[768px]:skew-y-0'
     },
     {
       quote: "“Being part of a concert board made me feel like my voice mattered to the artist.”",
       name: "Sohail R.",
       image: Sohail,
-      cardClassName: 'skew-y-1'
+      cardClassName: 'skew-y-1 max-[768px]:skew-y-0'
     }
   ];
 
   return (
-    <div className='px-[5%] max-[769px]:px-4 py-5'>
-      <div className='bg-[#F7F7F7] rounded-xl overflow-clip py-10 px-3 relative'>
+    <div className='px-[5%] max-[769px]:px-4 max-[768px]:px-0 py-5'>
+      <div className='bg-[#F7F7F7] rounded-xl max-[768px]:rounded-none overflow-clip py-10 px-3 relative'>
         <Image src={Background} alt='' className='absolute h-full inset-0' />
         <div className='absolute inset-0 pointer-events-none'>
           <Image src={Particles} alt="particles" className='absolute bottom-0 left-0' />
           <Image src={Particles} alt="particles" className='absolute top-0 right-0' />
         </div>
 
-        {/* <Confetti
-          autoFire={false}
-          triggerOnScroll={true}
-          autoFireDelay={300}
-          showButton={false}
-          buttonText="🎉 Celebrate!"
-          buttonPosition="top-right"
-          options={{
-            particleCount: 100,
-            colors: ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#9370DB', '#32CD32', '#FF4500', '#1E90FF']
-          }}
-        /> */}
+        <TitleCard color='white' title='Why People Love It' />
 
-        <h2 className='text-center relative text-white text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold'>
-          Why People Love It
-        </h2>
-
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-5 max-w-6xl mx-auto relative z-10 mt-6'>
+        <div className='grid grid-cols-2 max-[768px]:flex max-[768px]:overflow-x-auto scrollbar-hide gap-5 max-w-6xl mx-auto relative z-10 mt-6'>
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className={`bg-white rounded-[10px] py-4 px-6 ${testimonial.cardClassName}`}
+              className={`bg-white rounded-[10px] py-4 px-6 max-[768px]:min-w-[280px] ${testimonial.cardClassName}`}
             >
               <div className='flex flex-col'>
                 <blockquote className='text-black text-[20px] max-[900px]:text-[16px] leading-relaxed mb-6'>

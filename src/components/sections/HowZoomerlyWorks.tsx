@@ -7,6 +7,7 @@ import Img2 from "@/assets/svgs/as-simple-as-wishing-2.svg";
 import Img3 from "@/assets/svgs/as-simple-as-wishing-3.svg";
 import Img4 from "@/assets/svgs/as-simple-as-wishing-4.svg";
 import Img5 from "@/assets/svgs/as-simple-as-wishing-5.svg";
+import TitleCard from "../cards/TitleCard";
 
 const steps = [
   {
@@ -95,9 +96,8 @@ const HowZoomerlyWorks = () => {
       style={{ height: `${steps.length * 200}vh` }}
     >
       <section className="sticky top-0 min-h-screen flex flex-col items-center justify-center px-[5%] max-[769px]:px-4">
-        <h2 className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
-          How Zoomerly Works
-        </h2>
+        
+        <TitleCard title="How Zoomerly Works"/>
 
         <div className="grid w-full max-[700px]:grid-cols-1 max-[1024px]:grid-cols-2 grid-cols-5 gap-8 items-center mt-12 max-[600px]:mt-4">
 

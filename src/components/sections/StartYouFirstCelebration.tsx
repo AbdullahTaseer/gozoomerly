@@ -13,8 +13,8 @@ import Particles from "@/assets/svgs/start-you-first-celebration.svg";
 const StartYourFirstCelebration = () => {
 
   return (
-    <section className="px-[5%] max-[769px]:px-4 py-10">
-      <div className={`relative rounded-[20px] bg-gradient-to-b from-pink-500 via-pink-400 to-purple-500 text-white text-center px-6 py-12 overflow-hidden`}>
+    <section className="px-[5%] max-[768px]:px-0 py-10">
+      <div className={`relative rounded-[20px] max-[768px]:rounded-none bg-gradient-to-b from-pink-500 via-pink-400 to-purple-500 text-white text-center px-6 py-12 overflow-hidden`}>
 
         <Image
           src={Particles}
@@ -34,12 +34,15 @@ const StartYourFirstCelebration = () => {
           🎉 It only takes a minute to create a board. Bring people together, share memories, give gifts, and now connect.
         </p>
 
-        {/* <div className="flex flex-wrap justify-center gap-4 mb-16">
-          <GlobalButton title="Explore Spotlight Birthdays" bgColor="white" color="#000000" width="220px" hover={{ bgColor: 'white' }} />
-          <GlobalButton title="Create a Public Birthday Board" bgColor="transparent" borderColor="white" borderWidth="1px" width="220px" hover={{ bgColor: 'transparent' }} />
-        </div> */}
+        <div className="mb-16 flex justify-center max-[520px]:flex-col items-center gap-6">
+          <div className="w-[350px] max-[520px]:w-full">
+            <GlobalButton title='Create Your Board' height="46px" bgColor="white" color="black" width="100%" className="mx-auto" hover={{ bgColor: 'white' }} />
+          </div>
+          <div className="w-[350px] max-[520px]:w-full hidden max-[768px]:block">
+            <GlobalButton title='Watch a Real Board' height="46px" bgColor="transparent" width="100%" borderColor="white" borderWidth="1px" className="mx-auto" hover={{ bgColor: 'transparent' }} />
+          </div>
+        </div>
 
-        <GlobalButton title='Create Your Board' bgColor="white" color="black" width="200px" className="mx-auto  mb-16" hover={{ bgColor: 'white' }} />
       </div>
     </section>
   );

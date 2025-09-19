@@ -58,7 +58,7 @@ const GlobalButton = ({
         border: `${borderWidth || "0px"} solid ${borderColor || "transparent"}`,
         userSelect: 'none'
       }}
-      className={`gap-2 ${className} flex justify-center items-center text-[13px] max-[540px]:text-[12px] tracking-[0.1px] cursor-pointer`}
+      className={`gap-2 ${className} flex justify-center items-center text-[15px] max-[540px]:text-[13px] tracking-[0.1px] cursor-pointer`}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = hoverBgColor;
         e.currentTarget.style.color = hover?.color || color;

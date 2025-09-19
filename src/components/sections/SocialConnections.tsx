@@ -8,6 +8,7 @@ import icon_1 from "@/assets/svgs/social-connections-icon-1.svg";
 import icon_2 from "@/assets/svgs/social-connections-icon-2.svg";
 import icon_3 from "@/assets/svgs/social-connections-icon-3.svg";
 import icon_4 from "@/assets/svgs/social-connections-icon-4.svg";
+import TitleCard from "../cards/TitleCard";
 
 const features = [
   {
@@ -57,12 +58,11 @@ const circles = [
 
 const SocialConnections = () => {
   return (
-    <div className="px-[5%] max-[769px]:px-4 mt-12">
+    <div className="px-[5%] max-[769px]:px-4 max-[768px]:px-0 mt-12">
 
-      <div className="bg-[#F7F7F7] rounded-2xl py-12 px-8 max-[600px]:px-4">
-        <p className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
-          The New Twist: Social Connections
-        </p>
+      <div className="bg-[#F7F7F7] rounded-2xl max-[768px]:rounded-none py-12 px-8 max-[768px]:px-4 max-[600px]:px-4">
+
+        <TitleCard title="The New Twist: Social Connections" />
 
         <div className="grid grid-cols-2 max-[768px]:grid-cols-1 gap-8 mt-12 items-center">
           <div className="flex flex-col gap-4 max-[768px]:order-1">
@@ -96,26 +96,28 @@ const SocialConnections = () => {
         </div>
 
 
-        <div className="bg-white rounded-2xl mt-12 py-8 px-8 max-[600px]:px-4">
-          <p className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
-            Circles for Deeper Connection
-          </p>
+        <div className="bg-white max-[768px]:bg-transparent rounded-2xl mt-12 py-8 px-8 max-[768px]:px-0">
 
-          <div className="grid grid-cols-4 max-[1024px]:grid-cols-2 max-[420px]:grid-cols-1 gap-6 mt-6">
+          <TitleCard title="Circles for Deeper Connection" />
+
+          <div className="grid max-[768px]:flex max-[768px]:overflow-x-auto scrollbar-hide grid-cols-4 max-[1150px]:grid-cols-2 gap-6 mt-6">
             {circles.map((circle, i) => (
               <div
                 key={i}
-                className={`${circle.color} text-white p-6 max-[600px]:p-4 rounded-xl shadow-sm`}
+                className={`${circle.color} text-white p-6 min-w-[280px] max-[600px]:p-4 rounded-xl shadow-sm`}
               >
-                <p className="font-semibold mb-2 text-xl text-center">{circle.title}</p>
+                <p className="font-semibold mb-2 px-5 text-[24px] text-center">{circle.title}</p>
                 <p className="text-[16px] text-center">{circle.desc}</p>
               </div>
             ))}
           </div>
 
           <div className="text-center mt-10">
-            <p className="font-bold text-[24px] max-[600px]:text-[20px]">Personalized Social Experience</p>
-            <p className="text-gray-600 font-medium mt-2 max-w-2xl mx-auto">
+            <p className="font-bold text-[32px] max-[768px]:hidden">Personalized Social Experience</p>
+            <div className="hidden max-[768px]:block">
+              <TitleCard title="Personalized Social Experience" />
+            </div>
+            <p className="text-gray-600 font-medium mt-2 max-w-4xl mx-auto">
               Filter whose posts, stories, and wishes you want to see. Show posts
               to one circle, but not others. Focus on what matters most to you.
             </p>

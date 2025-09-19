@@ -9,6 +9,7 @@ import "swiper/css/navigation";
 import { boards } from "@/lib/MockData";
 import GlobalButton from "../buttons/GlobalButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import TitleCard from "../cards/TitleCard";
 
 const BoardCard = ({ board }: { board: (typeof boards)[0] }) => {
   const progress = board.target > 0 ? Math.round((board.raised / board.target) * 100) : 0;
@@ -80,9 +81,8 @@ const OurCommunityBoard = () => {
 
   return (
     <section className="px-[5%] max-[769px]:px-4 py-10">
-      <h2 className="text-center text-[42px] max-[900px]:text-[30px] max-[600px]:text-[24px] font-bold">
-        Real Boards from Our Community
-      </h2>
+
+      <TitleCard title="Real Boards from Our Community" />
 
       <div className="mt-10 relative px-10 max-[800px]:px-6 max-[420px]:px-4">
 
