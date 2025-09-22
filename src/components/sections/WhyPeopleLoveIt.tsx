@@ -39,7 +39,7 @@ const WhyPeopleLove = () => {
 
   return (
     <div className='px-[5%] max-[769px]:px-4 max-[768px]:px-0 py-5'>
-      <div className='bg-[#F7F7F7] rounded-xl max-[768px]:rounded-none overflow-clip py-10 px-3 relative'>
+      <div className='bg-[#F7F7F7] rounded-xl max-[768px]:rounded-none overflow-clip py-10 px-3 max-[768px]:px-0 relative'>
         <Image src={Background} alt='' className='absolute h-full inset-0' />
         <div className='absolute inset-0 pointer-events-none'>
           <Image src={Particles} alt="particles" className='absolute bottom-0 left-0' />
@@ -48,11 +48,11 @@ const WhyPeopleLove = () => {
 
         <TitleCard color='white' title='Why People Love It' />
 
-        <div className='grid grid-cols-2 max-[768px]:flex max-[768px]:overflow-x-auto scrollbar-hide gap-5 max-w-6xl mx-auto relative z-10 mt-6'>
+        <div className='grid grid-cols-2 max-[768px]:flex max-[768px]:overflow-x-auto scrollbar-hide gap-5 max-[768px]:gap-0 max-w-6xl mx-auto relative z-10 mt-6'>
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className={`bg-white rounded-[10px] py-4 px-6 max-[768px]:min-w-[280px] ${testimonial.cardClassName}`}
+              className={`bg-white rounded-[10px] max-[768px]:mx-3 py-4 px-6 max-[768px]:min-w-[280px] ${testimonial.cardClassName}`}
             >
               <div className='flex flex-col'>
                 <blockquote className='text-black text-[20px] max-[900px]:text-[16px] leading-relaxed mb-6'>

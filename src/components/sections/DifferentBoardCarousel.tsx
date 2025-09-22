@@ -23,7 +23,7 @@ const CarouselCard: React.FC<CarouselCardProps> = ({
 }) => {
   return (
     <div
-      className={`relative w-[470px] max-[768px]:w-[320px] max-[768px]:h-[400px] shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 ${isActive ? "scale-100" : "scale-100"
+      className={`relative max-[768px]:mx-3 w-[470px] max-[768px]:w-[320px] max-[768px]:h-[400px] shrink-0 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 ${isActive ? "scale-100" : "scale-100"
         }`}
     >
       <Image src={imageSrc || image_1} alt={title} className="h-full object-cover" />
@@ -116,7 +116,7 @@ const DifferentBoardCarousel = () => {
 
   return (
     <div className="px-[5%] max-[769px]:px-4 max-[768px]:px-0">
-      <div className="bg-[#F7F7F7] py-10 px-2 rounded-xl max-[768px]:rounded-none">
+      <div className="bg-[#F7F7F7] py-10 rounded-xl max-[768px]:rounded-none">
 
         <TitleCard title="Types of Boards" />
 
@@ -125,7 +125,7 @@ const DifferentBoardCarousel = () => {
             <div
               id="carousel-container"
               ref={containerRef}
-              className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide"
+              className="flex gap-6 max-[768px]:gap-0 overflow-x-auto pb-8 scrollbar-hide"
             >
               {carouselData.map((card, index) => (
                 <div
