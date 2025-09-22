@@ -113,10 +113,7 @@ const SocialConnections = () => {
           </div>
 
           <div className="text-center mt-10">
-            <p className="font-bold text-[32px] max-[768px]:hidden">Personalized Social Experience</p>
-            <div className="hidden max-[768px]:block px-4">
-              <TitleCard title="Personalized Social Experience" />
-            </div>
+            <p className="font-bold text-[32px] max-[768px]:text-[24px]">Personalized Social Experience</p>
             <p className="text-gray-600 font-medium mt-2 max-w-4xl mx-auto">
               Filter whose posts, stories, and wishes you want to see. Show posts
               to one circle, but not others. Focus on what matters most to you.

@@ -3,7 +3,8 @@ import Navbar from "@/components/navbar/Navbar";
 import DifferentBoardCarousel from "@/components/sections/DifferentBoardCarousel";
 import Faqs from "@/components/sections/Faqs";
 import HeroSection from "@/components/sections/HeroSection";
-import HowZoomerlyWorks from "@/components/sections/HowZoomerlyWorks";
+import HowZoomerlyWorksDesktop from "@/components/sections/HowZoomerlyWorksDesktop";
+import HowZoomerlyWorksMobile from "@/components/sections/HowZoomerlyWorksMobile";
 import OurCommunityBoard from "@/components/sections/OurCommunityBoard";
 import SocialConnections from "@/components/sections/SocialConnections";
 import StartYourFirstCelebration from "@/components/sections/StartYouFirstCelebration";
@@ -19,7 +20,12 @@ export default function Home() {
       <DifferentBoardCarousel/>
       <OurCommunityBoard/>
       <WhyPeopleLove />
-      <HowZoomerlyWorks />
+      <div className="max-[768px]:hidden">
+      <HowZoomerlyWorksDesktop />
+      </div>
+      <div className="hidden max-[768px]:block">
+        <HowZoomerlyWorksMobile/>
+      </div>
       <SocialConnections/>
       <StartYourFirstCelebration />
       <Faqs />

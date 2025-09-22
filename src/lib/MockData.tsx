@@ -210,3 +210,18 @@ export const boards = [
     ],
   },
 ];
+
+
+import How_Img1 from "@/assets/svgs/as-simple-as-wishing.svg";
+import How_Img2 from "@/assets/svgs/as-simple-as-wishing-2.svg";
+import How_Img3 from "@/assets/svgs/as-simple-as-wishing-3.svg";
+import How_Img4 from "@/assets/svgs/as-simple-as-wishing-4.svg";
+import How_Img5 from "@/assets/svgs/as-simple-as-wishing-5.svg";
+
+export const steps = [
+  { number: "01", title: "Create Your Board", desc: "Pick the event type and add the celebrated star.", img: How_Img1 },
+  { number: "02", title: "Invite People", desc: "Share the link by SMS, email, or QR. Control privacy.", img: How_Img2 },
+  { number: "03", title: "Collect Memories", desc: "Guests post wishes, media, and comments.", img: How_Img3 },
+  { number: "04", title: "Wish + Gift", desc: "Contributors send meaningful gifts alongside their messages.", img: How_Img4 },
+  { number: "05", title: "Celebrate & Relive", desc: "Surprise boards deliver on the big day; event boards stay live and collaborative.", img: How_Img5 },
+];

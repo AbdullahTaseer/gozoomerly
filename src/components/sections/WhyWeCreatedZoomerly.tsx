@@ -6,7 +6,7 @@ import Particles from "@/assets/svgs/why-people-love-particles.svg";
 
 import problem_1 from "@/assets/svgs/problem-icon-1.svg";
 import problem_2 from "@/assets/svgs/problem-icon-2.svg";
-import problem_3 from "@/assets/svgs/problem-icon-3.svg"
+import problem_3 from "@/assets/svgs/problem-icon-3.svg";
 
 import solve_1 from "@/assets/svgs/solves-icon-1.svg";
 import solve_2 from "@/assets/svgs/solves-icon-2.svg";
@@ -46,7 +46,7 @@ const WhyWeCreatedZoomerly = () => {
 
       <div className="px-18 max-[1200px]:px-0">
         <Image src={Particles} alt="particles" className='absolute bottom-28 -z-10 right-0' />
-        <TitleCard title="Why We Created Zoomerly" />
+        <TitleCard className="px-8" title="Why We Created Zoomerly" />
         <div className="grid grid-cols-2 gap-6 mt-12 relative max-[768px]:hidden max-[768px]:pl-4">
           <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">The Problem</p>
           <p className="text-transparent font-bold text-[32px] max-[900px]:text-[28px] bg-clip-text bg-gradient-to-r from-[#EA4088] to-[#885CB8]">Zoomerly solves all of this</p>

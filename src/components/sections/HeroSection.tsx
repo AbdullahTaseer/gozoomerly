@@ -12,8 +12,7 @@ const HeroSection = () => {
         <Image src={BgImg} alt='' fill className='object-cover' />
         <div className='text-center text-white max-w-[1150px] relative z-2'>
           <p className='text-[70px] max-[1024px]:text-[55px] max-[768px]:text-[44px] max-[600px]:text-[36px] font-semibold'>Celebrate Life&apos;s Biggest Moments. Together.</p>
-          <p className='text-[24px] mt-6 max-[768px]:hidden'>Zoomerly lets you create interactive boards for every occasion birthdays, weddings, concerts, graduations, family gatherings, and more. Collect wishes, share media, send gifts, and now… connect with the people you meet at events.</p>
-          <p className='text-[20px] mt-6 hidden max-[768px]:flex'>Zoomerly creates interactive boards for occasions. Collect wishes, photos, videos, and gifts to relive memories.</p>
+          <p className='text-[24px] max-[768px]:text-[20px] mt-4'>Zoomerly lets you create interactive boards for every occasion birthdays, weddings, concerts, graduations, family gatherings, and more. Collect wishes, share media, send gifts, and now… connect with the people you meet at events.</p>
           <div className='flex justify-center items-center max-[520px]:flex-col gap-6 mt-6'>
             <div className='w-[200px] max-[520px]:w-full'>
               <GlobalButton title='Create Your Board' height='48px' />
