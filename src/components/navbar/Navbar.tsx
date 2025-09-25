@@ -26,8 +26,8 @@ const Navbar = () => {
     if (option === "Have a question?") {
       return pathname === "/haveQuestion";
     }
-    if (option === "Sign in") {
-      return pathname === "/signin";
+    if (option === "Sign up") {
+      return pathname === "/signup";
     }
 
     return false;
@@ -50,8 +50,8 @@ const Navbar = () => {
       case "Have a question?":
         router.push("/haveQuestion");
         break;
-      case "Sign in":
-        router.push("/signin");
+      case "Sign up":
+        router.push("/signup");
         break;
       default:
         break;

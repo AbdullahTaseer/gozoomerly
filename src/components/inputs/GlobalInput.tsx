@@ -103,7 +103,7 @@ const GlobalInput = ({
         onChange={handleInputChange}
         min={type === "number" ? 0 : undefined}
         style={{ height: height, width: width, backgroundColor: bgColor }}
-        className={`globalinput-placeholder placeholder:text-[13px] text-[13px] text-black autofill:text-[#A6A6A6] placeholder:text-[#A6A6A6] rounded-[5px] border focus:outline-none block placeholder:font-[300] border-[#C4C4C4] px-4 ${inputClassName}`}
+        className={`globalinput-placeholder placeholder:text-[15px] text-[15px] text-black autofill:text-[#A6A6A6] placeholder:text-[#020202] rounded-[5px] border focus:outline-none block placeholder:font-[300] border-[#2E2C39] px-4 ${inputClassName}`}
       />
       {(error || localError) && (
         <div className={`${error || localError ? "mb-1" : ""}`}>

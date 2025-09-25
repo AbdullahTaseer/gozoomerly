@@ -134,6 +134,10 @@ body {
   font-family: var(--font-jost)
 }
 
+.poppin-font {
+    font-family: var(--font-poppins), sans-serif !important;
+}
+
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;

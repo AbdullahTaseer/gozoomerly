@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
-import { Jost } from "next/font/google";
+// 1. Import Poppins alongside Jost
+import { Jost, Poppins } from "next/font/google";
 import "./globals.css";
 
 const jost = Jost({
   variable: "--font-jost",
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
@@ -23,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${jost.variable} antialiased`}>
+      <body className={`${jost.variable} ${poppins.variable} antialiased`}>
         {children}
       </body>
     </html>
