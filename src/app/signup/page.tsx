@@ -3,8 +3,8 @@ import Image from 'next/image';
 
 import Background from "@/assets/svgs/hero-bg-img.svg";
 import WhiteLogo from "@/assets/svgs/Zoomerly-white.svg";
-import GlobalInput from '@/components/inputs/GlobalInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
+import FloatingInput from '@/components/inputs/FloatingInput';
 
 const Signup = () => {
   return (
@@ -18,9 +18,9 @@ const Signup = () => {
         <div className='max-w-md w-full'>
           <p className='text-center poppin-font text-[36px] font-medium'>Welcome back!</p>
           <p className='text-center font-poppins'>Please login to your account</p>
-          <GlobalInput title='' width='100%' height='46px' className="mt-10" placeholder='Email' />
-          <GlobalInput title='' width='100%' height='46px' className="mt-6" placeholder='Phone Number' />
-          <GlobalInput title='' width='100%' height='46px' className="mt-6" placeholder='Password' />
+          <FloatingInput id={"email"} title='Email' type='email' width='100%' className="mt-10" />
+          <FloatingInput id={"phone-number"} title='Phone Number' type='tel' width='100%' className="mt-6" />
+          <FloatingInput id={"password"} title='Password' type='password' width='100%' className="mt-6" />
           <p className='text-right font-medium text-sm my-3'>Forgot Password?</p>
           <GlobalButton title='Continue' height='46px' />
         </div>
