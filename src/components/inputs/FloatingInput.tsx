@@ -45,7 +45,7 @@ const FloatingInput = ({
   labelFont = "400",
   bgColor = "transparent",
   type,
-  height = "46px",
+  height = "50px",
   labelColor = "#2D2D2D",
 }: props) => {
   const [localError, setLocalError] = useState<string | null>(null);
