@@ -73,6 +73,7 @@ const SignIn = () => {
         )}
 
         <FloatingInput
+          id={"email"}
           title='Email'
           width='100%'
           height='46px'
@@ -83,6 +84,7 @@ const SignIn = () => {
         />
 
         <FloatingInput
+          id={"password"}
           title='Password'
           width='100%'
           height='46px'
@@ -98,7 +100,7 @@ const SignIn = () => {
         />
 
         <p
-          className='text-right font-medium text-sm my-3 cursor-pointer hover:text-blue-600'
+          className='text-right font-medium text-sm my-3 cursor-pointer hover:text-pink-600'
           onClick={handleForgotPassword}
         >
           Forgot Password?
