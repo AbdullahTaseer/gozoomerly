@@ -36,11 +36,14 @@ const Signup = () => {
     <AuthLayout>
 
       {step !== 5 &&
-        <div className='absolute top-10 flex w-full max-w-lg items-center gap-6'>
-          <ArrowLeft className={`shrink-0 ${step === 1 ? "cursor-not-allowed" : "cursor-pointer"}`} color='black' onClick={handleBack} />
-          <div className='h-1.5 w-full rounded-full bg-gray-200 overflow-hidden'>
-            <div className='h-1.5 bg-[#E3418B]' style={{ width: `${progressBar}%` }} />
+        <div className='w-full mt-6 max-w-lg'>
+          <div className='w-full flex gap-3 items-center'>
+            <ArrowLeft className={`shrink-0 ${step === 1 ? "cursor-not-allowed" : "cursor-pointer"}`} color='black' onClick={handleBack} />
+            <div className='h-1.5 w-full rounded-full bg-gray-200 overflow-hidden'>
+              <div className='h-1.5 bg-[#E3418B] duration-700' style={{ width: `${progressBar}%` }} />
+            </div>
           </div>
+          <p className='pl-[35px]'>{progressBar}% Complete</p>
         </div>
       }
 
@@ -80,12 +83,15 @@ const Signup = () => {
       }
 
       {step === 5 &&
-        <div className='max-w-lg w-full'>
-          <Image src={CelebrtionImg} alt="" height={120} width={120} className='mx-auto mb-5' />
-          <p className='text-center poppin-font text-[36px] font-medium'>All done</p>
-          <p className='text-center font-poppins'>Your account has been created. You're now ready to explore and enjoy all the features and benefits we have to offer.</p>
-          <GlobalButton title='Create a Board' height='50px' className='mt-6' onClick={() => router.push("/")} />
-        </div>
+        <>
+          <div />
+          <div className='max-w-lg w-full'>
+            <Image src={CelebrtionImg} alt="" height={120} width={120} className='mx-auto mb-5' />
+            <p className='text-center poppin-font text-[36px] font-medium'>All done</p>
+            <p className='text-center font-poppins'>Your account has been created. You're now ready to explore and enjoy all the features and benefits we have to offer.</p>
+            <GlobalButton title='Create a Board' height='50px' className='mt-6' onClick={() => router.push("/")} />
+          </div>
+        </>
       }
 
     </AuthLayout>
