@@ -96,7 +96,7 @@ const FloatingInput = ({
         onChange={handleInputChange}
         min={type === "number" ? 0 : undefined}
         style={{ height: height, width: width, backgroundColor: bgColor }}
-        className={`peer block w-full rounded-md border border-[#2E2C39] px-4 text-[15px] text-black focus:outline-none placeholder-transparent ${inputClassName} autofill:bg-white`}
+        className={`peer block w-full rounded-md border border-[#2E2C39] px-4 text-[16px] text-black focus:outline-none placeholder-transparent ${inputClassName} autofill:bg-white`}
       />
       <label
         htmlFor={id}
