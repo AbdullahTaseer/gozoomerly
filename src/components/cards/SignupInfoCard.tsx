@@ -1,25 +1,22 @@
 "use client";
 import React, { useState } from "react";
-import FloatingInput from "../inputs/FloatingInput";
 import Image from "next/image";
-import dummyAvatar from "@/assets/svgs/boy-avatar.svg";
 import { Plus } from "lucide-react";
+import { SelectItem } from "@/components/ui/select";
 import { Country, State, City } from "country-state-city";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import GlobalButton from "../buttons/GlobalButton";
 
+import FloatingInput from "../inputs/FloatingInput";
+import GlobalButton from "../buttons/GlobalButton";
+import FloatingSelect from "../inputs/FloatingSelect";
+
+import dummyAvatar from "@/assets/svgs/boy-avatar.svg";
 
 const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
 
   const [avatar, setAvatar] = useState<string | null>(null);
   const [countryCode, setCountryCode] = useState<string>("");
   const [stateCode, setStateCode] = useState<string>("");
+  const [city, setCity] = useState<string>("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,44 +66,46 @@ const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
         <FloatingInput id={"Full Name"} title="Full Name" width="100%" />
         <FloatingInput id={"Birthday Date"} title="Birthday Date" type="date" width="100%" />
 
-        <Select onValueChange={(val) => { setCountryCode(val); setStateCode(""); }}>
-          <SelectTrigger className="w-full border bg-white border-[#2E2C39] !h-[50px]">
-            <SelectValue placeholder="Country" />
-          </SelectTrigger>
-          <SelectContent>
-            {countries.map((c) => (
-              <SelectItem key={c.isoCode} value={c.isoCode}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FloatingSelect
+          label="Country"
+          value={countryCode}
+          onChange={(val) => {
+            setCountryCode(val);
+            setStateCode("");
+          }}
+        >
+          {countries.map((c) => (
+            <SelectItem key={c.isoCode} value={c.isoCode}>
+              {c.name}
+            </SelectItem>
+          ))}
+        </FloatingSelect>
 
-        <Select onValueChange={(val) => setStateCode(val)} disabled={!countryCode}>
-          <SelectTrigger className="w-full border bg-white border-[#2E2C39] !h-[50px]">
-            <SelectValue placeholder="State" />
-          </SelectTrigger>
-          <SelectContent>
-            {states.map((s) => (
-              <SelectItem key={s.isoCode} value={s.isoCode}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FloatingSelect
+          label="State"
+          value={stateCode}
+          onChange={(val) => setStateCode(val)}
+          disabled={!countryCode}
+        >
+          {states.map((s) => (
+            <SelectItem key={s.isoCode} value={s.isoCode}>
+              {s.name}
+            </SelectItem>
+          ))}
+        </FloatingSelect>
 
-        <Select disabled={!stateCode}>
-          <SelectTrigger className="w-full border bg-white border-[#2E2C39] !h-[50px]">
-            <SelectValue placeholder="City" />
-          </SelectTrigger>
-          <SelectContent>
-            {cities.map((city) => (
-              <SelectItem key={city.name} value={city.name}>
-                {city.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <FloatingSelect
+          label="City"
+          value={city}
+          onChange={(val) => setCity(val)}
+          disabled={!stateCode}
+        >
+          {cities.map((cityObj) => (
+            <SelectItem key={cityObj.name} value={cityObj.name}>
+              {cityObj.name}
+            </SelectItem>
+          ))}
+        </FloatingSelect>
 
         <GlobalButton title='Continue' height='50px' onClick={continueClick} />
       </div>
