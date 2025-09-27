@@ -13,7 +13,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
         <div className='bg-black/50 absolute inset-0' />
         <Image src={WhiteLogo} alt='' className='relative' />
       </div>
-      <div className='w-[55%] max-[768px]:w-full flex justify-center items-center p-4'>
+      <div className='w-[55%] relative max-[768px]:w-full flex justify-center flex-col items-center p-4'>
         {children}
       </div>
     </div>
