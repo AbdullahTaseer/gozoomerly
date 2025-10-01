@@ -11,9 +11,24 @@ import FloatingSelect from "../inputs/FloatingSelect";
 
 import dummyAvatar from "@/assets/svgs/boy-avatar.svg";
 
-const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
+export interface UserInfo {
+  fullName: string;
+  birthDate: string;
+  country: string;
+  state: string;
+  city: string;
+  avatar?: string | null;
+}
+
+interface SignupInfoCardProps {
+  continueClick: (userInfo: UserInfo) => void;
+}
+
+const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
 
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string>("");
+  const [birthDate, setBirthDate] = useState<string>("");
   const [countryCode, setCountryCode] = useState<string>("");
   const [stateCode, setStateCode] = useState<string>("");
   const [city, setCity] = useState<string>("");
@@ -35,6 +50,20 @@ const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
     countryCode && stateCode
       ? City.getCitiesOfState(countryCode, stateCode)
       : [];
+
+  const handleContinue = () => {
+    const selectedCountry = countries.find(c => c.isoCode === countryCode);
+    const selectedState = states.find(s => s.isoCode === stateCode);
+    
+    continueClick({
+      fullName,
+      birthDate,
+      country: selectedCountry?.name || countryCode,
+      state: selectedState?.name || stateCode,
+      city,
+      avatar
+    });
+  };
 
   return (
     <div>
@@ -63,8 +92,21 @@ const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
 
       <div className="space-y-6">
 
-        <FloatingInput id={"Full Name"} title="Full Name" width="100%" />
-        <FloatingInput id={"Birthday Date"} title="Birthday Date" type="date" width="100%" />
+        <FloatingInput 
+          id={"Full Name"} 
+          title="Full Name" 
+          width="100%" 
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+        />
+        <FloatingInput 
+          id={"Birthday Date"} 
+          title="Birthday Date" 
+          type="date" 
+          width="100%" 
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+        />
 
         <FloatingSelect
           label="Country"
@@ -107,7 +149,12 @@ const SignupInfoCard = ({ continueClick }: { continueClick: () => void }) => {
           ))}
         </FloatingSelect>
 
-        <GlobalButton title='Continue' height='50px' onClick={continueClick} />
+        <GlobalButton 
+          title='Continue' 
+          height='50px' 
+          onClick={handleContinue}
+          disabled={!fullName || !birthDate || !countryCode || !stateCode || !city}
+        />
       </div>
 
     </div>

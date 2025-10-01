@@ -1,8 +1,24 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const OtpInput = () => {
+interface OtpInputProps {
+  value?: string;
+  onChange?: (value: string) => void;
+}
+
+const OtpInput = ({ value = '', onChange }: OtpInputProps) => {
   const [otp, setOtp] = useState<string[]>(new Array(6).fill(''));
+
+  useEffect(() => {
+    if (value) {
+      const otpArray = value.split('').slice(0, 6);
+      const newOtp = [...new Array(6).fill('')];
+      otpArray.forEach((digit, index) => {
+        newOtp[index] = digit;
+      });
+      setOtp(newOtp);
+    }
+  }, [value]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
@@ -11,6 +27,10 @@ const OtpInput = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+
+    if (onChange) {
+      onChange(newOtp.join(''));
+    }
 
     if (value && index < 5) {
       const nextInput = document.getElementById(`otp-input-${index + 1}`);

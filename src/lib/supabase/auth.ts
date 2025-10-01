@@ -12,8 +12,36 @@ export interface SignInCredentials {
   password: string;
 }
 
+export interface PhoneSignInCredentials {
+  phone: string;
+  password: string;
+}
+
 export interface SignUpCredentials extends SignInCredentials {
   phoneNumber?: string;
+}
+
+export interface PhoneSignUpCredentials {
+  phone: string;
+  password: string;
+}
+
+export interface PhoneOTPCredentials {
+  phone: string;
+}
+
+export interface VerifyOTPCredentials {
+  phone: string;
+  token: string;
+  password: string;
+  userInfo?: {
+    fullName: string;
+    birthDate: string;
+    country: string;
+    state: string;
+    city: string;
+    avatar?: string | null;
+  };
 }
 
 export class AuthService {
@@ -27,6 +55,35 @@ export class AuthService {
         password: credentials.password,
       });
       
+      
+      if (error) {
+        return {
+          success: false,
+          error: this.handleAuthError(error),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          user: data.user,
+          session: data.session,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
+    }
+  }
+
+  async signInWithPhone(credentials: PhoneSignInCredentials): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.signInWithPassword({
+        phone: credentials.phone,
+        password: credentials.password,
+      });
       
       if (error) {
         return {
@@ -103,6 +160,105 @@ export class AuthService {
         success: false,
         error: 'An unexpected error occurred while signing out.',
       };
+    }
+  }
+
+  async sendPhoneOTP(credentials: PhoneOTPCredentials): Promise<AuthResponse> {
+    try {
+      const { error } = await this.supabase.auth.signInWithOtp({
+        phone: credentials.phone,
+      });
+
+      if (error) {
+        return {
+          success: false,
+          error: this.handleAuthError(error),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          message: 'OTP sent successfully to your phone number.',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
+    }
+  }
+
+  async verifyPhoneOTP(credentials: VerifyOTPCredentials): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.verifyOtp({
+        phone: credentials.phone,
+        token: credentials.token,
+        type: 'sms',
+      });
+
+      if (error) {
+        return {
+          success: false,
+          error: this.handleAuthError(error),
+        };
+      }
+
+      // Update user password and metadata after successful OTP verification
+      const updateData: any = {
+        password: credentials.password,
+      };
+
+      if (credentials.userInfo) {
+        updateData.data = {
+          full_name: credentials.userInfo.fullName,
+          birth_date: credentials.userInfo.birthDate,
+          country: credentials.userInfo.country,
+          state: credentials.userInfo.state,
+          city: credentials.userInfo.city,
+          avatar_url: credentials.userInfo.avatar,
+          phone: credentials.phone,
+        };
+      }
+
+      const { error: updateError } = await this.supabase.auth.updateUser(updateData);
+
+      if (updateError) {
+        return {
+          success: false,
+          error: this.handleAuthError(updateError),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          user: data.user,
+          session: data.session,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
+    }
+  }
+
+  async updateUserProfile(profile: any): Promise<{ error?: string }> {
+    try {
+      const { error } = await this.supabase.auth.updateUser({
+        data: profile
+      });
+
+      if (error) {
+        return { error: this.handleAuthError(error) };
+      }
+
+      return {};
+    } catch (error) {
+      return { error: 'An unexpected error occurred. Please try again.' };
     }
   }
 

@@ -10,7 +10,9 @@ import FloatingInput from '@/components/inputs/FloatingInput';
 const SignIn = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,17 +20,21 @@ const SignIn = () => {
     if (e) e.preventDefault();
     setError('');
 
-    if (!email || !password) {
+    if (loginMode === 'email' && (!email || !password)) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (loginMode === 'phone' && (!phone || !password)) {
       setError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
 
-    const response = await authService.signInWithEmail({
-      email,
-      password,
-    });
+    const response = loginMode === 'email' 
+      ? await authService.signInWithEmail({ email, password })
+      : await authService.signInWithPhone({ phone, password });
 
     console.log("Sign in response:", response);
 
@@ -72,16 +78,55 @@ const SignIn = () => {
           </div>
         )}
 
-        <FloatingInput
-          id={"email"}
-          title='Email'
-          width='100%'
-          height='46px'
-          className="mt-10"
-          type='email'
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="flex gap-2 mt-6 mb-4">
+          <button
+            type="button"
+            onClick={() => setLoginMode('email')}
+            className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+              loginMode === 'email' 
+                ? 'bg-pink-500 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Email
+          </button>
+          <button
+            type="button"
+            onClick={() => setLoginMode('phone')}
+            className={`flex-1 py-2 px-4 rounded-md transition-colors ${
+              loginMode === 'phone' 
+                ? 'bg-pink-500 text-white' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Phone
+          </button>
+        </div>
+
+        {loginMode === 'email' ? (
+          <FloatingInput
+            id={"email"}
+            title='Email'
+            width='100%'
+            height='46px'
+            className="mt-4"
+            type='email'
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        ) : (
+          <FloatingInput
+            id={"phone"}
+            title='Phone Number'
+            width='100%'
+            height='46px'
+            className="mt-4"
+            type='tel'
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+1234567890"
+          />
+        )}
 
         <FloatingInput
           id={"password"}
