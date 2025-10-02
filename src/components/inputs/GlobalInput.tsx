@@ -21,8 +21,8 @@ type props = {
   error?: undefined | any;
   validationMessage?: string;
   validationRegex?: RegExp;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onValidationError?: (message: string) => void;
 };
 

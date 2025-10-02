@@ -7,6 +7,7 @@ import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ChatCard from '@/components/cards/ChatCard';
 import { chatListData } from '@/lib/MockData';
+import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
 
 type Chat = {
   id: number;
@@ -15,16 +16,64 @@ type Chat = {
   time: string;
   avatar: string | StaticImageData;
 };
-const ChatPage = () => {
 
+type Message = {
+  id: number;
+  sender: "me" | "other";
+  text?: string;
+  fileUrl?: string;
+  fileType?: string;
+  fileName?: string;
+};
+
+const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 1, sender: "me", text: "Hi, how are you?" },
+    { id: 2, sender: "other", text: "I am good thanks." },
+    { id: 3, sender: "me", text: "Happy Birthday! 🎉 Wishing you a day filled with love, laughter, and unforgettable moments." },
+    { id: 4, sender: "other", text: "Thanks!" },
+  ]);
+  const [newMessage, setNewMessage] = useState("");
+
+  const handleSend = () => {
+    if (!newMessage.trim()) return;
+
+    setMessages(prev => [
+      ...prev,
+      { id: prev.length + 1, sender: "me", text: newMessage.trim() }
+    ]);
+
+    setNewMessage("");
+  };
+
+  const handleFileUpload = (file: File) => {
+    const fileUrl = URL.createObjectURL(file);
+    const fileType = file.type;
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        sender: "me",
+        fileUrl,
+        fileType,
+        fileName: file.name,
+      },
+    ]);
+  };
 
   return (
     <div className='px-[7%] max-[900px]:px-3 text-white'>
       <div className='px-4 flex items-center justify-between max-[500px]:flex-col gap-2'>
         <TitleCard title='Chat' className='text-left' />
         <div className='relative w-[270px] max-[500px]:mx-auto'>
-          <GlobalInput placeholder='Search friends & family...' height='42px' width='100%' borderRadius='100px'/>
+          <GlobalInput
+            placeholder='Search friends & family...'
+            height='42px'
+            width='100%'
+            borderRadius='100px'
+          />
         </div>
       </div>
 
@@ -54,27 +103,82 @@ const ChatPage = () => {
               </div>
 
               <div className='flex-1 text-sm p-3 overflow-y-auto space-y-4'>
-                <div className='text-center my-4'><span className='bg-gray-700 text-xs px-3 py-1 rounded-full'>Today</span></div>
-                <div className='flex justify-end'><div className='bg-[#2A2D3A] rounded-lg p-3 max-w-md'>Hi, how are you?</div></div>
-                <div className='flex justify-start'><div className='bg-[#F7F7F7] text-black rounded-lg p-3 max-w-md'>I am good thanks.</div></div>
-                <div className='flex justify-end'><div className='bg-[#2A2D3A] rounded-lg p-3 max-w-md'>Happy Birthday! Wishing you a day filled with love, laughter, and unforgettable.</div></div>
-                <div className='flex justify-start'><div className='bg-[#F7F7F7] text-black rounded-lg p-3 max-w-md'>Thanks!</div></div>
+                <div className='text-center my-4'>
+                  <span className='bg-gray-700 text-xs px-3 py-1 rounded-full'>Today</span>
+                </div>
+
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-xs sm:max-w-md`}>
+                      {msg.text && <p className={`rounded-lg p-2 max-w-xs sm:max-w-md ${msg.sender === "me" ? "bg-[#2A2D3A] text-white" : "bg-[#F7F7F7] text-black"}`}>{msg.text}</p>}
+
+                      {msg.fileUrl && (
+                        <>
+                          {msg.fileType?.startsWith("image/") ? (
+                            <Image
+                              src={msg.fileUrl}
+                              alt={msg.fileName || "Uploaded file"}
+                              width={200}
+                              height={200}
+                              className="rounded-lg mt-2"
+                            />
+                          ) : (
+                            <a
+                              href={msg.fileUrl}
+                              download={msg.fileName}
+                              className="text-blue-400 underline mt-2 block"
+                            >
+                              📎 {msg.fileName}
+                            </a>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               <div className='p-4 bg-[#F7F7F7] flex items-center gap-4'>
-                <div className='bg-white p-2 rounded-full'>
-                  <PlusCircle size={24} className='text-black cursor-pointer' />
+                <div className='bg-white p-2 rounded-full relative'>
+                  <input
+                    type="file"
+                    id="fileUpload"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        handleFileUpload(e.target.files[0]);
+                      }
+                    }}
+                  />
+                  <label htmlFor="fileUpload">
+                    <PlusCircle size={24} className='text-black cursor-pointer' />
+                  </label>
                 </div>
-                <div className='flex-1'>
-                  <GlobalInput placeholder='Write your message...' height='40px' width='100%' borderRadius='100px' bgColor='white' inputClassName="pl-4 pr-12 border-none" />
+
+                <div className='flex-1 relative'>
+                  <GlobalInput
+                    placeholder='Write your message...'
+                    height='40px'
+                    width='100%'
+                    borderRadius='100px'
+                    bgColor='white'
+                    inputClassName="pl-4 pr-12 border-none"
+                    value={newMessage}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSend()}
+                  />
                 </div>
-                <button className='bg-white p-3 rounded-full'>
+                <button
+                  className='bg-white p-3 rounded-full'
+                  onClick={handleSend}
+                >
                   <Send size={18} className='text-black' />
                 </button>
               </div>
             </>
           ) : (
             <div className="max-[900px]:hidden flex flex-col items-center justify-center h-full text-gray-400">
+              <Image src={ZoomerlyLogo} alt='' />
               <p>Select a chat to start messaging</p>
             </div>
           )}
