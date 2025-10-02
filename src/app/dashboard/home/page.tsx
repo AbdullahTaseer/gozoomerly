@@ -6,7 +6,7 @@ import TitleCard from '@/components/cards/TitleCard';
 import BoardCard from '@/components/cards/BoardCard';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
-import AvatarList from '@/app/dashboardComponents/AvatarList';
+import AvatarList from '@/components/cards/AvatarList';
 import { homeBoardsSwiper, spotlightCampaigns } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 
