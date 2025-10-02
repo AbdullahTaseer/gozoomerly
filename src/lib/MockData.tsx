@@ -358,3 +358,30 @@ export const personalCircles = [
     memberCount: 33,
   },
 ];
+
+
+
+// chat list data 
+
+import chatAvatar_1 from "@/assets/svgs/chat-avatar-1.svg";
+import chatAvatar_2 from "@/assets/svgs/chat-avatar-2.svg";
+import chatAvatar_3 from "@/assets/svgs/chat-avatar-3.svg";
+import chatAvatar_4 from "@/assets/svgs/chat-avatar-4.svg";
+import chatAvatar_5 from "@/assets/svgs/chat-avatar-5.svg";
+
+export const chatListData = [
+  { id: 1, name: 'Family Circles', message: 'Have a nice day!', time: 'now', avatar: chatAvatar_1 },
+  { id: 2, name: 'karennne', message: 'I heard this is a good movie, s...', time: '15m', avatar: chatAvatar_2 },
+  { id: 3, name: 'joshua_l', message: 'Have a nice day, bro!', time: 'now', avatar: chatAvatar_3 },
+  { id: 4, name: 'martini_rond', message: 'Have a nice day, bro!', time: '20m', avatar: chatAvatar_4 },
+  { id: 5, name: 'andrewww', message: 'Sounds good 😎😎😎', time: '2h', avatar: chatAvatar_5 },
+  { id: 6, name: 'kiero_d', message: 'The new design looks cool, b...', time: '3h', avatar: chatAvatar_1 },
+  { id: 7, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
+  { id: 8, name: 'Family Circles', message: 'Have a nice day!', time: 'now', avatar: chatAvatar_1 },
+  { id: 9, name: 'karennne', message: 'I heard this is a good movie, s...', time: '15m', avatar: chatAvatar_2 },
+  { id: 10, name: 'joshua_l', message: 'Have a nice day, bro!', time: 'now', avatar: chatAvatar_3 },
+  { id: 11, name: 'martini_rond', message: 'Have a nice day, bro!', time: '20m', avatar: chatAvatar_4 },
+  { id: 12, name: 'andrewww', message: 'Sounds good 😎😎😎', time: '2h', avatar: chatAvatar_5 },
+  { id: 13, name: 'kiero_d', message: 'The new design looks cool, b...', time: '3h', avatar: chatAvatar_1 },
+  { id: 14, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
+];
