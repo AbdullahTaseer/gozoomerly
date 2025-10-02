@@ -20,7 +20,7 @@ const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
 
   return (
-    <div className='px-[7%] max-lg:px-3 text-white'>
+    <div className='px-[7%] max-[900px]:px-3 text-white'>
       <div className='px-4 flex items-center justify-between max-[500px]:flex-col gap-2'>
         <TitleCard title='Chat' className='text-left' />
         <div className='relative w-[270px] max-[500px]:mx-auto'>
@@ -28,9 +28,9 @@ const ChatPage = () => {
         </div>
       </div>
 
-      <div className='flex h-[calc(100vh-200px)] mt-3'>
+      <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] mt-3'>
 
-        <div className={`w-[350px] max-lg:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedChat ? 'max-lg:hidden' : 'flex'}`}>
+        <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedChat ? 'max-[900px]:hidden' : 'flex'}`}>
           {chatListData.map(chat => (
             <ChatCard
               key={chat.id}
@@ -44,7 +44,7 @@ const ChatPage = () => {
           ))}
         </div>
 
-        <div className={`flex-1 border border-l-0 flex-col ${selectedChat ? 'flex' : 'max-lg:hidden'}`}>
+        <div className={`flex-1 border border-l-0 flex-col ${selectedChat ? 'flex' : 'max-[900px]:hidden'}`}>
           {selectedChat ? (
             <>
               <div className='flex items-center gap-4 bg-[#2A2D3A] p-4 border-b border-gray-700'>
@@ -74,7 +74,7 @@ const ChatPage = () => {
               </div>
             </>
           ) : (
-            <div className="hidden lg:flex flex-col items-center justify-center h-full text-gray-400">
+            <div className="max-[900px]:hidden flex flex-col items-center justify-center h-full text-gray-400">
               <p>Select a chat to start messaging</p>
             </div>
           )}
