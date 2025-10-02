@@ -1,5 +1,6 @@
 import React from 'react';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import DashFooter from '@/components/footer/DashFooter';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
@@ -9,6 +10,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <main className="flex-1">
         {children}
       </main>
+      <DashFooter/>
     </div>
   );
 };

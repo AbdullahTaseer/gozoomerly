@@ -70,7 +70,7 @@ const DashNavbar = () => {
           width={20}
           onClick={() => setIsSidebarOpen(true)}
         />
-        <Image src={AppLogo} onClick={() => router.push("/")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
+        <Image src={AppLogo} onClick={() => router.push("/dashboard")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
         <div className='flex items-center gap-6 max-[900px]:hidden'>
           {desktopOptions.map((option, i) => (
             <p

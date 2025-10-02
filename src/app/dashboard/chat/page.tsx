@@ -104,7 +104,7 @@ const ChatPage = () => {
 
               <div className='flex-1 text-sm p-3 overflow-y-auto space-y-4'>
                 <div className='text-center my-4'>
-                  <span className='bg-gray-700 text-xs px-3 py-1 rounded-full'>Today</span>
+                  <span className='bg-gray-700 text-xs px-12 py-1 rounded-full'>Today</span>
                 </div>
 
                 {messages.map(msg => (
