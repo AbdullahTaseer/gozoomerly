@@ -72,7 +72,7 @@ export const giftsData = [
 ];
 
 
-// swiper carousel 
+// swiper carousel homeBoardsSwiper
 
 import Community_1_avatar from "@/assets/svgs/community-1.svg";
 import Community_2_avatar from "@/assets/svgs/community-2.svg";
@@ -82,7 +82,7 @@ import Community_4_avatar from "@/assets/svgs/community-4.svg";
 import BigWish from "@/assets/svgs/big-wish-icon.svg";
 import bossBoost from "@/assets/svgs/boss-boost.svg";
 
-export const boards = [
+export const homeBoardsSwiper = [
   {
     id: 1,
     avatar: Community_1_avatar,
@@ -119,7 +119,7 @@ export const boards = [
     participants: 112,
     wishes: 112,
     gifters: 89,
-    media: '500+',
+    media: 500,
     topContributors: [
       { label: "Big Wish", amount: 300, iconSrc: BigWish },
       { label: "Boss Boost", amount: 500, iconSrc: bossBoost },
@@ -128,7 +128,7 @@ export const boards = [
   {
     id: 3,
     avatar: Community_3_avatar,
-    title: "Miami Summer Music Festival",
+    title: "Miami Summer Music",
     name: "Asha & David’s",
     location: "Miami, FL",
     date: "July 2025",
@@ -224,4 +224,137 @@ export const steps = [
   { number: "03", title: "Collect Memories", desc: "Guests post wishes, media, and comments.", img: How_Img3 },
   { number: "04", title: "Wish + Gift", desc: "Contributors send meaningful gifts alongside their messages.", img: How_Img4 },
   { number: "05", title: "Celebrate & Relive", desc: "Surprise boards deliver on the big day; event boards stay live and collaborative.", img: How_Img5 },
+];
+
+
+// DASHBOARD MOCK DATA START
+
+// dashboard home avatar list 
+
+import avatarListIcon_1 from "@/assets/svgs/avatar-list-icon-1.svg";
+import avatarListIcon_2 from "@/assets/svgs/avatar-list-icon-2.svg";
+import avatarListIcon_3 from "@/assets/svgs/avatar-list-icon-3.svg";
+import avatarListIcon_4 from "@/assets/svgs/avatar-list-icon-4.svg";
+
+export const avatarListData = [
+  { imgPath: avatarListIcon_1, profileName: 'Taylor' },
+  { imgPath: avatarListIcon_2, profileName: 'Jamie' },
+  { imgPath: avatarListIcon_3, profileName: 'Zoya' },
+  { imgPath: avatarListIcon_4, profileName: 'Ben' },
+  { imgPath: avatarListIcon_1, profileName: 'Mia' },
+  { imgPath: avatarListIcon_1, profileName: 'Leo' },
+  { imgPath: avatarListIcon_4, profileName: 'Ava' },
+  { imgPath: avatarListIcon_2, profileName: 'Ethan' },
+  { imgPath: avatarListIcon_3, profileName: 'Chloe' },
+  { imgPath: avatarListIcon_4, profileName: 'Mia' },
+  { imgPath: avatarListIcon_1, profileName: 'Ethan' },
+  { imgPath: avatarListIcon_2, profileName: 'Ben' },
+  { imgPath: avatarListIcon_2, profileName: 'Taylor' },
+  { imgPath: avatarListIcon_4, profileName: 'Leo' },
+  { imgPath: avatarListIcon_3, profileName: 'Jamie' },
+];
+
+
+// spotlight compaigns data 
+
+import SpotLightImg_1 from '@/assets/svgs/spotlight-1.svg';
+import SpotLightImg_2 from '@/assets/svgs/spotlight-2.svg';
+
+export const spotlightCampaigns = [
+  {
+    id: 1,
+    name: 'Kim Kardashian',
+    spotLightImg: SpotLightImg_1,
+    description: "This year, we're making Kim's birthday unforgettable not just with love, but with impact. Join her birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just her day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+  {
+    id: 2,
+    name: 'Elon Musk',
+    spotLightImg: SpotLightImg_2,
+    description: "This year, we're making Elon Musk's birthday unforgettable not just with love, but with impact. Join his birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just his day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+  {
+    id: 3,
+    name: 'Kim Kardashian',
+    spotLightImg: SpotLightImg_1,
+    description: "This year, we're making Kim's birthday unforgettable not just with love, but with impact. Join her birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just her day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+  {
+    id: 4,
+    name: 'Elon Musk',
+    spotLightImg: SpotLightImg_2,
+    description: "This year, we're making Elon Musk's birthday unforgettable not just with love, but with impact. Join his birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just his day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+  {
+    id: 5,
+    name: 'Kim Kardashian',
+    spotLightImg: SpotLightImg_1,
+    description: "This year, we're making Kim's birthday unforgettable not just with love, but with impact. Join her birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just her day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+  {
+    id: 6,
+    name: 'Elon Musk',
+    spotLightImg: SpotLightImg_2,
+    description: "This year, we're making Elon Musk's birthday unforgettable not just with love, but with impact. Join his birthday campaign and help us support children's education. Your wishes, messages, and meaningful gifts will light up more than just his day...they'll light up young lives.",
+    participants: 42,
+    gifted: 38,
+    wished: 40,
+  },
+];
+
+
+// circles screen data
+
+import circleAvatar1 from '@/assets/svgs/circle-avatar-1.svg';
+import circleAvatar2 from '@/assets/svgs/circle-avatar-2.svg';
+import circleAvatar3 from '@/assets/svgs/circle-avatar-3.svg';
+import FamilyBG from '@/assets/pngs/circle-1.png';
+import FriendsBG from '@/assets/pngs/circle-2.png';
+import TourBG from '@/assets/pngs/circle-3.png';
+import WeedingBG from '@/assets/pngs/circle-4.png';
+
+export const personalCircles = [
+  {
+    id: 1,
+    title: 'Family Circles',
+    backgroundImage: FamilyBG,
+    avatars: [circleAvatar1, circleAvatar2, circleAvatar3],
+    memberCount: 5,
+  },
+  {
+    id: 2,
+    title: 'Friends Circles',
+    backgroundImage: FriendsBG,
+    avatars: [circleAvatar2, circleAvatar1, circleAvatar1],
+    memberCount: 17,
+  },
+  {
+    id: 3,
+    title: 'Tour Circles',
+    backgroundImage: TourBG,
+    avatars: [circleAvatar3, circleAvatar1, circleAvatar1],
+    memberCount: 43,
+  },
+  {
+    id: 4,
+    title: 'Weeding Circles',
+    backgroundImage: WeedingBG,
+    avatars: [circleAvatar1, circleAvatar2, circleAvatar3],
+    memberCount: 33,
+  },
 ];

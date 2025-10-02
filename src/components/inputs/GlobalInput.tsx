@@ -14,6 +14,7 @@ type props = {
   labelFont?: string;
   inputLabel?: string;
   placeholder?: string;
+  borderRadius?: string;
   labelColor?: string;
   validationType?: 'letters' | 'numbers';
   inputClassName?: any;
@@ -38,12 +39,13 @@ const GlobalInput = ({
   validationType,
   inputClassName,
   onValidationError,
-  width = "full",
+  width = "100%",
   labelFont = '400',
   bgColor = "transparent",
   type,
   height = "42px",
   labelColor = "#2D2D2D",
+  borderRadius = '5px'
 }: props) => {
 
   const [localError, setLocalError] = useState<string | null>(null);
@@ -102,8 +104,8 @@ const GlobalInput = ({
         placeholder={placeholder}
         onChange={handleInputChange}
         min={type === "number" ? 0 : undefined}
-        style={{ height: height, width: width, backgroundColor: bgColor }}
-        className={`globalinput-placeholder placeholder:text-[15px] text-[15px] text-black autofill:text-[#A6A6A6] placeholder:text-[#020202] rounded-[5px] border focus:outline-none block placeholder:font-[300] border-[#2E2C39] px-4 ${inputClassName}`}
+        style={{ height: height, width: width, backgroundColor: bgColor, borderRadius: borderRadius }}
+        className={`globalinput-placeholder placeholder:text-[15px] text-[15px] text-black autofill:text-[#A6A6A6] placeholder:text-[#020202] border focus:outline-none block placeholder:font-[300] border-[#2E2C39] px-4 ${inputClassName}`}
       />
       {(error || localError) && (
         <div className={`${error || localError ? "mb-1" : ""}`}>

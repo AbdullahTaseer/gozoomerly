@@ -11,7 +11,7 @@ import StartYourFirstCelebration from "@/components/sections/StartYouFirstCelebr
 import WhyPeopleLove from "@/components/sections/WhyPeopleLoveIt";
 import WhyWeCreatedZoomerly from "@/components/sections/WhyWeCreatedZoomerly";
 
-export default function Home() {
+export default function Page() {
   return (
     <div>
       <Navbar/>
