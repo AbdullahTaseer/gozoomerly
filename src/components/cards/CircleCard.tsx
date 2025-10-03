@@ -7,15 +7,16 @@ type Props = {
   backgroundImage: string | StaticImport;
   avatars: (string | StaticImport)[];
   memberCount: number;
+  onClick?: () => void;
 };
 
-const CircleCard = ({ title, backgroundImage, avatars, memberCount }: Props) => {
+const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick }: Props) => {
 
   const avatarsToShow = avatars.slice(0, 3);
   const remainingCount = memberCount - avatarsToShow.length;
 
   return (
-    <div className='relative w-full h-[320px] rounded-2xl overflow-hidden group cursor-pointer'>
+    <div onClick={onClick} className='relative w-full h-[320px] rounded-2xl overflow-hidden group cursor-pointer'>
       <Image src={backgroundImage} alt={title} fill className='object-cover transition-transform duration-300 group-hover:scale-105' />
       <div className='absolute inset-0 bg-black/60' />
 

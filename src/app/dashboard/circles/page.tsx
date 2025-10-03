@@ -1,14 +1,20 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
-import TitleCard from '@/components/cards/TitleCard';
-import GlobalInput from '@/components/inputs/GlobalInput';
-import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
-import GlobalButton from '@/components/buttons/GlobalButton';
-import CircleCard from '@/components/cards/CircleCard';
+import { useRouter } from 'next/navigation';
 import { personalCircles } from '@/lib/MockData';
+import TitleCard from '@/components/cards/TitleCard';
+import CircleCard from '@/components/cards/CircleCard';
+import GlobalInput from '@/components/inputs/GlobalInput';
+import GlobalButton from '@/components/buttons/GlobalButton';
+import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 
 const Circles = () => {
+
+  const router = useRouter();
+
   return (
     <div className='px-[7%] max-[769px]:px-4 py-4'>
 
@@ -32,6 +38,7 @@ const Circles = () => {
             backgroundImage={circle.backgroundImage}
             avatars={circle.avatars}
             memberCount={circle.memberCount}
+            onClick={() => router.push('/dashboard/profile')}
           />
         ))}
       </div>

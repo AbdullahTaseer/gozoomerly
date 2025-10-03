@@ -1,9 +1,12 @@
 import React from 'react'
 import Image from 'next/image';
 import { Search } from 'lucide-react';
+import FlowerImg from "@/assets/pngs/flowers.png";
+import VideoThumbnail from "@/assets/pngs/thumbnail.png";
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
+import ContributionCard from '@/components/cards/ContributionCard';
 
 const data = [
   {
@@ -49,6 +52,24 @@ const MyContributions = () => {
             <p className='text-[#F0F0F0]'>{item.title}</p>
           </div>
         ))}
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-4'>
+        <ContributionCard
+          birthdayNumber={'Sarah 30th Birthday'}
+          birthdayTo={'To: Sarah Mitchell - Apr 28, 2025'}
+          desc={'"Cheers to a fantastic year ahead…"'}
+          gift={' $40 via Stripe'}
+          thumbnail={VideoThumbnail}
+          iframeSrc='https://www.youtube.com/embed/n6M8ELkdPOM?si=k8MxYbUPstr2O4ud'
+        />
+        <ContributionCard
+          birthdayNumber={'Linda 30th Birthday'}
+          birthdayTo={'To: Linda Thompson - Feb 10, 2025'}
+          desc={'"Cheers to a fantastic year ahead…"'}
+          gift={' $200 via Stripe'}
+          imgSrc={FlowerImg}
+        />
       </div>
 
     </div>
