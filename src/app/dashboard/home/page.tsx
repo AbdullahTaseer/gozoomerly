@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import BoardCard from '@/components/cards/BoardCard';
@@ -11,19 +11,23 @@ import { homeBoardsSwiper, spotlightCampaigns } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 
 const Home = () => {
-
   const router = useRouter();
+  const [selectedFilter, setSelectedFilter] = useState("All");
+
   const handleAllBoards = () => {
-    router.push('/dashboard/allBoards')
-  }
+    router.push('/dashboard/allBoards');
+  };
+
+  const feedFilters = ['All', 'Friends', 'Family', 'Public', 'Private'];
 
   return (
     <div className='px-[7%] max-[769px]:px-6'>
       <AvatarList />
+
       <div className='py-8'>
         <TitleCard title='Active Boards' className='text-left' />
         <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
-          {homeBoardsSwiper.map((board) => (
+          {homeBoardsSwiper.slice(0, 3).map((board) => (
             <BoardCard
               key={board.id}
               title={board.title}
@@ -66,23 +70,29 @@ const Home = () => {
         </div>
       </div>
 
-
       <div>
         <div className='flex max-[550px]:flex-col justify-between gap-4'>
           <TitleCard title='Feed' className='text-left' />
           <div className='flex items-center gap-6 max-[500px]:gap-3 justify-center'>
-            {['All', 'Friends', 'Family', 'Public', 'Private'].map((item) => (
-              <p key={item} className='text-[20px] max-[768px]:text-[16px] cursor-pointer hover:text-pink-500 font-bold'>{item}</p>
+            {feedFilters.map((item) => (
+              <p
+                key={item}
+                onClick={() => setSelectedFilter(item)}
+                className={`text-[20px] max-[768px]:text-[16px] cursor-pointer font-bold transition-colors
+                  ${selectedFilter === item ? 'text-pink-500' : 'text-gray-700 hover:text-pink-400'}`}
+              >
+                {item}
+              </p>
             ))}
           </div>
         </div>
+
         <div className='max-w-[745px] mx-auto py-6 space-y-6'>
           <PostsImagesCarouselCard />
           <PostsVideoCard />
           <PostsImagesCarouselCard />
         </div>
       </div>
-
     </div>
   );
 };

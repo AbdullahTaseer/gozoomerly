@@ -22,7 +22,7 @@ const Memories = () => {
         </div>
       </div>
       <div className='grid grid-cols-3 max-[1024px]:grid-cols-2 max-[600px]:grid-cols-1 mt-6 gap-6 h-full'>
-        {homeBoardsSwiper.map((board) => (
+        {homeBoardsSwiper.slice(0, 3).map((board) => (
           <BoardCard
             key={board.id}
             title={board.title}
