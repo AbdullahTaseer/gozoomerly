@@ -22,12 +22,13 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 import PaymentMethodCard from '@/components/cards/PaymentMethodCard';
 import * as Switch from '@radix-ui/react-switch';
+import BellIconIndicator from '@/components/cards/BellIconIndicator';
 
 const Profile = () => {
   const menuItems = [
     { label: "Memories", icon: MyMemories, href: '/dashboard/memories' },
     { label: "Boards", icon: BoardsIcon, href: '/dashboard/boards' },
-    { label: "My Contributions", icon: MyContributors, href: '/dashboard/myContributors' },
+    { label: "My Contributions", icon: MyContributors, href: '/dashboard/myContributions' },
     { label: "Share with friends", icon: Friends, href: '/dashboard/friends' },
     { label: "Bio", icon: Bio, href: '/dashboard/bio' },
     { label: "Activity", icon: Activity, href: '/dashboard/activity' },
@@ -39,10 +40,7 @@ const Profile = () => {
       {/* Header */}
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Profile' className='text-left' />
-        <div className='relative'>
-          <Bell />
-          <span className='p-1 absolute top-0 right-0 rounded-full bg-pink-500' />
-        </div>
+        <BellIconIndicator/>
       </div>
 
       {/* Profile Card */}

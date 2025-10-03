@@ -1,5 +1,6 @@
+import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import TitleCard from '@/components/cards/TitleCard';
-import { Bell, ChevronRight, Gift, Heart, MessageCircle } from 'lucide-react';
+import { ChevronRight, Gift, Heart, MessageCircle } from 'lucide-react';
 import React from 'react';
 
 const MyActivity = () => {
@@ -7,10 +8,7 @@ const MyActivity = () => {
     <div className='px-[7%] max-[768px]:px-6'>
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Activity' className='text-left' />
-        <div className='relative'>
-          <Bell />
-          <span className='p-1 absolute top-0 right-0 rounded-full bg-pink-500' />
-        </div>
+        <BellIconIndicator />
       </div>
       <div className='bg-[#F4F4F4] py-3 rounded-[24px] mt-4'>
         <div className='flex items-center justify-between px-5 py-2 cursor-pointer hover:bg-gray-50'>

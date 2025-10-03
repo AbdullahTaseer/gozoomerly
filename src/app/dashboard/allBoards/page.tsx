@@ -14,7 +14,7 @@ const AllBoards = () => {
         <div className='flex justify-between max-[870px]:flex-col gap-6'>
           <TitleCard title='Personal Boards' className='text-left' />
           <div className='flex gap-4 items-center max-[870px]:mx-auto'>
-            <div className='relative w-[300px]'>
+            <div className='relative w-[260px]'>
               <Search size={18} className='absolute top-3 left-3' />
               <GlobalInput placeholder='Search...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
             </div>

@@ -3,10 +3,11 @@ import Image from 'next/image';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 import TitleCard from '@/components/cards/TitleCard';
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 import MyWorkIcon from "@/assets/svgs/my-work.svg";
 import LanguageSpeaksIcon from "@/assets/svgs/language.svg";
 import LivesInIcon from "@/assets/svgs/lives-in.svg";
+import BellIconIndicator from '@/components/cards/BellIconIndicator';
 
 const BioPage = () => {
   return (
@@ -14,10 +15,7 @@ const BioPage = () => {
 
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Bio' className='text-left' />
-        <div className='relative'>
-          <Bell />
-          <span className='p-1 absolute top-0 right-0 rounded-full bg-pink-500' />
-        </div>
+        <BellIconIndicator/>
       </div>
 
       <div className='bg-[#1B1D26] px-6 py-16 max-[1100px]:py-10 mt-4 relative rounded-[24px] overflow-hidden grid grid-cols-4 max-[1100px]:grid-cols-1 gap-4'>

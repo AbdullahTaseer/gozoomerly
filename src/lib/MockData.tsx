@@ -209,6 +209,27 @@ export const homeBoardsSwiper = [
       { label: "Boss Boost", amount: 1000, iconSrc: bossBoost },
     ],
   },
+   {
+    id: 7,
+    avatar: Community_2_avatar,
+    title: "Startup Launch Party",
+    name: "TechNova Team",
+    location: "San Francisco, CA",
+    date: "Aug 15,2025",
+    description: "Join us to celebrate TechNova’s big launch 🚀",
+    fundTitle: "Innovation Fund",
+    target: 10000,
+    raised: 8500,
+    invited: 300,
+    participants: 180,
+    wishes: 140,
+    gifters: 120,
+    media: 500,
+    topContributors: [
+      { label: "Big Wish", amount: 700, iconSrc: BigWish },
+      { label: "Boss Boost", amount: 1000, iconSrc: bossBoost },
+    ],
+  },
 ];
 
 
