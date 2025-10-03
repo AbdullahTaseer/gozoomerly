@@ -58,7 +58,7 @@ const Notifications = () => {
             <Star />
           </div>
           <div>
-            <p className='text-[24px]'>{title}</p>
+            <p className='text-[24px] max-[768px]:text-[20px]'>{title}</p>
             <p className='text-xs'>{time}</p>
           </div>
         </div>
