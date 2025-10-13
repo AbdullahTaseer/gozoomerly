@@ -29,13 +29,10 @@ const SignIn = () => {
       setError('Please fill in all fields');
       return;
     }
-
     setLoading(true);
-
     const response = loginMode === 'email' 
-      ? await authService.signInWithEmail({ email, password })
-      : await authService.signInWithPhone({ phone, password });
-
+    ? await authService.signInWithEmail({ email, password })
+    : await authService.signInWithPhone({ phone, password });
     console.log("Sign in response:", response);
 
     setLoading(false);

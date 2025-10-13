@@ -63,6 +63,11 @@ export class AuthService {
         };
       }
 
+      // Store access token in localStorage as requested
+      if (typeof window !== 'undefined' && data.session?.access_token) {
+        localStorage.setItem('access_token', data.session.access_token);
+      }
+
       return {
         success: true,
         data: {
@@ -90,6 +95,11 @@ export class AuthService {
           success: false,
           error: this.handleAuthError(error),
         };
+      }
+
+      // Store access token in localStorage as requested
+      if (typeof window !== 'undefined' && data.session?.access_token) {
+        localStorage.setItem('access_token', data.session.access_token);
       }
 
       return {
@@ -150,6 +160,11 @@ export class AuthService {
           success: false,
           error: this.handleAuthError(error),
         };
+      }
+
+      // Remove access token from localStorage on signout
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('access_token');
       }
 
       return {
@@ -231,6 +246,11 @@ export class AuthService {
         };
       }
 
+      // Store access token in localStorage (for OTP verification/signup)
+      if (data.session?.access_token) {
+        localStorage.setItem('access_token', data.session.access_token);
+      }
+
       return {
         success: true,
         data: {
@@ -259,6 +279,62 @@ export class AuthService {
       return {};
     } catch (error) {
       return { error: 'An unexpected error occurred. Please try again.' };
+    }
+  }
+
+  async updateEmail(newEmail: string): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.updateUser({
+        email: newEmail
+      });
+
+      if (error) {
+        return {
+          success: false,
+          error: this.handleAuthError(error),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          user: data.user,
+          message: 'Email update initiated. Please check your new email for confirmation.',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
+    }
+  }
+
+  async updatePassword(newPassword: string): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return {
+          success: false,
+          error: this.handleAuthError(error),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          user: data.user,
+          message: 'Password updated successfully.',
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'An unexpected error occurred. Please try again.',
+      };
     }
   }
 
@@ -312,6 +388,15 @@ export class AuthService {
       }
 
       return data.user;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getAccessToken(): Promise<string | null> {
+    try {
+      const { data: { session } } = await this.supabase.auth.getSession();
+      return session?.access_token || null;
     } catch (error) {
       return null;
     }

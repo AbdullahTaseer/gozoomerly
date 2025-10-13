@@ -10,6 +10,7 @@ import GlobalButton from '@/components/buttons/GlobalButton';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import SignupInfoCard, { type UserInfo } from '@/components/cards/SignupInfoCard';
 import { authService } from '@/lib/supabase/auth';
+import { createClient } from '@/lib/supabase/client';
 
 import CelebrtionImg from "@/assets/svgs/bomb.svg";
 import { ArrowLeft } from 'lucide-react';
@@ -108,10 +109,45 @@ const Signup = () => {
       
       if (error) {
         setError(error);
-      } else {
-        setStep(5);
+        return;
       }
+
+      const currentUser = await authService.getUser();
+      
+      if (currentUser) {
+        const supabase = createClient();
+        
+        const profileData = {
+          id: currentUser.id,
+          name: info.fullName,
+          email: currentUser.email || '',
+          phone_number: phoneNumber,
+          birth_date: info.birthDate || null,
+          country: info.country || null,
+          state: info.state || null,
+          city: info.city || null,
+          bio: null,
+          work: null,
+          languages: [],
+          lives_in: null,
+          profile_pic_url: info.avatar || null,
+          followers_count: 0,
+          following_count: 0,
+          boards_created_count: 0,
+        };
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([profileData]);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+      }
+      
+      setStep(5);
     } catch (err) {
+      console.error('Error in signup:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

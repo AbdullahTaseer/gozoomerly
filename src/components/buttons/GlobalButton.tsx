@@ -23,6 +23,7 @@ type Props = {
   };
   aos?: false | string;
   onClick?: (e: React.FormEvent) => void;
+  disabled?: boolean;
 };
 
 const GlobalButton = ({
@@ -40,6 +41,7 @@ const GlobalButton = ({
   bgColor, 
   onClick,
   aos = "zoom-in",
+  disabled = false,
 }: Props) => {
 
   const defaultGradient = "linear-gradient(90deg, #FF4E94 0%, #8B5CF6 100%)";
@@ -54,20 +56,26 @@ const GlobalButton = ({
         height,
         borderRadius,
         fontWeight: font,
-        background: bgColor || defaultGradient,
+        background: disabled ? '#e5e5e5' : (bgColor || defaultGradient),
         border: `${borderWidth || "0px"} solid ${borderColor || "transparent"}`,
-        userSelect: 'none'
+        userSelect: 'none',
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer'
       }}
-      className={`gap-2 ${className} flex justify-center items-center text-[15px] max-[540px]:text-[13px] tracking-[0.1px] cursor-pointer`}
+      className={`gap-2 ${className} flex justify-center items-center text-[15px] max-[540px]:text-[13px] tracking-[0.1px]`}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = hoverBgColor;
-        e.currentTarget.style.color = hover?.color || color;
+        if (!disabled) {
+          e.currentTarget.style.background = hoverBgColor;
+          e.currentTarget.style.color = hover?.color || color;
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = bgColor || defaultGradient;
-        e.currentTarget.style.color = color;
+        if (!disabled) {
+          e.currentTarget.style.background = bgColor || defaultGradient;
+          e.currentTarget.style.color = color;
+        }
       }}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
     >
       {icon && <Image src={icon} alt="icon" />}
       {title}
