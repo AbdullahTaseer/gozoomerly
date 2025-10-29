@@ -12,7 +12,7 @@ interface PasswordChangeModalProps {
   onSuccess: () => void;
 }
 
-const PasswordChangeModal = ({ isOpen, onClose, onSuccess }: PasswordChangeModalProps) => {
+const PasswordChangeForm = ({ onClose, onSuccess }: Omit<PasswordChangeModalProps, 'isOpen'>) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,73 +53,56 @@ const PasswordChangeModal = ({ isOpen, onClose, onSuccess }: PasswordChangeModal
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <X size={20} />
-        </button>
+    <div>
 
-        <h2 className="text-2xl font-semibold mb-6">Change Password</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <FloatingInput
-            id="new-password"
-            title="New Password"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            width="100%"
-          />
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <FloatingInput
+          id="new-password"
+          title="New Password"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          width="100%"
+        />
 
-          <FloatingInput
-            id="confirm-password"
-            title="Confirm New Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            width="100%"
-          />
+        <FloatingInput
+          id="confirm-password"
+          title="Confirm New Password"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          width="100%"
+        />
 
-          {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="text-sm text-gray-600">
-            Password must be at least 6 characters long
+        {error && (
+          <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+            {error}
           </div>
+        )}
 
-          <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <GlobalButton
-              title={loading ? 'Updating...' : 'Update Password'}
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1"
-            />
-          </div>
-        </form>
-      </div>
+        <div className="text-sm text-gray-600">
+          Password must be at least 6 characters long
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border cursor-pointer border-gray-300 text-gray-700 rounded-full hover:bg-gray-50"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <GlobalButton
+            title={loading ? 'Updating...' : 'Update Password'}
+            onClick={handleSubmit}
+            disabled={loading}
+          />
+        </div>
+      </form>
     </div>
   );
 };
 
-export default PasswordChangeModal;
+export default PasswordChangeForm;

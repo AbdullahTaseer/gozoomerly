@@ -13,7 +13,7 @@ interface EmailChangeModalProps {
   onSuccess: () => void;
 }
 
-const EmailChangeModal = ({ isOpen, onClose, currentEmail, onSuccess }: EmailChangeModalProps) => {
+ const EmailChangeForm = ({ currentEmail, onClose, onSuccess }: Omit<EmailChangeModalProps, 'isOpen'>) => {
   const [newEmail, setNewEmail] = useState('');
   const [confirmEmail, setConfirmEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,74 +51,57 @@ const EmailChangeModal = ({ isOpen, onClose, currentEmail, onSuccess }: EmailCha
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      
-      {/* Modal */}
-      <div className="relative bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg"
-        >
-          <X size={20} />
-        </button>
+    <div>
 
-        <h2 className="text-2xl font-semibold mb-6">Change Email</h2>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-gray-100 p-3 rounded-lg">
-            <p className="text-sm text-gray-600">Current email</p>
-            <p className="font-medium">{currentEmail}</p>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-gray-100 p-3 rounded-lg">
+          <p className="text-sm text-gray-600">Current email</p>
+          <p className="font-medium">{currentEmail}</p>
+        </div>
+
+        <FloatingInput
+          id="new-email"
+          title="New Email"
+          type="email"
+          value={newEmail}
+          onChange={(e) => setNewEmail(e.target.value)}
+          width="100%"
+        />
+
+        <FloatingInput
+          id="confirm-email"
+          title="Confirm New Email"
+          type="email"
+          value={confirmEmail}
+          onChange={(e) => setConfirmEmail(e.target.value)}
+          width="100%"
+        />
+
+        {error && (
+          <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+            {error}
           </div>
+        )}
 
-          <FloatingInput
-            id="new-email"
-            title="New Email"
-            type="email"
-            value={newEmail}
-            onChange={(e) => setNewEmail(e.target.value)}
-            width="100%"
+        <div className="grid grid-cols-2 gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 px-4 py-2 border cursor-pointer border-gray-300 text-gray-700 rounded-full hover:bg-gray-50"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <GlobalButton
+            title={loading ? 'Updating...' : 'Update Email'}
+            onClick={handleSubmit}
+            disabled={loading}
           />
-
-          <FloatingInput
-            id="confirm-email"
-            title="Confirm New Email"
-            type="email"
-            value={confirmEmail}
-            onChange={(e) => setConfirmEmail(e.target.value)}
-            width="100%"
-          />
-
-          {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex gap-3 mt-6">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <GlobalButton
-              title={loading ? 'Updating...' : 'Update Email'}
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1"
-            />
-          </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   );
 };
 
-export default EmailChangeModal;
+export default EmailChangeForm;

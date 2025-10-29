@@ -36,8 +36,9 @@ const GlobalModal = ({
       zIndex: 120,
     },
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.50)',
-      zIndex: 110,
+      backgroundColor: 'rgba(0, 0, 0, 0.60)',
+      backdropFilter: "blur(2px)",
+      zIndex: 1010,
       ...overlayStyle,
     },
   };
@@ -61,14 +62,14 @@ const GlobalModal = ({
       ariaHideApp={false}
     >
       {modalHeader && (
-        <div className="p-3 bg-[#F8F8F8] flex items-center gap-4 justify-between">
+        <div className="p-3 flex items-center gap-4 justify-between">
           <div className="flex items-center gap-4 1sm:gap-2">
-            <h3 className="text-[#0A96D4] text-[20px] 3sm:text-[18px] 2xs:text-[14px] font-[700] tracking-normal">
+            <h3 className="text-black text-[20px] 3sm:text-[18px] 2xs:text-[14px] font-[700] tracking-normal">
               {title}
             </h3>
           </div>
-          <div onClick={onClose} className="border border-[#dadada] hover:bg-gray-200 w-[28px] h-[28px] rounded-md flex items-center justify-center cursor-pointer">
-            <X />
+          <div onClick={onClose} className="hover:bg-gray-100 w-[28px] h-[28px] rounded-md flex items-center justify-center cursor-pointer">
+            <X size={18} />
           </div>
         </div>
       )}

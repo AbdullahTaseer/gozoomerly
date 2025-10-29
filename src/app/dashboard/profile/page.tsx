@@ -14,8 +14,6 @@ import {
   UserLock,
   Smartphone,
   Edit2,
-  Check,
-  X,
 } from 'lucide-react';
 import Activity from "@/assets/svgs/activity.svg";
 import TitleCard from '@/components/cards/TitleCard';
@@ -32,9 +30,10 @@ import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ProfilePictureUpload from './ProfilePictureUpload';
-import EmailChangeModal from '@/components/modals/EmailChangeModal';
-import PasswordChangeModal from '@/components/modals/PasswordChangeModal';
+import GlobalModal from '@/components/modals/GlobalModal';
 import GlobalButton from '@/components/buttons/GlobalButton';
+import EmailChangeForm from '@/components/modals/EmailChangeModal';
+import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 
 interface UserProfile {
   id: string;
@@ -274,18 +273,15 @@ const Profile = () => {
   return (
     <div className='px-[7%] max-[768px]:px-6'>
 
-      {/* Header */}
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Profile' className='text-left' />
         <BellIconIndicator />
       </div>
 
-      {/* Profile Card */}
       <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>
         <Image src={Particles} alt="" className='absolute object-cover' />
 
         <div className='relative z-10'>
-          {/* Edit Button */}
           {!isEditing && (
             <button
               onClick={handleEdit}
@@ -357,7 +353,6 @@ const Profile = () => {
             </span>
           </div>
 
-          {/* Bio Section */}
           <div className='mt-6'>
             <p className='text-white font-semibold mb-2'>Bio</p>
             {isEditing ? (
@@ -373,7 +368,6 @@ const Profile = () => {
             )}
           </div>
 
-          {/* Work Section */}
           {(isEditing || profile?.work) && (
             <div className='mt-4'>
               <p className='text-white font-semibold mb-2'>Work</p>
@@ -412,7 +406,6 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Menu List */}
       <div className='mt-4 bg-white border-b pb-4'>
         {menuItems.map((item, idx) => (
           <Link key={idx} href={item.href} className='flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100'>
@@ -425,7 +418,6 @@ const Profile = () => {
         ))}
       </div>
 
-      {/* Payment Method */}
       <div className='py-4 border-b'>
         <div className='flex justify-between gap-3 items-center mb-2'>
           <p className='text-[20px] font-semibold'>Payment Method</p>
@@ -439,7 +431,6 @@ const Profile = () => {
         />
       </div>
 
-      {/* Notification Settings */}
       <div className='py-4 border-b'>
         <p className='text-[20px] font-semibold mb-3'>Notification Settings</p>
         <div className='flex items-center justify-between px-1 py-2'>
@@ -462,7 +453,6 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Account Settings */}
       <div className='py-4 border-b'>
         <p className='text-[20px] font-semibold mb-3'>Account Settings</p>
         <div
@@ -487,7 +477,6 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Danger Zone */}
       <div className='py-4'>
         <div className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'>
           <Trash2 size={20} className='text-red-500' />
@@ -502,25 +491,35 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Email Change Modal */}
-      <EmailChangeModal
+      <GlobalModal
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
-        currentEmail={user?.email || ''}
-        onSuccess={async () => {
-          // Refresh user data
-          await fetchUserData();
-        }}
-      />
+        title="Change Email"
+        className='w-[400px] max-[420px]:w-[95vw]'
+      >
+        <EmailChangeForm
+          currentEmail={user?.email || ''}
+          onClose={() => setShowEmailModal(false)}
+          onSuccess={async () => {
+            // Refresh user data
+            await fetchUserData();
+          }}
+        />
+      </GlobalModal>
 
-      {/* Password Change Modal */}
-      <PasswordChangeModal
+      <GlobalModal
         isOpen={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
-        onSuccess={() => {
-          // Optional: Show success message
-        }}
-      />
+        title="Change Password"
+        className='w-[400px] max-[420px]:w-[95vw]'
+      >
+        <PasswordChangeForm
+          onClose={() => setShowPasswordModal(false)}
+          onSuccess={() => {
+            // Optional: Show success message
+          }}
+        />
+      </GlobalModal>
 
     </div>
   );
