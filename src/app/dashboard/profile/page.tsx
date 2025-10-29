@@ -34,6 +34,7 @@ import { useRouter } from 'next/navigation';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import EmailChangeModal from '@/components/modals/EmailChangeModal';
 import PasswordChangeModal from '@/components/modals/PasswordChangeModal';
+import GlobalButton from '@/components/buttons/GlobalButton';
 
 interface UserProfile {
   id: string;
@@ -83,7 +84,7 @@ const Profile = () => {
     try {
       setLoading(true);
       const currentUser = await authService.getUser();
-      
+
       if (!currentUser) {
         console.error('No authenticated user found');
         router.push('/signin');
@@ -92,7 +93,7 @@ const Profile = () => {
 
       console.log('Current user:', currentUser);
       setUser(currentUser);
-      
+
       // Fetch profile data from the profiles table
       const supabase = createClient();
       const { data: profileData, error: profileError } = await supabase
@@ -126,7 +127,7 @@ const Profile = () => {
           following_count: 0,
           boards_created_count: 0,
         };
-        
+
         // Insert the new profile
         const { data: insertedProfile, error: insertError } = await supabase
           .from('profiles')
@@ -137,7 +138,7 @@ const Profile = () => {
         if (insertError) {
           console.error('Profile insert error:', insertError);
           setError(`Failed to create profile: ${insertError.message}`);
-          
+
           // Log more details for debugging
           console.error('Insert error details:', {
             code: insertError.code,
@@ -183,9 +184,9 @@ const Profile = () => {
     try {
       setSaving(true);
       setError(null);
-      
+
       const supabase = createClient();
-      
+
       // Update profile in the profiles table
       const { data: updatedProfile, error: updateError } = await supabase
         .from('profiles')
@@ -259,7 +260,7 @@ const Profile = () => {
       <div className='px-[7%] max-[768px]:px-6 flex items-center justify-center min-h-screen'>
         <div className='text-center'>
           <p className='text-red-500 mb-4'>{error}</p>
-          <button 
+          <button
             onClick={fetchUserData}
             className='px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
           >
@@ -276,13 +277,13 @@ const Profile = () => {
       {/* Header */}
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Profile' className='text-left' />
-        <BellIconIndicator/>
+        <BellIconIndicator />
       </div>
 
       {/* Profile Card */}
       <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>
         <Image src={Particles} alt="" className='absolute object-cover' />
-        
+
         <div className='relative z-10'>
           {/* Edit Button */}
           {!isEditing && (
@@ -296,7 +297,7 @@ const Profile = () => {
 
           <div className='grid grid-cols-5 max-[900px]:grid-cols-3 gap-4'>
             <div className='flex items-center max-[420px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
-              <ProfilePictureUpload 
+              <ProfilePictureUpload
                 profile={profile}
                 onUpdate={(updatedProfile) => setProfile(updatedProfile)}
                 userId={user?.id || ''}
@@ -390,34 +391,22 @@ const Profile = () => {
             </div>
           )}
 
-          {/* Save/Cancel buttons */}
           {isEditing && (
-            <div className='flex gap-2 mt-4 justify-end'>
+            <div className='flex gap-3 justify-end pt-5'>
               <button
                 onClick={handleCancel}
-                className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2'
+                className='px-6 py-2 border border-gray-300 text-gray-700 rounded-full cursor-pointer bg-gray-50'
                 disabled={saving}
               >
-                <X size={16} />
                 Cancel
               </button>
-              <button
+              <GlobalButton
+                title={saving ? 'Saving...' : 'Save Changes'}
                 onClick={handleSave}
-                className='px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 flex items-center gap-2'
                 disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white'></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Save
-                  </>
-                )}
-              </button>
+                width='150px'
+                height='46px'
+              />
             </div>
           )}
         </div>
@@ -476,7 +465,7 @@ const Profile = () => {
       {/* Account Settings */}
       <div className='py-4 border-b'>
         <p className='text-[20px] font-semibold mb-3'>Account Settings</p>
-        <div 
+        <div
           className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
           onClick={() => setShowEmailModal(true)}
         >
@@ -486,7 +475,7 @@ const Profile = () => {
           </div>
           <ChevronRight className='text-[#8A8A8A]' size={22} />
         </div>
-        <div 
+        <div
           className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
           onClick={() => setShowPasswordModal(true)}
         >
@@ -504,7 +493,7 @@ const Profile = () => {
           <Trash2 size={20} className='text-red-500' />
           <span className='text-red-500'>Delete Account</span>
         </div>
-        <div 
+        <div
           onClick={handleLogout}
           className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'
         >

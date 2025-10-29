@@ -14,7 +14,11 @@ import Avatar from "@/assets/svgs/Sohail.svg";
 import carousel_1 from "@/assets/pngs/post-carousel-1.jpg";
 import carousel_2 from "@/assets/pngs/posts-carsousel-2.jpg";
 
-const PostsImagesCarouselCard = () => {
+type props = {
+  goToProfile?: () => void;
+}
+
+const PostsImagesCarouselCard = ({ goToProfile }: props) => {
   const media = [
     { type: "image", src: carousel_1 },
     { type: "image", src: carousel_2 },
@@ -45,7 +49,7 @@ const PostsImagesCarouselCard = () => {
     <div className="border border-[#E8E8E8] rounded-[24px] overflow-clip">
 
       <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
-        <div className="flex items-center gap-3">
+        <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
           <Image
             src={Avatar}
             alt=""

@@ -6,14 +6,18 @@ import { Heart, MessageCircle, Play } from "lucide-react";
 import Avatar from "@/assets/svgs/Sohail.svg";
 import videoThumb from "@/assets/pngs/video-thumbnail.png";
 
-const PostsVideoCard = () => {
+type props = {
+  goToProfile?: () => void;
+}
+
+const PostsVideoCard = ({ goToProfile }: props) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
     <div className="border border-[#E8E8E8] rounded-[24px] overflow-clip">
-     
+
       <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
-        <div className="flex items-center gap-3">
+        <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
           <Image
             src={Avatar}
             alt=""
@@ -64,13 +68,13 @@ const PostsVideoCard = () => {
         )}
       </div>
 
-      
+
       <p className="mt-4 px-5 text-sm">
         <span className="font-bold">Sean,</span> you&apos;re the most deserving
         person I know. Here&apos;s to your dream trip 🌊
       </p>
 
-      
+
       <div className="border-t bg-[#F4F4F4] mt-4 py-3 px-5 flex justify-between text-sm text-gray-600">
         <div className="flex items-center gap-1">
           <Heart size={16} />

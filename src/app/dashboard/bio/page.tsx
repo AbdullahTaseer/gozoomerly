@@ -176,14 +176,14 @@ const BioPage = () => {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className='absolute top-0 right-0 p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
+              className='absolute right-0 -top-10 max-[1100px]:-top-4 cursor-pointer p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
             >
               <Edit2 size={20} className='text-white' />
             </button>
           )}
 
-          <div className='grid grid-cols-4 max-[1100px]:grid-cols-1 gap-4'>
-            <div className='flex items-center max-[1100px]:flex-col gap-3'>
+          <div className='grid grid-cols-4 max-[1300px]:grid-cols-2 max-[900px]:grid-cols-1 gap-4'>
+            <div className='flex items-center max-[900px]:flex-col gap-3'>
               {profile?.profile_pic_url ? (
                 <img 
                   src={profile.profile_pic_url} 
@@ -301,7 +301,7 @@ const BioPage = () => {
               setLivesIn(profile?.lives_in || '');
               setLanguages(profile?.languages || []);
             }}
-            className='px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50'
+            className='px-6 py-2 border border-gray-300 text-gray-700 rounded-full cursor-pointer hover:bg-gray-50'
             disabled={saving}
           >
             Cancel
@@ -310,6 +310,8 @@ const BioPage = () => {
             title={saving ? 'Saving...' : 'Save Changes'}
             onClick={handleSave}
             disabled={saving}
+            width='150px'
+            height='46px'
           />
         </div>
       )}

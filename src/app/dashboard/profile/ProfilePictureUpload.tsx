@@ -124,7 +124,7 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
   };
 
   return (
-    <div className='relative group'>
+    <div className='relative group shrink-0'>
       {profile?.profile_pic_url && profile.profile_pic_url !== '' ? (
         <img 
           src={profile.profile_pic_url} 
