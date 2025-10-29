@@ -31,7 +31,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import GlobalModal from '@/components/modals/GlobalModal';
-import GlobalButton from '@/components/buttons/GlobalButton';
+import EditProfileModal from '@/components/modals/EditProfileModal';
 import EmailChangeForm from '@/components/modals/EmailChangeModal';
 import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 
@@ -59,12 +59,10 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({});
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
 
   const menuItems = [
     { label: "Memories", icon: MyMemories, href: '/dashboard/memories' },
@@ -107,7 +105,6 @@ const Profile = () => {
       } else if (profileData) {
         setProfile(profileData);
       } else {
-        // If no profile exists, create one from user metadata
         const newProfile: any = {
           id: currentUser.id,
           name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User',
@@ -127,7 +124,6 @@ const Profile = () => {
           boards_created_count: 0,
         };
 
-        // Insert the new profile
         const { data: insertedProfile, error: insertError } = await supabase
           .from('profiles')
           .insert([newProfile])
@@ -138,7 +134,6 @@ const Profile = () => {
           console.error('Profile insert error:', insertError);
           setError(`Failed to create profile: ${insertError.message}`);
 
-          // Log more details for debugging
           console.error('Insert error details:', {
             code: insertError.code,
             message: insertError.message,
@@ -159,71 +154,7 @@ const Profile = () => {
   };
 
   const handleEdit = () => {
-    if (profile) {
-      setEditedProfile({
-        name: profile.name,
-        bio: profile.bio || '',
-        work: profile.work || '',
-        country: profile.country || '',
-        state: profile.state || '',
-        city: profile.city || '',
-        lives_in: profile.lives_in || '',
-      });
-      setIsEditing(true);
-    }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditedProfile({});
-    setError(null);
-  };
-
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      setError(null);
-
-      const supabase = createClient();
-
-      // Update profile in the profiles table
-      const { data: updatedProfile, error: updateError } = await supabase
-        .from('profiles')
-        .update(editedProfile)
-        .eq('id', user.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Profile update error:', updateError);
-        setError('Failed to update profile');
-        return;
-      }
-
-      // Also update user metadata
-      const { error: authError } = await authService.updateUserProfile({
-        full_name: editedProfile.name,
-        bio: editedProfile.bio,
-        work: editedProfile.work,
-        country: editedProfile.country,
-        state: editedProfile.state,
-        city: editedProfile.city,
-        lives_in: editedProfile.lives_in,
-      });
-
-      if (authError) {
-        console.error('Auth metadata update error:', authError);
-      }
-
-      setProfile(updatedProfile);
-      setIsEditing(false);
-      setEditedProfile({});
-    } catch (err) {
-      console.error('Error saving profile:', err);
-      setError('Failed to save changes');
-    } finally {
-      setSaving(false);
-    }
+    if (profile) setShowEditProfileModal(true);
   };
 
   const handleLogout = async () => {
@@ -282,61 +213,24 @@ const Profile = () => {
         <Image src={Particles} alt="" className='absolute object-cover' />
 
         <div className='relative z-10'>
-          {!isEditing && (
-            <button
-              onClick={handleEdit}
-              className='absolute top-0 right-0 p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
-            >
-              <Edit2 size={20} className='text-white' />
-            </button>
-          )}
+          <button
+            onClick={handleEdit}
+            className='absolute -top-10 max-[1100px]:-top-4 -right-10 max-[1100px]:-right-4 cursor-pointer p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
+          >
+            <Edit2 size={20} className='text-white' />
+          </button>
 
           <div className='grid grid-cols-5 max-[900px]:grid-cols-3 gap-4'>
-            <div className='flex items-center max-[420px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
+            <div className='flex items-center max-[500px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
               <ProfilePictureUpload
                 profile={profile}
                 onUpdate={(updatedProfile) => setProfile(updatedProfile)}
                 userId={user?.id || ''}
               />
               <span>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedProfile.name || ''}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, name: e.target.value })}
-                    className='bg-white/10 text-white text-[24px] font-bold px-2 py-1 rounded border border-white/20'
-                  />
-                ) : (
-                  <p className='text-white text-[24px] font-bold'>{profile?.name || 'User'}</p>
-                )}
+                <p className='text-white text-[24px] font-bold'>{profile?.name || 'User'}</p>
                 <p className='text-[#F0F0F0] text-sm'>{formatBirthDate(profile?.birth_date)}</p>
-                {isEditing ? (
-                  <div className='space-y-1 mt-1'>
-                    <input
-                      type='text'
-                      value={editedProfile.city || ''}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, city: e.target.value })}
-                      placeholder='City'
-                      className='bg-white/10 text-[#F0F0F0] text-sm px-2 py-1 rounded border border-white/20 w-full'
-                    />
-                    <input
-                      type='text'
-                      value={editedProfile.state || ''}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, state: e.target.value })}
-                      placeholder='State'
-                      className='bg-white/10 text-[#F0F0F0] text-sm px-2 py-1 rounded border border-white/20 w-full'
-                    />
-                    <input
-                      type='text'
-                      value={editedProfile.country || ''}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, country: e.target.value })}
-                      placeholder='Country'
-                      className='bg-white/10 text-[#F0F0F0] text-sm px-2 py-1 rounded border border-white/20 w-full'
-                    />
-                  </div>
-                ) : (
-                  <p className='text-[#F0F0F0] text-sm'>{formatLocation(profile?.country, profile?.state, profile?.city)}</p>
-                )}
+                <p className='text-[#F0F0F0] text-sm'>{formatLocation(profile?.country, profile?.state, profile?.city)}</p>
               </span>
             </div>
             <span className='my-auto'>
@@ -355,54 +249,16 @@ const Profile = () => {
 
           <div className='mt-6'>
             <p className='text-white font-semibold mb-2'>Bio</p>
-            {isEditing ? (
-              <textarea
-                value={editedProfile.bio || ''}
-                onChange={(e) => setEditedProfile({ ...editedProfile, bio: e.target.value })}
-                placeholder='Tell us about yourself...'
-                className='w-full bg-white/10 text-white px-3 py-2 rounded border border-white/20 min-h-[80px] resize-none'
-                maxLength={500}
-              />
-            ) : (
-              <p className='text-[#F0F0F0] text-sm'>{profile?.bio || 'No bio added yet'}</p>
-            )}
+            <p className='text-[#F0F0F0] text-sm'>{profile?.bio || 'No bio added yet'}</p>
           </div>
 
-          {(isEditing || profile?.work) && (
+          {profile?.work && (
             <div className='mt-4'>
               <p className='text-white font-semibold mb-2'>Work</p>
-              {isEditing ? (
-                <input
-                  type='text'
-                  value={editedProfile.work || ''}
-                  onChange={(e) => setEditedProfile({ ...editedProfile, work: e.target.value })}
-                  placeholder='Your profession or company'
-                  className='w-full bg-white/10 text-white px-3 py-2 rounded border border-white/20'
-                />
-              ) : (
-                <p className='text-[#F0F0F0] text-sm'>{profile?.work}</p>
-              )}
+              <p className='text-[#F0F0F0] text-sm'>{profile?.work}</p>
             </div>
           )}
 
-          {isEditing && (
-            <div className='flex gap-3 justify-end pt-5'>
-              <button
-                onClick={handleCancel}
-                className='px-6 py-2 border border-gray-300 text-gray-700 rounded-full cursor-pointer bg-gray-50'
-                disabled={saving}
-              >
-                Cancel
-              </button>
-              <GlobalButton
-                title={saving ? 'Saving...' : 'Save Changes'}
-                onClick={handleSave}
-                disabled={saving}
-                width='150px'
-                height='46px'
-              />
-            </div>
-          )}
         </div>
       </div>
 
@@ -520,6 +376,16 @@ const Profile = () => {
           }}
         />
       </GlobalModal>
+
+      <EditProfileModal
+        isOpen={showEditProfileModal}
+        onClose={() => setShowEditProfileModal(false)}
+        profile={profile}
+        onSuccess={async (updatedProfile) => {
+          if (updatedProfile) setProfile(updatedProfile);
+          await fetchUserData();
+        }}
+      />
 
     </div>
   );

@@ -147,7 +147,7 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
       <button
         onClick={() => fileInputRef.current?.click()}
         disabled={uploadingImage}
-        className='absolute bottom-0 right-0 p-1.5 bg-pink-500 rounded-full hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+        className='absolute bottom-0 right-0 cursor-pointer p-1.5 bg-pink-500 rounded-full hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
         title='Change profile picture'
       >
         {uploadingImage ? (
