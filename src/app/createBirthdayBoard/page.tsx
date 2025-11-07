@@ -43,6 +43,8 @@ const CreateBirthdayBoard = () => {
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [uploadedMediaIds, setUploadedMediaIds] = useState<string[]>([]);
+  const [selectedMusicId, setSelectedMusicId] = useState<number | null>(null);
   const router = useRouter();
 
   // Group fields by step based on mockup screenshots
@@ -120,7 +122,7 @@ const CreateBirthdayBoard = () => {
     setCustomFieldValues(prev => ({ ...prev, [fieldKey]: value }));
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     setStep(step + 1);
   };
 
@@ -201,7 +203,7 @@ const CreateBirthdayBoard = () => {
         // Now safe to remove the board type selection
         localStorage.removeItem('selectedBoardType');
 
-        // Navigate to invitation step
+        // Navigate to invitation step (step 5)
         setStep(5);
       } else if (error) {
         console.error('Error creating board:', error);
@@ -222,6 +224,50 @@ const CreateBirthdayBoard = () => {
     if (data && !error) {
       setStep(6);
     }
+  };
+
+  const handleMediaUploaded = (mediaIds: string[], musicId?: number) => {
+    setUploadedMediaIds(mediaIds);
+    if (musicId) {
+      setSelectedMusicId(musicId);
+      // Also save to custom field values for board update
+      handleFieldChange('music_track_id', musicId);
+    }
+    console.log('Media uploaded:', mediaIds, 'Music:', musicId);
+  };
+
+  const handleStep3Next = async () => {
+    // Save uploaded media IDs to the board if any
+    if (boardId && (uploadedMediaIds.length > 0 || selectedMusicId)) {
+      try {
+        const updateData: any = {};
+        
+        if (uploadedMediaIds.length > 0) {
+          updateData.meta_tags = {
+            ...customFieldValues.meta_tags,
+            media_ids: uploadedMediaIds
+          };
+        }
+        
+        if (selectedMusicId) {
+          updateData.meta_tags = {
+            ...updateData.meta_tags,
+            music_track_id: selectedMusicId
+          };
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error } = await updateBoard(boardId, updateData);
+          if (error) {
+            console.error('Error updating board with media:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Error saving media to board:', error);
+      }
+    }
+    
+    setStep(4);
   };
 
   const renderField = (field: BoardTypeField) => {
@@ -520,9 +566,10 @@ const CreateBirthdayBoard = () => {
 
                     {/* Media Upload Section */}
                     <div className="my-6">
-                      <div onClick={() => setModalOpen(true)} className="border-2 hover:bg-gray-100 border-dashed cursor-pointer border-gray-300 rounded-lg p-8 text-center">
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center opacity-60">
                         <Image src={AddWishImg} alt='' className='mx-auto' />
                         <p className="text-gray-500 mt-2">Upload memorable moments to share</p>
+                        <p className="text-sm text-gray-400 mt-1">(Media can be uploaded after board creation)</p>
                       </div>
                     </div>
 
@@ -636,11 +683,14 @@ const CreateBirthdayBoard = () => {
         onClose={() => setModalOpen(false)}
         modalHeader={false}
         className="w-[600px] max-[768px]:w-[90vw] max-h-[90vh]">
-        <AddFilesModal doneOnclick={() => {
-          setStep(3)
-          setModalOpen(false)
-        }}
+        <AddFilesModal 
+          doneOnclick={() => {
+            setStep(3)
+            setModalOpen(false)
+          }}
           onClose={() => setModalOpen(false)}
+          boardId={boardId}
+          onMediaUploaded={handleMediaUploaded}
         />
       </GlobalModal>
     </>

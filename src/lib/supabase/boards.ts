@@ -46,6 +46,12 @@ export interface Board {
   created_at: string;
   updated_at: string;
   deleted_at?: string;
+  creator?: {
+    id: string;
+    name: string;
+    profile_pic_url?: string;
+  };
+  board_types?: BoardType;
 }
 
 export interface CreateBoardInput {
@@ -259,6 +265,23 @@ export async function updateBoard(boardId: string, updates: Partial<Board>) {
 export async function publishBoard(boardId: string) {
   const supabase = createClient();
   
+  // First check if the board exists
+  const { data: existingBoard, error: fetchError } = await supabase
+    .from('boards')
+    .select('id, status, creator_id')
+    .eq('id', boardId)
+    .single();
+
+  if (fetchError || !existingBoard) {
+    console.error('Board not found:', boardId, fetchError);
+    return { 
+      data: null, 
+      error: fetchError || new Error('Board not found') 
+    };
+  }
+
+  console.log('Attempting to publish board:', boardId, 'Current status:', existingBoard.status);
+  
   const { data, error } = await supabase
     .from('boards')
     .update({
@@ -270,10 +293,49 @@ export async function publishBoard(boardId: string) {
     .single();
 
   if (error) {
-    console.error('Error publishing board:', error);
+    console.error('Error publishing board:', {
+      boardId,
+      error,
+      errorMessage: error.message,
+      errorDetails: error.details,
+      errorCode: error.code,
+      errorHint: error.hint
+    });
     return { data: null, error };
   }
 
+  console.log('Board published successfully:', data);
+  return { data, error: null };
+}
+
+// Publish multiple boards at once
+export async function publishMultipleBoards(boardIds: string[]) {
+  const supabase = createClient();
+  
+  console.log('Attempting to publish boards:', boardIds);
+  
+  const { data, error } = await supabase
+    .from('boards')
+    .update({
+      status: 'published',
+      published_at: new Date().toISOString()
+    })
+    .in('id', boardIds)
+    .select();
+
+  if (error) {
+    console.error('Error publishing boards:', {
+      boardIds,
+      error,
+      errorMessage: error.message,
+      errorDetails: error.details,
+      errorCode: error.code,
+      errorHint: error.hint
+    });
+    return { data: null, error };
+  }
+
+  console.log('Boards published successfully:', data?.length || 0, 'boards');
   return { data, error: null };
 }
 
@@ -376,7 +438,7 @@ export async function uploadBoardMedia(
   const bucketName = 'board-media'; // Adjust based on your storage setup
   
   // Upload file to storage
-  const { data: uploadData, error: uploadError } = await supabase.storage
+  const { error: uploadError } = await supabase.storage
     .from(bucketName)
     .upload(fileName, file);
 
@@ -464,5 +526,151 @@ export async function createOrUpdateBoard(
       title: updates.title || 'Untitled Board',
       ...updates
     });
+  }
+}
+
+// Fetch active boards for home page
+export async function fetchActiveBoards(options?: {
+  includeStatus?: string[];
+  includePrivacy?: string[];
+  showAll?: boolean;
+}) {
+  const supabase = createClient();
+  
+  let query = supabase
+    .from('boards')
+    .select(`
+      *,
+      board_types (
+        name,
+        slug,
+        icon,
+        color_scheme
+      ),
+      profiles:creator_id (
+        id,
+        name,
+        profile_pic_url
+      )
+    `);
+
+  // Apply filters based on options
+  if (!options?.showAll) {
+    if (options?.includeStatus) {
+      query = query.in('status', options.includeStatus);
+    } else {
+      // Default to showing both published and draft boards
+      query = query.in('status', ['published', 'draft']);
+    }
+
+    if (options?.includePrivacy) {
+      query = query.in('privacy', options.includePrivacy);
+    }
+    // If no privacy filter specified, show all privacy levels
+  }
+
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error('Error fetching active boards:', error);
+    return { boards: [], error };
+  }
+
+  console.log('Fetched boards:', data?.length || 0, 'boards');
+  console.log('First board:', data?.[0]);
+
+  return { boards: data || [], error: null };
+}
+
+// Fetch boards for a specific user
+export async function fetchUserBoards(userId: string) {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('boards')
+    .select(`
+      *,
+      board_types (
+        name,
+        slug,
+        icon,
+        color_scheme
+      )
+    `)
+    .eq('creator_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user boards:', error);
+    return { boards: [], error };
+  }
+
+  return { boards: data || [], error: null };
+}
+
+// Search boards
+export async function searchBoards(query: string) {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('boards')
+    .select(`
+      *,
+      board_types (
+        name,
+        slug,
+        icon,
+        color_scheme
+      ),
+      profiles:creator_id (
+        id,
+        name,
+        profile_pic_url
+      )
+    `)
+    .eq('status', 'published')
+    .eq('privacy', 'public')
+    .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
+    .order('published_at', { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error('Error searching boards:', error);
+    return { boards: [], error };
+  }
+
+  return { boards: data || [], error: null };
+}
+
+// Get board statistics
+export async function getBoardStats(boardId: string) {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('boards')
+    .select('total_raised, contributors_count, wishes_count, views_count, shares_count')
+    .eq('id', boardId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching board stats:', error);
+    return { stats: null, error };
+  }
+
+  return { stats: data, error: null };
+}
+
+// Increment board view count
+export async function incrementBoardView(boardId: string) {
+  const supabase = createClient();
+  
+  const { error } = await supabase.rpc('increment_board_views', {
+    board_id: boardId
+  });
+
+  if (error) {
+    console.error('Error incrementing board views:', error);
   }
 }

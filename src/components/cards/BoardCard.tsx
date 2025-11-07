@@ -12,6 +12,7 @@ export type BoardCardProps = {
   title: string;
   avatar: string;
   name: string;
+  creatorId?: string;
   location?: string;
   date?: string;
   description?: string;
@@ -26,6 +27,7 @@ export type BoardCardProps = {
   topContributors?: Contributor[];
   buttonText?: string;
   onButtonClick?: () => void;
+  onCreatorClick?: () => void;
   className?: string
 };
 
@@ -33,6 +35,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
   title,
   avatar,
   name,
+  creatorId,
   location,
   date,
   description,
@@ -47,6 +50,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
   topContributors = [],
   buttonText = "View Full Board",
   onButtonClick,
+  onCreatorClick,
   className,
 }) => {
   const progress = target > 0 ? Math.round((raised / target) * 100) : 0;
@@ -58,7 +62,12 @@ const BoardCard: React.FC<BoardCardProps> = ({
       <div className="flex items-center gap-3 mt-2">
         <Image src={avatar} alt={title} width={55} height={55} className="rounded-full shrink-0" />
         <div>
-          <p className="font-medium text-[20px] max-[400px]:text-[16px]">{name}</p>
+          <p 
+            className={`font-medium text-[20px] max-[400px]:text-[16px] ${onCreatorClick ? 'cursor-pointer hover:text-pink-400 transition-colors' : ''}`}
+            onClick={onCreatorClick}
+          >
+            {name}
+          </p>
           {(location || date) && (
             <div className="text-sm text-gray-100 flex flex-col gap-1">
               {location && <span>Location: {location}</span>}

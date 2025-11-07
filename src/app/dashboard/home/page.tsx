@@ -1,24 +1,65 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import BoardCard from '@/components/cards/BoardCard';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AvatarList from '@/components/cards/AvatarList';
-import { homeBoardsSwiper, spotlightCampaigns } from '@/lib/MockData';
+import { spotlightCampaigns } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
+import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 
 const Home = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAllBoards = () => {
-    router.push('/dashboard/allBoards');
+  useEffect(() => {
+    loadBoards();
+  }, []);
+
+  const loadBoards = async () => {
+    try {
+      setLoading(true);
+      const { boards: fetchedBoards, error } = await fetchActiveBoards({ showAll: true });
+      
+      if (error) {
+        console.error('Supabase error:', error);
+      } else {
+        console.log(`Found ${fetchedBoards?.length || 0} boards`);
+        setBoards(fetchedBoards || []);
+      }
+    } catch (err) {
+      console.error('Error loading boards:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleViewBoard = (boardId: string) => {
+    router.push(`/dashboard/boards/${boardId}`);
+  };
+
+  const handleCreatorClick = (creatorId: string) => {
+    router.push(`/dashboard/visitProfile/${creatorId}`);
+  };
+
+
   const feedFilters = ['All', 'Friends', 'Family', 'Public', 'Private'];
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
 
   return (
     <div className='px-[7%] max-[769px]:px-6'>
@@ -26,31 +67,52 @@ const Home = () => {
 
       <div className='py-8'>
         <TitleCard title='Active Boards' className='text-left' />
-        <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
-          {homeBoardsSwiper.slice(0, 4).map((board) => (
-            <BoardCard
-              key={board.id}
-              title={board.title}
-              avatar={board.avatar}
-              name={board.name}
-              location={board.location}
-              date={board.date}
-              description={board.description}
-              fundTitle={board.fundTitle}
-              raised={board.raised}
-              target={board.target}
-              invited={board.invited}
-              participants={board.participants}
-              wishes={board.wishes}
-              gifters={board.gifters}
-              media={board.media}
-              topContributors={board.topContributors}
-              buttonText="View Full Board"
-              onButtonClick={handleAllBoards}
-              className='min-w-[340px] h-full'
-            />
-          ))}
-        </div>
+        
+        {loading ? (
+          <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className='min-w-[340px] h-[400px] bg-gray-100 rounded-lg animate-pulse' />
+            ))}
+          </div>
+        ) : boards.length > 0 ? (
+          <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
+            {boards.slice(0, 4).map((board) => (
+              <BoardCard
+                key={board.id}
+                title={board.title}
+                avatar={(board as any).profiles?.profile_pic_url || ProfileAvatar}
+                name={(board as any).profiles?.name || 'Unknown'}
+                creatorId={board.creator_id}
+                location={board.honoree_details?.hometown || 'No location'}
+                date={formatDate(board.deadline_date || board.created_at)}
+                description={board.description}
+                fundTitle="Target Amount"
+                raised={0}
+                target={board.goal_amount || 0}
+                invited={0}
+                participants={0}
+                wishes={0}
+                gifters={0}
+                media={0}
+                topContributors={[]}
+                buttonText="View Board"
+                onButtonClick={() => handleViewBoard(board.id)}
+                onCreatorClick={() => handleCreatorClick(board.creator_id)}
+                className='min-w-[340px] h-full'
+              />
+            ))}
+          </div>
+        ) : (
+          <div className='text-center py-12'>
+            <p className='text-gray-500'>No active boards found</p>
+            <button 
+              onClick={() => router.push('/dashboard/boards')}
+              className='mt-4 px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
+            >
+              Create First Board
+            </button>
+          </div>
+        )}
       </div>
 
       <div className='py-8'>

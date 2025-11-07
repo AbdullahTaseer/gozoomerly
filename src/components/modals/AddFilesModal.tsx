@@ -11,10 +11,14 @@ import {
 
 import { musicList } from "@/lib/MockData";
 import ImageEditorSection from "./ImageEditorSection";
+import { uploadBoardMedia } from "@/lib/supabase/boards";
+import { authService } from '@/lib/supabase/auth';
 
 export interface FileItem {
   id: number;
   src: string;
+  file?: File; // Add the actual File object
+  mediaId?: string; // Add uploaded media ID
 }
 
 export type FontStyle = "modern" | "classic" | "signature";
@@ -32,12 +36,15 @@ export interface FileEditSettings {
 type props = {
   doneOnclick: () => void;
   onClose: () => void;
+  boardId?: string; // Add boardId prop for uploading
+  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number) => void; // Callback for uploaded media
 }
 
-const AddFilesModal = ({ doneOnclick, onClose }: props) => {
+const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props) => {
   const [step, setStep] = useState<"files" | "music">("files");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [selectedMusic, setSelectedMusic] = useState<number | null>(null);
   const [search, setSearch] = useState("");
@@ -66,6 +73,7 @@ const AddFilesModal = ({ doneOnclick, onClose }: props) => {
     const newFiles = Array.from(e.target.files).map((file: File, i) => ({
       id: Date.now() + i,
       src: URL.createObjectURL(file),
+      file: file, // Store the actual File object
     }));
 
     setFiles((prev) => {
@@ -114,6 +122,65 @@ const AddFilesModal = ({ doneOnclick, onClose }: props) => {
     }));
   };
 
+  const handleUploadAndDone = async () => {
+    if (!boardId || files.length === 0) {
+      doneOnclick();
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const user = await authService.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      // Upload all files to Supabase
+      const uploadPromises = files.map(async (fileItem) => {
+        if (!fileItem.file) return null;
+
+        // Determine media type based on file type
+        const mediaType = fileItem.file.type.startsWith('image/') 
+          ? 'image' as const 
+          : fileItem.file.type.startsWith('video/') 
+            ? 'video' as const 
+            : 'audio' as const;
+
+        const { data, error } = await uploadBoardMedia(
+          boardId,
+          user.id,
+          fileItem.file,
+          mediaType
+        );
+
+        if (error) {
+          console.error('Error uploading file:', fileItem.file.name, error);
+          return null;
+        }
+
+        return data?.id;
+      });
+
+      const uploadResults = await Promise.all(uploadPromises);
+      const successfulUploads = uploadResults.filter((id): id is string => id !== null);
+
+      console.log('Successfully uploaded', successfulUploads.length, 'media files');
+      
+      // Call the callback with uploaded media IDs and selected music
+      if (onMediaUploaded) {
+        onMediaUploaded(successfulUploads, selectedMusic || undefined);
+      }
+
+      doneOnclick();
+    } catch (error) {
+      console.error('Error uploading media:', error);
+      alert('Failed to upload some media files. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className={`${showEditor ? "pb-4" : "pb-0"}`}>
       {step === "files" && (
@@ -138,8 +205,12 @@ const AddFilesModal = ({ doneOnclick, onClose }: props) => {
           <div className="flex justify-between items-center mb-4 p-2">
             <ArrowLeft onClick={() => setStep("files")} className="cursor-pointer" />
             <h2 className="font-semibold text-lg">Add Music</h2>
-            <button onClick={doneOnclick} className="bg-gradient-to-r cursor-pointer from-[#F43C83] to-[#845CBA] font-bold text-transparent bg-clip-text">
-              Done
+            <button 
+              onClick={handleUploadAndDone} 
+              disabled={uploading}
+              className="bg-gradient-to-r cursor-pointer from-[#F43C83] to-[#845CBA] font-bold text-transparent bg-clip-text disabled:opacity-50"
+            >
+              {uploading ? "Uploading..." : "Done"}
             </button>
           </div>
 
