@@ -75,7 +75,7 @@ const SignIn = () => {
           </div>
         )}
 
-        <div className="flex gap-2 mt-6 mb-4">
+        <div className="flex gap-2 my-6">
           <button
             type="button"
             onClick={() => setLoginMode('email')}

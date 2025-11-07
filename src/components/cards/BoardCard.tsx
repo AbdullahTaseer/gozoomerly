@@ -60,7 +60,9 @@ const BoardCard: React.FC<BoardCardProps> = ({
       <h3 className="text-[24px] max-[1250px]:text-[20px] max-[400px]:text-[16px]">{title}</h3>
 
       <div className="flex items-center gap-3 mt-2">
-        <Image src={avatar} alt={title} width={55} height={55} className="rounded-full shrink-0" />
+        <div className="relative h-[55px] w-[55px]">
+        <Image src={avatar} alt={title} fill className="rounded-full object-cover shrink-0" />
+        </div>
         <div>
           <p 
             className={`font-medium text-[20px] max-[400px]:text-[16px] ${onCreatorClick ? 'cursor-pointer hover:text-pink-400 transition-colors' : ''}`}
@@ -69,7 +71,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
             {name}
           </p>
           {(location || date) && (
-            <div className="text-sm text-gray-100 flex flex-col gap-1">
+            <div className="text-sm text-gray-100 flex flex-col">
               {location && <span>Location: {location}</span>}
               {date && <span>Date: {date}</span>}
             </div>

@@ -17,9 +17,9 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
         <div className='bg-black/50 absolute inset-0' />
         <Image onClick={() => router.push("/")} src={WhiteLogo} alt='' className='relative cursor-pointer' />
       </div>
-      <div className='w-[55%] overflow-y-auto relative max-[768px]:w-full flex flex-col justify-between items-center p-4'>
+      <div className='w-[55%] overflow-y-auto relative max-[768px]:w-full flex flex-col justify-center items-center p-4'>
         {children}
-        <div/>
+        {/* <div/> */}
       </div>
     </div>
   );
