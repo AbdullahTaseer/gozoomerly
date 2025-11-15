@@ -36,8 +36,8 @@ export interface FileEditSettings {
 type props = {
   doneOnclick: () => void;
   onClose: () => void;
-  boardId?: string; // Add boardId prop for uploading
-  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number) => void; // Callback for uploaded media
+  boardId?: string; 
+  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number) => void; 
 }
 
 const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props) => {
@@ -49,7 +49,6 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
   const [selectedMusic, setSelectedMusic] = useState<number | null>(null);
   const [search, setSearch] = useState("");
 
-  // Per-file edit settings keyed by file id
   const [editSettingsById, setEditSettingsById] = useState<Record<number, FileEditSettings>>({});
   const [showEditor, setShowEditor] = useState<boolean>(false);
 
@@ -73,7 +72,7 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
     const newFiles = Array.from(e.target.files).map((file: File, i) => ({
       id: Date.now() + i,
       src: URL.createObjectURL(file),
-      file: file, // Store the actual File object
+      file: file,
     }));
 
     setFiles((prev) => {
@@ -136,11 +135,9 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
         return;
       }
 
-      // Upload all files to Supabase
       const uploadPromises = files.map(async (fileItem) => {
         if (!fileItem.file) return null;
 
-        // Determine media type based on file type
         const mediaType = fileItem.file.type.startsWith('image/') 
           ? 'image' as const 
           : fileItem.file.type.startsWith('video/') 
@@ -167,7 +164,6 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
 
       console.log('Successfully uploaded', successfulUploads.length, 'media files');
       
-      // Call the callback with uploaded media IDs and selected music
       if (onMediaUploaded) {
         onMediaUploaded(successfulUploads, selectedMusic || undefined);
       }

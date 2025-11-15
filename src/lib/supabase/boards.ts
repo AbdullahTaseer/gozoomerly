@@ -367,7 +367,58 @@ export async function addBoardGiftOptions(boardId: string, giftOptions: Array<{
   return { data, error: null };
 }
 
-// Board Circle Visibility
+export async function getBoardGiftOptions(boardId: string) {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('board_gift_options')
+    .select('*')
+    .eq('board_id', boardId)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching gift options:', error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export async function addGiftContribution(
+  boardId: string,
+  contributorId: string,
+  giftData: {
+    amount: number;
+    gift_option_id?: string;
+    message?: string;
+    is_custom: boolean;
+  }
+) {
+  const supabase = createClient();
+  
+  const giftOptionData = {
+    board_id: boardId,
+    amount: giftData.amount,
+    label: giftData.gift_option_id || `Custom Gift - $${giftData.amount}`,
+    description: giftData.message || undefined,
+    is_custom: giftData.is_custom,
+    display_order: 0
+  };
+
+  const { data, error } = await supabase
+    .from('board_gift_options')
+    .insert([giftOptionData])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding gift:', error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
 export async function setBoardCircleVisibility(boardId: string, circleIds: string[]) {
   const supabase = createClient();
   
@@ -389,7 +440,6 @@ export async function setBoardCircleVisibility(boardId: string, circleIds: strin
   return { data, error: null };
 }
 
-// Wishes
 export interface CreateWishInput {
   content: string;
   media_ids?: string[];
@@ -414,7 +464,6 @@ export async function addWishToBoard(boardId: string, senderId: string, wish: Cr
     return { data: null, error };
   }
 
-  // Update board wishes count
   await supabase
     .from('boards')
     .update({ wishes_count: data ? 1 : 0 })
@@ -423,7 +472,6 @@ export async function addWishToBoard(boardId: string, senderId: string, wish: Cr
   return { data, error: null };
 }
 
-// Media Upload
 export async function uploadBoardMedia(
   boardId: string, 
   userId: string, 
@@ -432,12 +480,10 @@ export async function uploadBoardMedia(
 ) {
   const supabase = createClient();
   
-  // Create a unique file path
   const fileExt = file.name.split('.').pop();
   const fileName = `${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const bucketName = 'board-media'; // Adjust based on your storage setup
+  const bucketName = 'board-media'; 
   
-  // Upload file to storage
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
     .upload(fileName, file);
@@ -447,12 +493,10 @@ export async function uploadBoardMedia(
     return { data: null, error: uploadError };
   }
 
-  // Get public URL
   const { data: { publicUrl } } = supabase.storage
     .from(bucketName)
     .getPublicUrl(fileName);
 
-  // Save media record
   const { data, error } = await supabase
     .from('media')
     .insert([{
@@ -471,7 +515,6 @@ export async function uploadBoardMedia(
 
   if (error) {
     console.error('Error saving media record:', error);
-    // Try to delete the uploaded file
     await supabase.storage.from(bucketName).remove([fileName]);
     return { data: null, error };
   }
@@ -479,7 +522,6 @@ export async function uploadBoardMedia(
   return { data, error: null };
 }
 
-// Board Invitations
 export async function createBoardInvitation(
   boardId: string,
   inviterId: string,
@@ -511,17 +553,14 @@ export async function createBoardInvitation(
   return { data, error: null };
 }
 
-// Create or update board progressively
 export async function createOrUpdateBoard(
   userId: string, 
   boardId: string | null,
   updates: Partial<CreateBoardInput>
 ) {
   if (boardId) {
-    // Update existing board
     return updateBoard(boardId, updates as Partial<Board>);
   } else {
-    // Create new board with minimal data
     return createBoard(userId, {
       title: updates.title || 'Untitled Board',
       ...updates
@@ -529,7 +568,6 @@ export async function createOrUpdateBoard(
   }
 }
 
-// Fetch active boards for home page
 export async function fetchActiveBoards(options?: {
   includeStatus?: string[];
   includePrivacy?: string[];
@@ -554,19 +592,16 @@ export async function fetchActiveBoards(options?: {
       )
     `);
 
-  // Apply filters based on options
   if (!options?.showAll) {
     if (options?.includeStatus) {
       query = query.in('status', options.includeStatus);
     } else {
-      // Default to showing both published and draft boards
       query = query.in('status', ['published', 'draft']);
     }
 
     if (options?.includePrivacy) {
       query = query.in('privacy', options.includePrivacy);
     }
-    // If no privacy filter specified, show all privacy levels
   }
 
   const { data, error } = await query
@@ -584,7 +619,6 @@ export async function fetchActiveBoards(options?: {
   return { boards: data || [], error: null };
 }
 
-// Fetch boards for a specific user
 export async function fetchUserBoards(userId: string) {
   const supabase = createClient();
   
@@ -610,7 +644,6 @@ export async function fetchUserBoards(userId: string) {
   return { boards: data || [], error: null };
 }
 
-// Search boards
 export async function searchBoards(query: string) {
   const supabase = createClient();
   
@@ -644,7 +677,6 @@ export async function searchBoards(query: string) {
   return { boards: data || [], error: null };
 }
 
-// Get board statistics
 export async function getBoardStats(boardId: string) {
   const supabase = createClient();
   
@@ -662,7 +694,6 @@ export async function getBoardStats(boardId: string) {
   return { stats: data, error: null };
 }
 
-// Increment board view count
 export async function incrementBoardView(boardId: string) {
   const supabase = createClient();
   

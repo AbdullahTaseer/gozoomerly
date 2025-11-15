@@ -1,23 +1,139 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import GlobalButton from "../buttons/GlobalButton";
 import ArrowRightIcon from "@/assets/svgs/ArrowRight.svg";
 import GlobalInput from "../inputs/GlobalInput";
 import Image from "next/image";
 import { giftsData } from "@/lib/MockData";
+import { addGiftContribution } from "@/lib/supabase/boards";
+import { authService } from "@/lib/supabase/auth";
 
 type props = {
   goToPayment: () => void;
+  boardId?: string;
+  onGiftSaved?: (giftData: any) => void;
 }
 
-const AddGift = ({ goToPayment }: props) => {
+const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
   const [selectedGift, setSelectedGift] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const raised = 50;
-  const goal = 2000;
-  const progress = Math.min((raised / goal) * 100, 100);
+  const handleContinueToPayment = async () => {
+    if (!selectedGift && !customAmount) {
+      alert('Please select a gift or enter a custom amount');
+      return;
+    }
+
+    let amount = 0;
+    let isCustom = false;
+    let giftLabel = '';
+
+    if (customAmount) {
+      amount = parseFloat(customAmount);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+      isCustom = true;
+      giftLabel = `Custom Gift - $${amount}`;
+    } else if (selectedGift) {
+      const selectedGiftData = giftsData.find(g => g.id === selectedGift);
+      if (selectedGiftData) {
+        amount = selectedGiftData.price;
+        giftLabel = selectedGiftData.label;
+      }
+    }
+
+    if (amount <= 0) {
+      alert('Please select a valid gift or enter a valid amount');
+      return;
+    }
+
+    if (!boardId) {
+      const giftData = {
+        amount,
+        label: giftLabel,
+        message,
+        isCustom
+      };
+      
+      if (onGiftSaved) {
+        onGiftSaved(giftData);
+      }
+      
+      goToPayment();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await authService.getUser();
+      if (!user) {
+        alert('Please sign in to continue');
+        setLoading(false);
+        return;
+      }
+
+      let amount = 0;
+      let isCustom = false;
+
+      if (customAmount) {
+        amount = parseFloat(customAmount);
+        if (isNaN(amount) || amount <= 0) {
+          alert('Please enter a valid amount');
+          setLoading(false);
+          return;
+        }
+        isCustom = true;
+      } else if (selectedGift) {
+        const selectedGiftData = giftsData.find(g => g.id === selectedGift);
+        if (selectedGiftData) {
+          amount = selectedGiftData.price;
+        }
+      }
+
+      if (amount <= 0) {
+        alert('Please select a valid gift or enter a valid amount');
+        setLoading(false);
+        return;
+      }
+
+      let giftLabel = '';
+      if (isCustom) {
+        giftLabel = `Custom Gift - $${amount}`;
+      } else if (selectedGift) {
+        const selectedGiftData = giftsData.find(g => g.id === selectedGift);
+        giftLabel = selectedGiftData?.label || '';
+      }
+
+      const { data, error } = await addGiftContribution(boardId, user.id, {
+        amount,
+        gift_option_id: giftLabel,
+        message: message || undefined,
+        is_custom: isCustom,
+      });
+
+      if (error) {
+        console.error('Error saving gift:', error);
+        alert('Failed to save gift. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (onGiftSaved) {
+        onGiftSaved(data);
+      }
+
+      goToPayment();
+    } catch (error) {
+      console.error('Error processing gift:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto space-y-6">
@@ -27,27 +143,9 @@ const AddGift = ({ goToPayment }: props) => {
           Add a gift 🎁
         </p>
         <p className="text-sm text-center mt-1 text-gray-600">
-          Your gift helps make their dream happen Goal Progress
+          Make their celebration extra special with a thoughtful gift
         </p>
       </div>
-
-
-      <div className="bg-black text-white rounded-lg p-4">
-        <div className="flex justify-between text-sm mb-1">
-          <span>{progress.toFixed(0)}%</span>
-        </div>
-        <div className="w-full h-1.5 bg-[#D9D9D9] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[#F43C83]"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex justify-between text-xs mt-2">
-          <span>${raised} raised</span>
-          <span>${goal} goal</span>
-        </div>
-      </div>
-
 
       <div>
         <p className="font-medium mb-3">Choose a Gift Amount</p>
@@ -85,9 +183,9 @@ const AddGift = ({ goToPayment }: props) => {
       />
 
       <div>
-        <p className="text-sm mb-1">Message with Gift</p>
+        <p className="text-sm mb-1">Description</p>
         <textarea
-          placeholder="Write a message to go with your gift…"
+          placeholder="Write a description for your gift…"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none resize-none min-h-[100px]"
@@ -96,11 +194,12 @@ const AddGift = ({ goToPayment }: props) => {
 
 
       <GlobalButton
-        title="Continue to Payment"
+        title={loading ? "Processing..." : "Continue to Payment"}
         icon={ArrowRightIcon}
         height="44px"
         className="mt-6 flex-row-reverse"
-        onClick={goToPayment}
+        onClick={handleContinueToPayment}
+        disabled={loading}
       />
     </div>
   );

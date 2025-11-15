@@ -9,13 +9,9 @@ import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 import ArrowRight from "@/assets/svgs/ArrowRight.svg";
 import ArrowLeft from "@/assets/svgs/ArrowLeft.svg";
-import AddYourWish from "@/components/compaignSections/AddYourWish";
-import PickThemeForm from "@/components/compaignSections/PickThemeForm";
-import MakeWishTrueForm from "@/components/compaignSections/MakeWishTrueForm";
 import GlobalModal from "@/components/modals/GlobalModal";
 import AddFilesModal from "@/components/modals/AddFilesModal";
 import AddGift from "@/components/compaignSections/AddGift";
-import ContinuePayment from "@/components/compaignSections/ContinuePayment";
 import WhoCanJoin from "@/components/compaignSections/WhoCanJoin";
 import YourBoardIsLive from "@/components/compaignSections/YourBoardIsLive";
 import GlobalInput from "@/components/inputs/GlobalInput";
@@ -26,7 +22,6 @@ import {
   updateBoard,
   getBoardTypeFields,
   BoardTypeField,
-  publishBoard,
   CreateBoardInput,
   addBoardGiftOptions
 } from '@/lib/supabase/boards';
@@ -64,15 +59,17 @@ const CreateBirthdayBoard = () => {
   const progress = step === 1
     ? 20
     : step === 2
-      ? 40
+      ? 35
       : step === 3
-        ? 60
+        ? 50
         : step === 4
-          ? 80
+          ? 65
           : step === 5
-            ? 90
+            ? 80
             : step === 6
-              ? 99 : 0
+              ? 90
+              : step === 7
+                ? 99 : 0
 
   useEffect(() => {
     checkAuth();
@@ -126,103 +123,79 @@ const CreateBirthdayBoard = () => {
     setStep(step + 1);
   };
 
-  const handleCreateBoard = async () => {
-    if (!userId || !selectedBoardType || creating) return;
-
-    setCreating(true);
-
-    try {
-      // Create board with all the collected data
-      const boardData: CreateBoardInput = {
-        title: customFieldValues.title || `${selectedBoardType.name} Board`,
-        description: customFieldValues.description || '',
-        board_type_id: selectedBoardType.id,
-        honoree_details: {
-          first_name: customFieldValues.first_name,
-          last_name: customFieldValues.last_name,
-          date_of_birth: customFieldValues.date_of_birth,
-          hometown: customFieldValues.hometown,
-          phone: customFieldValues.phone,
-          email: customFieldValues.email,
-          profile_photo_url: customFieldValues.profile_photo_url,
-          theme_color: customFieldValues.theme_color || '#9B59B6', // Default to Fun & Colorful
-        },
-        goal_type: customFieldValues.goal_amount ? 'monetary' : 'non_monetary',
-        goal_amount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : undefined,
-        currency: 'USD',
-        deadline_date: customFieldValues.deadline_date,
-        privacy: customFieldValues.privacy || 'public',
-        allow_invites: customFieldValues.allow_invites ?? true,
-        invites_can_invite: customFieldValues.invites_can_invite ?? false,
-      };
-
-      console.log('Creating board with data:', boardData);
-
-      const { data, error } = await createBoard(userId, boardData);
-      if (data && !error) {
-        setBoardId(data.id);
-
-        // Store board data for use in other steps
-        localStorage.setItem('currentBoardId', data.id);
-        localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
-
-        // Add gift options if suggested amounts were set
-        if (customFieldValues.suggested_amount) {
-          try {
-            // Handle different input formats
-            let amounts: number[] = [];
-
-            if (typeof customFieldValues.suggested_amount === 'string') {
-              // If it's a comma-separated string like "25,50,100"
-              amounts = customFieldValues.suggested_amount
-                .split(',')
-                .map((a: string) => parseFloat(a.trim()))
-                .filter((n: number) => !isNaN(n) && n > 0);
-            } else if (typeof customFieldValues.suggested_amount === 'number') {
-              // If it's a single number
-              amounts = [customFieldValues.suggested_amount];
-            } else if (Array.isArray(customFieldValues.suggested_amount)) {
-              // If it's already an array
-              amounts = customFieldValues.suggested_amount
-                .map((a: any) => parseFloat(a))
-                .filter((n: number) => !isNaN(n) && n > 0);
-            }
-
-            if (amounts.length > 0) {
-              await addBoardGiftOptions(data.id, amounts.map((amount: number) => ({
-                amount,
-                label: `$${amount}`,
-              })));
-            }
-          } catch (err) {
-            console.error('Error adding gift options:', err);
-            // Continue without gift options - not critical for board creation
-          }
-        }
-
-        // Now safe to remove the board type selection
-        localStorage.removeItem('selectedBoardType');
-
-        // Navigate to invitation step (step 5)
-        setStep(5);
-      } else if (error) {
-        console.error('Error creating board:', error);
-        alert('Failed to create board. Please try again.');
-      }
-    } catch (err) {
-      console.error('Unexpected error:', err);
-      alert('An unexpected error occurred. Please try again.');
-    } finally {
-      setCreating(false);
-    }
+  const handleStep5Next = () => {
+    setStep(6);
   };
 
   const handlePublishBoard = async () => {
-    if (!boardId) return;
+    if (!boardId && userId && selectedBoardType) {
+      setCreating(true);
+      
+      try {
+        const boardData: CreateBoardInput = {
+          title: customFieldValues.title || `${selectedBoardType.name} Board`,
+          description: customFieldValues.description || '',
+          board_type_id: selectedBoardType.id,
+          honoree_details: {
+            first_name: customFieldValues.first_name,
+            last_name: customFieldValues.last_name,
+            date_of_birth: customFieldValues.date_of_birth,
+            hometown: customFieldValues.hometown,
+            phone: customFieldValues.phone,
+            email: customFieldValues.email,
+            profile_photo_url: customFieldValues.profile_photo_url,
+            theme_color: customFieldValues.theme_color || '#9B59B6',
+          },
+          goal_type: customFieldValues.goal_amount ? 'monetary' : 'non_monetary',
+          goal_amount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : undefined,
+          currency: 'USD',
+          deadline_date: customFieldValues.deadline_date,
+          privacy: customFieldValues.privacy || 'public',
+          allow_invites: customFieldValues.allow_invites ?? true,
+          invites_can_invite: customFieldValues.invites_can_invite ?? false,
+        };
 
-    const { data, error } = await publishBoard(boardId);
-    if (data && !error) {
-      setStep(6);
+        console.log('Creating board with data:', boardData);
+
+        const { data, error } = await createBoard(userId, boardData);
+        if (data && !error) {
+          setBoardId(data.id);
+          localStorage.setItem('currentBoardId', data.id);
+          localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+          localStorage.removeItem('selectedBoardType');
+          
+          if (savedGiftData) {
+            try {
+              const giftOptionData = [{
+                amount: savedGiftData.amount,
+                label: savedGiftData.label,
+                description: savedGiftData.message || undefined,
+                is_custom: savedGiftData.isCustom,
+              }];
+              
+              await addBoardGiftOptions(data.id, giftOptionData);
+              console.log('Gift saved to board:', giftOptionData);
+            } catch (giftError) {
+              console.error('Error saving gift:', giftError);
+              // Continue anyway - gift is optional
+            }
+          }
+          
+          // Board created successfully, go to final step
+          setStep(7);
+        } else {
+          console.error('Error creating board:', error);
+          alert('Failed to create board. Please try again.');
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        alert('An unexpected error occurred. Please try again.');
+      } finally {
+        setCreating(false);
+      }
+    } else if (boardId) {
+      // Board already exists, just go to final step
+      setStep(7);
     }
   };
 
@@ -230,44 +203,24 @@ const CreateBirthdayBoard = () => {
     setUploadedMediaIds(mediaIds);
     if (musicId) {
       setSelectedMusicId(musicId);
-      // Also save to custom field values for board update
       handleFieldChange('music_track_id', musicId);
     }
     console.log('Media uploaded:', mediaIds, 'Music:', musicId);
   };
 
   const handleStep3Next = async () => {
-    // Save uploaded media IDs to the board if any
-    if (boardId && (uploadedMediaIds.length > 0 || selectedMusicId)) {
-      try {
-        const updateData: any = {};
-        
-        if (uploadedMediaIds.length > 0) {
-          updateData.meta_tags = {
-            ...customFieldValues.meta_tags,
-            media_ids: uploadedMediaIds
-          };
-        }
-        
-        if (selectedMusicId) {
-          updateData.meta_tags = {
-            ...updateData.meta_tags,
-            music_track_id: selectedMusicId
-          };
-        }
+    setStep(4); 
+  };
 
-        if (Object.keys(updateData).length > 0) {
-          const { error } = await updateBoard(boardId, updateData);
-          if (error) {
-            console.error('Error updating board with media:', error);
-          }
-        }
-      } catch (error) {
-        console.error('Error saving media to board:', error);
-      }
-    }
-    
-    setStep(4);
+  const [savedGiftData, setSavedGiftData] = useState<any>(null);
+
+  const handleGiftPayment = () => {
+    setStep(5);
+  };
+
+  const handleGiftSaved = (giftData: any) => {
+    console.log('Gift saved temporarily:', giftData);
+    setSavedGiftData(giftData);
   };
 
   const renderField = (field: BoardTypeField) => {
@@ -552,7 +505,6 @@ const CreateBirthdayBoard = () => {
                   </div>
                 )}
 
-                {/* Step 3: Add Music and Media */}
                 {step === 3 && (
                   <div className="bg-white rounded-xl p-6 shadow-lg">
                     <div>
@@ -564,43 +516,22 @@ const CreateBirthdayBoard = () => {
                       </p>
                     </div>
 
-                    {/* Media Upload Section */}
                     <div className="my-6">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center opacity-60">
+                      <div 
+                        onClick={() => setModalOpen(true)}
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#F43C83] transition-all duration-300"
+                      >
                         <Image src={AddWishImg} alt='' className='mx-auto' />
-                        <p className="text-gray-500 mt-2">Upload memorable moments to share</p>
-                        <p className="text-sm text-gray-400 mt-1">(Media can be uploaded after board creation)</p>
+                        <p className="text-gray-700 mt-2 font-medium">Click to upload photos, videos & select music</p>
+                        {uploadedMediaIds.length > 0 && (
+                          <p className="text-sm text-green-600 mt-1">
+                            ✓ {uploadedMediaIds.length} media file{uploadedMediaIds.length > 1 ? 's' : ''} uploaded
+                          </p>
+                        )}
+                        {selectedMusicId && (
+                          <p className="text-sm text-green-600 mt-1">✓ Music selected</p>
+                        )}
                       </div>
-                    </div>
-
-                    {/* Music Selection */}
-                    <div className="space-y-4">
-                      {fieldGroups.step3?.filter(f => f.field_key === 'music_track_id').map((field) => (
-                        <div key={field.id}>
-                          <label className="block text-sm font-medium mb-2">
-                            {field.label || "Background Music"}
-                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                          {renderField(field)}
-                          {field.help_text && (
-                            <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
-                          )}
-                        </div>
-                      ))}
-
-                      {/* Story Overlays if available */}
-                      {fieldGroups.step3?.filter(f => f.field_key === 'story_overlays').map((field) => (
-                        <div key={field.id}>
-                          <label className="block text-sm font-medium mb-2">
-                            {field.label}
-                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                          {renderField(field)}
-                          {field.help_text && (
-                            <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
-                          )}
-                        </div>
-                      ))}
                     </div>
 
                     <div className="flex justify-between mt-6">
@@ -615,7 +546,7 @@ const CreateBirthdayBoard = () => {
                       <GlobalButton
                         title="Next"
                         icon={ArrowRight}
-                        onClick={handleNextStep}
+                        onClick={handleStep3Next}
                         height="48px"
                         width="120px"
                         className="flex-row-reverse"
@@ -624,8 +555,32 @@ const CreateBirthdayBoard = () => {
                   </div>
                 )}
 
-                {/* Step 4: Privacy Settings */}
                 {step === 4 && (
+                  <div className="space-y-4">
+                    <AddGift 
+                      goToPayment={handleGiftPayment}
+                      boardId={undefined}
+                      onGiftSaved={handleGiftSaved}
+                    />
+                    <div className="flex justify-center">
+                      <button
+                        onClick={() => setStep(3)}
+                        className="text-gray-600 hover:text-gray-800 underline text-sm"
+                      >
+                        ← Go Back
+                      </button>
+                      <span className="mx-4 text-gray-400">|</span>
+                      <button
+                        onClick={() => setStep(5)}
+                        className="text-gray-600 hover:text-gray-800 underline text-sm"
+                      >
+                        Skip Gift →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {step === 5 && (
                   <div className="bg-white rounded-xl p-6 shadow-lg">
                     <h3 className="text-center text-[20px] max-[600px]:text-[16px] font-bold">Privacy Settings</h3>
                     <div className="space-y-4">
@@ -651,9 +606,8 @@ const CreateBirthdayBoard = () => {
                           icon={ArrowLeft}
                         />
                         <GlobalButton
-                          title={creating ? "Creating..." : "Create Board"}
-                          onClick={handleCreateBoard}
-                          disabled={creating}
+                          title="Continue"
+                          onClick={handleStep5Next}
                           height="48px"
                           width="160px"
                         />
@@ -663,13 +617,11 @@ const CreateBirthdayBoard = () => {
                 )}
 
 
-                {/* Step 5: Who Can Join */}
-                {step === 5 &&
+                {step === 6 &&
                   <WhoCanJoin goToLiveBoard={handlePublishBoard} />
                 }
 
-                {/* Step 6: Board is Live */}
-                {step === 6 &&
+                {step === 7 &&
                   <YourBoardIsLive />
                 }
               </>
@@ -689,7 +641,7 @@ const CreateBirthdayBoard = () => {
             setModalOpen(false)
           }}
           onClose={() => setModalOpen(false)}
-          boardId={boardId}
+          boardId={boardId || undefined}
           onMediaUploaded={handleMediaUploaded}
         />
       </GlobalModal>
