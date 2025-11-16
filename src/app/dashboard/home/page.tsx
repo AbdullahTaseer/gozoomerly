@@ -7,6 +7,7 @@ import BoardCard from '@/components/cards/BoardCard';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AvatarList from '@/components/cards/AvatarList';
+import InviteModal from '@/components/modals/InviteModal';
 import { spotlightCampaigns } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
@@ -17,6 +18,8 @@ const Home = () => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<{ slug: string; title: string } | null>(null);
 
   useEffect(() => {
     loadBoards();
@@ -40,12 +43,25 @@ const Home = () => {
     }
   };
 
-  const handleViewBoard = (boardId: string) => {
-    router.push(`/dashboard/boards/${boardId}`);
+  const handleViewBoard = (board: Board) => {
+    router.push(`/dashboard/boards/${board.slug}`);
   };
 
   const handleCreatorClick = (creatorId: string) => {
     router.push(`/dashboard/visitProfile/${creatorId}`);
+  };
+
+  const handleInviteClick = (board: Board) => {
+    setSelectedBoard({
+      slug: board.slug,
+      title: board.title
+    });
+    setInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setInviteModalOpen(false);
+    setSelectedBoard(null);
   };
 
 
@@ -96,8 +112,10 @@ const Home = () => {
                 media={0}
                 topContributors={[]}
                 buttonText="View Board"
-                onButtonClick={() => handleViewBoard(board.id)}
+                onButtonClick={() => handleViewBoard(board)}
                 onCreatorClick={() => handleCreatorClick(board.creator_id)}
+                onInviteClick={() => handleInviteClick(board)}
+                slug={board.slug}
                 className='min-w-[340px] h-full'
               />
             ))}
@@ -155,6 +173,15 @@ const Home = () => {
           <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
         </div>
       </div>
+
+      {selectedBoard && (
+        <InviteModal
+          isOpen={inviteModalOpen}
+          onClose={handleCloseInviteModal}
+          boardSlug={selectedBoard.slug}
+          boardTitle={selectedBoard.title}
+        />
+      )}
     </div>
   );
 };

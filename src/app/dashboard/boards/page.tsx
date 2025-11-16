@@ -7,6 +7,7 @@ import BoardCard from '@/components/cards/BoardCard';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
+import InviteModal from '@/components/modals/InviteModal';
 import { getUserBoards } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 
@@ -15,6 +16,8 @@ const Boards = () => {
   const [boards, setBoards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedBoard, setSelectedBoard] = useState<{ slug: string; title: string } | null>(null);
   
   useEffect(() => {
     fetchUserBoards();
@@ -41,6 +44,19 @@ const Boards = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInviteClick = (board: any) => {
+    setSelectedBoard({
+      slug: board.slug,
+      title: board.title
+    });
+    setInviteModalOpen(true);
+  };
+
+  const handleCloseInviteModal = () => {
+    setInviteModalOpen(false);
+    setSelectedBoard(null);
   };
   
   return (
@@ -94,10 +110,21 @@ const Boards = () => {
               topContributors={[]}
               buttonText="View Board"
               onButtonClick={() => router.push(`/dashboard/boards/${board.slug}`)}
+              onInviteClick={() => handleInviteClick(board)}
+              slug={board.slug}
             />
           ))
         )}
       </div>
+
+      {selectedBoard && (
+        <InviteModal
+          isOpen={inviteModalOpen}
+          onClose={handleCloseInviteModal}
+          boardSlug={selectedBoard.slug}
+          boardTitle={selectedBoard.title}
+        />
+      )}
     </div>
   );
 };

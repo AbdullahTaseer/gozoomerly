@@ -28,6 +28,8 @@ export type BoardCardProps = {
   buttonText?: string;
   onButtonClick?: () => void;
   onCreatorClick?: () => void;
+  onInviteClick?: () => void;
+  slug?: string;
   className?: string
 };
 
@@ -51,6 +53,8 @@ const BoardCard: React.FC<BoardCardProps> = ({
   buttonText = "View Full Board",
   onButtonClick,
   onCreatorClick,
+  onInviteClick,
+  slug,
   className,
 }) => {
   const progress = target > 0 ? Math.round((raised / target) * 100) : 0;
@@ -128,7 +132,19 @@ const BoardCard: React.FC<BoardCardProps> = ({
         </div>
       )}
 
-      <GlobalButton title={buttonText} className="mt-6" onClick={onButtonClick} />
+      <div className="flex flex-col gap-3 mt-6">
+        {onInviteClick && (
+          <GlobalButton 
+            title="Invite Someone" 
+            className="w-full" 
+            onClick={onInviteClick}
+            bgColor="#e5e5e5"
+            color="#333"
+            height="40px"
+          />
+        )}
+        <GlobalButton title={buttonText} className="w-full" onClick={onButtonClick} />
+      </div>
     </div>
   );
 };
