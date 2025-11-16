@@ -65,10 +65,10 @@ const BoardCard: React.FC<BoardCardProps> = ({
 
       <div className="flex items-center gap-3 mt-2">
         <div className="relative h-[55px] w-[55px]">
-        <Image src={avatar} alt={title} fill className="rounded-full object-cover shrink-0" />
+          <Image src={avatar} alt={title} fill className="rounded-full object-cover shrink-0" />
         </div>
         <div>
-          <p 
+          <p
             className={`font-medium text-[20px] max-[400px]:text-[16px] ${onCreatorClick ? 'cursor-pointer hover:text-pink-400 transition-colors' : ''}`}
             onClick={onCreatorClick}
           >
@@ -132,15 +132,15 @@ const BoardCard: React.FC<BoardCardProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-3 mt-6">
+      <div className="grid grid-cols-2 gap-3 mt-6">
         {onInviteClick && (
-          <GlobalButton 
-            title="Invite Someone" 
-            className="w-full" 
+          <GlobalButton
+            title="Invite Someone"
+            className="w-full"
             onClick={onInviteClick}
             bgColor="#e5e5e5"
+            hover={{ color: 'white' }}
             color="#333"
-            height="40px"
           />
         )}
         <GlobalButton title={buttonText} className="w-full" onClick={onButtonClick} />
