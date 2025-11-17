@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Activity from "@/assets/svgs/activity.svg";
 import TitleCard from '@/components/cards/TitleCard';
+import Follow from "@/assets/svgs/following.svg";
 import BoardsIcon from "@/assets/svgs/board-icon.svg";
 import MyContributors from "@/assets/svgs/coins 1.svg";
 import MyMemories from "@/assets/svgs/memory-icon.svg";
@@ -71,6 +72,8 @@ const Profile = () => {
     { label: "Share with friends", icon: Friends, href: '/dashboard/friends' },
     { label: "Bio", icon: Bio, href: '/dashboard/bio' },
     { label: "Activity", icon: Activity, href: '/dashboard/activity' },
+    { label: "Followers", icon: Follow, href: '' },
+    { label: "Following", icon: Follow, href: '' },
   ];
 
   useEffect(() => {
