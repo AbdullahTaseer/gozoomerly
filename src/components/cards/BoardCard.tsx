@@ -105,7 +105,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
 
       {(invited !== undefined || wishes !== undefined || gifters !== undefined || media !== undefined) && (
         <div className="bg-[#23232A] rounded-lg p-4 mt-4">
-          <div className="flex justify-between items-center gap-2 text-center whitespace-nowrap overflow-x-auto">
+          <div className="flex justify-between items-center gap-2 text-center whitespace-nowrap">
             {invited !== undefined && (
               <div className="flex-shrink-0">
                 <p className="text-white text-lg font-semibold">{invited}</p>
@@ -151,7 +151,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mt-6">
+      <div className="flex gap-3 mt-6">
         {onInviteClick && (
           <GlobalButton
             title="Invite Someone"

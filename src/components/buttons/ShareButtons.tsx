@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageCircle, Share2, Camera, Copy, Check } from 'lucide-react';
+import Image from 'next/image';
+import WhatsappImg from "@/assets/svgs/whatsapp.png";
+import { Check, Facebook, Instagram } from 'lucide-react';
 
 type Props = {
   shareUrl: string;
@@ -27,34 +29,33 @@ const ShareButtons = ({ shareUrl, title, className }: Props) => {
 
   return (
     <div className={`flex items-center gap-3 ${className || ''}`}>
-      <a 
-        href={whatsappHref} 
-        target="_blank" 
+      <a
+        href={whatsappHref}
+        target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#20BA5A] transition-colors"
       >
-        <MessageCircle size={18} />
+        <Image src={WhatsappImg} height={24} alt='' />
         <span className="text-sm font-medium">WhatsApp</span>
       </a>
-      <a 
-        href={facebookHref} 
-        target="_blank" 
+      <a
+        href={facebookHref}
+        target="_blank"
         rel="noopener noreferrer"
         className="flex items-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition-colors"
       >
-        <Share2 size={18} />
+        <Facebook size={18} />
         <span className="text-sm font-medium">Facebook</span>
       </a>
-      <button 
-        onClick={handleCopy} 
-        title="Copy link for Instagram" 
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-          copied 
-            ? 'bg-green-500 text-white' 
-            : 'bg-[#E1306C] text-white hover:bg-[#C91A56]'
-        }`}
+      <button
+        onClick={handleCopy}
+        title="Copy link for Instagram"
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${copied
+          ? 'bg-green-500 text-white'
+          : 'bg-[#E1306C] text-white hover:bg-[#C91A56]'
+          }`}
       >
-        {copied ? <Check size={18} /> : <Camera size={18} />}
+        {copied ? <Check size={18} /> : <Instagram size={18} />}
         <span className="text-sm font-medium">{copied ? 'Copied' : 'Instagram'}</span>
       </button>
     </div>
