@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import GlobalModal from './GlobalModal';
 import GlobalButton from '../buttons/GlobalButton';
 import { Copy, Check } from 'lucide-react';
 import { generateInviteLink, copyToClipboard } from '@/lib/utils/inviteLink';
+import ShareButtons from '@/components/buttons/ShareButtons';
 
-type Props = {
+type InviteModalContentProps = {
   boardSlug: string;
   boardTitle?: string;
   onClose: () => void;
 };
 
-const InviteModalContent = ({ boardSlug, boardTitle, onClose }: Props) => {
+const InviteModalContent = ({ boardSlug, boardTitle, onClose }: InviteModalContentProps) => {
   const [inviteLink, setInviteLink] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -62,9 +64,11 @@ const InviteModalContent = ({ boardSlug, boardTitle, onClose }: Props) => {
           </button>
         </div>
 
-        {copied && (
-          <p className="text-sm text-green-600 mt-2">Link copied to clipboard!</p>
-        )}
+        <div>
+          <p className="text-sm text-gray-600 mb-2">Or share directly on:</p>
+          <ShareButtons shareUrl={inviteLink} title={boardTitle} />
+        </div>
+
       </div>
 
       <div className="flex justify-end">
@@ -82,4 +86,28 @@ const InviteModalContent = ({ boardSlug, boardTitle, onClose }: Props) => {
   );
 };
 
-export default InviteModalContent;
+type InviteModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  boardSlug: string;
+  boardTitle?: string;
+};
+
+const InviteModal = ({ isOpen, onClose, boardSlug, boardTitle }: InviteModalProps) => {
+  return (
+    <GlobalModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Invite Someone"
+      className="min-w-[400px] max-w-[600px] max-[480px]:min-w-[90vw]"
+    >
+      <InviteModalContent
+        boardSlug={boardSlug}
+        boardTitle={boardTitle}
+        onClose={onClose}
+      />
+    </GlobalModal>
+  );
+};
+
+export default InviteModal;

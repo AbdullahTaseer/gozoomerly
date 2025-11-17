@@ -94,19 +94,18 @@ const Boards = () => {
             <BoardCard
               key={board.id}
               title={board.title}
-              avatar='/default-avatar.jpg'
+              avatar={board.profiles?.profile_pic_url || '/default-avatar.jpg'}
               name={board.profiles?.name || 'Unknown'}
-              location=''
+              location={board.honoree_details?.hometown || ''}
               date={new Date(board.created_at).toLocaleDateString()}
               description={board.description || ''}
               fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
               raised={board.total_raised || 0}
               target={board.goal_amount || 0}
-              invited={0}
-              participants={board.contributors_count || 0}
-              wishes={board.wishes_count || 0}
+              invited={board.shares_count || 0}
+              wishes={board.views_count || 0}
               gifters={board.contributors_count || 0}
-              media={0}
+              media={(board as any).media_count || 0}
               topContributors={[]}
               buttonText="View Board"
               onButtonClick={() => router.push(`/dashboard/boards/${board.slug}`)}

@@ -201,6 +201,11 @@ export async function getUserBoards(userId: string) {
       board_participants!inner (
         user_id,
         role
+      ),
+      profiles:creator_id (
+        id,
+        name,
+        profile_pic_url
       )
     `)
     .eq('board_participants.user_id', userId)
@@ -209,6 +214,33 @@ export async function getUserBoards(userId: string) {
   if (error) {
     console.error('Error fetching user boards:', error);
     return { data: null, error };
+  }
+
+  // Fetch invitation counts and media counts for each board
+  if (data) {
+    const boardsWithCounts = await Promise.all(
+      data.map(async (board) => {
+        // Count invitations
+        const { count: invitedCount } = await supabase
+          .from('board_invitations')
+          .select('*', { count: 'exact', head: true })
+          .eq('board_id', board.id);
+
+        // Count media
+        const { count: mediaCount } = await supabase
+          .from('media')
+          .select('*', { count: 'exact', head: true })
+          .eq('board_id', board.id);
+
+        return {
+          ...board,
+          invited_count: invitedCount || 0,
+          media_count: mediaCount || 0
+        };
+      })
+    );
+
+    return { data: boardsWithCounts, error: null };
   }
 
   return { data, error: null };
@@ -613,10 +645,38 @@ export async function fetchActiveBoards(options?: {
     return { boards: [], error };
   }
 
-  console.log('Fetched boards:', data?.length || 0, 'boards');
-  console.log('First board:', data?.[0]);
+  // Fetch invitation counts and media counts for each board
+  if (data) {
+    const boardsWithCounts = await Promise.all(
+      data.map(async (board) => {
+        // Count invitations
+        const { count: invitedCount } = await supabase
+          .from('board_invitations')
+          .select('*', { count: 'exact', head: true })
+          .eq('board_id', board.id);
 
-  return { boards: data || [], error: null };
+        // Count media
+        const { count: mediaCount } = await supabase
+          .from('media')
+          .select('*', { count: 'exact', head: true })
+          .eq('board_id', board.id);
+
+        return {
+          ...board,
+          invited_count: invitedCount || 0,
+          media_count: mediaCount || 0
+        };
+      })
+    );
+
+    console.log('Fetched boards:', boardsWithCounts?.length || 0, 'boards');
+    console.log('First board:', boardsWithCounts?.[0]);
+
+    return { boards: boardsWithCounts || [], error: null };
+  }
+
+  // If no data, return empty array
+  return { boards: [], error: null };
 }
 
 export async function fetchUserBoards(userId: string) {

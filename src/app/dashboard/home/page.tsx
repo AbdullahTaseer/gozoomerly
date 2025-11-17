@@ -103,14 +103,13 @@ const Home = () => {
                 location={board.honoree_details?.hometown || 'No location'}
                 date={formatDate(board.deadline_date || board.created_at)}
                 description={board.description}
-                fundTitle="Target Amount"
-                raised={0}
+                fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
+                raised={board.total_raised || 0}
                 target={board.goal_amount || 0}
-                invited={0}
-                participants={0}
-                wishes={0}
-                gifters={0}
-                media={0}
+                invited={board.shares_count || 0}
+                wishes={board.views_count || 0}
+                gifters={board.contributors_count || 0}
+                media={(board as any).media_count || 0}
                 topContributors={[]}
                 buttonText="View Board"
                 onButtonClick={() => handleViewBoard(board)}
@@ -175,20 +174,14 @@ const Home = () => {
         </div>
       </div>
 
-      <GlobalModal
-        isOpen={inviteModalOpen}
-        onClose={handleCloseInviteModal}
-        title="Invite Someone"
-        className="min-w-[400px] max-w-[600px] max-[480px]:min-w-[90vw]"
-      >
-        {selectedBoard && (
-          <InviteModal
-            boardSlug={selectedBoard.slug}
-            boardTitle={selectedBoard.title}
-            onClose={handleCloseInviteModal}
-          />
-        )}
-      </GlobalModal>
+      {selectedBoard && (
+        <InviteModal
+          isOpen={inviteModalOpen}
+          onClose={handleCloseInviteModal}
+          boardSlug={selectedBoard.slug}
+          boardTitle={selectedBoard.title}
+        />
+      )}
 
     </div>
   );
