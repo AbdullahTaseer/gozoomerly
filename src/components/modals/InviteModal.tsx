@@ -99,7 +99,7 @@ const InviteModal = ({ isOpen, onClose, boardSlug, boardTitle }: InviteModalProp
       isOpen={isOpen}
       onClose={onClose}
       title="Invite Someone"
-      className="min-w-[400px] max-w-[600px] max-[480px]:min-w-[90vw]"
+      className="w-[400px] max-[470px]:w-[90vw]"
     >
       <InviteModalContent
         boardSlug={boardSlug}

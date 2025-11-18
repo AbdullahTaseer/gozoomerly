@@ -35,6 +35,8 @@ import GlobalModal from '@/components/modals/GlobalModal';
 import EditProfileModal from '@/components/modals/EditProfileModal';
 import EmailChangeForm from '@/components/modals/EmailChangeModal';
 import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
+import FollowersModalContent from '@/components/modals/FollowersModalContent';
+import FollowingModalContent from '@/components/modals/FollowingModalContent';
 
 interface UserProfile {
   id: string;
@@ -64,6 +66,8 @@ const Profile = () => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [showFollowerModal, setIsShowFollowerModal] = useState(false);
+  const [showFollowingModal, setIsShowFollowingModal] = useState(false);
 
   const menuItems = [
     { label: "Memories", icon: MyMemories, href: '/dashboard/memories' },
@@ -72,8 +76,8 @@ const Profile = () => {
     { label: "Share with friends", icon: Friends, href: '/dashboard/friends' },
     { label: "Bio", icon: Bio, href: '/dashboard/bio' },
     { label: "Activity", icon: Activity, href: '/dashboard/activity' },
-    { label: "Followers", icon: Follow, href: '' },
-    { label: "Following", icon: Follow, href: '' },
+    { label: "Followers", icon: Follow, onClick: () => setIsShowFollowerModal(true) },
+    { label: "Following", icon: Follow, onClick: () => setIsShowFollowingModal(true) },
   ];
 
   useEffect(() => {
@@ -267,13 +271,24 @@ const Profile = () => {
 
       <div className='mt-4 bg-white border-b pb-4'>
         {menuItems.map((item, idx) => (
-          <Link key={idx} href={item.href} className='flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100'>
-            <div className='flex items-center gap-3'>
-              <Image src={item.icon} alt='' width={20} height={20} />
-              <span className='text-gray-800 font-medium'>{item.label}</span>
+          <button
+            key={idx}
+            type="button"
+            onClick={() => {
+              if (item.href) {
+                router.push(item.href);
+              } else if (item.onClick) {
+                item.onClick();
+              }
+            }}
+            className="w-full text-left flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100"
+          >
+            <div className="flex items-center gap-3">
+              <Image src={item.icon} alt="" width={20} height={20} />
+              <span className="text-gray-800 font-medium">{item.label}</span>
             </div>
-            <ChevronRight className='text-[#8A8A8A]' size={22} />
-          </Link>
+            <ChevronRight className="text-[#8A8A8A]" size={22} />
+          </button>
         ))}
       </div>
 
@@ -389,6 +404,24 @@ const Profile = () => {
           await fetchUserData();
         }}
       />
+
+      <GlobalModal
+        title='Followers'
+        isOpen={showFollowerModal}
+        onClose={() => setIsShowFollowerModal(false)}
+        className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+      >
+        <FollowersModalContent />
+      </GlobalModal>
+
+      <GlobalModal
+        title='Following'
+        isOpen={showFollowingModal}
+        onClose={() => setIsShowFollowingModal(false)}
+        className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+      >
+        <FollowingModalContent />
+      </GlobalModal>
 
     </div>
   );

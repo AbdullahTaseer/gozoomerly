@@ -32,7 +32,7 @@ const GlobalModal = ({
       padding: '0px',
       transform: 'translate(-50%, -50%)',
       border: '2px solid #E9E9E9',
-      borderRadius: '10px',
+      borderRadius: '20px',
       zIndex: 120,
     },
     overlay: {
@@ -68,7 +68,7 @@ const GlobalModal = ({
               {title}
             </h3>
           </div>
-          <div onClick={onClose} className="hover:bg-gray-100 w-[28px] h-[28px] rounded-md flex items-center justify-center cursor-pointer">
+          <div onClick={onClose} className="hover:bg-gray-100 border border-black w-[28px] h-[28px] rounded-full flex items-center justify-center cursor-pointer">
             <X size={18} />
           </div>
         </div>

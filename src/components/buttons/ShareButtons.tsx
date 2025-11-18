@@ -28,21 +28,21 @@ const ShareButtons = ({ shareUrl, title, className }: Props) => {
   };
 
   return (
-    <div className={`flex items-center gap-3 ${className || ''}`}>
+    <div className={`grid grid-cols-3 max-[500px]:grid-cols-2 gap-3 ${className || ''}`}>
       <a
         href={whatsappHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 px-4 py-2 bg-[#25D366] text-white rounded-lg hover:bg-[#20BA5A] transition-colors"
+        className="flex items-center justify-center gap-2 px-4 py-2 h-[37px] bg-[#25D366] text-white rounded-lg hover:bg-[#20BA5A] transition-colors"
       >
-        <Image src={WhatsappImg} height={24} alt='' />
+        <Image src={WhatsappImg} height={32} alt='' />
         <span className="text-sm font-medium">WhatsApp</span>
       </a>
       <a
         href={facebookHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 px-4 py-2 bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition-colors"
+        className="flex items-center justify-center gap-2 px-4 py-2 h-[37px] bg-[#1877F2] text-white rounded-lg hover:bg-[#166FE5] transition-colors"
       >
         <Facebook size={18} />
         <span className="text-sm font-medium">Facebook</span>
@@ -50,9 +50,9 @@ const ShareButtons = ({ shareUrl, title, className }: Props) => {
       <button
         onClick={handleCopy}
         title="Copy link for Instagram"
-        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${copied
-          ? 'bg-green-500 text-white'
-          : 'bg-[#E1306C] text-white hover:bg-[#C91A56]'
+        className={`flex items-center justify-center gap-2 px-4 py-2 h-[37px] rounded-lg transition-colors ${copied
+          ? 'bg-green-500 text-white cursor-not-allowed'
+          : 'bg-[#E1306C] text-white hover:bg-[#C91A56] cursor-pointer'
           }`}
       >
         {copied ? <Check size={18} /> : <Instagram size={18} />}
