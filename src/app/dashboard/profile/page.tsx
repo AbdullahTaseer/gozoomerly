@@ -37,6 +37,7 @@ import EmailChangeForm from '@/components/modals/EmailChangeModal';
 import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 import FollowersModalContent from '@/components/modals/FollowersModalContent';
 import FollowingModalContent from '@/components/modals/FollowingModalContent';
+import { recalculateFollowingCount, recalculateFollowersCount } from '@/lib/supabase/followUtils';
 
 interface UserProfile {
   id: string;
@@ -110,7 +111,17 @@ const Profile = () => {
         console.error('Profile fetch error:', profileError);
         setError(`Failed to load profile data: ${profileError.message}`);
       } else if (profileData) {
-        setProfile(profileData);
+        const [actualFollowingCount, actualFollowersCount] = await Promise.all([
+          recalculateFollowingCount(currentUser.id),
+          recalculateFollowersCount(currentUser.id)
+        ]);
+
+        const updatedProfile = {
+          ...profileData,
+          following_count: actualFollowingCount,
+          followers_count: actualFollowersCount
+        };
+        setProfile(updatedProfile);
       } else {
         const newProfile: any = {
           id: currentUser.id,
@@ -390,7 +401,7 @@ const Profile = () => {
         <PasswordChangeForm
           onClose={() => setShowPasswordModal(false)}
           onSuccess={() => {
-            // Optional: Show success message
+            
           }}
         />
       </GlobalModal>
@@ -408,19 +419,46 @@ const Profile = () => {
       <GlobalModal
         title='Followers'
         isOpen={showFollowerModal}
-        onClose={() => setIsShowFollowerModal(false)}
+        onClose={async () => {
+          setIsShowFollowerModal(false);
+          if (user?.id) {
+            const [actualFollowingCount, actualFollowersCount] = await Promise.all([
+              recalculateFollowingCount(user.id),
+              recalculateFollowersCount(user.id)
+            ]);
+            setProfile(prev => prev ? {
+              ...prev,
+              following_count: actualFollowingCount,
+              followers_count: actualFollowersCount
+            } : null);
+          }
+        }}
         className='w-[550px] pb-0 max-[600px]:w-[90vw]'
       >
-        <FollowersModalContent />
+        <FollowersModalContent userId={user?.id} />
       </GlobalModal>
 
       <GlobalModal
         title='Following'
         isOpen={showFollowingModal}
-        onClose={() => setIsShowFollowingModal(false)}
+        onClose={async () => {
+          setIsShowFollowingModal(false);
+          // Recalculate counts when modal closes
+          if (user?.id) {
+            const [actualFollowingCount, actualFollowersCount] = await Promise.all([
+              recalculateFollowingCount(user.id),
+              recalculateFollowersCount(user.id)
+            ]);
+            setProfile(prev => prev ? {
+              ...prev,
+              following_count: actualFollowingCount,
+              followers_count: actualFollowersCount
+            } : null);
+          }
+        }}
         className='w-[550px] pb-0 max-[600px]:w-[90vw]'
       >
-        <FollowingModalContent />
+        <FollowingModalContent userId={user?.id} />
       </GlobalModal>
 
     </div>

@@ -1,7 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
 import { Heart, MessageCircle } from 'lucide-react';
+import { Metadata } from 'next';
 import { getBoardBySlug } from '@/lib/supabase/boards';
+import { createClient } from '@/lib/supabase/server';
 
 import AvatarFallback from "@/assets/svgs/Sam.svg";
 import ShareNetwork from "@/assets/svgs/ShareNetwork.svg";
@@ -15,6 +17,103 @@ import ShareButtons from '@/components/buttons/ShareButtons';
 
 interface PageProps {
   params: { slug: string }
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { data: board } = await getBoardBySlug(params.slug);
+  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const shareUrl = `${siteBase}/dashboard/boards/${params.slug}`;
+  
+  let imageUrl = `${siteBase}/Zoomerly.svg`; 
+  if (board?.cover_media_id) {
+    try {
+      const supabase = await createClient();
+      const { data: media } = await supabase
+        .from('media')
+        .select('cdn_url')
+        .eq('id', board.cover_media_id)
+        .single();
+      if (media?.cdn_url) {
+        imageUrl = media.cdn_url.startsWith('http') 
+          ? media.cdn_url 
+          : `${siteBase}${media.cdn_url.startsWith('/') ? '' : '/'}${media.cdn_url}`;
+      }
+    } catch (error) {
+      console.error('Error fetching cover media:', error);
+    }
+  }
+  
+  if (imageUrl === `${siteBase}/Zoomerly.svg` && board?.id) {
+    try {
+      const supabase = await createClient();
+      const { data: firstMedia } = await supabase
+        .from('media')
+        .select('cdn_url')
+        .eq('board_id', board.id)
+        .eq('media_type', 'image')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (firstMedia?.cdn_url) {
+        imageUrl = firstMedia.cdn_url.startsWith('http') 
+          ? firstMedia.cdn_url 
+          : `${siteBase}${firstMedia.cdn_url.startsWith('/') ? '' : '/'}${firstMedia.cdn_url}`;
+      }
+    } catch (error) {
+    }
+  }
+
+  const title = board?.title || 'Board';
+  const description = board?.description 
+    ? `${board.description}${board?.goal_amount ? ` - Goal: $${board.goal_amount}` : ''}`
+    : `Join this board${board?.goal_amount ? ` - Goal: $${board.goal_amount}` : ''}`;
+  const creatorName = (board as any)?.profiles?.name || 'Unknown';
+
+  return {
+    title: title,
+    description: description,
+    metadataBase: new URL(siteBase),
+    openGraph: {
+      type: 'website',
+      url: shareUrl,
+      title: title,
+      description: description,
+      siteName: 'Zoomerly',
+      locale: 'en_US',
+      images: [
+        {
+          url: imageUrl,
+          width: 1200,
+          height: 630,
+          alt: title,
+          type: 'image/jpeg',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: title,
+      description: description,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: shareUrl,
+    },
+    other: {
+      'og:url': shareUrl,
+      'og:type': 'website',
+      'og:title': title,
+      'og:description': description,
+      'og:image': imageUrl,
+      'og:image:secure_url': imageUrl,
+      'og:image:type': 'image/jpeg',
+      'og:image:width': '1200',
+      'og:image:height': '630',
+      'og:image:alt': title,
+      'og:site_name': 'Zoomerly',
+      'og:locale': 'en_US',
+    },
+  };
 }
 
 export default async function BoardPage({ params }: PageProps) {
@@ -60,7 +159,6 @@ export default async function BoardPage({ params }: PageProps) {
             <p className='text-sm bg-black rounded-full px-3 py-1'>Time left to wish : 00-00-00</p>
           </div>
 
-          {/* Preserved design block commented out in original */}
         </div>
       </div>
 

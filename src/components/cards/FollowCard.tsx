@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
+import DefaultAvatar from "@/assets/svgs/boy-avatar.svg";
 
 type props = {
   imgSrc: string | StaticImport,
@@ -11,9 +12,36 @@ type props = {
 }
 
 const FollowCard = ({ imgSrc, name, data, btnTitle, onClickBtn }: props) => {
+  const [imgError, setImgError] = useState(false);
+  const [fallbackSrc, setFallbackSrc] = useState<string | StaticImport>(imgSrc);
+
+  const handleImageError = () => {
+    if (!imgError) {
+      setImgError(true);
+      setFallbackSrc(DefaultAvatar);
+    }
+  };
+
   return (
     <div className='flex gap-3 items-center bg-[#F4F4F4] p-2 rounded-xl'>
-      <Image src={imgSrc} height={50} width={50} alt={name} className='rounded-full shrink-0 overflow-hidden' />
+      <div className='relative h-[50px] w-[50px] shrink-0'>
+        {typeof fallbackSrc === 'string' && (fallbackSrc.startsWith('http') || fallbackSrc.startsWith('/')) ? (
+          <img
+            src={fallbackSrc}
+            alt={name}
+            className='rounded-full object-cover h-full w-full'
+            onError={handleImageError}
+          />
+        ) : (
+          <Image
+            src={fallbackSrc}
+            alt={name}
+            fill
+            className='rounded-full object-cover'
+            onError={handleImageError}
+          />
+        )}
+      </div>
       <div className="flex-1 min-w-0 whitespace-nowrap">
         <p className='font-semibold text-md max-[500px]:text-sm'>{name}</p>
         <p className='font-light text-sm max-[500px]:text-xs text-ellipsis line-clamp-1 overflow-hidden'>{data}</p>

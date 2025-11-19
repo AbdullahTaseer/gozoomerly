@@ -1,33 +1,83 @@
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import GlobalInput from '../inputs/GlobalInput';
 import FollowCard from '../cards/FollowCard';
 import Avatar from "@/assets/svgs/boy-avatar.svg";
+import { getFollowers, type UserConnection } from '@/lib/supabase/followUtils';
+import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
+import { authService } from '@/lib/supabase/auth';
 
-const FollowersModalContent = () => {
+type Props = {
+  userId?: string;
+};
 
+const FollowersModalContent = ({ userId }: Props) => {
   const [search, setSearch] = useState("");
+  const [followers, setFollowers] = useState<UserConnection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
 
-  const [followers, setFollowers] = useState([
-    { id: 1, name: "Rasib Malik", data: "Followed by Nashit Malik + 6 others", imgSrc: Avatar, isFollowing: false },
-    { id: 2, name: "Nashit Khan", data: "Followed by Ali Raza + 2 others", imgSrc: Avatar, isFollowing: false },
-    { id: 3, name: "Saeed Ahmad", data: "Followed by Farhan Malik + 3 others", imgSrc: Avatar, isFollowing: false },
-    { id: 4, name: "Hassan Ali", data: "Followed by Umair Tariq + 1 other", imgSrc: Avatar, isFollowing: false },
-    { id: 5, name: "Bilal Sheikh", data: "Followed by Ahmad Khan + 4 others", imgSrc: Avatar, isFollowing: false },
-    { id: 6, name: "Usman Tariq", data: "Followed by Danish Ali + 3 others", imgSrc: Avatar, isFollowing: false },
-    { id: 7, name: "Zain Rehman", data: "Followed by Imran Khan + 5 others", imgSrc: Avatar, isFollowing: false },
-    { id: 8, name: "Hamza Yasin", data: "Followed by Shahzad Ali + 3 others", imgSrc: Avatar, isFollowing: false },
-    { id: 9, name: "Ahsan Javed", data: "Followed by Moiz Ahmed + 6 others", imgSrc: Avatar, isFollowing: false },
-    { id: 10, name: "Moiz Ahmed", data: "Followed by Ahsan Javed + 2 others", imgSrc: Avatar, isFollowing: false },
-  ]);
+  useEffect(() => {
+    if (userId) {
+      fetchFollowers();
+    }
+  }, [userId]);
 
+  const fetchFollowers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const currentUser = await authService.getUser();
+      if (!currentUser || !userId) return;
 
-  const handleToggleFollow = (id: number) => {
-    setFollowers(prev =>
-      prev.map(user =>
-        user.id === id ? { ...user, isFollowing: !user.isFollowing } : user
-      )
-    );
+      const data = await getFollowers(userId);
+      setFollowers(data);
+
+      if (data.length > 0) {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const followerIds = data.map(f => f.user_id);
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('followee_id')
+          .eq('follower_id', currentUser.id)
+          .in('followee_id', followerIds);
+
+        const statusMap: Record<string, boolean> = {};
+        const followingIds = new Set(followData?.map(f => f.followee_id) || []);
+        data.forEach(follower => {
+          statusMap[follower.user_id] = followingIds.has(follower.user_id);
+        });
+        setFollowingStatus(statusMap);
+      }
+    } catch (err: any) {
+      console.error('Error fetching followers:', err);
+      setError(err.message || 'Failed to load followers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleFollow = async (followerUserId: string) => {
+    try {
+      const currentUser = await authService.getUser();
+      if (!currentUser) return;
+
+      const isFollowing = followingStatus[followerUserId];
+      
+      if (isFollowing) {
+        await unfollowUser(currentUser.id, followerUserId);
+        setFollowingStatus(prev => ({ ...prev, [followerUserId]: false }));
+      } else {
+        await followUser(currentUser.id, followerUserId);
+        setFollowingStatus(prev => ({ ...prev, [followerUserId]: true }));
+      }
+    } catch (err: any) {
+      console.error('Error toggling follow:', err);
+    }
   };
 
   const filteredList = followers.filter(user =>
@@ -51,19 +101,28 @@ const FollowersModalContent = () => {
       </div>
 
       <div className="space-y-3 h-[65vh] overflow-y-auto scrollbar-hide">
-        {filteredList.length > 0 ? (
+        {loading ? (
+          <div className="text-center text-gray-500 mt-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+            <p className="mt-2">Loading followers...</p>
+          </div>
+        ) : error ? (
+          <p className="text-center text-red-500 mt-10">{error}</p>
+        ) : filteredList.length > 0 ? (
           filteredList.map((user) => (
             <FollowCard
-              key={user.id}
-              name={user.name}
-              data={user.data}
-              imgSrc={user.imgSrc}
-              btnTitle={user.isFollowing ? "Following" : "Follow"}
-              onClickBtn={() => handleToggleFollow(user.id)}
+              key={user.follow_id}
+              name={user.name || 'Unknown'}
+              data={user.notes || `Followed on ${new Date(user.followed_at).toLocaleDateString()}`}
+              imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
+              btnTitle={followingStatus[user.user_id] ? "Following" : "Follow"}
+              onClickBtn={() => handleToggleFollow(user.user_id)}
             />
           ))
         ) : (
-          <p className="text-center text-gray-500 mt-10">No results found</p>
+          <p className="text-center text-gray-500 mt-10">
+            {search ? "No results found" : "No followers yet"}
+          </p>
         )}
       </div>
     </div>

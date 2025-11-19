@@ -1,31 +1,57 @@
-import React, { useState } from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import GlobalInput from "../inputs/GlobalInput";
 import FollowCard from "../cards/FollowCard";
 import Avatar from "@/assets/svgs/boy-avatar.svg";
+import { getFollowing, type UserConnection } from '@/lib/supabase/followUtils';
+import { unfollowUser } from '@/lib/supabase/followUtils';
+import { authService } from '@/lib/supabase/auth';
 
-const FollowingModalContent = () => {
+type Props = {
+  userId?: string;
+};
+
+const FollowingModalContent = ({ userId }: Props) => {
   const [search, setSearch] = useState("");
+  const [following, setFollowing] = useState<UserConnection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [following, setFollowing] = useState([
-    { id: 1, name: "Rasib Malik", data: "Followed by Nashit Malik + 6 others", imgSrc: Avatar, isFollowing: true },
-    { id: 2, name: "Nashit Khan", data: "Followed by Ali Raza + 2 others", imgSrc: Avatar, isFollowing: true },
-    { id: 3, name: "Saeed Ahmad", data: "Followed by Farhan Malik + 3 others", imgSrc: Avatar, isFollowing: true },
-    { id: 4, name: "Hassan Ali", data: "Followed by Umair Tariq + 1 other", imgSrc: Avatar, isFollowing: true },
-    { id: 5, name: "Bilal Sheikh", data: "Followed by Ahmad Khan + 4 others", imgSrc: Avatar, isFollowing: true },
-    { id: 6, name: "Usman Tariq", data: "Followed by Danish Ali + 3 others", imgSrc: Avatar, isFollowing: true },
-    { id: 7, name: "Zain Rehman", data: "Followed by Imran Khan + 5 others", imgSrc: Avatar, isFollowing: true },
-    { id: 8, name: "Hamza Yasin", data: "Followed by Shahzad Ali + 3 others", imgSrc: Avatar, isFollowing: true },
-    { id: 9, name: "Ahsan Javed", data: "Followed by Moiz Ahmed + 6 others", imgSrc: Avatar, isFollowing: true },
-    { id: 10, name: "Moiz Ahmed", data: "Followed by Ahsan Javed + 2 others", imgSrc: Avatar, isFollowing: true },
-  ]);
+  useEffect(() => {
+    if (userId) {
+      fetchFollowing();
+    }
+  }, [userId]);
 
-  const handleToggleFollow = (id: number) => {
-    setFollowing(prev =>
-      prev.map(user =>
-        user.id === id ? { ...user, isFollowing: !user.isFollowing } : user
-      )
-    );
+  const fetchFollowing = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      if (!userId) return;
+
+      const data = await getFollowing(userId);
+      setFollowing(data);
+    } catch (err: any) {
+      console.error('Error fetching following:', err);
+      setError(err.message || 'Failed to load following');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleFollow = async (followingUserId: string) => {
+    try {
+      const currentUser = await authService.getUser();
+      if (!currentUser || !userId) return;
+
+      await unfollowUser(userId, followingUserId);
+      
+      setFollowing(prev => prev.filter(user => user.user_id !== followingUserId));
+    } catch (err: any) {
+      console.error('Error unfollowing:', err);
+    }
   };
 
   const filteredList = following.filter(user =>
@@ -48,19 +74,28 @@ const FollowingModalContent = () => {
       </div>
 
       <div className="space-y-3 h-[65vh] overflow-y-auto scrollbar-hide">
-        {filteredList.length > 0 ? (
+        {loading ? (
+          <div className="text-center text-gray-500 mt-10">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+            <p className="mt-2">Loading following...</p>
+          </div>
+        ) : error ? (
+          <p className="text-center text-red-500 mt-10">{error}</p>
+        ) : filteredList.length > 0 ? (
           filteredList.map(user => (
             <FollowCard
-              key={user.id}
-              name={user.name}
-              data={user.data}
-              imgSrc={user.imgSrc}
-              btnTitle={user.isFollowing ? "Following" : "Follow"}
-              onClickBtn={() => handleToggleFollow(user.id)}
+              key={user.follow_id}
+              name={user.name || 'Unknown'}
+              data={user.notes || `Followed on ${new Date(user.followed_at).toLocaleDateString()}`}
+              imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
+              btnTitle="Following"
+              onClickBtn={() => handleToggleFollow(user.user_id)}
             />
           ))
         ) : (
-          <p className="text-center text-gray-500 mt-10">No results found</p>
+          <p className="text-center text-gray-500 mt-10">
+            {search ? "No results found" : "Not following anyone yet"}
+          </p>
         )}
       </div>
 

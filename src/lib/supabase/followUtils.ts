@@ -1,10 +1,101 @@
 import { createClient } from './client';
 
+export interface UserConnection {
+  user_id: string;
+  follow_id: string;
+  name: string;
+  profile_pic?: string;
+  profile_pic_url?: string;
+  is_close_friend: boolean;
+  is_favorite: boolean;
+  notes?: string;
+  followed_at: string;
+}
+
+export async function getFollowers(userId: string, limit = 50, offset = 0): Promise<UserConnection[]> {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase.rpc("get_user_connections", {
+    p_user_id: userId,
+    p_type: "followers",
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw new Error(`Failed to get followers: ${error.message}`);
+  }
+
+  return data || [];
+}
+
+export async function getFollowing(userId: string, limit = 50, offset = 0): Promise<UserConnection[]> {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase.rpc("get_user_connections", {
+    p_user_id: userId,
+    p_type: "following",
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw new Error(`Failed to get following: ${error.message}`);
+  }
+
+  return data || [];
+}
+
+export async function recalculateFollowingCount(userId: string): Promise<number> {
+  const supabase = createClient();
+  
+  const { count, error } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', userId);
+
+  if (error) {
+    console.error('Error counting following:', error);
+    return 0;
+  }
+
+  const actualCount = count || 0;
+
+  await supabase
+    .from('profiles')
+    .update({ following_count: actualCount })
+    .eq('id', userId);
+
+  return actualCount;
+}
+
+export async function recalculateFollowersCount(userId: string): Promise<number> {
+  const supabase = createClient();
+  
+  const { count, error } = await supabase
+    .from('follows')
+    .select('*', { count: 'exact', head: true })
+    .eq('followee_id', userId);
+
+  if (error) {
+    console.error('Error counting followers:', error);
+    return 0;
+  }
+
+  const actualCount = count || 0;
+
+  await supabase
+    .from('profiles')
+    .update({ followers_count: actualCount })
+    .eq('id', userId);
+
+  return actualCount;
+}
+
 export async function followUser(followerId: string, followeeId: string) {
   const supabase = createClient();
   
   try {
-    // First check if already following
     const { data: existingFollow } = await supabase
       .from('follows')
       .select('*')
@@ -16,7 +107,6 @@ export async function followUser(followerId: string, followeeId: string) {
       return { success: false, error: 'Already following this user' };
     }
 
-    // Create the follow relationship
     const { data: followData, error: followError } = await supabase
       .from('follows')
       .insert({
@@ -33,7 +123,6 @@ export async function followUser(followerId: string, followeeId: string) {
       return { success: false, error: followError };
     }
 
-    // Get current counts
     const [followerProfile, followeeProfile] = await Promise.all([
       supabase
         .from('profiles')
@@ -47,7 +136,6 @@ export async function followUser(followerId: string, followeeId: string) {
         .single()
     ]);
 
-    // Update counts
     const updatePromises = [];
 
     if (!followerProfile.error && followerProfile.data) {
@@ -85,7 +173,6 @@ export async function unfollowUser(followerId: string, followeeId: string) {
   const supabase = createClient();
   
   try {
-    // Delete the follow relationship
     const { error: deleteError } = await supabase
       .from('follows')
       .delete()
@@ -97,7 +184,6 @@ export async function unfollowUser(followerId: string, followeeId: string) {
       return { success: false, error: deleteError };
     }
 
-    // Get current counts
     const [followerProfile, followeeProfile] = await Promise.all([
       supabase
         .from('profiles')
@@ -111,7 +197,6 @@ export async function unfollowUser(followerId: string, followeeId: string) {
         .single()
     ]);
 
-    // Update counts
     const updatePromises = [];
 
     if (!followerProfile.error && followerProfile.data) {
