@@ -70,7 +70,6 @@ const VisitProfilePage = () => {
     try {
       setLoading(true);
       
-      // Get current user
       const currentUser = await authService.getUser();
       if (!currentUser) {
         router.push('/signin');
@@ -78,7 +77,6 @@ const VisitProfilePage = () => {
       }
       setCurrentUserId(currentUser.id);
 
-      // If user is trying to view their own profile, redirect to profile page
       if (currentUser.id === profileId) {
         router.push('/dashboard/profile');
         return;
@@ -86,7 +84,6 @@ const VisitProfilePage = () => {
 
       const supabase = createClient();
       
-      // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -101,7 +98,6 @@ const VisitProfilePage = () => {
 
       setProfile(profileData);
 
-      // Check if current user is following this profile
       const { data: followData } = await supabase
         .from('follows')
         .select('*')

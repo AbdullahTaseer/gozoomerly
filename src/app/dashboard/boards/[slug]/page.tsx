@@ -1,15 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
-import { Heart, MessageCircle } from 'lucide-react';
 import { Metadata } from 'next';
 import { getBoardBySlug } from '@/lib/supabase/boards';
 import { createClient } from '@/lib/supabase/server';
-
-import AvatarFallback from "@/assets/svgs/Sam.svg";
-import ShareNetwork from "@/assets/svgs/ShareNetwork.svg";
-import FarahImg from "@/assets/svgs/Farah.svg";
-import smallAnnaAvatar from "@/assets/pngs/small-anna.png";
-import BoardBgImg from "@/assets/pngs/live-board-bg.png";
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import FundRaiserCard from '@/components/cards/FundRaiserCard';
@@ -118,57 +111,130 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BoardPage({ params }: PageProps) {
   const { data: board } = await getBoardBySlug(params.slug);
-  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
   const shareUrl = `${siteBase}/dashboard/boards/${params.slug}`;
 
+  // Fetch gift options and statistics
+  const supabase = await createClient();
+  let giftOptions: any[] = [];
+  let topContributors: any[] = [];
+  let invitedCount = 0;
+  let participantsCount = 0;
+  let mediaCount = 0;
+
+  if (board?.id) {
+    // Fetch gift options
+    const { data: giftData } = await supabase
+      .from('board_gift_options')
+      .select('*')
+      .eq('board_id', board.id)
+      .order('display_order', { ascending: true });
+
+    if (giftData) {
+      giftOptions = giftData;
+    }
+
+    // Fetch top contributors (from gift options with amounts)
+    if (giftData && giftData.length > 0) {
+      topContributors = giftData
+        .filter(g => g.amount > 0)
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5)
+        .map(g => ({
+          label: g.label || `Gift - $${g.amount}`,
+          amount: g.amount
+        }));
+    }
+
+    // Count invitations
+    const { count: invited } = await supabase
+      .from('board_invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('board_id', board.id);
+    invitedCount = invited || 0;
+
+    // Count media
+    const { count: media } = await supabase
+      .from('media')
+      .select('*', { count: 'exact', head: true })
+      .eq('board_id', board.id);
+    mediaCount = media || 0;
+
+    // Participants count (contributors)
+    participantsCount = board.contributors_count || 0;
+  }
+
+  const raised = board?.total_raised || 0;
+  const target = board?.goal_amount || 0;
+  const wishes = board?.wishes_count || 0;
+  const gifters = board?.contributors_count || 0;
+
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-[#0A0A0A] min-h-screen">
+      <div className='max-w-[900px] mx-auto px-4 py-8'>
+        {/* Title */}
+        <h1 className='text-white text-[32px] max-[768px]:text-[24px] font-bold mb-6'>
+          {board?.description || board?.title || 'Board'}
+        </h1>
 
-      <div className='relative w-full min-h-[400px] p-4 max-[420px]:p-3'>
-        <Image src={BoardBgImg} alt='' className='inset-0 h-full w-full object-cover absolute' />
-
-        <div className='relative z-10 max-w-[860px] mx-auto'>
-          <div className='flex justify-between items-center flex-wrap mt-4 gap-3'>
-            <p className='text-[42px] max-[768px]:text-[28px] relative text-white'>{board?.title || 'Board'}</p>
-            <div className='flex gap-3 mt-4 items-center'>
-              <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Post Media</p>
-              <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Wish</p>
-              <ShareButtons shareUrl={shareUrl} title={board?.title} />
-            </div>
-          </div>
-
-          <div className='flex items-center gap-3 mt-4'>
-            <Image src={AvatarFallback} alt='' height={50} width={50} className='rounded-full border-3 border-pink-100' />
-            <div className='text-white'>
-              <p className='text-md'>{(board as any)?.profiles?.name || 'Unknown'}</p>
-              <p className='text-sm'> <span className='font-bold'>Hometown:</span> {board?.honoree_details?.hometown || '—'} • <span className='font-bold'>Birthdate:</span> {board?.honoree_details?.date_of_birth || '—'}</p>
-            </div>
-          </div>
-
-          <p className='text-white pt-4 text-[16px] max-[450px]:text-[14px]'>
-            {board?.description || 'No description provided.'}{board?.goal_amount ? ` and the goal is $${board.goal_amount}` : ''}
+        {/* Goal Progress */}
+        <div className="bg-black p-6 rounded-[24px] mb-6">
+          <p className="text-white text-[24px] font-bold mb-4">
+            Goal Progress
           </p>
-
-          <div className='flex gap-2 items-center mt-6 text-white'>
-            <span className='text-lg'>Created by</span>
-            <Image src={smallAnnaAvatar} alt='' height={40} width={40} className='rounded-full' />
-            <span>{(board as any)?.profiles?.name || 'Unknown'}</span>
+          <div className="w-full h-[6px] bg-gray-600 rounded-full">
+            <div
+              className="h-[6px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
+              style={{ width: `${target > 0 ? Math.min((raised / target) * 100, 100) : 0}%` }}
+            ></div>
           </div>
-          <div className='flex justify-between flex-wrap gap-3 items-center text-white my-5'>
-            <p className='font-bold text-lg'>This surprise board will be delivered {board?.deadline_date ? `on ${new Date(board.deadline_date).toLocaleDateString()}` : ''}</p>
-            <p className='text-sm bg-black rounded-full px-3 py-1'>Time left to wish : 00-00-00</p>
+          <div className="flex justify-between text-sm text-white mt-2">
+            <span>Raised: ${raised.toLocaleString()}</span>
+            <span>Target: ${target.toLocaleString()}</span>
           </div>
+        </div>
 
+        {/* Statistics */}
+        <div className="bg-[#1B1B1B] p-4 rounded-xl mb-6">
+          <div className="flex justify-between items-center gap-2 text-center flex-wrap">
+            <div className="flex-1 min-w-[100px]">
+              <p className="text-white text-lg font-semibold">{invitedCount}</p>
+              <p className="text-gray-300 text-xs mt-1">Invited</p>
+            </div>
+            <div className="flex-1 min-w-[100px]">
+              <p className="text-white text-lg font-semibold">{participantsCount}</p>
+              <p className="text-gray-300 text-xs mt-1">Participants</p>
+            </div>
+            <div className="flex-1 min-w-[100px]">
+              <p className="text-white text-lg font-semibold">{wishes}</p>
+              <p className="text-gray-300 text-xs mt-1">Wishes</p>
+            </div>
+            <div className="flex-1 min-w-[100px]">
+              <p className="text-white text-lg font-semibold">{gifters}</p>
+              <p className="text-gray-300 text-xs mt-1">Gifters</p>
+            </div>
+            <div className="flex-1 min-w-[100px]">
+              <p className="text-white text-lg font-semibold">{mediaCount >= 500 ? `${mediaCount}+` : mediaCount}</p>
+              <p className="text-gray-300 text-xs mt-1">Media</p>
+            </div>
+          </div>
+        </div>
+
+        {/* FundRaiser Card with Gift Options */}
+        <FundRaiserCard 
+          raised={raised}
+          target={target}
+          giftOptions={giftOptions}
+          topContributors={topContributors}
+        />
+
+        {/* Media Sections */}
+        <div className='mt-6 space-y-6'>
+          <PostsImagesCarouselCard />
+          <PostsVideoCard />
+          <PostsImagesCarouselCard />
         </div>
       </div>
-
-      <div className='max-w-[745px] mx-auto px-4 py-6 space-y-6'>
-        <FundRaiserCard />
-        <PostsImagesCarouselCard />
-        <PostsVideoCard />
-        <PostsImagesCarouselCard />
-      </div>
-
     </div>
   );
 }

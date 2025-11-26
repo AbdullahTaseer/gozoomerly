@@ -155,8 +155,6 @@ const CreateBirthdayBoard = () => {
           invites_can_invite: customFieldValues.invites_can_invite ?? false,
         };
 
-        console.log('Creating board with data:', boardData);
-
         const { data, error } = await createBoard(userId, boardData);
         if (data && !error) {
           setBoardId(data.id);
@@ -177,11 +175,9 @@ const CreateBirthdayBoard = () => {
               console.log('Gift saved to board:', giftOptionData);
             } catch (giftError) {
               console.error('Error saving gift:', giftError);
-              // Continue anyway - gift is optional
             }
           }
           
-          // Board created successfully, go to final step
           setStep(7);
         } else {
           console.error('Error creating board:', error);

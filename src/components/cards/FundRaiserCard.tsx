@@ -1,70 +1,107 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
+import { giftsData } from "@/lib/MockData";
 
-const FundRaiserCard = () => {
-  const [selectedCost, setSelectedCost] = useState<string>("$10");
+type GiftOption = {
+  id?: string;
+  label?: string;
+  amount: number;
+  is_custom?: boolean;
+};
 
-  const costs = ["$10", "$25", "$50", "$100", "$250", "$500", "Custom"];
-  const raised = 1850;
-  const target = 3000;
+type TopContributor = {
+  label: string;
+  amount: number;
+};
 
-  const progress = (raised / target) * 100;
+type FundRaiserCardProps = {
+  raised?: number;
+  target?: number;
+  giftOptions?: GiftOption[];
+  topContributors?: TopContributor[];
+};
+
+const FundRaiserCard = ({ 
+  raised = 0, 
+  target = 0, 
+  giftOptions = [],
+  topContributors = []
+}: FundRaiserCardProps) => {
+  const [selectedGift, setSelectedGift] = useState<string | null>(null);
+
+  // Map gift options to display format with icons
+  const getGiftIcon = (label: string) => {
+    const gift = giftsData.find(g => 
+      label.toLowerCase().includes(g.label.toLowerCase()) ||
+      g.label.toLowerCase().includes(label.toLowerCase())
+    );
+    return gift?.icon || giftsData[0]?.icon;
+  };
+
+  // Combine gift options with default gifts if needed
+  const displayGifts = giftOptions.length > 0 
+    ? giftOptions.map(g => ({
+        label: g.label || `$${g.amount}`,
+        amount: g.amount,
+        icon: getGiftIcon(g.label || ''),
+        isCustom: g.is_custom || false
+      }))
+    : giftsData.slice(0, 5).map(g => ({
+        label: g.label,
+        amount: g.price,
+        icon: g.icon,
+        isCustom: false
+      }));
+
+  // Add Custom option
+  displayGifts.push({ label: 'Custom', amount: 0, icon: null, isCustom: true });
 
   return (
     <div className="bg-black p-6 rounded-[24px]">
-  
-      <p className="text-white text-[24px] font-bold">
-        Let's support <span className="capitalize">sean</span> to get his dream guitar
-      </p>
-
-      
-      <div className="mt-4">
-        <p className="text-white font-semibold">Goal Progress</p>
-        <div className="w-full h-[6px] bg-gray-600 rounded-full mt-2">
-          <div
-            className="h-[6px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
-            style={{ width: `${progress}%` }}
-          ></div>
-        </div>
-        <div className="flex justify-between text-sm text-white mt-1">
-          <span>Raised: ${raised.toLocaleString()}</span>
-          <span>Target: ${target.toLocaleString()}</span>
-        </div>
-      </div>
-
-    
-      <div className="bg-[#1B1B1B] flex justify-between max-[700px]:justify-start gap-3 p-4 mt-6 rounded-xl flex-wrap">
-        {costs.map((item, i) => (
+      {/* Gift Options */}
+      <div className="bg-[#1B1B1B] flex justify-between max-[700px]:justify-start gap-3 p-4 rounded-xl flex-wrap">
+        {displayGifts.map((gift, i) => (
           <button
             key={i}
-            onClick={() => setSelectedCost(item)}
-            className={`px-5 py-2 rounded-full text-white cursor-pointer transition text-sm ${
-              selectedCost === item
+            onClick={() => setSelectedGift(gift.label)}
+            className={`px-4 py-2 rounded-full text-white cursor-pointer transition text-sm flex items-center gap-2 ${
+              selectedGift === gift.label
                 ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
-                : "bg-[#303030]"
+                : "bg-[#303030] hover:bg-[#404040]"
             }`}
           >
-            {item}
+            {gift.icon && (
+              <Image src={gift.icon} alt={gift.label} height={20} width={20} />
+            )}
+            {gift.label} {gift.amount > 0 && `- $${gift.amount}`}
           </button>
         ))}
       </div>
 
-    
-      <div className="mt-6">
-        <p className="text-white text-[18px] font-bold">Top Contributors</p>
-        <div className="flex gap-3 flex-wrap mt-4">
-          <p className="border border-[#303030] rounded-full text-white text-sm bg-[#1B1B1B] px-3 py-1">
-            Team Crew - <span className="text-[#F71873]">$500</span>
-          </p>
-          <p className="border border-[#303030] rounded-full text-white text-sm bg-[#1B1B1B] px-3 py-1">
-            Mom & Dad - <span className="text-[#F71873]">$300</span>
-          </p>
-          <p className="border border-[#303030] rounded-full text-white text-sm bg-[#1B1B1B] px-3 py-1">
-            Anna - <span className="text-[#F71873]">$250</span>
-          </p>
+      {/* Top Contributors */}
+      {topContributors.length > 0 && (
+        <div className="mt-6">
+          <p className="text-white text-[18px] font-bold">Top Contributors</p>
+          <div className="flex gap-3 flex-wrap mt-4">
+            {topContributors.map((contributor, i) => {
+              const giftIcon = getGiftIcon(contributor.label);
+              return (
+                <div
+                  key={i}
+                  className="border border-[#303030] rounded-full text-white text-sm bg-[#1B1B1B] px-3 py-1 flex items-center gap-2"
+                >
+                  {giftIcon && (
+                    <Image src={giftIcon} alt={contributor.label} height={18} width={18} />
+                  )}
+                  {contributor.label} - <span className="text-[#F71873]">${contributor.amount}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

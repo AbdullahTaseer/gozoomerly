@@ -30,7 +30,7 @@ const Home = () => {
     try {
       setLoading(true);
       const { boards: fetchedBoards, error } = await fetchActiveBoards({ showAll: true });
-
+      
       if (error) {
         console.error('Supabase error:', error);
       } else {
@@ -71,10 +71,10 @@ const Home = () => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
     });
   };
 
@@ -84,7 +84,7 @@ const Home = () => {
 
       <div className='py-8'>
         <TitleCard title='Active Boards' className='text-left' />
-
+        
         {loading ? (
           <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
             {[1, 2, 3, 4].map((i) => (
@@ -123,7 +123,7 @@ const Home = () => {
         ) : (
           <div className='text-center py-12'>
             <p className='text-gray-500'>No active boards found</p>
-            <button
+            <button 
               onClick={() => router.push('/dashboard/boards')}
               className='mt-4 px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
             >

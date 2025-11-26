@@ -20,6 +20,7 @@ export type BoardCardProps = {
   raised?: number;
   target?: number;
   invited?: number;
+  participants?: number;
   wishes?: number;
   gifters?: number;
   media?: number;
@@ -44,6 +45,7 @@ const BoardCard: React.FC<BoardCardProps> = ({
   raised = 0,
   target = 0,
   invited,
+  participants,
   wishes,
   gifters,
   media,
@@ -103,13 +105,19 @@ const BoardCard: React.FC<BoardCardProps> = ({
         </div>
       )}
 
-      {(invited !== undefined || wishes !== undefined || gifters !== undefined || media !== undefined) && (
+      {(invited !== undefined || participants !== undefined || wishes !== undefined || gifters !== undefined || media !== undefined) && (
         <div className="bg-[#23232A] rounded-lg p-4 mt-4">
           <div className="flex justify-between items-center gap-2 text-center whitespace-nowrap">
             {invited !== undefined && (
               <div className="flex-shrink-0">
                 <p className="text-white text-lg font-semibold">{invited}</p>
                 <p className="text-gray-300 text-xs mt-1">Invited</p>
+              </div>
+            )}
+            {participants !== undefined && (
+              <div className="flex-shrink-0">
+                <p className="text-white text-lg font-semibold">{participants}</p>
+                <p className="text-gray-300 text-xs mt-1">Participants</p>
               </div>
             )}
             {wishes !== undefined && (
