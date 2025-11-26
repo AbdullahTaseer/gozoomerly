@@ -73,7 +73,7 @@ const FundRaiserCard = ({
       {/* Goal Progress */}
       <div className="mb-6">
         <p className="text-white text-[24px] font-bold mb-4">Goal Progress</p>
-        <div className="w-full h-[6px] bg-gray-600 rounded-full">
+        <div className="w-full h-[6px] bg-[#D9D9D9] rounded-full">
           <div
             className="h-[6px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
             style={{ width: `${target > 0 ? Math.min((raised / target) * 100, 100) : 0}%` }}
