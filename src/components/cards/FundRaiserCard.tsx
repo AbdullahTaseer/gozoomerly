@@ -86,7 +86,7 @@ const FundRaiserCard = ({
       </div>
 
       {/* Statistics */}
-      <div className="bg-[#1B1B1B] p-4 rounded-xl mb-6">
+      <div className="rounded-xl mb-6">
         <div className="flex justify-between items-center gap-2 text-center flex-wrap">
           <div className="flex-1 min-w-[100px]">
             <p className="text-white text-lg font-semibold">{invitedCount}</p>
