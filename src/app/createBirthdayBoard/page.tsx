@@ -23,7 +23,8 @@ import {
   getBoardTypeFields,
   BoardTypeField,
   CreateBoardInput,
-  addBoardGiftOptions
+  addBoardGiftOptions,
+  getBoardById
 } from '@/lib/supabase/boards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -178,7 +179,8 @@ const CreateBirthdayBoard = () => {
             }
           }
           
-          setStep(7);
+          // Redirect to the board detail page
+          router.push(`/dashboard/boards/${data.slug}`);
         } else {
           console.error('Error creating board:', error);
           alert('Failed to create board. Please try again.');
@@ -190,8 +192,19 @@ const CreateBirthdayBoard = () => {
         setCreating(false);
       }
     } else if (boardId) {
-      // Board already exists, just go to final step
-      setStep(7);
+      // Board already exists, fetch it to get the slug and redirect
+      try {
+        const { data: existingBoard, error: fetchError } = await getBoardById(boardId);
+        if (existingBoard && !fetchError && existingBoard.slug) {
+          router.push(`/dashboard/boards/${existingBoard.slug}`);
+        } else {
+          console.error('Error fetching existing board:', fetchError);
+          setStep(7);
+        }
+      } catch (err) {
+        console.error('Error fetching board:', err);
+        setStep(7);
+      }
     }
   };
 

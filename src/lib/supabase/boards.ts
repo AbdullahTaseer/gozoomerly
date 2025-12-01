@@ -276,6 +276,36 @@ export async function getBoardBySlug(slug: string) {
   return { data, error: null };
 }
 
+export async function getBoardById(boardId: string) {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('boards')
+    .select(`
+      *,
+      board_types (
+        name,
+        slug,
+        icon,
+        color_scheme
+      ),
+      profiles:creator_id (
+        id,
+        name,
+        profile_pic_url
+      )
+    `)
+    .eq('id', boardId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching board:', error);
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
 export async function updateBoard(boardId: string, updates: Partial<Board>) {
   const supabase = createClient();
   
@@ -428,7 +458,19 @@ export async function addGiftContribution(
 ) {
   const supabase = createClient();
   
-  const giftOptionData = {
+  // First, get the current board to check current total_raised
+  const { data: currentBoard, error: boardError } = await supabase
+    .from('boards')
+    .select('total_raised, contributors_count')
+    .eq('id', boardId)
+    .single();
+
+  if (boardError || !currentBoard) {
+    console.error('Error fetching board:', boardError);
+    return { data: null, error: boardError || new Error('Board not found') };
+  }
+
+  const giftOptionData: any = {
     board_id: boardId,
     amount: giftData.amount,
     label: giftData.gift_option_id || `Custom Gift - $${giftData.amount}`,
@@ -436,6 +478,14 @@ export async function addGiftContribution(
     is_custom: giftData.is_custom,
     display_order: 0
   };
+
+  // Add contributor_id if the column exists (for tracking unique contributors)
+  // Try to add it, but don't fail if the column doesn't exist
+  try {
+    giftOptionData.contributor_id = contributorId;
+  } catch (e) {
+    // Column might not exist, continue without it
+  }
 
   const { data, error } = await supabase
     .from('board_gift_options')
@@ -446,6 +496,54 @@ export async function addGiftContribution(
   if (error) {
     console.error('Error adding gift:', error);
     return { data: null, error };
+  }
+
+  // Update board's total_raised by adding the gift amount
+  const newTotalRaised = (currentBoard.total_raised || 0) + giftData.amount;
+  
+  // Check if this contributor already contributed to this board
+  // Try to check by contributor_id first, fallback to counting all contributions
+  let isNewContributor = true;
+  try {
+    const { count: existingContributionsFromUser } = await supabase
+      .from('board_gift_options')
+      .select('*', { count: 'exact', head: true })
+      .eq('board_id', boardId)
+      .eq('contributor_id', contributorId);
+    
+    isNewContributor = (existingContributionsFromUser || 0) === 0;
+  } catch (e) {
+    // contributor_id column might not exist, check by total contributions
+    const { count: totalContributions } = await supabase
+      .from('board_gift_options')
+      .select('*', { count: 'exact', head: true })
+      .eq('board_id', boardId);
+    
+    // If this is the first contribution ever, it's a new contributor
+    isNewContributor = (totalContributions || 0) === 0;
+  }
+  
+  // Increment contributors_count only if this is a new contributor
+  const newContributorsCount = isNewContributor
+    ? (currentBoard.contributors_count || 0) + 1
+    : currentBoard.contributors_count;
+
+  // Update the board with new total_raised and contributors_count
+  const { error: updateError } = await supabase
+    .from('boards')
+    .update({
+      total_raised: newTotalRaised,
+      contributors_count: newContributorsCount,
+      last_activity_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', boardId);
+
+  if (updateError) {
+    console.error('Error updating board total_raised:', updateError);
+    // Don't fail the whole operation, but log the error
+  } else {
+    console.log(`Updated board ${boardId}: total_raised = ${newTotalRaised}, contributors_count = ${newContributorsCount}`);
   }
 
   return { data, error: null };

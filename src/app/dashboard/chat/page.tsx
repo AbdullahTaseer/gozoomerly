@@ -1,141 +1,812 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image, { StaticImageData } from 'next/image';
-import { PlusCircle, Send, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
+import { PlusCircle, Send, ArrowLeft, Search, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ChatCard from '@/components/cards/ChatCard';
-import { chatListData } from '@/lib/MockData';
 import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
+import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
+import { useRealtimeChat, type ChatMessage } from '@/hooks/use-realtime-chat';
+import {
+  getUserConversations,
+  getConversationMessages,
+  sendMessage,
+  uploadMessageFile,
+  markConversationAsRead,
+  getOrCreateDirectConversation,
+  searchUsers,
+  type Conversation,
+} from '@/lib/supabase/chat';
+import { AuthService } from '@/lib/supabase/auth';
+import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
 
-type Chat = {
-  id: number;
-  name: string;
-  message: string;
-  time: string;
-  avatar: string | StaticImageData;
-};
-
-type Message = {
-  id: number;
-  sender: "me" | "other";
-  text?: string;
-  fileUrl?: string;
-  fileType?: string;
-  fileName?: string;
-};
+const authService = new AuthService();
 
 const ChatPage = () => {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, sender: "me", text: "Hi, how are you?" },
-    { id: 2, sender: "other", text: "I am good thanks." },
-    { id: 3, sender: "me", text: "Happy Birthday! 🎉 Wishing you a day filled with love, laughter, and unforgettable moments." },
-    { id: 4, sender: "other", text: "Thanks!" },
-  ]);
+  const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
+  // Get current user
+  useEffect(() => {
+    async function getCurrentUser() {
+      const user = await authService.getUser();
+      if (!user) {
+        router.push('/signin');
+        return;
+      }
+      setCurrentUserId(user.id);
+      loadConversations(user.id);
+    }
+    getCurrentUser();
+  }, []);
 
-    setMessages(prev => [
-      ...prev,
-      { id: prev.length + 1, sender: "me", text: newMessage.trim() }
-    ]);
-
-    setNewMessage("");
+  // Load conversations
+  const loadConversations = async (userId: string) => {
+    try {
+      setLoading(true);
+      const { conversations: convs, error } = await getUserConversations(userId);
+      if (error) {
+        console.error('Error loading conversations:', error);
+        
+        // Check if tables exist
+        const diagnostics = await checkChatTablesSetup();
+        if (!diagnostics.tablesExist) {
+          console.error('Chat tables diagnostic:', diagnostics);
+          alert(
+            `Chat tables are not set up correctly.\n\n` +
+            `Errors:\n${diagnostics.errors.join('\n')}\n\n` +
+            `Please run the SQL setup script in your Supabase dashboard.`
+          );
+        }
+      } else {
+        // Remove duplicates by conversation ID first
+        let uniqueConversations = (convs || []).filter((conv, index, self) => 
+          index === self.findIndex(c => c.id === conv.id)
+        );
+        
+        // Also remove duplicates by participant combination (same two users in direct conversations)
+        if (currentUserId) {
+          const seenPairs = new Set<string>();
+          uniqueConversations = uniqueConversations.filter(conv => {
+            if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
+              return true; // Keep non-direct or group conversations
+            }
+            
+            // Create a unique key for the participant pair
+            const participantIds = conv.participants
+              .map((p: any) => p.user_id)
+              .sort()
+              .join('-');
+            
+            if (seenPairs.has(participantIds)) {
+              // Duplicate conversation for same user pair - keep the one with most recent message
+              return false;
+            }
+            
+            seenPairs.add(participantIds);
+            return true;
+          });
+        }
+        
+        setConversations(uniqueConversations);
+      }
+    } catch (err) {
+      console.error('Error loading conversations:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleFileUpload = (file: File) => {
-    const fileUrl = URL.createObjectURL(file);
-    const fileType = file.type;
+  // Load messages when conversation is selected
+  useEffect(() => {
+    if (selectedConversation && currentUserId) {
+      loadMessages(selectedConversation.id);
+      markConversationAsRead(selectedConversation.id, currentUserId);
+    }
+  }, [selectedConversation, currentUserId]);
 
-    setMessages(prev => [
+  const loadMessages = async (conversationId: string) => {
+    if (!currentUserId) return;
+
+    try {
+      const { messages: msgs, error } = await getConversationMessages(
+        conversationId,
+        currentUserId,
+        100
+      );
+      if (error) {
+        console.error('Error loading messages:', error);
+      } else {
+        // Transform messages to ChatMessage format
+        const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
+          // Fetch sender profile if not included
+          const senderName = msg.sender?.name || 
+                            (msg.sender_id ? 'Loading...' : 'Unknown');
+          const senderAvatar = msg.sender?.profile_pic_url || undefined;
+          
+          return {
+            id: msg.id,
+            content: msg.content || '',
+            createdAt: msg.created_at,
+            user: {
+              id: msg.sender_id,
+              name: senderName,
+              avatar: senderAvatar,
+            },
+            conversationId: msg.conversation_id,
+            senderId: msg.sender_id,
+            messageType: msg.message_type || 'text',
+            fileUrl: msg.file_url,
+            fileName: msg.file_name,
+          };
+        });
+        
+        // If any messages have "Loading..." or "Unknown" or missing avatar, fetch profile data
+        const messagesNeedingProfiles = chatMessages.filter(
+          m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
+        );
+        
+        if (messagesNeedingProfiles.length > 0 && currentUserId) {
+          const { createClient } = await import('@/lib/supabase/client');
+          const supabase = createClient();
+          
+          await Promise.all(
+            messagesNeedingProfiles.map(async (msg) => {
+              try {
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('id, name, profile_pic_url')
+                  .eq('id', msg.senderId)
+                  .single();
+                
+                if (profileData) {
+                  const index = chatMessages.findIndex(m => m.id === msg.id);
+                  if (index !== -1) {
+                    chatMessages[index].user = {
+                      id: profileData.id,
+                      name: profileData.name || 'Unknown User',
+                      avatar: profileData.profile_pic_url || undefined,
+                    };
+                  }
+                }
+              } catch (err) {
+                console.warn('Could not fetch profile for message:', msg.id, err);
+              }
+            })
+          );
+        }
+        setMessages(chatMessages);
+        // Scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } catch (err) {
+      console.error('Error loading messages:', err);
+    }
+  };
+
+  // Real-time subscription handlers - use useCallback to prevent re-subscriptions
+  const handleMessageReceived = useCallback((message: ChatMessage) => {
+    console.log('handleMessageReceived called with:', message);
+    setMessages(prev => {
+      // Remove any temporary/optimistic messages with same content from current user
+      // and avoid duplicates based on message id
+      const filtered = prev.filter(m => {
+        // Remove temp messages from current user if real message arrived (match by content and sender)
+        if (m.id.startsWith('temp-') && 
+            m.senderId === currentUserId && 
+            m.senderId === message.senderId &&
+            m.content === message.content &&
+            Math.abs(new Date(m.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000) {
+          return false;
+        }
+        // Remove duplicates by ID
+        if (m.id === message.id) {
+          return false;
+        }
+        return true;
+      });
+      
+      // Add the new message and sort by timestamp
+      const updated = [...filtered, message];
+      return updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    });
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    
+    // Mark as read if it's not from current user
+    if (message.senderId !== currentUserId && selectedConversation) {
+      markConversationAsRead(selectedConversation.id, currentUserId!);
+    }
+    
+    // Update conversation in list immediately (no loading, no refresh)
+    setConversations(prev => {
+      const updated = prev.map(conv => 
+        conv.id === message.conversationId 
+          ? { 
+              ...conv, 
+              last_message: message.content || message.fileName || 'Media',
+              last_message_at: message.createdAt 
+            }
+          : conv
+      );
+      // Move updated conversation to top
+      const updatedConv = updated.find(c => c.id === message.conversationId);
+      if (updatedConv) {
+        return [updatedConv, ...updated.filter(c => c.id !== message.conversationId)];
+      }
+      return updated;
+    });
+    
+    // Update selected conversation if it matches
+    setSelectedConversation(prev => {
+      if (prev && message.conversationId === prev.id) {
+        return {
       ...prev,
-      {
-        id: prev.length + 1,
-        sender: "me",
-        fileUrl,
-        fileType,
-        fileName: file.name,
+          last_message: message.content || message.fileName || 'Media',
+          last_message_at: message.createdAt,
+        };
+      }
+      return prev;
+    });
+  }, [currentUserId, selectedConversation]);
+
+  const handleMessageUpdated = useCallback((message: ChatMessage) => {
+    setMessages(prev =>
+      prev.map(msg => msg.id === message.id ? message : msg)
+    );
+  }, []);
+
+  const handleMessageDeleted = useCallback((messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+  }, []);
+
+  // Real-time subscription
+  const { isConnected, error: realtimeError } = useRealtimeChat({
+    conversationId: selectedConversation?.id || null,
+    currentUserId,
+    onMessageReceived: handleMessageReceived,
+    onMessageUpdated: handleMessageUpdated,
+    onMessageDeleted: handleMessageDeleted,
+    enabled: !!selectedConversation && !!currentUserId,
+  });
+
+  // Log real-time connection status
+  useEffect(() => {
+    if (selectedConversation) {
+      console.log('Real-time connection status:', isConnected, 'Error:', realtimeError);
+      if (realtimeError) {
+        console.error('Real-time error:', realtimeError);
+      }
+    }
+  }, [isConnected, realtimeError, selectedConversation]);
+
+  // Search users
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (!searchQuery.trim() || !currentUserId) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setSearching(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      const { users, error } = await searchUsers(searchQuery, currentUserId);
+      if (error) {
+        console.error('Error searching users:', error);
+      } else {
+        setSearchResults(users || []);
+        setShowSearchResults(true);
+      }
+      setSearching(false);
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, currentUserId]);
+
+  const handleStartConversation = async (userId: string) => {
+    if (!currentUserId) return;
+
+    try {
+      const { conversation, error } = await getOrCreateDirectConversation(
+        currentUserId,
+        userId
+      );
+
+      if (error) {
+        console.error('Error creating conversation:', error);
+        const errorMessage = error?.message || JSON.stringify(error) || 'Unknown error';
+        alert(`Failed to start conversation: ${errorMessage}\n\nPlease make sure the database tables are set up correctly.`);
+      } else if (conversation) {
+        setSearchQuery("");
+        setShowSearchResults(false);
+        
+        // Check if conversation already exists in the list and update/add it
+        setConversations(prev => {
+          // Remove any duplicates first (by conversation ID)
+          const unique = prev.filter((conv, index, self) => 
+            index === self.findIndex(c => c.id === conv.id)
+          );
+          
+          // Check if this conversation already exists
+          const existingIndex = unique.findIndex(c => c.id === conversation.id);
+          
+          if (existingIndex !== -1) {
+            // Update existing conversation in place
+            const updated = [...unique];
+            updated[existingIndex] = conversation;
+            return updated;
+          } else {
+            // Add new conversation at the top
+            return [conversation, ...unique];
+          }
+        });
+        
+        setSelectedConversation(conversation);
+      } else {
+        alert('Failed to start conversation. No conversation was created.');
+      }
+    } catch (err: any) {
+      console.error('Error starting conversation:', err);
+      const errorMessage = err?.message || JSON.stringify(err) || 'Unknown error';
+      alert(`Failed to start conversation: ${errorMessage}`);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!newMessage.trim() || !selectedConversation || !currentUserId) return;
+
+    const messageContent = newMessage.trim();
+    const tempMessageId = `temp-${Date.now()}`;
+    const now = new Date().toISOString();
+    
+    // Create optimistic message immediately
+    const optimisticMessage: ChatMessage = {
+      id: tempMessageId,
+      content: messageContent,
+      createdAt: now,
+      user: {
+        id: currentUserId,
+        name: 'You', // Will be replaced by real-time update
+        avatar: undefined,
       },
-    ]);
+      conversationId: selectedConversation.id,
+      senderId: currentUserId,
+      messageType: 'text',
+    };
+    
+    // Add message to UI immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage("");
+    
+    // Scroll to bottom
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
+    
+    // Update the selected conversation's last_message immediately
+    const updatedConversation = {
+      ...selectedConversation,
+      last_message: messageContent,
+      last_message_at: now,
+    };
+    setSelectedConversation(updatedConversation);
+    
+    // Update conversation in the list immediately (no loading, no refresh)
+    setConversations(prev => {
+      const updated = prev.map(conv => 
+        conv.id === selectedConversation.id 
+          ? { ...conv, last_message: messageContent, last_message_at: now }
+          : conv
+      );
+      // Move updated conversation to top
+      const updatedConv = updated.find(c => c.id === selectedConversation.id);
+      if (updatedConv) {
+        return [updatedConv, ...updated.filter(c => c.id !== selectedConversation.id)];
+      }
+      return updated;
+    });
+    
+    // Send message in background (no loading state, no UI blocking)
+    // The optimistic message will be replaced by the real one via real-time subscription
+    sendMessage(currentUserId, {
+      conversation_id: selectedConversation.id,
+      content: messageContent,
+      message_type: 'text',
+    }).then(({ error, message: sentMessage }) => {
+      if (error) {
+        console.error('Error sending message:', error);
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(m => m.id !== tempMessageId));
+        // Revert conversation update
+        setConversations(prev => prev.map(conv => 
+          conv.id === selectedConversation.id ? selectedConversation : conv
+        ));
+        setSelectedConversation(selectedConversation);
+        alert('Failed to send message. Please try again.');
+      } else if (sentMessage) {
+        // If we got the message back, replace optimistic with real one immediately
+        // (in case real-time is slow)
+        setMessages(prev => {
+          const filtered = prev.filter(m => m.id !== tempMessageId);
+          // Check if real message already exists (from real-time)
+          if (!filtered.some(m => m.id === sentMessage.id)) {
+            const realMessage: ChatMessage = {
+              id: sentMessage.id,
+              content: sentMessage.content || '',
+              createdAt: sentMessage.created_at,
+              user: {
+                id: sentMessage.sender_id,
+                name: sentMessage.sender?.name || 'You',
+                avatar: sentMessage.sender?.profile_pic_url,
+              },
+              conversationId: sentMessage.conversation_id,
+              senderId: sentMessage.sender_id,
+              messageType: sentMessage.message_type || 'text',
+              fileUrl: sentMessage.file_url,
+              fileName: sentMessage.file_name,
+            };
+            return [...filtered, realMessage];
+          }
+          return filtered;
+        });
+      }
+      // If no error and no message, real-time will handle it
+    }).catch((err) => {
+      console.error('Error sending message:', err);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== tempMessageId));
+      // Revert conversation update
+      setConversations(prev => prev.map(conv => 
+        conv.id === selectedConversation.id ? selectedConversation : conv
+      ));
+      setSelectedConversation(selectedConversation);
+      alert('Failed to send message. Please try again.');
+    });
   };
+
+  const handleFileUpload = async (file: File) => {
+    if (!selectedConversation || !currentUserId || uploading) return;
+
+    try {
+      setUploading(true);
+      
+      // Upload file
+      const { fileUrl, error: uploadError } = await uploadMessageFile(
+        selectedConversation.id,
+        currentUserId,
+        file
+      );
+
+      if (uploadError || !fileUrl) {
+        console.error('Error uploading file:', uploadError);
+        alert('Failed to upload file. Please try again.');
+        return;
+      }
+
+      // Determine message type
+      const messageType = file.type.startsWith('image/') ? 'image' :
+                         file.type.startsWith('video/') ? 'video' :
+                         file.type.startsWith('audio/') ? 'audio' : 'file';
+
+      // Send message with file
+      const { error: sendError } = await sendMessage(currentUserId, {
+        conversation_id: selectedConversation.id,
+        message_type: messageType,
+        file_url: fileUrl,
+        file_name: file.name,
+        file_size: file.size,
+        file_type: file.type,
+      });
+
+      if (sendError) {
+        console.error('Error sending file message:', sendError);
+        alert('Failed to send file. Please try again.');
+      } else {
+        const now = new Date().toISOString();
+        const updatedConv = {
+          ...selectedConversation,
+          last_message: file.name || 'Media',
+          last_message_at: now,
+        };
+        
+        // Update the selected conversation immediately
+        setSelectedConversation(updatedConv);
+        
+        // Update conversation in the list immediately (no loading, no refresh)
+        setConversations(prev => {
+          const updated = prev.map(conv => 
+            conv.id === selectedConversation.id 
+              ? { ...conv, last_message: file.name || 'Media', last_message_at: now }
+              : conv
+          );
+          // Move updated conversation to top
+          const updatedConvItem = updated.find(c => c.id === selectedConversation.id);
+          if (updatedConvItem) {
+            return [updatedConvItem, ...updated.filter(c => c.id !== selectedConversation.id)];
+          }
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      alert('Failed to upload file. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Get conversation display name
+  const getConversationName = (conv: Conversation): string => {
+    if (conv.name) return conv.name;
+    if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
+      const otherParticipant = conv.participants.find(
+        (p: any) => p.user_id !== currentUserId
+      );
+      
+      if (otherParticipant) {
+        // If user data is already loaded, use it
+        if (otherParticipant.user?.name) {
+          return otherParticipant.user.name;
+        }
+        
+        // Otherwise, try to fetch it (this will be async, so we'll show a fallback)
+        // The profile should be loaded in getUserConversations, but if not, show partial ID
+        if (otherParticipant.user_id) {
+          return `User ${otherParticipant.user_id.substring(0, 8)}`;
+        }
+      }
+    }
+    return 'Conversation';
+  };
+
+  // Get conversation avatar
+  const getConversationAvatar = (conv: Conversation): string => {
+    if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
+      const otherParticipant = conv.participants.find(
+        (p: any) => p.user_id !== currentUserId
+      );
+      
+      // Return profile_pic_url if it exists and is not empty
+      if (otherParticipant?.user?.profile_pic_url) {
+        const picUrl = otherParticipant.user.profile_pic_url.trim();
+        if (picUrl && picUrl !== 'null' && picUrl !== 'undefined') {
+          return picUrl;
+        }
+      }
+    }
+    return '/default-avatar.png';
+  };
+
+  // Format time
+  const formatTime = (dateString?: string): string => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString();
+  };
+
+  // Filter conversations by search
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery) return true;
+    const searchLower = searchQuery.toLowerCase();
+    const name = getConversationName(conv).toLowerCase();
+    const lastMessage = (conv.last_message || '').toLowerCase();
+    return name.includes(searchLower) || lastMessage.includes(searchLower);
+  });
+
+  // Determine if we should show header for message
+  const shouldShowHeader = (message: ChatMessage, index: number): boolean => {
+    if (index === 0) return true;
+    const prevMessage = messages[index - 1];
+    return prevMessage.senderId !== message.senderId ||
+           new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; // 5 minutes
+  };
+
+  if (loading) {
+    return (
+      <div className='px-[7%] max-[900px]:px-3 text-white flex items-center justify-center min-h-screen'>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Loading conversations...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='px-[7%] max-[900px]:px-3 text-white'>
       <div className='px-4 flex items-center justify-between max-[500px]:flex-col gap-2'>
         <TitleCard title='Chat' className='text-left' />
         <div className='relative w-[270px] max-[500px]:mx-auto'>
+          <div className="relative">
+            <Search size={18} className='absolute top-3 left-3 text-gray-400' />
           <GlobalInput
-            placeholder='Search friends & family...'
+              placeholder='Search users or conversations...'
             height='42px'
             width='100%'
             borderRadius='100px'
-          />
+              inputClassName="pl-10 pr-10"
+              value={searchQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value.trim()) {
+                  setShowSearchResults(true);
+                } else {
+                  setShowSearchResults(false);
+                }
+              }}
+              onFocus={() => {
+                if (searchQuery.trim()) {
+                  setShowSearchResults(true);
+                }
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowSearchResults(false);
+                }}
+                className="absolute top-2.5 right-3 text-gray-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* Search Results Dropdown */}
+          {showSearchResults && searchQuery.trim() && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[#2A2D3A] rounded-lg shadow-lg border border-gray-700 max-h-64 overflow-y-auto z-50">
+              {searching ? (
+                <div className="p-4 text-center text-gray-400">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
+                  <p className="mt-2 text-sm">Searching...</p>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="py-2">
+                  <p className="px-4 py-2 text-xs text-gray-400 font-semibold">Users</p>
+                  {searchResults.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleStartConversation(user.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3A3D4A] transition-colors"
+                    >
+                      <Image
+                        src={user.profile_pic_url || '/default-avatar.png'}
+                        alt={user.name}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover"
+                      />
+                      <div className="flex-1 text-left">
+                        <p className="font-medium text-sm">{user.name}</p>
+                        {user.email && (
+                          <p className="text-xs text-gray-400">{user.email}</p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-gray-400">
+                  <p className="text-sm">No users found</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
 
-        <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedChat ? 'max-[900px]:hidden' : 'flex'}`}>
-          {chatListData.map(chat => (
+        <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
+          {filteredConversations.length === 0 ? (
+            <div className="p-4 text-center text-gray-400">
+              <p>No conversations found</p>
+              <p className="text-sm mt-2">Search for users to start a conversation</p>
+            </div>
+          ) : (
+            filteredConversations.map(conv => {
+              // Get the last message - prefer from conversation, otherwise from messages if this is selected
+              let lastMessageText = conv.last_message;
+              
+              // If no last_message but this conversation is selected and has messages, use the last message
+              if (!lastMessageText && selectedConversation?.id === conv.id && messages.length > 0) {
+                const lastMsg = messages[messages.length - 1];
+                lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
+              }
+              
+              return (
             <ChatCard
-              key={chat.id}
-              imgPath={chat.avatar}
-              name={chat.name}
-              message={chat.message}
-              time={chat.time}
-              isActive={selectedChat?.id === chat.id}
-              onClick={() => setSelectedChat(chat)}
-            />
-          ))}
+                  key={conv.id}
+                  imgPath={getConversationAvatar(conv)}
+                  name={getConversationName(conv)}
+                  message={lastMessageText || 'No messages yet'}
+                  time={formatTime(conv.last_message_at)}
+                  isActive={selectedConversation?.id === conv.id}
+                  onClick={() => setSelectedConversation(conv)}
+                />
+              );
+            })
+          )}
         </div>
 
-        <div className={`flex-1 border border-l-0 flex-col ${selectedChat ? 'flex' : 'max-[900px]:hidden'}`}>
-          {selectedChat ? (
+        <div className={`flex-1 border border-l-0 flex-col ${selectedConversation ? 'flex' : 'max-[900px]:hidden'}`}>
+          {selectedConversation ? (
             <>
               <div className='flex items-center gap-4 bg-[#2A2D3A] p-4 border-b border-gray-700'>
-                <ArrowLeft onClick={() => setSelectedChat(null)} className='cursor-pointer lg:hidden' />
-                <Image src={selectedChat.avatar} alt={selectedChat.name} width={40} height={40} className='rounded-full' />
-                <p className='font-bold'>{selectedChat.name}</p>
+                <ArrowLeft 
+                  onClick={() => setSelectedConversation(null)} 
+                  className='cursor-pointer lg:hidden' 
+                />
+                <Image 
+                  src={getConversationAvatar(selectedConversation)} 
+                  alt={getConversationName(selectedConversation)} 
+                  width={40} 
+                  height={40} 
+                  className='rounded-full object-cover' 
+                />
+                <div className='flex-1'>
+                  <p className='font-bold'>{getConversationName(selectedConversation)}</p>
+                </div>
               </div>
 
-              <div className='flex-1 text-sm p-3 overflow-y-auto space-y-4'>
-                <div className='text-center my-4'>
-                  <span className='bg-gray-700 text-xs px-12 py-1 rounded-full'>Today</span>
+              <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>
+                {messages.length === 0 ? (
+                  <div className="text-center text-gray-400 mt-8">
+                    <p>No messages yet</p>
+                    <p className="text-xs mt-2">Start the conversation!</p>
                 </div>
-
-                {messages.map(msg => (
-                  <div key={msg.id} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-xs sm:max-w-md`}>
-                      {msg.text && <p className={`rounded-lg p-2 max-w-xs sm:max-w-md ${msg.sender === "me" ? "bg-[#2A2D3A] text-white" : "bg-[#F7F7F7] text-black"}`}>{msg.text}</p>}
-
-                      {msg.fileUrl && (
-                        <>
-                          {msg.fileType?.startsWith("image/") ? (
-                            <Image
-                              src={msg.fileUrl}
-                              alt={msg.fileName || "Uploaded file"}
-                              width={200}
-                              height={200}
-                              className="rounded-lg mt-2"
-                            />
-                          ) : (
-                            <a
-                              href={msg.fileUrl}
-                              download={msg.fileName}
-                              className="text-blue-400 underline mt-2 block"
-                            >
-                              📎 {msg.fileName}
-                            </a>
-                          )}
+                ) : (
+                  <>
+                    {messages.map((msg, index) => (
+                      <ChatMessageItem
+                        key={msg.id}
+                        message={msg}
+                        isOwnMessage={msg.senderId === currentUserId}
+                        showHeader={shouldShowHeader(msg, index)}
+                      />
+                    ))}
+                    <div ref={messagesEndRef} />
                         </>
                       )}
-                    </div>
-                  </div>
-                ))}
               </div>
 
               <div className='p-4 bg-[#F7F7F7] flex items-center gap-4'>
@@ -144,20 +815,24 @@ const ChatPage = () => {
                     type="file"
                     id="fileUpload"
                     className="hidden"
+                    disabled={uploading}
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         handleFileUpload(e.target.files[0]);
                       }
                     }}
                   />
-                  <label htmlFor="fileUpload">
-                    <PlusCircle size={24} className='text-black cursor-pointer' />
+                  <label 
+                    htmlFor="fileUpload" 
+                    className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  >
+                    <PlusCircle size={24} className='text-black' />
                   </label>
                 </div>
 
                 <div className='flex-1 relative'>
                   <GlobalInput
-                    placeholder='Write your message...'
+                    placeholder={uploading ? 'Uploading...' : 'Write your message...'}
                     height='40px'
                     width='100%'
                     borderRadius='100px'
@@ -165,12 +840,19 @@ const ChatPage = () => {
                     inputClassName="pl-4 pr-12 border-none"
                     value={newMessage}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === "Enter" && handleSend()}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                      if (e.key === "Enter" && !e.shiftKey && !uploading) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    disabled={uploading}
                   />
                 </div>
                 <button
-                  className='bg-white p-3 rounded-full'
+                  className='bg-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed'
                   onClick={handleSend}
+                    disabled={uploading || !newMessage.trim()}
                 >
                   <Send size={18} className='text-black' />
                 </button>
@@ -179,7 +861,7 @@ const ChatPage = () => {
           ) : (
             <div className="max-[900px]:hidden flex flex-col items-center justify-center h-full text-gray-400">
               <Image src={ZoomerlyLogo} alt='' />
-              <p>Select a chat to start messaging</p>
+              <p>Select a conversation to start messaging</p>
             </div>
           )}
         </div>

@@ -11,6 +11,7 @@ import ShareModalTrigger from '@/components/modals/ShareModalTrigger';
 import staticProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import backgroundcake from "@/assets/svgs/background-cake.svg";
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
+import ImageWithFallback from '@/components/images/ImageWithFallback';
 
 interface PageProps {
   params: { slug: string }
@@ -175,6 +176,89 @@ export default async function BoardPage(props: any) {
   const wishes = board?.wishes_count || 0;
   const gifters = board?.contributors_count || 0;
 
+  // Extract honoree details
+  const honoree = board?.honoree_details || {};
+  const honoreeFirstName = honoree.first_name || '';
+  const honoreeLastName = honoree.last_name || '';
+  const honoreeFullName = `${honoreeFirstName} ${honoreeLastName}`.trim() || 'Honoree';
+  const honoreeHometown = honoree.hometown || '';
+  const honoreeDateOfBirth = honoree.date_of_birth || '';
+  const honoreeProfilePhoto = honoree.profile_photo_url || staticProfileAvatar;
+  
+  // Format date of birth
+  const formatDateOfBirth = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Format deadline date
+  const formatDeadlineDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // Calculate time left until deadline
+  const calculateTimeLeft = (deadlineDate?: string) => {
+    if (!deadlineDate) return '00-00-00';
+    try {
+      const deadline = new Date(deadlineDate);
+      const now = new Date();
+      const diff = deadline.getTime() - now.getTime();
+      
+      if (diff <= 0) return '00-00-00';
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      return `${String(days).padStart(2, '0')}-${String(hours).padStart(2, '0')}-${String(minutes).padStart(2, '0')}`;
+    } catch {
+      return '00-00-00';
+    }
+  };
+
+  // Get creator info
+  const creator = board?.creator || (board as any)?.profiles;
+  const creatorName = creator?.name || 'Unknown';
+  const creatorAvatar = creator?.profile_pic_url || staticProfileAvatar;
+
+  // Get board title
+  const boardTitle = board?.title || 'Untitled Board';
+
+  // Get description
+  const description = board?.description || '';
+  const goalText = board?.goal_amount ? ` and the goal is ${board.currency || '$'}${board.goal_amount}` : '';
+  const fullDescription = description ? `${description}${goalText}` : `Join this board${goalText}`;
+
+  // Get deadline
+  const deadlineDate = board?.deadline_date;
+  const deadlineText = deadlineDate 
+    ? `This surprise board will be delivered to ${honoreeFullName} on ${formatDeadlineDate(deadlineDate)}`
+    : '';
+
+  if (!board) {
+    return (
+      <div className="w-full min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Board not found</h1>
+          <Link href="/dashboard" className="text-blue-600 hover:underline">
+            Go back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="relative w-full overflow-hidden mb-6 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
@@ -190,7 +274,7 @@ export default async function BoardPage(props: any) {
                 <ArrowLeft size={26} className="text-white" />
               </Link>
               <h1 className="text-white text-[46px] max-[1024px]:text-[32px] max-[768px]:text-[24px] font-semibold">
-                Sean Parker birthday
+                {boardTitle}
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -200,56 +284,64 @@ export default async function BoardPage(props: any) {
               <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
                 Wish
               </button>
-              <ShareModalTrigger shareUrl={shareUrl} title="Sean Parker birthday" />
+              <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
             </div>
           </div>
 
           <div className="flex items-center mt-6 gap-4">
-            <Image
-              src={staticProfileAvatar}
-              alt="User"
+            <ImageWithFallback
+              src={honoreeProfilePhoto}
+              alt={honoreeFullName}
               width={65}
               height={65}
-              className="rounded-full"
+              className="rounded-full object-cover"
+              fallbackSrc={staticProfileAvatar}
             />
 
             <div>
-              <p className="text-white font-semibold text-lg">Sean Parker</p>
-              <p className="text-white/90 text-sm flex gap-5 mt-1">
-                <span><strong>Hometown:</strong> Miami, FL</span>
-                <span><strong>Date of Birth:</strong> December 03</span>
+              <p className="text-white font-semibold text-lg">{honoreeFullName}</p>
+              <p className="text-white/90 text-sm flex gap-5 mt-1 flex-wrap">
+                {honoreeHometown && (
+                  <span><strong>Hometown:</strong> {honoreeHometown}</span>
+                )}
+                {honoreeDateOfBirth && (
+                  <span><strong>Date of Birth:</strong> {formatDateOfBirth(honoreeDateOfBirth)}</span>
+                )}
               </p>
             </div>
           </div>
 
-          <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
-            Happy Birthday, Sean! 🎉 Wishing you a fantastic year ahead filled with health, happiness,
-            and success. May your special day be as amazing as you are. Cheers to many more celebrations!
-            and the goal is $1000
-          </p>
+          {fullDescription && (
+            <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
+              {fullDescription}
+            </p>
+          )}
 
           <div className="flex items-center gap-2 mt-6">
             <p className="text-white text-[15px]">Created by</p>
             <div className="flex items-center gap-2">
-              <Image
-                src={staticProfileAvatar}
-                alt="Anna"
+              <ImageWithFallback
+                src={creatorAvatar}
+                alt={creatorName}
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="rounded-full object-cover"
+                fallbackSrc={staticProfileAvatar}
               />
-              <p className="text-white font-semibold text-sm">Anna</p>
+              <p className="text-white font-semibold text-sm">{creatorName}</p>
             </div>
           </div>
 
-          <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
-            <p className="text-white font-semibold text-lg">
-              This surprise board will be delivered to Sean Parker on Sep 12, 2025
-            </p>
-            <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
-              Time left to wish : 00-00-00
+          {deadlineText && (
+            <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
+              <p className="text-white font-semibold text-lg">
+                {deadlineText}
+              </p>
+              <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
+                Time left to wish : {calculateTimeLeft(deadlineDate)}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

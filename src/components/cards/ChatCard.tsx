@@ -19,11 +19,14 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, onClick }: P
         }`}
     >
       <Image
-        src={imgPath}
+        src={imgPath || '/default-avatar.png'}
         alt={name}
         width={48}
         height={48}
-        className='rounded-full border border-[#48484A] p-[2px]'
+        className='rounded-full border border-[#48484A] p-[2px] object-cover'
+        onError={(e) => {
+          e.currentTarget.src = '/default-avatar.png';
+        }}
       />
 
       <div className='flex-1'>
