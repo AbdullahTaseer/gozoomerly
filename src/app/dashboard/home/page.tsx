@@ -13,6 +13,7 @@ import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard'
 import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import GlobalModal from '@/components/modals/GlobalModal';
+import { authService } from '@/lib/supabase/auth';
 
 const Home = () => {
   const router = useRouter();
@@ -29,12 +30,23 @@ const Home = () => {
   const loadBoards = async () => {
     try {
       setLoading(true);
-      const { boards: fetchedBoards, error } = await fetchActiveBoards({ showAll: true });
+      
+      const user = await authService.getUser();
+      
+      if (!user) {
+        console.error('No user logged in');
+        setLoading(false);
+        return;
+      }
+      
+      const { boards: fetchedBoards, error } = await fetchActiveBoards({ 
+        userId: user.id,
+        showAll: true 
+      });
       
       if (error) {
         console.error('Supabase error:', error);
       } else {
-        console.log(`Found ${fetchedBoards?.length || 0} boards`);
         setBoards(fetchedBoards || []);
       }
     } catch (err) {
@@ -93,7 +105,7 @@ const Home = () => {
           </div>
         ) : boards.length > 0 ? (
           <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
-            {boards.slice(0, 4).map((board) => {
+            {boards.map((board) => {
               // Get honoree's name from honoree_details
               const honoreeFirstName = board.honoree_details?.first_name || '';
               const honoreeLastName = board.honoree_details?.last_name || '';

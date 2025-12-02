@@ -304,6 +304,7 @@ export default async function BoardPage(props: any) {
           mediaCount={mediaCount}
           wishes={wishes}
           gifters={gifters}
+          boardId={board?.id}
         />
 
         {/* Media Sections */}

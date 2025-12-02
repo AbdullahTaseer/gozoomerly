@@ -448,6 +448,35 @@ export async function addGiftContribution(
     return { data: null, error };
   }
 
+  // Update board's total_raised and contributors_count
+  if (data) {
+    // First, get the current board data
+    const { data: currentBoard, error: fetchError } = await supabase
+      .from('boards')
+      .select('total_raised, contributors_count')
+      .eq('id', boardId)
+      .single();
+
+    if (!fetchError && currentBoard) {
+      const newTotalRaised = (currentBoard.total_raised || 0) + giftData.amount;
+      const newContributorsCount = (currentBoard.contributors_count || 0) + 1;
+
+      const { error: updateError } = await supabase
+        .from('boards')
+        .update({
+          total_raised: newTotalRaised,
+          contributors_count: newContributorsCount,
+          last_activity_at: new Date().toISOString()
+        })
+        .eq('id', boardId);
+
+      if (updateError) {
+        console.error('Error updating board raised amount:', updateError);
+        // Don't fail the whole operation if update fails, but log it
+      }
+    }
+  }
+
   return { data, error: null };
 }
 
@@ -601,6 +630,7 @@ export async function createOrUpdateBoard(
 }
 
 export async function fetchActiveBoards(options?: {
+  userId?: string;
   includeStatus?: string[];
   includePrivacy?: string[];
   showAll?: boolean;
@@ -617,12 +647,20 @@ export async function fetchActiveBoards(options?: {
         icon,
         color_scheme
       ),
+      board_participants!inner (
+        user_id,
+        role
+      ),
       profiles:creator_id (
         id,
         name,
         profile_pic_url
       )
     `);
+
+  if (options?.userId) {
+    query = query.eq('board_participants.user_id', options.userId);
+  }
 
   if (!options?.showAll) {
     if (options?.includeStatus) {
@@ -637,25 +675,21 @@ export async function fetchActiveBoards(options?: {
   }
 
   const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .limit(10);
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching active boards:', error);
     return { boards: [], error };
   }
 
-  // Fetch invitation counts and media counts for each board
   if (data) {
     const boardsWithCounts = await Promise.all(
       data.map(async (board) => {
-        // Count invitations
         const { count: invitedCount } = await supabase
           .from('board_invitations')
           .select('*', { count: 'exact', head: true })
           .eq('board_id', board.id);
 
-        // Count media
         const { count: mediaCount } = await supabase
           .from('media')
           .select('*', { count: 'exact', head: true })
@@ -669,13 +703,9 @@ export async function fetchActiveBoards(options?: {
       })
     );
 
-    console.log('Fetched boards:', boardsWithCounts?.length || 0, 'boards');
-    console.log('First board:', boardsWithCounts?.[0]);
-
     return { boards: boardsWithCounts || [], error: null };
   }
 
-  // If no data, return empty array
   return { boards: [], error: null };
 }
 

@@ -88,6 +88,36 @@ const CreateBirthdayBoard = () => {
         setSelectedBoardType(boardType);
         fetchBoardTypeFields(boardType.id);
         // Don't remove it yet - will remove after board is created
+        
+        // Check if we're starting a new board or continuing an existing one
+        const currentBoardId = localStorage.getItem('currentBoardId');
+        const savedBoardData = localStorage.getItem('boardTypeFields');
+        
+        // Only load saved data if we're continuing an existing board
+        // If there's no currentBoardId, we're starting fresh - clear old data
+        if (!currentBoardId && savedBoardData) {
+          // Starting a new board - clear old saved data
+          localStorage.removeItem('boardTypeFields');
+          localStorage.removeItem('currentBoardId');
+          // Reset form state
+          setCustomFieldValues({});
+          setProfilePhotoPreview(null);
+          setStep(1);
+          setBoardId(null);
+        } else if (currentBoardId && savedBoardData) {
+          // Continuing an existing board - load saved data
+          try {
+            const savedData = JSON.parse(savedBoardData);
+            setCustomFieldValues(savedData);
+            // If profile photo URL exists, set it as preview
+            if (savedData.profile_photo_url) {
+              setProfilePhotoPreview(savedData.profile_photo_url);
+            }
+            setBoardId(currentBoardId);
+          } catch (error) {
+            console.error('Error parsing saved board data:', error);
+          }
+        }
       } catch (error) {
         console.error('Error parsing board type:', error);
         router.push('/compaign');
@@ -96,21 +126,6 @@ const CreateBirthdayBoard = () => {
       // No board type selected, redirect back to selection
       console.log('No board type in localStorage, redirecting to /compaign');
       router.push('/compaign');
-    }
-
-    // Load saved board data if exists
-    const savedBoardData = localStorage.getItem('boardTypeFields');
-    if (savedBoardData) {
-      try {
-        const savedData = JSON.parse(savedBoardData);
-        setCustomFieldValues(savedData);
-        // If profile photo URL exists, set it as preview
-        if (savedData.profile_photo_url) {
-          setProfilePhotoPreview(savedData.profile_photo_url);
-        }
-      } catch (error) {
-        console.error('Error parsing saved board data:', error);
-      }
     }
   }, []);
 
@@ -279,6 +294,14 @@ const CreateBirthdayBoard = () => {
           }
           
           setStep(7);
+          // Clear form data after successful board creation
+          // This ensures a clean slate for the next board creation
+          setTimeout(() => {
+            localStorage.removeItem('boardTypeFields');
+            localStorage.removeItem('currentBoardId');
+            setCustomFieldValues({});
+            setProfilePhotoPreview(null);
+          }, 2000); // Clear after 2 seconds to allow user to see the success message
         } else {
           console.error('Error creating board:', error);
           alert('Failed to create board. Please try again.');
