@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { CloudUpload } from "lucide-react";
 
 import AddWishImg from "@/assets/svgs/add-wish.svg";
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
@@ -26,6 +27,7 @@ import {
   addBoardGiftOptions
 } from '@/lib/supabase/boards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createClient } from '@/lib/supabase/client';
 
 const CreateBirthdayBoard = () => {
 
@@ -40,6 +42,10 @@ const CreateBirthdayBoard = () => {
   const [creating, setCreating] = useState(false);
   const [uploadedMediaIds, setUploadedMediaIds] = useState<string[]>([]);
   const [selectedMusicId, setSelectedMusicId] = useState<number | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
+  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
+  const [profilePhotoError, setProfilePhotoError] = useState<string | null>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Group fields by step based on mockup screenshots
@@ -91,6 +97,21 @@ const CreateBirthdayBoard = () => {
       console.log('No board type in localStorage, redirecting to /compaign');
       router.push('/compaign');
     }
+
+    // Load saved board data if exists
+    const savedBoardData = localStorage.getItem('boardTypeFields');
+    if (savedBoardData) {
+      try {
+        const savedData = JSON.parse(savedBoardData);
+        setCustomFieldValues(savedData);
+        // If profile photo URL exists, set it as preview
+        if (savedData.profile_photo_url) {
+          setProfilePhotoPreview(savedData.profile_photo_url);
+        }
+      } catch (error) {
+        console.error('Error parsing saved board data:', error);
+      }
+    }
   }, []);
 
   const checkAuth = async () => {
@@ -117,6 +138,85 @@ const CreateBirthdayBoard = () => {
 
   const handleFieldChange = (fieldKey: string, value: any) => {
     setCustomFieldValues(prev => ({ ...prev, [fieldKey]: value }));
+  };
+
+  const handleProfilePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setProfilePhotoError('Image size should be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setProfilePhotoError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    setUploadingProfilePhoto(true);
+    setProfilePhotoError(null);
+
+    try {
+      const user = await authService.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `board-profile-${user.id}-${Date.now()}.${fileExt}`;
+
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // Convert file to array buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      // Upload using direct storage API endpoint
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': file.type,
+            'Cache-Control': 'max-age=3600'
+          },
+          body: uint8Array
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to upload image: ${error}`);
+      }
+
+      // Construct public URL
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Store the URL in customFieldValues
+      handleFieldChange('profile_photo_url', publicUrl);
+    } catch (err) {
+      console.error('Error uploading profile photo:', err);
+      setProfilePhotoError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setUploadingProfilePhoto(false);
+    }
   };
 
   const handleNextStep = async () => {
@@ -432,7 +532,68 @@ const CreateBirthdayBoard = () => {
                     </div>
 
                     <div className="space-y-4">
-                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color').map((field) => (
+                      {/* Profile Photo Upload - Always show in first step */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Profile Photo
+                          {fieldGroups.step1?.find(f => f.field_key === 'profile_photo_url')?.is_required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                        </label>
+                        <div className="relative">
+                          <label
+                            onClick={() => !uploadingProfilePhoto && profilePhotoInputRef.current?.click()}
+                            className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              uploadingProfilePhoto
+                                ? 'border-gray-300 bg-gray-50 cursor-wait'
+                                : profilePhotoPreview || customFieldValues.profile_photo_url
+                                ? 'border-[#F43C83] bg-pink-50'
+                                : 'border-[#B2B2B2] hover:border-[#F43C83] hover:bg-gray-50'
+                            }`}
+                          >
+                            {uploadingProfilePhoto ? (
+                              <div className="flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#F43C83] border-t-transparent mb-2" />
+                                <p className="text-sm text-gray-500">Uploading...</p>
+                              </div>
+                            ) : profilePhotoPreview || customFieldValues.profile_photo_url ? (
+                              <div className="flex flex-col items-center">
+                                <img
+                                  src={profilePhotoPreview || customFieldValues.profile_photo_url}
+                                  alt="Profile preview"
+                                  className="h-20 w-20 rounded-full object-cover mb-2 border-2 border-white shadow-md"
+                                />
+                                <p className="text-sm text-gray-600">Click to change photo</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center">
+                                <div className="bg-[#EEEEEE] flex justify-center items-center h-9 w-9 rounded-full mb-2">
+                                  <CloudUpload className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <p className="text-sm text-gray-500">Upload Profile Photo</p>
+                              </div>
+                            )}
+                            <input
+                              ref={profilePhotoInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleProfilePhotoUpload}
+                              className="hidden"
+                              disabled={uploadingProfilePhoto}
+                            />
+                          </label>
+                          {profilePhotoError && (
+                            <p className="text-sm text-red-500 mt-1">{profilePhotoError}</p>
+                          )}
+                          {fieldGroups.step1?.find(f => f.field_key === 'profile_photo_url')?.help_text && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {fieldGroups.step1.find(f => f.field_key === 'profile_photo_url')?.help_text}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color' && f.field_key !== 'profile_photo_url').map((field) => (
                         <div key={field.id}>
                           <label className="block text-sm font-medium mb-2">
                             {field.label}

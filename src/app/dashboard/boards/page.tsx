@@ -90,29 +90,43 @@ const Boards = () => {
             />
           </div>
         ) : (
-          boards.map((board) => (
-            <BoardCard
-              key={board.id}
-              title={board.title}
-              avatar={board.profiles?.profile_pic_url || '/default-avatar.jpg'}
-              name={board.profiles?.name || 'Unknown'}
-              location={board.honoree_details?.hometown || ''}
-              date={new Date(board.created_at).toLocaleDateString()}
-              description={board.description || ''}
-              fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
-              raised={board.total_raised || 0}
-              target={board.goal_amount || 0}
-              invited={board.shares_count || 0}
-              wishes={board.views_count || 0}
-              gifters={board.contributors_count || 0}
-              media={(board as any).media_count || 0}
-              topContributors={[]}
-              buttonText="View Board"
-              onButtonClick={() => router.push(`/dashboard/boards/${board.slug}`)}
-              onInviteClick={() => handleInviteClick(board)}
-              slug={board.slug}
-            />
-          ))
+          boards.map((board) => {
+            // Get honoree's name from honoree_details
+            const honoreeFirstName = board.honoree_details?.first_name || '';
+            const honoreeLastName = board.honoree_details?.last_name || '';
+            const honoreeName = honoreeFirstName && honoreeLastName 
+              ? `${honoreeFirstName} ${honoreeLastName}`.trim()
+              : honoreeFirstName || honoreeLastName || 'Unknown';
+            
+            // Get honoree's profile photo
+            const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || '/default-avatar.jpg';
+            
+            return (
+              <BoardCard
+                key={board.id}
+                title={board.title}
+                avatar={honoreeProfilePhoto}
+                name={honoreeName}
+                location={board.honoree_details?.hometown || ''}
+                date={board.honoree_details?.date_of_birth 
+                  ? new Date(board.honoree_details.date_of_birth).toLocaleDateString()
+                  : new Date(board.created_at).toLocaleDateString()}
+                description={board.description || ''}
+                fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
+                raised={board.total_raised || 0}
+                target={board.goal_amount || 0}
+                invited={board.shares_count || 0}
+                wishes={board.views_count || 0}
+                gifters={board.contributors_count || 0}
+                media={(board as any).media_count || 0}
+                topContributors={[]}
+                buttonText="View Board"
+                onButtonClick={() => router.push(`/dashboard/boards/${board.slug}`)}
+                onInviteClick={() => handleInviteClick(board)}
+                slug={board.slug}
+              />
+            );
+          })
         )}
       </div>
 

@@ -175,6 +175,43 @@ export default async function BoardPage(props: any) {
   const wishes = board?.wishes_count || 0;
   const gifters = board?.contributors_count || 0;
 
+  // Get honoree's information
+  const honoreeFirstName = board?.honoree_details?.first_name || '';
+  const honoreeLastName = board?.honoree_details?.last_name || '';
+  const honoreeName = honoreeFirstName && honoreeLastName 
+    ? `${honoreeFirstName} ${honoreeLastName}`.trim()
+    : honoreeFirstName || honoreeLastName || 'Unknown';
+  const honoreeProfilePhoto = board?.honoree_details?.profile_photo_url || staticProfileAvatar;
+  const honoreeHometown = board?.honoree_details?.hometown || '';
+  const honoreeDateOfBirth = board?.honoree_details?.date_of_birth || '';
+  
+  // Format date of birth
+  const formatDateOfBirth = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
+  // Format deadline date
+  const formatDeadlineDate = (dateString?: string) => {
+    if (!dateString) return '';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
+  const boardTitle = board?.title || `${honoreeName} birthday`;
+  const boardDescription = board?.description || `Happy Birthday, ${honoreeFirstName || honoreeName}! 🎉`;
+  const creatorName = (board as any)?.profiles?.name || 'Unknown';
+  const creatorAvatar = (board as any)?.profiles?.profile_pic_url || staticProfileAvatar;
+
   return (
     <div className="w-full min-h-screen bg-white">
       <div className="relative w-full overflow-hidden mb-6 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
@@ -190,7 +227,7 @@ export default async function BoardPage(props: any) {
                 <ArrowLeft size={26} className="text-white" />
               </Link>
               <h1 className="text-white text-[46px] max-[1024px]:text-[32px] max-[768px]:text-[24px] font-semibold">
-                Sean Parker birthday
+                {boardTitle}
               </h1>
             </div>
             <div className="flex items-center gap-4">
@@ -200,56 +237,57 @@ export default async function BoardPage(props: any) {
               <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
                 Wish
               </button>
-              <ShareModalTrigger shareUrl={shareUrl} title="Sean Parker birthday" />
+              <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
             </div>
           </div>
 
           <div className="flex items-center mt-6 gap-4">
             <Image
-              src={staticProfileAvatar}
-              alt="User"
+              src={honoreeProfilePhoto}
+              alt={honoreeName}
               width={65}
               height={65}
-              className="rounded-full"
+              className="rounded-full object-cover"
             />
 
             <div>
-              <p className="text-white font-semibold text-lg">Sean Parker</p>
+              <p className="text-white font-semibold text-lg">{honoreeName}</p>
               <p className="text-white/90 text-sm flex gap-5 mt-1">
-                <span><strong>Hometown:</strong> Miami, FL</span>
-                <span><strong>Date of Birth:</strong> December 03</span>
+                {honoreeHometown && <span><strong>Location:</strong> {honoreeHometown}</span>}
+                {honoreeDateOfBirth && <span><strong>Date of Birth:</strong> {formatDateOfBirth(honoreeDateOfBirth)}</span>}
               </p>
             </div>
           </div>
 
           <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
-            Happy Birthday, Sean! 🎉 Wishing you a fantastic year ahead filled with health, happiness,
-            and success. May your special day be as amazing as you are. Cheers to many more celebrations!
-            and the goal is $1000
+            {boardDescription}
+            {target > 0 && ` and the goal is $${target.toLocaleString()}`}
           </p>
 
           <div className="flex items-center gap-2 mt-6">
             <p className="text-white text-[15px]">Created by</p>
             <div className="flex items-center gap-2">
               <Image
-                src={staticProfileAvatar}
-                alt="Anna"
+                src={creatorAvatar}
+                alt={creatorName}
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="rounded-full object-cover"
               />
-              <p className="text-white font-semibold text-sm">Anna</p>
+              <p className="text-white font-semibold text-sm">{creatorName}</p>
             </div>
           </div>
 
-          <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
-            <p className="text-white font-semibold text-lg">
-              This surprise board will be delivered to Sean Parker on Sep 12, 2025
-            </p>
-            <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
-              Time left to wish : 00-00-00
+          {board?.deadline_date && (
+            <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
+              <p className="text-white font-semibold text-lg">
+                This surprise board will be delivered to {honoreeName} on {formatDeadlineDate(board.deadline_date)}
+              </p>
+              <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
+                Time left to wish : 00-00-00
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
