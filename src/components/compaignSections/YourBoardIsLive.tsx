@@ -11,17 +11,21 @@ import BoardBgImg from "@/assets/pngs/live-board-bg.png";
 import LiveBoardBoys from "@/assets/pngs/live-board-boys.png";
 import ShareNetwork from "@/assets/svgs/ShareNetwork.svg";
 
-const YourBoardIsLive = () => {
+type Props = {
+  onPublish?: () => void;
+  isPublishing?: boolean;
+};
+
+const YourBoardIsLive = ({ onPublish, isPublishing }: Props) => {
 
   return (
     <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto space-y-6">
       <div>
         <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">
-          Your board is live! 🥳
+          Your board is ready! 🥳
         </p>
         <p className="text-sm text-center mt-1 text-gray-600">
-          Every wish, photo, video, and gift will gather here in one place and Sean will receive it all at midnight on their birthday, beautifully wrapped in our BirthdayText story.
-          You can invite more people anytime and watch the love grow.
+          Your board is created and saved as a draft. Click "Publish Board" to make it live and start inviting people!
         </p>
       </div>
 
@@ -102,13 +106,27 @@ const YourBoardIsLive = () => {
 
       </div>
 
-      <Link href="/posts">
-        <GlobalButton
-          title="Invite More People"
-          height="44px"
-          className="mt-6"
-        />
-      </Link>
+      <div className="space-y-3">
+        {onPublish && (
+          <GlobalButton
+            title={isPublishing ? "Publishing..." : "Publish Board"}
+            height="48px"
+            className="mt-6"
+            onClick={onPublish}
+            disabled={isPublishing}
+          />
+        )}
+        
+        <Link href="/dashboard/home">
+          <GlobalButton
+            title="Save as Draft & Go to Dashboard"
+            height="48px"
+            bgColor="#E5E5E5"
+            color="#333333"
+            className="mt-3"
+          />
+        </Link>
+      </div>
     </div>
   );
 };

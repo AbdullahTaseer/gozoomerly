@@ -24,7 +24,9 @@ import {
   getBoardTypeFields,
   BoardTypeField,
   CreateBoardInput,
-  addBoardGiftOptions
+  addBoardGiftOptions,
+  publishBoard,
+  Board
 } from '@/lib/supabase/boards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
@@ -235,17 +237,13 @@ const CreateBirthdayBoard = () => {
   };
 
   const handleNextStep = async () => {
-    setStep(step + 1);
-  };
+    if (step === 1) {
+      setStep(step + 1);
+      return;
+    }
 
-  const handleStep5Next = () => {
-    setStep(6);
-  };
-
-  const handlePublishBoard = async () => {
-    if (!boardId && userId && selectedBoardType) {
+    if (step === 2 && !boardId && userId && selectedBoardType) {
       setCreating(true);
-      
       try {
         const boardData: CreateBoardInput = {
           title: customFieldValues.title || `${selectedBoardType.name} Board`,
@@ -271,50 +269,179 @@ const CreateBirthdayBoard = () => {
         };
 
         const { data, error } = await createBoard(userId, boardData);
-        if (data && !error) {
-          setBoardId(data.id);
-          localStorage.setItem('currentBoardId', data.id);
-          localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
-          localStorage.removeItem('selectedBoardType');
-          
-          if (savedGiftData) {
-            try {
-              const giftOptionData = [{
-                amount: savedGiftData.amount,
-                label: savedGiftData.label,
-                description: savedGiftData.message || undefined,
-                is_custom: savedGiftData.isCustom,
-              }];
-              
-              await addBoardGiftOptions(data.id, giftOptionData);
-              console.log('Gift saved to board:', giftOptionData);
-            } catch (giftError) {
-              console.error('Error saving gift:', giftError);
-            }
-          }
-          
-          setStep(7);
-          // Clear form data after successful board creation
-          // This ensures a clean slate for the next board creation
-          setTimeout(() => {
-            localStorage.removeItem('boardTypeFields');
-            localStorage.removeItem('currentBoardId');
-            setCustomFieldValues({});
-            setProfilePhotoPreview(null);
-          }, 2000); // Clear after 2 seconds to allow user to see the success message
-        } else {
-          console.error('Error creating board:', error);
-          alert('Failed to create board. Please try again.');
+        
+        if (error || !data) {
+          const errorMessage = error?.message || 'Failed to create board';
+          alert(`Failed to create board: ${errorMessage}`);
+          return;
         }
+        
+        setBoardId(data.id);
+        localStorage.setItem('currentBoardId', data.id);
+        localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+        setStep(step + 1);
+        
       } catch (err) {
-        console.error('Unexpected error:', err);
-        alert('An unexpected error occurred. Please try again.');
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        alert(`An unexpected error occurred: ${errorMessage}`);
       } finally {
         setCreating(false);
       }
-    } else if (boardId) {
-      // Board already exists, just go to final step
+      return;
+    }
+
+    if (boardId && step === 2) {
+      setCreating(true);
+      try {
+        const updates: Partial<Board> = {};
+        
+        if (customFieldValues.title) {
+          updates.title = customFieldValues.title;
+        }
+        
+        if (customFieldValues.description) {
+          updates.description = customFieldValues.description;
+        }
+        
+        updates.honoree_details = {
+          first_name: customFieldValues.first_name,
+          last_name: customFieldValues.last_name,
+          date_of_birth: customFieldValues.date_of_birth,
+          hometown: customFieldValues.hometown,
+          phone: customFieldValues.phone,
+          email: customFieldValues.email,
+          profile_photo_url: customFieldValues.profile_photo_url,
+          theme_color: customFieldValues.theme_color || '#9B59B6',
+        };
+        
+        if (customFieldValues.goal_amount) {
+          updates.goal_type = 'monetary';
+          updates.goal_amount = parseFloat(customFieldValues.goal_amount);
+        } else {
+          updates.goal_type = 'non_monetary';
+        }
+
+        const { data, error } = await updateBoard(boardId, updates);
+        
+        if (error || !data) {
+          const errorMessage = error?.message || 'Failed to update board';
+          alert(`Failed to update board: ${errorMessage}`);
+          return;
+        }
+        
+        localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+        setStep(step + 1);
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        alert(`An unexpected error occurred: ${errorMessage}`);
+      } finally {
+        setCreating(false);
+      }
+      return;
+    }
+
+    setStep(step + 1);
+  };
+
+  const handleStep5Next = async () => {
+    if (boardId) {
+      setCreating(true);
+      try {
+        const updates: Partial<Board> = {};
+        
+        updates.privacy = (customFieldValues.privacy as 'public' | 'private' | 'circle_only') || 'public';
+        updates.allow_invites = customFieldValues.allow_invites !== undefined ? customFieldValues.allow_invites : true;
+        updates.invites_can_invite = customFieldValues.invites_can_invite !== undefined ? customFieldValues.invites_can_invite : false;
+
+        const { data } = await updateBoard(boardId, updates);
+        
+        if (data) {
+          localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+        }
+      } catch (err) {
+      } finally {
+        setCreating(false);
+      }
+    }
+    
+    setStep(6);
+  };
+
+  const handleStep6Next = async () => {
+    if (!boardId) {
+      alert('No board found. Please go back and complete step 2.');
+      return;
+    }
+
+    setCreating(true);
+    
+    try {
+      if (savedGiftData) {
+        const giftOptionData = [{
+          amount: savedGiftData.amount,
+          label: savedGiftData.label,
+          description: savedGiftData.message || undefined,
+          is_custom: savedGiftData.isCustom,
+        }];
+        
+        const giftResult = await addBoardGiftOptions(boardId, giftOptionData);
+        if (giftResult.error) {
+          alert(`Warning: Failed to save gift option: ${giftResult.error.message || 'Unknown error'}`);
+        }
+      }
+
+      localStorage.removeItem('selectedBoardType');
       setStep(7);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`An unexpected error occurred: ${errorMessage}`);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handlePublishBoard = async () => {
+    if (!boardId) {
+      alert('No board found to publish.');
+      return;
+    }
+
+    if (!userId) {
+      alert('User not authenticated. Please sign in again.');
+      router.push('/signin');
+      return;
+    }
+
+    setCreating(true);
+    
+    try {
+      const { data, error } = await publishBoard(boardId);
+      
+      if (error || !data) {
+        const errorMessage = error?.message || 'Failed to publish board';
+        alert(`Failed to publish board: ${errorMessage}`);
+        return;
+      }
+
+      setTimeout(() => {
+        localStorage.removeItem('boardTypeFields');
+        localStorage.removeItem('currentBoardId');
+        setCustomFieldValues({});
+        setProfilePhotoPreview(null);
+      }, 2000);
+      
+      alert('🎉 Board published successfully! Redirecting...');
+      setTimeout(() => {
+        router.push(`/dashboard/boards/${data.slug}`);
+      }, 1000);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`An unexpected error occurred: ${errorMessage}`);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -328,6 +455,41 @@ const CreateBirthdayBoard = () => {
   };
 
   const handleStep3Next = async () => {
+    if (boardId && selectedMusicId) {
+      setCreating(true);
+      try {
+        const currentHonoreeDetails = {
+          first_name: customFieldValues.first_name,
+          last_name: customFieldValues.last_name,
+          date_of_birth: customFieldValues.date_of_birth,
+          hometown: customFieldValues.hometown,
+          phone: customFieldValues.phone,
+          email: customFieldValues.email,
+          profile_photo_url: customFieldValues.profile_photo_url,
+          theme_color: customFieldValues.theme_color || '#9B59B6',
+        };
+
+        const updates: Partial<Board> = {
+          honoree_details: {
+            ...currentHonoreeDetails,
+            music_track_id: selectedMusicId,
+          }
+        };
+
+        const { data } = await updateBoard(boardId, updates);
+        
+        if (data) {
+          localStorage.setItem('boardTypeFields', JSON.stringify({
+            ...customFieldValues,
+            music_track_id: selectedMusicId
+          }));
+        }
+      } catch (err) {
+      } finally {
+        setCreating(false);
+      }
+    }
+    
     setStep(4); 
   };
 
@@ -673,12 +835,13 @@ const CreateBirthdayBoard = () => {
                           icon={ArrowLeft}
                         />
                         <GlobalButton
-                          title="Next"
+                          title={creating ? "Creating..." : "Next"}
                           onClick={handleNextStep}
                           icon={ArrowRight}
                           height="48px"
                           width="120px"
                           className="flex-row-reverse"
+                          disabled={creating}
                         />
                       </div>
                     </div>
@@ -722,14 +885,16 @@ const CreateBirthdayBoard = () => {
                         height="48px"
                         width="100px"
                         icon={ArrowLeft}
+                        disabled={creating}
                       />
                       <GlobalButton
-                        title="Next"
+                        title={creating ? "Updating..." : "Next"}
                         icon={ArrowRight}
                         onClick={handleStep3Next}
                         height="48px"
                         width="120px"
                         className="flex-row-reverse"
+                        disabled={creating}
                       />
                     </div>
                   </div>
@@ -784,12 +949,14 @@ const CreateBirthdayBoard = () => {
                           height="48px"
                           width="100px"
                           icon={ArrowLeft}
+                          disabled={creating}
                         />
                         <GlobalButton
-                          title="Continue"
+                          title={creating ? "Updating..." : "Continue"}
                           onClick={handleStep5Next}
                           height="48px"
                           width="160px"
+                          disabled={creating}
                         />
                       </div>
                     </div>
@@ -798,11 +965,14 @@ const CreateBirthdayBoard = () => {
 
 
                 {step === 6 &&
-                  <WhoCanJoin goToLiveBoard={handlePublishBoard} />
+                  <WhoCanJoin goToLiveBoard={handleStep6Next} />
                 }
 
                 {step === 7 &&
-                  <YourBoardIsLive />
+                  <YourBoardIsLive 
+                    onPublish={handlePublishBoard}
+                    isPublishing={creating}
+                  />
                 }
               </>
             )}

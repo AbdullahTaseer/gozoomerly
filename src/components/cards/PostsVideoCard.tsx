@@ -4,88 +4,87 @@ import Image from "next/image";
 import { Heart, MessageCircle, Play } from "lucide-react";
 
 import Avatar from "@/assets/svgs/Sohail.svg";
-import videoThumb from "@/assets/pngs/video-thumbnail.png";
 
 type props = {
   goToProfile?: () => void;
+  videos?: any[];
 }
 
-const PostsVideoCard = ({ goToProfile }: props) => {
+const PostsVideoCard = ({ goToProfile, videos = [] }: props) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+
+  if (!videos || videos.length === 0) {
+    return null;
+  }
+
+  const currentVideo = videos[currentVideoIndex];
 
   return (
-    <div className="border border-[#E8E8E8] rounded-[24px] overflow-clip">
-
-      <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
-        <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
-          <Image
-            src={Avatar}
-            alt=""
-            height={50}
-            width={50}
-            className="rounded-full border-2 border-pink-100"
-          />
-          <span className="font-semibold">Mark D.</span>
-          <span className="bg-[#F4F4F4] rounded-full px-2 py-1 text-sm">
-            Creator
-          </span>
-        </div>
-        <div className="space-x-2 flex flex-wrap">
-          <span className="bg-black text-white rounded-full px-3 py-1 text-xs">
-            ✨ Wished
-          </span>
-          <span className="bg-black text-white rounded-full px-3 py-1 text-xs">
-            💖 With Love - $100
-          </span>
-        </div>
-      </div>
-
-      <div className="relative px-5">
-        {isPlaying ? (
-          <iframe
-            className="rounded-xl w-full aspect-video"
-            src="https://www.youtube.com/embed/3GwjfUFyY6M?autoplay=1"
-            title="Birthday Celebration Video"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        ) : (
-          <>
-            <Image
-              src={videoThumb}
-              alt="video thumbnail"
-              className="rounded-xl w-full object-cover"
-            />
-            <button
-              className="absolute inset-0 flex items-center justify-center"
-              onClick={() => setIsPlaying(true)}
-            >
-              <div className="border border-white text-white rounded-full p-3 shadow-md bg-black/60 hover:bg-black transition">
-                <Play size={23} />
+    <>
+      {videos.map((video, index) => {
+        const uploader = video.profiles || { name: 'Unknown User', profile_pic_url: null };
+        
+        return (
+          <div key={video.id || index} className="border border-[#E8E8E8] rounded-[24px] overflow-clip mb-6">
+            <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
+              <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
+                {uploader.profile_pic_url ? (
+                  <img
+                    src={uploader.profile_pic_url}
+                    alt={uploader.name}
+                    className="rounded-full border-2 border-pink-100 w-[50px] h-[50px] object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={Avatar}
+                    alt=""
+                    height={50}
+                    width={50}
+                    className="rounded-full border-2 border-pink-100"
+                  />
+                )}
+                <span className="font-semibold">{uploader.name}</span>
+                <span className="bg-[#F4F4F4] rounded-full px-2 py-1 text-sm">
+                  Contributor
+                </span>
               </div>
-            </button>
-          </>
-        )}
-      </div>
+              <div className="space-x-2 flex flex-wrap">
+                <span className="bg-black text-white rounded-full px-3 py-1 text-xs">
+                  🎥 Video
+                </span>
+              </div>
+            </div>
+
+          <div className="relative px-5">
+            <video
+              className="rounded-xl w-full max-h-[500px] object-cover"
+              controls
+              src={video.cdn_url}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
 
 
-      <p className="mt-4 px-5 text-sm">
-        <span className="font-bold">Sean,</span> you&apos;re the most deserving
-        person I know. Here&apos;s to your dream trip 🌊
-      </p>
+            <p className="mt-4 px-5 text-sm">
+              {video.filename || 'Video contribution'}
+            </p>
 
-
-      <div className="border-t bg-[#F4F4F4] mt-4 py-3 px-5 flex justify-between text-sm text-gray-600">
-        <div className="flex items-center gap-1">
-          <Heart size={16} />
-          <span>68 likes</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <MessageCircle size={16} />
-          <span>3 comments</span>
-        </div>
-      </div>
-    </div>
+            <div className="border-t bg-[#F4F4F4] mt-4 py-3 px-5 flex justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Heart size={16} />
+                <span>0 likes</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MessageCircle size={16} />
+                <span>0 comments</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </>
   );
 };
 

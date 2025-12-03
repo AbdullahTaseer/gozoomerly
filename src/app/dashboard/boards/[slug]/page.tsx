@@ -124,16 +124,16 @@ export default async function BoardPage(props: any) {
   const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
   const shareUrl = `${siteBase}/dashboard/boards/${slug}`;
 
-  // Fetch gift options and statistics
   const supabase = await createClient();
   let giftOptions: any[] = [];
   let topContributors: any[] = [];
   let invitedCount = 0;
   let participantsCount = 0;
   let mediaCount = 0;
+  let boardImages: any[] = [];
+  let boardVideos: any[] = [];
 
   if (board?.id) {
-    // Fetch gift options
     const { data: giftData } = await supabase
       .from('board_gift_options')
       .select('*')
@@ -161,11 +161,25 @@ export default async function BoardPage(props: any) {
       .eq('board_id', board.id);
     invitedCount = invited || 0;
 
-    const { count: media } = await supabase
+    const { data: allMedia, count: media } = await supabase
       .from('media')
-      .select('*', { count: 'exact', head: true })
-      .eq('board_id', board.id);
+      .select(`
+        *,
+        profiles:uploader_id (
+          id,
+          name,
+          profile_pic_url
+        )
+      `, { count: 'exact' })
+      .eq('board_id', board.id)
+      .order('created_at', { ascending: false });
+    
     mediaCount = media || 0;
+
+    if (allMedia) {
+      boardImages = allMedia.filter(m => m.media_type === 'image');
+      boardVideos = allMedia.filter(m => m.media_type === 'video');
+    }
 
     participantsCount = board.contributors_count || 0;
   }
@@ -307,12 +321,17 @@ export default async function BoardPage(props: any) {
           boardId={board?.id}
         />
 
-        {/* Media Sections */}
-        <div className='mt-6 space-y-6'>
-          <PostsImagesCarouselCard />
-          <PostsVideoCard />
-          <PostsImagesCarouselCard />
-        </div>
+        {(boardImages.length > 0 || boardVideos.length > 0) && (
+          <div className='mt-6 space-y-6'>
+            {boardImages.length > 0 && (
+              <PostsImagesCarouselCard images={boardImages} />
+            )}
+            
+            {boardVideos.length > 0 && (
+              <PostsVideoCard videos={boardVideos} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
