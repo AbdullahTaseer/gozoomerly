@@ -11,6 +11,9 @@ import GlobalButton from '@/components/buttons/GlobalButton';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 import { createClient } from '@/lib/supabase/client';
 import { authService } from '@/lib/supabase/auth';
+import GlobalModal from '@/components/modals/GlobalModal';
+import FloatingInput from '@/components/inputs/FloatingInput';
+import AddCircleModal from '@/components/modals/AddCircleModal';
 
 interface Circle {
   id: string;
@@ -36,6 +39,7 @@ const Circles = () => {
   const [circles, setCircles] = useState<Circle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [createCircleModalOpen, setIsCreateCircleModalOpen] = useState(false);
 
   useEffect(() => {
     fetchUserCircles();
@@ -45,7 +49,7 @@ const Circles = () => {
     try {
       const supabase = createClient();
       const user = await authService.getUser();
-      
+
       if (!user) {
         router.push('/signin');
         return;
@@ -111,7 +115,7 @@ const Circles = () => {
             <GlobalInput placeholder='Search...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
           </div>
           <Image src={FilterSliderIcon} alt='' height={45} width={45} />
-          <GlobalButton title='Create Circle' height='42px' className='w-[164px] max-[580px]:w-[120px]' />
+          <GlobalButton onClick={() => setIsCreateCircleModalOpen(true)} title='Create Circle' height='42px' className='w-[164px] max-[580px]:w-[120px]' />
         </div>
       </div>
 
@@ -138,6 +142,15 @@ const Circles = () => {
           ))
         )}
       </div>
+
+      <GlobalModal
+        title='Create Circles'
+        isOpen={createCircleModalOpen}
+        onClose={() => setIsCreateCircleModalOpen(false)}
+        className="w-[500px] max-[550px]:w-[95vw]"
+      >
+        <AddCircleModal />
+      </GlobalModal>
     </div>
   );
 };

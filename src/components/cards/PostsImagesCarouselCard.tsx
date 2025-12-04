@@ -34,7 +34,7 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
   const currentItem = media[currentIndex];
 
   useEffect(() => {
-    if (currentItem.type === "video") {
+    if (currentItem?.type === "video") {
       setIsPlaying(true);
     } else {
       setIsPlaying(false);
@@ -46,7 +46,7 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
 
       <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
         <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
-          {currentItem.uploader.profile_pic_url ? (
+          {currentItem?.uploader.profile_pic_url ? (
             <img
               src={currentItem.uploader.profile_pic_url}
               alt={currentItem.uploader.name}
@@ -61,7 +61,7 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
               className="rounded-full border-2 border-pink-100"
             />
           )}
-          <span className="font-semibold">{currentItem.uploader.name}</span>
+          <span className="font-semibold">{currentItem?.uploader.name}</span>
           <span className="bg-[#F4F4F4] rounded-full px-2 py-1 text-sm">Contributor</span>
         </div>
         <div className="space-x-2 flex flex-wrap">
@@ -72,7 +72,7 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
       </div>
 
       <div className="relative px-5">
-        {currentItem.type === "image" ? (
+        {currentItem?.type === "image" ? (
           <img
             src={currentItem.src}
             alt={currentItem.filename || `carousel-item-${currentIndex}`}
