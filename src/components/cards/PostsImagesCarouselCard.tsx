@@ -18,15 +18,15 @@ type props = {
 }
 
 const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
-  const media = images.map(img => ({
-    type: "image",
-    src: img.cdn_url,
-    filename: img.filename,
-    uploader: img.profiles || { name: 'Unknown User', profile_pic_url: null }
-  }));
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const media = (images || []).map(img => ({
+    type: "image",
+    src: img?.cdn_url || '',
+    filename: img?.filename || 'Image',
+    uploader: img?.profiles || { name: 'Unknown User', profile_pic_url: null }
+  }));
 
   const goPrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
   const goNext = () => setCurrentIndex((prev) => Math.min(prev + 1, media.length - 1));
@@ -40,6 +40,10 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
       setIsPlaying(false);
     }
   }, [currentItem]);
+
+  if (!images || images.length === 0 || !currentItem) {
+    return null;
+  }
 
   return (
     <div className="border border-[#E8E8E8] rounded-[24px] overflow-clip">
