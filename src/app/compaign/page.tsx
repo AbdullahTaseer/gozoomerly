@@ -59,6 +59,10 @@ const Compaign = () => {
   const handleCampaignSelect = (boardType: BoardType) => {
     console.log('Board type selected:', boardType);
     
+    // Clear any previous board creation data when starting a new board
+    localStorage.removeItem('boardTypeFields');
+    localStorage.removeItem('currentBoardId');
+    
     // Store the selected board type info
     const boardTypeData = {
       id: boardType.id,

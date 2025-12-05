@@ -125,16 +125,16 @@ export default async function BoardPage(props: any) {
   const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
   const shareUrl = `${siteBase}/dashboard/boards/${slug}`;
 
-  // Fetch gift options and statistics
   const supabase = await createClient();
   let giftOptions: any[] = [];
   let topContributors: any[] = [];
   let invitedCount = 0;
   let participantsCount = 0;
   let mediaCount = 0;
+  let boardImages: any[] = [];
+  let boardVideos: any[] = [];
 
   if (board?.id) {
-    // Fetch gift options
     const { data: giftData } = await supabase
       .from('board_gift_options')
       .select('*')
@@ -162,11 +162,25 @@ export default async function BoardPage(props: any) {
       .eq('board_id', board.id);
     invitedCount = invited || 0;
 
-    const { count: media } = await supabase
+    const { data: allMedia, count: media } = await supabase
       .from('media')
-      .select('*', { count: 'exact', head: true })
-      .eq('board_id', board.id);
+      .select(`
+        *,
+        profiles:uploader_id (
+          id,
+          name,
+          profile_pic_url
+        )
+      `, { count: 'exact' })
+      .eq('board_id', board.id)
+      .order('created_at', { ascending: false });
+    
     mediaCount = media || 0;
+
+    if (allMedia) {
+      boardImages = allMedia.filter(m => m.media_type === 'image');
+      boardVideos = allMedia.filter(m => m.media_type === 'video');
+    }
 
     participantsCount = board.contributors_count || 0;
   }
@@ -176,14 +190,15 @@ export default async function BoardPage(props: any) {
   const wishes = board?.wishes_count || 0;
   const gifters = board?.contributors_count || 0;
 
-  // Extract honoree details
-  const honoree = board?.honoree_details || {};
-  const honoreeFirstName = honoree.first_name || '';
-  const honoreeLastName = honoree.last_name || '';
-  const honoreeFullName = `${honoreeFirstName} ${honoreeLastName}`.trim() || 'Honoree';
-  const honoreeHometown = honoree.hometown || '';
-  const honoreeDateOfBirth = honoree.date_of_birth || '';
-  const honoreeProfilePhoto = honoree.profile_photo_url || staticProfileAvatar;
+  // Get honoree's information
+  const honoreeFirstName = board?.honoree_details?.first_name || '';
+  const honoreeLastName = board?.honoree_details?.last_name || '';
+  const honoreeName = honoreeFirstName && honoreeLastName 
+    ? `${honoreeFirstName} ${honoreeLastName}`.trim()
+    : honoreeFirstName || honoreeLastName || 'Unknown';
+  const honoreeProfilePhoto = board?.honoree_details?.profile_photo_url || staticProfileAvatar;
+  const honoreeHometown = board?.honoree_details?.hometown || '';
+  const honoreeDateOfBirth = board?.honoree_details?.date_of_birth || '';
   
   // Format date of birth
   const formatDateOfBirth = (dateString?: string) => {
@@ -192,7 +207,7 @@ export default async function BoardPage(props: any) {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
     } catch {
-      return dateString;
+      return '';
     }
   };
 
@@ -203,61 +218,14 @@ export default async function BoardPage(props: any) {
       const date = new Date(dateString);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
-      return dateString;
+      return '';
     }
   };
 
-  // Calculate time left until deadline
-  const calculateTimeLeft = (deadlineDate?: string) => {
-    if (!deadlineDate) return '00-00-00';
-    try {
-      const deadline = new Date(deadlineDate);
-      const now = new Date();
-      const diff = deadline.getTime() - now.getTime();
-      
-      if (diff <= 0) return '00-00-00';
-      
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      
-      return `${String(days).padStart(2, '0')}-${String(hours).padStart(2, '0')}-${String(minutes).padStart(2, '0')}`;
-    } catch {
-      return '00-00-00';
-    }
-  };
-
-  // Get creator info
-  const creator = board?.creator || (board as any)?.profiles;
-  const creatorName = creator?.name || 'Unknown';
-  const creatorAvatar = creator?.profile_pic_url || staticProfileAvatar;
-
-  // Get board title
-  const boardTitle = board?.title || 'Untitled Board';
-
-  // Get description
-  const description = board?.description || '';
-  const goalText = board?.goal_amount ? ` and the goal is ${board.currency || '$'}${board.goal_amount}` : '';
-  const fullDescription = description ? `${description}${goalText}` : `Join this board${goalText}`;
-
-  // Get deadline
-  const deadlineDate = board?.deadline_date;
-  const deadlineText = deadlineDate 
-    ? `This surprise board will be delivered to ${honoreeFullName} on ${formatDeadlineDate(deadlineDate)}`
-    : '';
-
-  if (!board) {
-    return (
-      <div className="w-full min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Board not found</h1>
-          <Link href="/dashboard" className="text-blue-600 hover:underline">
-            Go back to dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const boardTitle = board?.title || `${honoreeName} birthday`;
+  const boardDescription = board?.description || `Happy Birthday, ${honoreeFirstName || honoreeName}! 🎉`;
+  const creatorName = (board as any)?.profiles?.name || 'Unknown';
+  const creatorAvatar = (board as any)?.profiles?.profile_pic_url || staticProfileAvatar;
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -289,56 +257,49 @@ export default async function BoardPage(props: any) {
           </div>
 
           <div className="flex items-center mt-6 gap-4">
-            <ImageWithFallback
+            <Image
               src={honoreeProfilePhoto}
-              alt={honoreeFullName}
+              alt={honoreeName}
               width={65}
               height={65}
               className="rounded-full object-cover"
-              fallbackSrc={staticProfileAvatar}
             />
 
             <div>
-              <p className="text-white font-semibold text-lg">{honoreeFullName}</p>
-              <p className="text-white/90 text-sm flex gap-5 mt-1 flex-wrap">
-                {honoreeHometown && (
-                  <span><strong>Hometown:</strong> {honoreeHometown}</span>
-                )}
-                {honoreeDateOfBirth && (
-                  <span><strong>Date of Birth:</strong> {formatDateOfBirth(honoreeDateOfBirth)}</span>
-                )}
+              <p className="text-white font-semibold text-lg">{honoreeName}</p>
+              <p className="text-white/90 text-sm flex gap-5 mt-1">
+                {honoreeHometown && <span><strong>Location:</strong> {honoreeHometown}</span>}
+                {honoreeDateOfBirth && <span><strong>Date of Birth:</strong> {formatDateOfBirth(honoreeDateOfBirth)}</span>}
               </p>
             </div>
           </div>
 
-          {fullDescription && (
-            <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
-              {fullDescription}
-            </p>
-          )}
+          <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
+            {boardDescription}
+            {target > 0 && ` and the goal is $${target.toLocaleString()}`}
+          </p>
 
           <div className="flex items-center gap-2 mt-6">
             <p className="text-white text-[15px]">Created by</p>
             <div className="flex items-center gap-2">
-              <ImageWithFallback
+              <Image
                 src={creatorAvatar}
                 alt={creatorName}
                 width={32}
                 height={32}
                 className="rounded-full object-cover"
-                fallbackSrc={staticProfileAvatar}
               />
               <p className="text-white font-semibold text-sm">{creatorName}</p>
             </div>
           </div>
 
-          {deadlineText && (
+          {board?.deadline_date && (
             <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
               <p className="text-white font-semibold text-lg">
-                {deadlineText}
+                This surprise board will be delivered to {honoreeName} on {formatDeadlineDate(board.deadline_date)}
               </p>
               <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
-                Time left to wish : {calculateTimeLeft(deadlineDate)}
+                Time left to wish : 00-00-00
               </div>
             </div>
           )}
@@ -358,14 +319,20 @@ export default async function BoardPage(props: any) {
           mediaCount={mediaCount}
           wishes={wishes}
           gifters={gifters}
+          boardId={board?.id}
         />
 
-        {/* Media Sections */}
-        <div className='mt-6 space-y-6'>
-          <PostsImagesCarouselCard />
-          <PostsVideoCard />
-          <PostsImagesCarouselCard />
-        </div>
+        {(boardImages.length > 0 || boardVideos.length > 0) && (
+          <div className='mt-6 space-y-6'>
+            {boardImages.length > 0 && (
+              <PostsImagesCarouselCard images={boardImages} />
+            )}
+            
+            {boardVideos.length > 0 && (
+              <PostsVideoCard videos={boardVideos} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

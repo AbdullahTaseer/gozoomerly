@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { CloudUpload } from "lucide-react";
 
 import AddWishImg from "@/assets/svgs/add-wish.svg";
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
@@ -24,9 +25,11 @@ import {
   BoardTypeField,
   CreateBoardInput,
   addBoardGiftOptions,
-  getBoardById
+  publishBoard,
+  Board
 } from '@/lib/supabase/boards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { createClient } from '@/lib/supabase/client';
 
 const CreateBirthdayBoard = () => {
 
@@ -41,6 +44,10 @@ const CreateBirthdayBoard = () => {
   const [creating, setCreating] = useState(false);
   const [uploadedMediaIds, setUploadedMediaIds] = useState<string[]>([]);
   const [selectedMusicId, setSelectedMusicId] = useState<number | null>(null);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
+  const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
+  const [profilePhotoError, setProfilePhotoError] = useState<string | null>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   // Group fields by step based on mockup screenshots
@@ -83,6 +90,36 @@ const CreateBirthdayBoard = () => {
         setSelectedBoardType(boardType);
         fetchBoardTypeFields(boardType.id);
         // Don't remove it yet - will remove after board is created
+        
+        // Check if we're starting a new board or continuing an existing one
+        const currentBoardId = localStorage.getItem('currentBoardId');
+        const savedBoardData = localStorage.getItem('boardTypeFields');
+        
+        // Only load saved data if we're continuing an existing board
+        // If there's no currentBoardId, we're starting fresh - clear old data
+        if (!currentBoardId && savedBoardData) {
+          // Starting a new board - clear old saved data
+          localStorage.removeItem('boardTypeFields');
+          localStorage.removeItem('currentBoardId');
+          // Reset form state
+          setCustomFieldValues({});
+          setProfilePhotoPreview(null);
+          setStep(1);
+          setBoardId(null);
+        } else if (currentBoardId && savedBoardData) {
+          // Continuing an existing board - load saved data
+          try {
+            const savedData = JSON.parse(savedBoardData);
+            setCustomFieldValues(savedData);
+            // If profile photo URL exists, set it as preview
+            if (savedData.profile_photo_url) {
+              setProfilePhotoPreview(savedData.profile_photo_url);
+            }
+            setBoardId(currentBoardId);
+          } catch (error) {
+            console.error('Error parsing saved board data:', error);
+          }
+        }
       } catch (error) {
         console.error('Error parsing board type:', error);
         router.push('/compaign');
@@ -120,18 +157,93 @@ const CreateBirthdayBoard = () => {
     setCustomFieldValues(prev => ({ ...prev, [fieldKey]: value }));
   };
 
+  const handleProfilePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setProfilePhotoError('Image size should be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setProfilePhotoError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    setUploadingProfilePhoto(true);
+    setProfilePhotoError(null);
+
+    try {
+      const user = await authService.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop();
+      const fileName = `board-profile-${user.id}-${Date.now()}.${fileExt}`;
+
+      // Get session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      // Convert file to array buffer
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      // Upload using direct storage API endpoint
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': file.type,
+            'Cache-Control': 'max-age=3600'
+          },
+          body: uint8Array
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to upload image: ${error}`);
+      }
+
+      // Construct public URL
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Store the URL in customFieldValues
+      handleFieldChange('profile_photo_url', publicUrl);
+    } catch (err) {
+      console.error('Error uploading profile photo:', err);
+      setProfilePhotoError(err instanceof Error ? err.message : 'Failed to upload image');
+    } finally {
+      setUploadingProfilePhoto(false);
+    }
+  };
+
   const handleNextStep = async () => {
-    setStep(step + 1);
-  };
+    if (step === 1) {
+      setStep(step + 1);
+      return;
+    }
 
-  const handleStep5Next = () => {
-    setStep(6);
-  };
-
-  const handlePublishBoard = async () => {
-    if (!boardId && userId && selectedBoardType) {
+    if (step === 2 && !boardId && userId && selectedBoardType) {
       setCreating(true);
-      
       try {
         const boardData: CreateBoardInput = {
           title: customFieldValues.title || `${selectedBoardType.name} Board`,
@@ -157,54 +269,179 @@ const CreateBirthdayBoard = () => {
         };
 
         const { data, error } = await createBoard(userId, boardData);
-        if (data && !error) {
-          setBoardId(data.id);
-          localStorage.setItem('currentBoardId', data.id);
-          localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
-          localStorage.removeItem('selectedBoardType');
-          
-          if (savedGiftData) {
-            try {
-              const giftOptionData = [{
-                amount: savedGiftData.amount,
-                label: savedGiftData.label,
-                description: savedGiftData.message || undefined,
-                is_custom: savedGiftData.isCustom,
-              }];
-              
-              await addBoardGiftOptions(data.id, giftOptionData);
-              console.log('Gift saved to board:', giftOptionData);
-            } catch (giftError) {
-              console.error('Error saving gift:', giftError);
-            }
-          }
-          
-          // Redirect to the board detail page
-          router.push(`/dashboard/boards/${data.slug}`);
-        } else {
-          console.error('Error creating board:', error);
-          alert('Failed to create board. Please try again.');
+        
+        if (error || !data) {
+          const errorMessage = error?.message || 'Failed to create board';
+          alert(`Failed to create board: ${errorMessage}`);
+          return;
         }
+        
+        setBoardId(data.id);
+        localStorage.setItem('currentBoardId', data.id);
+        localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+        setStep(step + 1);
+        
       } catch (err) {
-        console.error('Unexpected error:', err);
-        alert('An unexpected error occurred. Please try again.');
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        alert(`An unexpected error occurred: ${errorMessage}`);
       } finally {
         setCreating(false);
       }
-    } else if (boardId) {
-      // Board already exists, fetch it to get the slug and redirect
+      return;
+    }
+
+    if (boardId && step === 2) {
+      setCreating(true);
       try {
-        const { data: existingBoard, error: fetchError } = await getBoardById(boardId);
-        if (existingBoard && !fetchError && existingBoard.slug) {
-          router.push(`/dashboard/boards/${existingBoard.slug}`);
+        const updates: Partial<Board> = {};
+        
+        if (customFieldValues.title) {
+          updates.title = customFieldValues.title;
+        }
+        
+        if (customFieldValues.description) {
+          updates.description = customFieldValues.description;
+        }
+        
+        updates.honoree_details = {
+          first_name: customFieldValues.first_name,
+          last_name: customFieldValues.last_name,
+          date_of_birth: customFieldValues.date_of_birth,
+          hometown: customFieldValues.hometown,
+          phone: customFieldValues.phone,
+          email: customFieldValues.email,
+          profile_photo_url: customFieldValues.profile_photo_url,
+          theme_color: customFieldValues.theme_color || '#9B59B6',
+        };
+        
+        if (customFieldValues.goal_amount) {
+          updates.goal_type = 'monetary';
+          updates.goal_amount = parseFloat(customFieldValues.goal_amount);
         } else {
-          console.error('Error fetching existing board:', fetchError);
-          setStep(7);
+          updates.goal_type = 'non_monetary';
+        }
+
+        const { data, error } = await updateBoard(boardId, updates);
+        
+        if (error || !data) {
+          const errorMessage = error?.message || 'Failed to update board';
+          alert(`Failed to update board: ${errorMessage}`);
+          return;
+        }
+        
+        localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
+        setStep(step + 1);
+        
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        alert(`An unexpected error occurred: ${errorMessage}`);
+      } finally {
+        setCreating(false);
+      }
+      return;
+    }
+
+    setStep(step + 1);
+  };
+
+  const handleStep5Next = async () => {
+    if (boardId) {
+      setCreating(true);
+      try {
+        const updates: Partial<Board> = {};
+        
+        updates.privacy = (customFieldValues.privacy as 'public' | 'private' | 'circle_only') || 'public';
+        updates.allow_invites = customFieldValues.allow_invites !== undefined ? customFieldValues.allow_invites : true;
+        updates.invites_can_invite = customFieldValues.invites_can_invite !== undefined ? customFieldValues.invites_can_invite : false;
+
+        const { data } = await updateBoard(boardId, updates);
+        
+        if (data) {
+          localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
         }
       } catch (err) {
-        console.error('Error fetching board:', err);
-        setStep(7);
+      } finally {
+        setCreating(false);
       }
+    }
+    
+    setStep(6);
+  };
+
+  const handleStep6Next = async () => {
+    if (!boardId) {
+      alert('No board found. Please go back and complete step 2.');
+      return;
+    }
+
+    setCreating(true);
+    
+    try {
+      if (savedGiftData) {
+        const giftOptionData = [{
+          amount: savedGiftData.amount,
+          label: savedGiftData.label,
+          description: savedGiftData.message || undefined,
+          is_custom: savedGiftData.isCustom,
+        }];
+        
+        const giftResult = await addBoardGiftOptions(boardId, giftOptionData);
+        if (giftResult.error) {
+          alert(`Warning: Failed to save gift option: ${giftResult.error.message || 'Unknown error'}`);
+        }
+      }
+
+      localStorage.removeItem('selectedBoardType');
+      setStep(7);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`An unexpected error occurred: ${errorMessage}`);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handlePublishBoard = async () => {
+    if (!boardId) {
+      alert('No board found to publish.');
+      return;
+    }
+
+    if (!userId) {
+      alert('User not authenticated. Please sign in again.');
+      router.push('/signin');
+      return;
+    }
+
+    setCreating(true);
+    
+    try {
+      const { data, error } = await publishBoard(boardId);
+      
+      if (error || !data) {
+        const errorMessage = error?.message || 'Failed to publish board';
+        alert(`Failed to publish board: ${errorMessage}`);
+        return;
+      }
+
+      setTimeout(() => {
+        localStorage.removeItem('boardTypeFields');
+        localStorage.removeItem('currentBoardId');
+        setCustomFieldValues({});
+        setProfilePhotoPreview(null);
+      }, 2000);
+      
+      alert('🎉 Board published successfully! Redirecting...');
+      setTimeout(() => {
+        router.push(`/dashboard/boards/${data.slug}`);
+      }, 1000);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      alert(`An unexpected error occurred: ${errorMessage}`);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -218,6 +455,41 @@ const CreateBirthdayBoard = () => {
   };
 
   const handleStep3Next = async () => {
+    if (boardId && selectedMusicId) {
+      setCreating(true);
+      try {
+        const currentHonoreeDetails = {
+          first_name: customFieldValues.first_name,
+          last_name: customFieldValues.last_name,
+          date_of_birth: customFieldValues.date_of_birth,
+          hometown: customFieldValues.hometown,
+          phone: customFieldValues.phone,
+          email: customFieldValues.email,
+          profile_photo_url: customFieldValues.profile_photo_url,
+          theme_color: customFieldValues.theme_color || '#9B59B6',
+        };
+
+        const updates: Partial<Board> = {
+          honoree_details: {
+            ...currentHonoreeDetails,
+            music_track_id: selectedMusicId,
+          }
+        };
+
+        const { data } = await updateBoard(boardId, updates);
+        
+        if (data) {
+          localStorage.setItem('boardTypeFields', JSON.stringify({
+            ...customFieldValues,
+            music_track_id: selectedMusicId
+          }));
+        }
+      } catch (err) {
+      } finally {
+        setCreating(false);
+      }
+    }
+    
     setStep(4); 
   };
 
@@ -445,7 +717,68 @@ const CreateBirthdayBoard = () => {
                     </div>
 
                     <div className="space-y-4">
-                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color').map((field) => (
+                      {/* Profile Photo Upload - Always show in first step */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Profile Photo
+                          {fieldGroups.step1?.find(f => f.field_key === 'profile_photo_url')?.is_required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                        </label>
+                        <div className="relative">
+                          <label
+                            onClick={() => !uploadingProfilePhoto && profilePhotoInputRef.current?.click()}
+                            className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
+                              uploadingProfilePhoto
+                                ? 'border-gray-300 bg-gray-50 cursor-wait'
+                                : profilePhotoPreview || customFieldValues.profile_photo_url
+                                ? 'border-[#F43C83] bg-pink-50'
+                                : 'border-[#B2B2B2] hover:border-[#F43C83] hover:bg-gray-50'
+                            }`}
+                          >
+                            {uploadingProfilePhoto ? (
+                              <div className="flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-[#F43C83] border-t-transparent mb-2" />
+                                <p className="text-sm text-gray-500">Uploading...</p>
+                              </div>
+                            ) : profilePhotoPreview || customFieldValues.profile_photo_url ? (
+                              <div className="flex flex-col items-center">
+                                <img
+                                  src={profilePhotoPreview || customFieldValues.profile_photo_url}
+                                  alt="Profile preview"
+                                  className="h-20 w-20 rounded-full object-cover mb-2 border-2 border-white shadow-md"
+                                />
+                                <p className="text-sm text-gray-600">Click to change photo</p>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center">
+                                <div className="bg-[#EEEEEE] flex justify-center items-center h-9 w-9 rounded-full mb-2">
+                                  <CloudUpload className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <p className="text-sm text-gray-500">Upload Profile Photo</p>
+                              </div>
+                            )}
+                            <input
+                              ref={profilePhotoInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleProfilePhotoUpload}
+                              className="hidden"
+                              disabled={uploadingProfilePhoto}
+                            />
+                          </label>
+                          {profilePhotoError && (
+                            <p className="text-sm text-red-500 mt-1">{profilePhotoError}</p>
+                          )}
+                          {fieldGroups.step1?.find(f => f.field_key === 'profile_photo_url')?.help_text && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              {fieldGroups.step1.find(f => f.field_key === 'profile_photo_url')?.help_text}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color' && f.field_key !== 'profile_photo_url').map((field) => (
                         <div key={field.id}>
                           <label className="block text-sm font-medium mb-2">
                             {field.label}
@@ -502,12 +835,13 @@ const CreateBirthdayBoard = () => {
                           icon={ArrowLeft}
                         />
                         <GlobalButton
-                          title="Next"
+                          title={creating ? "Creating..." : "Next"}
                           onClick={handleNextStep}
                           icon={ArrowRight}
                           height="48px"
                           width="120px"
                           className="flex-row-reverse"
+                          disabled={creating}
                         />
                       </div>
                     </div>
@@ -551,14 +885,16 @@ const CreateBirthdayBoard = () => {
                         height="48px"
                         width="100px"
                         icon={ArrowLeft}
+                        disabled={creating}
                       />
                       <GlobalButton
-                        title="Next"
+                        title={creating ? "Updating..." : "Next"}
                         icon={ArrowRight}
                         onClick={handleStep3Next}
                         height="48px"
                         width="120px"
                         className="flex-row-reverse"
+                        disabled={creating}
                       />
                     </div>
                   </div>
@@ -613,12 +949,14 @@ const CreateBirthdayBoard = () => {
                           height="48px"
                           width="100px"
                           icon={ArrowLeft}
+                          disabled={creating}
                         />
                         <GlobalButton
-                          title="Continue"
+                          title={creating ? "Updating..." : "Continue"}
                           onClick={handleStep5Next}
                           height="48px"
                           width="160px"
+                          disabled={creating}
                         />
                       </div>
                     </div>
@@ -627,11 +965,14 @@ const CreateBirthdayBoard = () => {
 
 
                 {step === 6 &&
-                  <WhoCanJoin goToLiveBoard={handlePublishBoard} />
+                  <WhoCanJoin goToLiveBoard={handleStep6Next} />
                 }
 
                 {step === 7 &&
-                  <YourBoardIsLive />
+                  <YourBoardIsLive 
+                    onPublish={handlePublishBoard}
+                    isPublishing={creating}
+                  />
                 }
               </>
             )}

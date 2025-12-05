@@ -130,7 +130,14 @@ export async function getBoardTypeFields(boardTypeId: string) {
 export async function createBoard(userId: string, input: CreateBoardInput) {
   const supabase = createClient();
   
-  // Generate a unique slug from the title
+  if (!userId) {
+    return { data: null, error: { message: 'User ID is required to create a board' } };
+  }
+  
+  if (!input.title || input.title.trim() === '') {
+    return { data: null, error: { message: 'Board title is required' } };
+  }
+  
   const baseSlug = input.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
@@ -142,19 +149,18 @@ export async function createBoard(userId: string, input: CreateBoardInput) {
     creator_id: userId,
     title: input.title,
     slug,
-    description: input.description,
-    honoree_details: input.honoree_details,
+    description: input.description || '',
+    honoree_details: input.honoree_details || {},
     goal_type: input.goal_type || 'monetary',
-    goal_amount: input.goal_amount,
+    goal_amount: input.goal_amount || null,
     currency: input.currency || 'USD',
-    deadline_date: input.deadline_date,
+    deadline_date: input.deadline_date || null,
     privacy: input.privacy || 'public',
     allow_invites: input.allow_invites ?? true,
     invites_can_invite: input.invites_can_invite ?? false,
     status: 'draft'
   };
   
-  // Only include board_type_id if it's provided
   if (input.board_type_id) {
     boardData.board_type_id = input.board_type_id;
   }
@@ -166,11 +172,15 @@ export async function createBoard(userId: string, input: CreateBoardInput) {
     .single();
 
   if (error) {
-    console.error('Error creating board:', error);
-    return { data: null, error };
+    return { 
+      data: null, 
+      error: {
+        ...error,
+        message: `Failed to create board: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`
+      }
+    };
   }
 
-  // Add creator as a board participant
   if (data) {
     await supabase
       .from('board_participants')
@@ -309,15 +319,21 @@ export async function getBoardById(boardId: string) {
 export async function updateBoard(boardId: string, updates: Partial<Board>) {
   const supabase = createClient();
   
+  const cleanedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as Record<string, any>);
+  
   const { data, error } = await supabase
     .from('boards')
-    .update(updates)
+    .update(cleanedUpdates)
     .eq('id', boardId)
     .select()
     .single();
 
   if (error) {
-    console.error('Error updating board:', error);
     return { data: null, error };
   }
 
@@ -327,22 +343,32 @@ export async function updateBoard(boardId: string, updates: Partial<Board>) {
 export async function publishBoard(boardId: string) {
   const supabase = createClient();
   
-  // First check if the board exists
   const { data: existingBoard, error: fetchError } = await supabase
     .from('boards')
-    .select('id, status, creator_id')
+    .select('*')
     .eq('id', boardId)
     .single();
 
-  if (fetchError || !existingBoard) {
-    console.error('Board not found:', boardId, fetchError);
+  if (fetchError) {
     return { 
       data: null, 
-      error: fetchError || new Error('Board not found') 
+      error: { 
+        ...fetchError, 
+        message: `Failed to find board: ${fetchError.message}` 
+      }
     };
   }
 
-  console.log('Attempting to publish board:', boardId, 'Current status:', existingBoard.status);
+  if (!existingBoard) {
+    return { 
+      data: null, 
+      error: { message: 'Board not found. Please try creating the board again.' }
+    };
+  }
+
+  if (existingBoard.status === 'published') {
+    return { data: existingBoard, error: null };
+  }
   
   const { data, error } = await supabase
     .from('boards')
@@ -355,18 +381,15 @@ export async function publishBoard(boardId: string) {
     .single();
 
   if (error) {
-    console.error('Error publishing board:', {
-      boardId,
-      error,
-      errorMessage: error.message,
-      errorDetails: error.details,
-      errorCode: error.code,
-      errorHint: error.hint
-    });
-    return { data: null, error };
+    return { 
+      data: null, 
+      error: {
+        ...error,
+        message: `Failed to publish board: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`
+      }
+    };
   }
-
-  console.log('Board published successfully:', data);
+  
   return { data, error: null };
 }
 
@@ -498,52 +521,33 @@ export async function addGiftContribution(
     return { data: null, error };
   }
 
-  // Update board's total_raised by adding the gift amount
-  const newTotalRaised = (currentBoard.total_raised || 0) + giftData.amount;
-  
-  // Check if this contributor already contributed to this board
-  // Try to check by contributor_id first, fallback to counting all contributions
-  let isNewContributor = true;
-  try {
-    const { count: existingContributionsFromUser } = await supabase
-      .from('board_gift_options')
-      .select('*', { count: 'exact', head: true })
-      .eq('board_id', boardId)
-      .eq('contributor_id', contributorId);
-    
-    isNewContributor = (existingContributionsFromUser || 0) === 0;
-  } catch (e) {
-    // contributor_id column might not exist, check by total contributions
-    const { count: totalContributions } = await supabase
-      .from('board_gift_options')
-      .select('*', { count: 'exact', head: true })
-      .eq('board_id', boardId);
-    
-    // If this is the first contribution ever, it's a new contributor
-    isNewContributor = (totalContributions || 0) === 0;
-  }
-  
-  // Increment contributors_count only if this is a new contributor
-  const newContributorsCount = isNewContributor
-    ? (currentBoard.contributors_count || 0) + 1
-    : currentBoard.contributors_count;
+  // Update board's total_raised and contributors_count
+  if (data) {
+    // First, get the current board data
+    const { data: currentBoard, error: fetchError } = await supabase
+      .from('boards')
+      .select('total_raised, contributors_count')
+      .eq('id', boardId)
+      .single();
 
-  // Update the board with new total_raised and contributors_count
-  const { error: updateError } = await supabase
-    .from('boards')
-    .update({
-      total_raised: newTotalRaised,
-      contributors_count: newContributorsCount,
-      last_activity_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', boardId);
+    if (!fetchError && currentBoard) {
+      const newTotalRaised = (currentBoard.total_raised || 0) + giftData.amount;
+      const newContributorsCount = (currentBoard.contributors_count || 0) + 1;
 
-  if (updateError) {
-    console.error('Error updating board total_raised:', updateError);
-    // Don't fail the whole operation, but log the error
-  } else {
-    console.log(`Updated board ${boardId}: total_raised = ${newTotalRaised}, contributors_count = ${newContributorsCount}`);
+      const { error: updateError } = await supabase
+        .from('boards')
+        .update({
+          total_raised: newTotalRaised,
+          contributors_count: newContributorsCount,
+          last_activity_at: new Date().toISOString()
+        })
+        .eq('id', boardId);
+
+      if (updateError) {
+        console.error('Error updating board raised amount:', updateError);
+        // Don't fail the whole operation if update fails, but log it
+      }
+    }
   }
 
   return { data, error: null };
@@ -611,8 +615,8 @@ export async function uploadBoardMedia(
   const supabase = createClient();
   
   const fileExt = file.name.split('.').pop();
-  const fileName = `${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const bucketName = 'board-media'; 
+  const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const bucketName = 'profile-images'; 
   
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
@@ -650,6 +654,72 @@ export async function uploadBoardMedia(
   }
 
   return { data, error: null };
+}
+
+export async function uploadMultipleBoardMedia(
+  boardId: string,
+  userId: string,
+  files: File[]
+) {
+  const supabase = createClient();
+  const bucketName = 'profile-images';
+  const results: { success: string[], failed: string[] } = { success: [], failed: [] };
+
+  for (const file of files) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        results.failed.push(file.name);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(fileName);
+
+      const mediaType = file.type.startsWith('image/') 
+        ? 'image' 
+        : file.type.startsWith('video/') 
+          ? 'video' 
+          : 'audio';
+
+      const { data, error } = await supabase
+        .from('media')
+        .insert([{
+          uploader_id: userId,
+          board_id: boardId,
+          bucket: bucketName,
+          path: fileName,
+          filename: file.name,
+          media_type: mediaType,
+          mime_type: file.type,
+          size_bytes: file.size,
+          cdn_url: publicUrl
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving media record:', error);
+        await supabase.storage.from(bucketName).remove([fileName]);
+        results.failed.push(file.name);
+      } else if (data) {
+        results.success.push(data.id);
+      }
+    } catch (err) {
+      console.error('Unexpected error uploading file:', file.name, err);
+      results.failed.push(file.name);
+    }
+  }
+
+  return { data: results, error: null };
 }
 
 export async function createBoardInvitation(
@@ -699,6 +769,7 @@ export async function createOrUpdateBoard(
 }
 
 export async function fetchActiveBoards(options?: {
+  userId?: string;
   includeStatus?: string[];
   includePrivacy?: string[];
   showAll?: boolean;
@@ -715,12 +786,20 @@ export async function fetchActiveBoards(options?: {
         icon,
         color_scheme
       ),
+      board_participants!inner (
+        user_id,
+        role
+      ),
       profiles:creator_id (
         id,
         name,
         profile_pic_url
       )
     `);
+
+  if (options?.userId) {
+    query = query.eq('board_participants.user_id', options.userId);
+  }
 
   if (!options?.showAll) {
     if (options?.includeStatus) {
@@ -735,25 +814,21 @@ export async function fetchActiveBoards(options?: {
   }
 
   const { data, error } = await query
-    .order('created_at', { ascending: false })
-    .limit(10);
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.error('Error fetching active boards:', error);
     return { boards: [], error };
   }
 
-  // Fetch invitation counts and media counts for each board
   if (data) {
     const boardsWithCounts = await Promise.all(
       data.map(async (board) => {
-        // Count invitations
         const { count: invitedCount } = await supabase
           .from('board_invitations')
           .select('*', { count: 'exact', head: true })
           .eq('board_id', board.id);
 
-        // Count media
         const { count: mediaCount } = await supabase
           .from('media')
           .select('*', { count: 'exact', head: true })
@@ -767,13 +842,9 @@ export async function fetchActiveBoards(options?: {
       })
     );
 
-    console.log('Fetched boards:', boardsWithCounts?.length || 0, 'boards');
-    console.log('First board:', boardsWithCounts?.[0]);
-
     return { boards: boardsWithCounts || [], error: null };
   }
 
-  // If no data, return empty array
   return { boards: [], error: null };
 }
 

@@ -11,26 +11,22 @@ import {
 } from "lucide-react";
 
 import Avatar from "@/assets/svgs/Sohail.svg";
-import carousel_1 from "@/assets/pngs/post-carousel-1.jpg";
-import carousel_2 from "@/assets/pngs/posts-carsousel-2.jpg";
 
 type props = {
   goToProfile?: () => void;
+  images?: any[];
 }
 
-const PostsImagesCarouselCard = ({ goToProfile }: props) => {
-  const media = [
-    { type: "image", src: carousel_1 },
-    { type: "image", src: carousel_2 },
-    {
-      type: "video",
-      src: "https://www.youtube.com/embed/3GwjfUFyY6M",
-    },
-    { type: "image", src: carousel_1 },
-  ];
-
+const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const media = (images || []).map(img => ({
+    type: "image",
+    src: img?.cdn_url || '',
+    filename: img?.filename || 'Image',
+    uploader: img?.profiles || { name: 'Unknown User', profile_pic_url: null }
+  }));
 
   const goPrev = () => setCurrentIndex((prev) => Math.max(prev - 1, 0));
   const goNext = () => setCurrentIndex((prev) => Math.min(prev + 1, media.length - 1));
@@ -38,44 +34,53 @@ const PostsImagesCarouselCard = ({ goToProfile }: props) => {
   const currentItem = media[currentIndex];
 
   useEffect(() => {
-    if (currentItem.type === "video") {
+    if (currentItem?.type === "video") {
       setIsPlaying(true);
     } else {
       setIsPlaying(false);
     }
   }, [currentItem]);
 
+  if (!images || images.length === 0 || !currentItem) {
+    return null;
+  }
+
   return (
     <div className="border border-[#E8E8E8] rounded-[24px] overflow-clip">
 
       <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
         <div onClick={goToProfile} className="flex cursor-pointer items-center gap-3">
-          <Image
-            src={Avatar}
-            alt=""
-            height={50}
-            width={50}
-            className="rounded-full border-2 border-pink-100"
-          />
-          <span className="font-semibold">Anna</span>
-          <span className="bg-[#F4F4F4] rounded-full px-2 py-1 text-sm">Creator</span>
+          {currentItem?.uploader.profile_pic_url ? (
+            <img
+              src={currentItem.uploader.profile_pic_url}
+              alt={currentItem.uploader.name}
+              className="rounded-full border-2 border-pink-100 w-[50px] h-[50px] object-cover"
+            />
+          ) : (
+            <Image
+              src={Avatar}
+              alt=""
+              height={50}
+              width={50}
+              className="rounded-full border-2 border-pink-100"
+            />
+          )}
+          <span className="font-semibold">{currentItem?.uploader.name}</span>
+          <span className="bg-[#F4F4F4] rounded-full px-2 py-1 text-sm">Contributor</span>
         </div>
         <div className="space-x-2 flex flex-wrap">
           <span className="bg-black text-white rounded-full px-3 py-1 text-xs">
-            ✨ Wished
-          </span>
-          <span className="bg-black text-white rounded-full px-3 py-1 text-xs">
-            ✈️ Take Flight - $250
+            📸 Photo
           </span>
         </div>
       </div>
 
       <div className="relative px-5">
-        {currentItem.type === "image" ? (
-          <Image
+        {currentItem?.type === "image" ? (
+          <img
             src={currentItem.src}
-            alt={`carousel-item-${currentIndex}`}
-            className="rounded-xl w-full object-cover"
+            alt={currentItem.filename || `carousel-item-${currentIndex}`}
+            className="rounded-xl w-full object-cover max-h-[500px]"
           />
         ) : (
           <div className="relative w-full">
