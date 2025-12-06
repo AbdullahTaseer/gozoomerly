@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
 import Image from 'next/image';
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
@@ -24,13 +25,14 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
           >
             {!isOwnMessage && (
               <Image
-                src={message.user.avatar || '/default-avatar.png'}
+                src={message.user.avatar || ProfileAvatar}
                 alt={message.user.name}
                 width={16}
                 height={16}
                 className="rounded-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png';
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.src = ProfileAvatar.src || ProfileAvatar;
                 }}
               />
             )}
@@ -47,35 +49,63 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
 
         <div
           className={cn(
-            'py-2 px-3 rounded-xl text-sm w-fit',
+            'py-2 px-3 rounded-xl text-sm w-fit max-w-full',
             isOwnMessage ? 'bg-[#2A2D3A] text-white' : 'bg-[#F7F7F7] text-black'
           )}
         >
-          {message.content && <p>{message.content}</p>}
+          {message.content && <p className="break-words">{message.content}</p>}
           
           {message.fileUrl && (
             <div className={message.content ? "mt-2" : ""}>
               {message.messageType === 'image' ? (
-                <Image
-                  src={message.fileUrl}
-                  alt={message.fileName || 'Image'}
-                  width={200}
-                  height={200}
-                  className="rounded-lg object-cover"
-                />
+                <div className="relative group">
+                  <div className="relative max-w-sm">
+                    <Image
+                      src={message.fileUrl}
+                      alt={message.fileName || 'Image'}
+                      width={400}
+                      height={400}
+                      className="rounded-lg object-contain max-w-full max-h-96 cursor-pointer hover:opacity-90 transition-opacity"
+                      unoptimized
+                      onClick={() => window.open(message.fileUrl, '_blank')}
+                    />
+                  </div>
+                  {message.fileName && (
+                    <p className="text-xs mt-1 opacity-70 truncate max-w-sm">{message.fileName}</p>
+                  )}
+                </div>
               ) : message.messageType === 'video' ? (
-                <video
-                  src={message.fileUrl}
-                  controls
-                  className="rounded-lg max-w-xs"
-                />
+                <div className="space-y-1">
+                  <video
+                    src={message.fileUrl}
+                    controls
+                    className="rounded-lg max-w-xs max-h-64"
+                  />
+                  {message.fileName && (
+                    <p className="text-xs opacity-70 truncate">{message.fileName}</p>
+                  )}
+                </div>
+              ) : message.messageType === 'audio' ? (
+                <div className="space-y-1">
+                  <audio
+                    src={message.fileUrl}
+                    controls
+                    className="w-full"
+                  />
+                  {message.fileName && (
+                    <p className="text-xs opacity-70 truncate">{message.fileName}</p>
+                  )}
+                </div>
               ) : (
                 <a
                   href={message.fileUrl}
                   download={message.fileName}
-                  className={`${isOwnMessage ? 'text-blue-300' : 'text-blue-600'} underline flex items-center gap-1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${isOwnMessage ? 'text-blue-300 hover:text-blue-200' : 'text-blue-600 hover:text-blue-700'} underline flex items-center gap-2 p-2 rounded hover:bg-opacity-10 ${isOwnMessage ? 'hover:bg-white' : 'hover:bg-black'}`}
                 >
-                  📎 {message.fileName || 'File'}
+                  <span className="text-lg">📎</span>
+                  <span className="break-words">{message.fileName || 'File'}</span>
                 </a>
               )}
             </div>

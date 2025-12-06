@@ -821,34 +821,82 @@ export async function uploadMessageFile(
     return { fileUrl: null, error: new Error('Not a participant in this conversation') };
   }
 
+  // Check if user is authenticated
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (!session || sessionError) {
+    return { fileUrl: null, error: new Error('User not authenticated') };
+  }
+
   // Determine file type
   const fileType = file.type.startsWith('image/') ? 'image' :
                    file.type.startsWith('video/') ? 'video' :
                    file.type.startsWith('audio/') ? 'audio' : 'file';
 
   // Upload to Supabase Storage
-  const fileExt = file.name.split('.').pop();
+  const fileExt = file.name.split('.').pop() || 'bin';
   const fileName = `${conversationId}/${userId}/${Date.now()}.${fileExt}`;
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('chat-files')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false,
-    });
+  try {
+    // Try uploading with the storage client
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('chat-files')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type || 'application/octet-stream',
+      });
 
-  if (uploadError || !uploadData) {
-    return { fileUrl: null, error: uploadError };
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      
+      // Check if bucket doesn't exist
+      if (uploadError.message?.includes('Bucket not found') || 
+          uploadError.message?.includes('does not exist') ||
+          uploadError.statusCode === 404) {
+        return { 
+          fileUrl: null, 
+          error: new Error(
+            'Storage bucket "chat-files" not found. Please create it in Supabase Dashboard → Storage → Create Bucket. ' +
+            'Name: chat-files, Public: true'
+          ) 
+        };
+      }
+      
+      // Check for permission errors
+      if (uploadError.statusCode === 400 || uploadError.statusCode === 403) {
+        return {
+          fileUrl: null,
+          error: new Error(
+            'Permission denied. Please check:\n' +
+            '1. The "chat-files" bucket exists and is public\n' +
+            '2. Storage policies allow authenticated users to upload\n' +
+            '3. Your user is properly authenticated'
+          )
+        };
+      }
+      
+      return { fileUrl: null, error: uploadError };
+    }
+
+    if (!uploadData) {
+      return { fileUrl: null, error: new Error('Upload failed: No data returned') };
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('chat-files')
+      .getPublicUrl(fileName);
+
+    return {
+      fileUrl: publicUrl,
+      error: null,
+    };
+  } catch (err: any) {
+    console.error('Unexpected error during file upload:', err);
+    return { 
+      fileUrl: null, 
+      error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`) 
+    };
   }
-
-  // Get public URL
-  const { data: { publicUrl } } = supabase.storage
-    .from('chat-files')
-    .getPublicUrl(fileName);
-
-  return {
-    fileUrl: publicUrl,
-    error: null,
-  };
 }
 

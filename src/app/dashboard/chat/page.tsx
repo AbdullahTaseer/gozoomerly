@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import { PlusCircle, Send, ArrowLeft, Search, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ChatCard from '@/components/cards/ChatCard';
 import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
 import { useRealtimeChat, type ChatMessage } from '@/hooks/use-realtime-chat';
 import {
@@ -203,7 +205,32 @@ const ChatPage = () => {
 
   // Real-time subscription handlers - use useCallback to prevent re-subscriptions
   const handleMessageReceived = useCallback((message: ChatMessage) => {
-    console.log('handleMessageReceived called with:', message);
+    console.log('📨 handleMessageReceived called with:', message);
+    console.log('Current conversation:', selectedConversation?.id, 'Message conversation:', message.conversationId);
+    
+    // Only process messages for the currently selected conversation
+    if (selectedConversation && message.conversationId !== selectedConversation.id) {
+      console.log('⚠️ Message is for a different conversation, updating conversation list only');
+      // Still update the conversation list
+      setConversations(prev => {
+        const updated = prev.map(conv => 
+          conv.id === message.conversationId 
+            ? { 
+                ...conv, 
+                last_message: message.content || message.fileName || 'Media',
+                last_message_at: message.createdAt 
+              }
+            : conv
+        );
+        const updatedConv = updated.find(c => c.id === message.conversationId);
+        if (updatedConv) {
+          return [updatedConv, ...updated.filter(c => c.id !== message.conversationId)];
+        }
+        return updated;
+      });
+      return;
+    }
+    
     setMessages(prev => {
       // Remove any temporary/optimistic messages with same content from current user
       // and avoid duplicates based on message id
@@ -225,7 +252,9 @@ const ChatPage = () => {
       
       // Add the new message and sort by timestamp
       const updated = [...filtered, message];
-      return updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const sorted = updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      console.log(`✅ Message added. Total messages: ${sorted.length}`);
+      return sorted;
     });
     
     // Scroll to bottom
@@ -252,7 +281,14 @@ const ChatPage = () => {
       // Move updated conversation to top
       const updatedConv = updated.find(c => c.id === message.conversationId);
       if (updatedConv) {
-        return [updatedConv, ...updated.filter(c => c.id !== message.conversationId)];
+        // Sort by last_message_at to ensure most recent is first
+        const others = updated.filter(c => c.id !== message.conversationId);
+        const sortedOthers = others.sort((a, b) => {
+          const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return timeB - timeA;
+        });
+        return [updatedConv, ...sortedOthers];
       }
       return updated;
     });
@@ -290,15 +326,117 @@ const ChatPage = () => {
     enabled: !!selectedConversation && !!currentUserId,
   });
 
-  // Log real-time connection status
+  // Log real-time connection status and show warning if not connected
   useEffect(() => {
     if (selectedConversation) {
       console.log('Real-time connection status:', isConnected, 'Error:', realtimeError);
       if (realtimeError) {
-        console.error('Real-time error:', realtimeError);
+        console.error('❌ Real-time error:', realtimeError);
+        console.error('💡 To fix: Enable replication for the "messages" table in Supabase Dashboard → Database → Replication');
+      }
+      if (!isConnected && !realtimeError) {
+        console.warn('⚠️ Real-time not connected yet. Waiting for subscription...');
       }
     }
   }, [isConnected, realtimeError, selectedConversation]);
+
+  // Always poll for new messages as a backup (works even if real-time fails)
+  useEffect(() => {
+    if (!selectedConversation || !currentUserId) return;
+
+    let pollInterval: NodeJS.Timeout | null = null;
+    const conversationId = selectedConversation.id;
+    let isPolling = false;
+
+    // Poll every 1 second for updates (reduced frequency to prevent reloads)
+    pollInterval = setInterval(async () => {
+      if (isPolling) return; // Prevent overlapping polls
+      isPolling = true;
+      
+      try {
+        const { messages: msgs } = await getConversationMessages(
+          conversationId,
+          currentUserId,
+          100
+        );
+        
+        if (msgs && msgs.length > 0) {
+          // Check if we have new messages by comparing with current state
+          setMessages(prev => {
+            const prevIds = new Set(prev.map(m => m.id));
+            const newMessages = msgs.filter(m => !prevIds.has(m.id));
+            
+            if (newMessages.length > 0) {
+              // Get the latest new message to update conversation list
+              const latestNewMessage = newMessages[newMessages.length - 1];
+              
+              // Update conversation list with latest message (only update, don't reload)
+              setConversations(prevConvs => {
+                const updated = prevConvs.map(conv => 
+                  conv.id === conversationId 
+                    ? { 
+                        ...conv, 
+                        last_message: latestNewMessage.content || latestNewMessage.file_name || 'Media',
+                        last_message_at: latestNewMessage.created_at 
+                      }
+                    : conv
+                );
+                // Move updated conversation to top
+                const updatedConv = updated.find(c => c.id === conversationId);
+                if (updatedConv) {
+                  const others = updated.filter(c => c.id !== conversationId);
+                  const sortedOthers = others.sort((a, b) => {
+                    const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+                    const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+                    return timeB - timeA;
+                  });
+                  return [updatedConv, ...sortedOthers];
+                }
+                return updated;
+              });
+              
+              // Transform and add new messages
+              const transformedNewMessages: ChatMessage[] = newMessages.map((msg: any) => ({
+                id: msg.id,
+                content: msg.content || '',
+                createdAt: msg.created_at,
+                user: {
+                  id: msg.sender_id,
+                  name: msg.sender?.name || 'Unknown',
+                  avatar: msg.sender?.profile_pic_url || undefined,
+                },
+                conversationId: msg.conversation_id,
+                senderId: msg.sender_id,
+                messageType: msg.message_type || 'text',
+                fileUrl: msg.file_url,
+                fileName: msg.file_name,
+              }));
+              
+              // Merge and sort
+              const allMessages = [...prev, ...transformedNewMessages];
+              return allMessages.sort((a, b) => 
+                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+              );
+            }
+            return prev;
+          });
+        }
+      } catch (err) {
+        console.error('Error polling for messages:', err);
+      } finally {
+        isPolling = false;
+      }
+    }, 1000); // Poll every 1 second (reduced from 500ms to prevent excessive reloads)
+
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [selectedConversation?.id, currentUserId]);
+
+  // Note: Removed polling for all conversations to prevent constant reloading
+  // The conversation list is updated when messages are received via real-time or polling
 
   // Search users
   useEffect(() => {
@@ -495,8 +633,48 @@ const ChatPage = () => {
   const handleFileUpload = async (file: File) => {
     if (!selectedConversation || !currentUserId || uploading) return;
 
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert('File size must be less than 10MB');
+      return;
+    }
+
     try {
       setUploading(true);
+      
+      // Create optimistic message for images
+      const messageType = file.type.startsWith('image/') ? 'image' :
+                         file.type.startsWith('video/') ? 'video' :
+                         file.type.startsWith('audio/') ? 'audio' : 'file';
+      
+      const tempMessageId = `temp-file-${Date.now()}`;
+      const now = new Date().toISOString();
+      
+      // For images, show preview immediately
+      if (messageType === 'image') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const previewUrl = e.target?.result as string;
+          const optimisticMessage: ChatMessage = {
+            id: tempMessageId,
+            content: '',
+            createdAt: now,
+            user: {
+              id: currentUserId,
+              name: 'You',
+              avatar: undefined,
+            },
+            conversationId: selectedConversation.id,
+            senderId: currentUserId,
+            messageType: 'image',
+            fileUrl: previewUrl,
+            fileName: file.name,
+          };
+          setMessages(prev => [...prev, optimisticMessage]);
+        };
+        reader.readAsDataURL(file);
+      }
       
       // Upload file
       const { fileUrl, error: uploadError } = await uploadMessageFile(
@@ -507,14 +685,45 @@ const ChatPage = () => {
 
       if (uploadError || !fileUrl) {
         console.error('Error uploading file:', uploadError);
-        alert('Failed to upload file. Please try again.');
+        // Remove optimistic message on error
+        if (messageType === 'image') {
+          setMessages(prev => prev.filter(m => m.id !== tempMessageId));
+        }
+        
+        // Show helpful error message
+        const errorMessage = uploadError?.message || 'Failed to upload file';
+        if (errorMessage.includes('Bucket not found') || errorMessage.includes('chat-files')) {
+          alert(
+            'Storage bucket not configured!\n\n' +
+            'Please create the "chat-files" bucket in Supabase:\n' +
+            '1. Go to Supabase Dashboard → Storage\n' +
+            '2. Click "Create Bucket"\n' +
+            '3. Name: chat-files\n' +
+            '4. Make it Public\n' +
+            '5. Click Create\n\n' +
+            'Then set up storage policies (see STORAGE_SETUP.md)'
+          );
+        } else if (errorMessage.includes('Permission') || errorMessage.includes('403') || errorMessage.includes('400')) {
+          alert(
+            'Storage permissions issue!\n\n' +
+            'The "chat-files" bucket exists but permissions are not set up.\n\n' +
+            'Please run this SQL in Supabase SQL Editor:\n\n' +
+            'CREATE POLICY "Allow authenticated uploads to chat-files"\n' +
+            'ON storage.objects FOR INSERT\n' +
+            'TO authenticated\n' +
+            'WITH CHECK (bucket_id = \'chat-files\');\n\n' +
+            'See STORAGE_SETUP.md for complete setup instructions.'
+          );
+        } else {
+          alert(`Failed to upload file: ${errorMessage}\n\nCheck browser console for details.`);
+        }
         return;
       }
 
-      // Determine message type
-      const messageType = file.type.startsWith('image/') ? 'image' :
-                         file.type.startsWith('video/') ? 'video' :
-                         file.type.startsWith('audio/') ? 'audio' : 'file';
+      // Remove optimistic message and send real one
+      if (messageType === 'image') {
+        setMessages(prev => prev.filter(m => m.id !== tempMessageId));
+      }
 
       // Send message with file
       const { error: sendError } = await sendMessage(currentUserId, {
@@ -531,9 +740,13 @@ const ChatPage = () => {
         alert('Failed to send file. Please try again.');
       } else {
         const now = new Date().toISOString();
+        const lastMessageText = messageType === 'image' ? '📷 Image' : 
+                               messageType === 'video' ? '🎥 Video' :
+                               messageType === 'audio' ? '🎵 Audio' : 
+                               file.name || 'Media';
         const updatedConv = {
           ...selectedConversation,
-          last_message: file.name || 'Media',
+          last_message: lastMessageText,
           last_message_at: now,
         };
         
@@ -544,16 +757,27 @@ const ChatPage = () => {
         setConversations(prev => {
           const updated = prev.map(conv => 
             conv.id === selectedConversation.id 
-              ? { ...conv, last_message: file.name || 'Media', last_message_at: now }
+              ? { ...conv, last_message: lastMessageText, last_message_at: now }
               : conv
           );
           // Move updated conversation to top
           const updatedConvItem = updated.find(c => c.id === selectedConversation.id);
           if (updatedConvItem) {
-            return [updatedConvItem, ...updated.filter(c => c.id !== selectedConversation.id)];
+            const others = updated.filter(c => c.id !== selectedConversation.id);
+            const sortedOthers = others.sort((a, b) => {
+              const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+              const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+              return timeB - timeA;
+            });
+            return [updatedConvItem, ...sortedOthers];
           }
           return updated;
         });
+        
+        // Scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     } catch (err) {
       console.error('Error uploading file:', err);
@@ -588,7 +812,7 @@ const ChatPage = () => {
   };
 
   // Get conversation avatar
-  const getConversationAvatar = (conv: Conversation): string => {
+  const getConversationAvatar = (conv: Conversation): string | StaticImport => {
     if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
@@ -597,12 +821,12 @@ const ChatPage = () => {
       // Return profile_pic_url if it exists and is not empty
       if (otherParticipant?.user?.profile_pic_url) {
         const picUrl = otherParticipant.user.profile_pic_url.trim();
-        if (picUrl && picUrl !== 'null' && picUrl !== 'undefined') {
+        if (picUrl && picUrl !== 'null' && picUrl !== 'undefined' && picUrl !== '') {
           return picUrl;
         }
       }
     }
-    return '/default-avatar.png';
+    return ProfileAvatar;
   };
 
   // Format time
@@ -709,11 +933,14 @@ const ChatPage = () => {
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3A3D4A] transition-colors"
                     >
                       <Image
-                        src={user.profile_pic_url || '/default-avatar.png'}
+                        src={user.profile_pic_url || ProfileAvatar}
                         alt={user.name}
                         width={40}
                         height={40}
                         className="rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
+                        }}
                       />
                       <div className="flex-1 text-left">
                         <p className="font-medium text-sm">{user.name}</p>
@@ -744,13 +971,15 @@ const ChatPage = () => {
             </div>
           ) : (
             filteredConversations.map(conv => {
-              // Get the last message - prefer from conversation, otherwise from messages if this is selected
+              // Get the last message - prefer from messages if this conversation is selected, otherwise from conversation
               let lastMessageText = conv.last_message;
+              let lastMessageTime = conv.last_message_at;
               
-              // If no last_message but this conversation is selected and has messages, use the last message
-              if (!lastMessageText && selectedConversation?.id === conv.id && messages.length > 0) {
+              // If this conversation is selected and has messages, use the latest message from the messages array
+              if (selectedConversation?.id === conv.id && messages.length > 0) {
                 const lastMsg = messages[messages.length - 1];
                 lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
+                lastMessageTime = lastMsg.createdAt;
               }
               
               return (
@@ -759,7 +988,7 @@ const ChatPage = () => {
                   imgPath={getConversationAvatar(conv)}
                   name={getConversationName(conv)}
                   message={lastMessageText || 'No messages yet'}
-                  time={formatTime(conv.last_message_at)}
+                  time={formatTime(lastMessageTime)}
                   isActive={selectedConversation?.id === conv.id}
                   onClick={() => setSelectedConversation(conv)}
                 />
@@ -781,7 +1010,11 @@ const ChatPage = () => {
                   alt={getConversationName(selectedConversation)} 
                   width={40} 
                   height={40} 
-                  className='rounded-full object-cover' 
+                  className='rounded-full object-cover'
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement;
+                    target.src = ProfileAvatar.src || ProfileAvatar;
+                  }}
                 />
                 <div className='flex-1'>
                   <p className='font-bold'>{getConversationName(selectedConversation)}</p>
@@ -816,15 +1049,20 @@ const ChatPage = () => {
                     id="fileUpload"
                     className="hidden"
                     disabled={uploading}
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+                    multiple={false}
                     onChange={(e) => {
                       if (e.target.files && e.target.files[0]) {
                         handleFileUpload(e.target.files[0]);
+                        // Reset input so same file can be selected again
+                        e.target.value = '';
                       }
                     }}
                   />
                   <label 
                     htmlFor="fileUpload" 
                     className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    title="Upload file or image"
                   >
                     <PlusCircle size={24} className='text-black' />
                   </label>

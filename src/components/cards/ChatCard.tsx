@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 
 type Props = {
   imgPath: string | StaticImport;
@@ -19,13 +20,14 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, onClick }: P
         }`}
     >
       <Image
-        src={imgPath || '/default-avatar.png'}
+        src={imgPath || ProfileAvatar}
         alt={name}
         width={48}
         height={48}
         className='rounded-full border border-[#48484A] p-[2px] object-cover'
         onError={(e) => {
-          e.currentTarget.src = '/default-avatar.png';
+          const target = e.currentTarget as HTMLImageElement;
+          target.src = ProfileAvatar.src || ProfileAvatar;
         }}
       />
 
