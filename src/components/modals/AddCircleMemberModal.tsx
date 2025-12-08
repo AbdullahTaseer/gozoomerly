@@ -8,6 +8,7 @@ import GlobalButton from "../buttons/GlobalButton";
 import { getAllUserConnections, UserConnection } from "@/lib/supabase/connections";
 import { getCircleMembers, addCircleMember } from "@/lib/supabase/circles";
 import { authService } from "@/lib/supabase/auth";
+import defaultAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
 
 interface AddCircleMemberModalProps {
   circleId?: string;
@@ -186,11 +187,11 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
               >
                 <div className="flex items-center space-x-3">
                   <Image
-                    src={connection.profile_pic_url || '/default-avatar.png'}
+                    src={connection.profile_pic_url || defaultAvatar}
                     width={40}
                     height={40}
                     alt={connection.name || 'User'}
-                    className="rounded-full object-cover"
+                    className="rounded-full shrink-0 object-cover"
                   />
 
                   <div>

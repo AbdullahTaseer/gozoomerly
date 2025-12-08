@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
-import { MoreVertical } from 'lucide-react';
+import { Edit, MoreVertical, Trash2 } from 'lucide-react';
 
 type Props = {
   title: string;
@@ -51,11 +51,11 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
         </>
       ) : (
         <>
-          <div 
+          <div
             className='absolute inset-0 transition-transform duration-300 group-hover:scale-105'
-            style={{ 
-              background: isColorValue 
-                ? backgroundImage 
+            style={{
+              background: isColorValue
+                ? backgroundImage
                 : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
             }}
           />
@@ -65,16 +65,16 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
 
       {/* Content */}
       <div className='relative z-10 flex flex-col items-center justify-center h-full px-6 py-8 text-white'>
-        <h2 className='text-3xl font-bold mb-8 text-center'>{title}</h2>
-        
+        <h2 className='text-2xl font-bold mb-8 text-center'>{title}</h2>
+
         {/* Member Avatars - Separate Circles */}
-        <div className='flex items-center justify-center gap-2 mb-6'>
+        <div className='flex items-center justify-center mb-6'>
           {avatarsToShow.length > 0 ? (
             <>
               {avatarsToShow.map((avatar, index) => (
                 <div
                   key={index}
-                  className='rounded-full border-[3px] border-white bg-white shadow-lg transition-transform hover:scale-110'
+                  className='rounded-full -ml-4 border-[3px] border-white bg-white shadow-lg transition-transform hover:scale-110'
                 >
                   <img
                     src={avatar as string}
@@ -120,7 +120,7 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
               }}
               className='w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2'
             >
-              <span>✏️</span>
+              <Edit size={20} />
               <span>Edit</span>
             </button>
             <button
@@ -129,9 +129,9 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
                 setMenuOpen(false);
                 onDelete?.();
               }}
-              className='w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2'
+              className='w-full px-4 py-3 cursor-pointer text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2'
             >
-              <span>🗑️</span>
+              <Trash2 />
               <span>Delete</span>
             </button>
           </div>
