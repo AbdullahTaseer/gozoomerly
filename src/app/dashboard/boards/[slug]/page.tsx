@@ -12,6 +12,8 @@ import staticProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import backgroundcake from "@/assets/svgs/background-cake.svg";
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import ImageWithFallback from '@/components/images/ImageWithFallback';
+import BoardSlugTabsCard from '@/components/cards/BoardSlugTabsCard';
+import BoardSlugChatDesign from '@/components/cards/BoardSlugChatDesign';
 
 interface PageProps {
   params: { slug: string }
@@ -323,8 +325,9 @@ export default async function BoardPage(props: any) {
         </div>
       </div>
 
+      <BoardSlugTabsCard chatsChildren={<BoardSlugChatDesign />} />
 
-      <div className='max-w-[900px] mx-auto px-4 py-8'>
+      {/* <div className='max-w-[900px] mx-auto px-4 py-8'>
 
         {(boardImages.length > 0 || boardVideos.length > 0) && (
           <div className='mt-6 space-y-6'>
@@ -337,7 +340,7 @@ export default async function BoardPage(props: any) {
             )}
           </div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

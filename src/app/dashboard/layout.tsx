@@ -16,7 +16,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       <main className="flex-1">
         {children}
       </main>
-      <DashFooter/>
+      {!hideNavbarForBoardDetail && <DashFooter />}
     </div>
   );
 };
