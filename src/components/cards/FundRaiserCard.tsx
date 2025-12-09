@@ -24,25 +24,15 @@ type FundRaiserCardProps = {
   target?: number;
   giftOptions?: GiftOption[];
   topContributors?: TopContributor[];
-  invitedCount?: number;
-  participantsCount?: number;
-  mediaCount?: number;
-  wishes?: number;
-  gifters?: number;
   boardId?: string;
   onGiftAdded?: () => void;
 };
 
-const FundRaiserCard = ({ 
-  raised = 0, 
-  target = 0, 
+const FundRaiserCard = ({
+  raised = 0,
+  target = 0,
   giftOptions = [],
   topContributors = [],
-  invitedCount = 0,
-  participantsCount = 0,
-  mediaCount = 0,
-  wishes = 0,
-  gifters = 0,
   boardId,
   onGiftAdded
 }: FundRaiserCardProps) => {
@@ -58,7 +48,7 @@ const FundRaiserCard = ({
 
   // Map gift options to display format with icons
   const getGiftIcon = (label: string) => {
-    const gift = giftsData.find(g => 
+    const gift = giftsData.find(g =>
       label.toLowerCase().includes(g.label.toLowerCase()) ||
       g.label.toLowerCase().includes(label.toLowerCase())
     );
@@ -66,19 +56,19 @@ const FundRaiserCard = ({
   };
 
   // Combine gift options with default gifts if needed
-  const displayGifts = giftOptions.length > 0 
+  const displayGifts = giftOptions.length > 0
     ? giftOptions.map(g => ({
-        label: g.label || `$${g.amount}`,
-        amount: g.amount,
-        icon: getGiftIcon(g.label || ''),
-        isCustom: g.is_custom || false
-      }))
+      label: g.label || `$${g.amount}`,
+      amount: g.amount,
+      icon: getGiftIcon(g.label || ''),
+      isCustom: g.is_custom || false
+    }))
     : giftsData.slice(0, 5).map(g => ({
-        label: g.label,
-        amount: g.price,
-        icon: g.icon,
-        isCustom: false
-      }));
+      label: g.label,
+      amount: g.price,
+      icon: g.icon,
+      isCustom: false
+    }));
 
   // Add Custom option
   displayGifts.push({ label: 'Custom', amount: 0, icon: null, isCustom: true });
@@ -157,31 +147,6 @@ const FundRaiserCard = ({
         </div>
       </div>
 
-      {/* Statistics */}
-      <div className="rounded-xl mb-6">
-        <div className="flex justify-between items-center gap-2 text-center flex-wrap">
-          <div className="flex-1 min-w-[100px]">
-            <p className="text-white text-lg font-semibold">{invitedCount}</p>
-            <p className="text-gray-300 text-xs mt-1">Invited</p>
-          </div>
-          <div className="flex-1 min-w-[100px]">
-            <p className="text-white text-lg font-semibold">{participantsCount}</p>
-            <p className="text-gray-300 text-xs mt-1">Participants</p>
-          </div>
-          <div className="flex-1 min-w-[100px]">
-            <p className="text-white text-lg font-semibold">{wishes}</p>
-            <p className="text-gray-300 text-xs mt-1">Wishes</p>
-          </div>
-          <div className="flex-1 min-w-[100px]">
-            <p className="text-white text-lg font-semibold">{gifters}</p>
-            <p className="text-gray-300 text-xs mt-1">Gifters</p>
-          </div>
-          <div className="flex-1 min-w-[100px]">
-            <p className="text-white text-lg font-semibold">{mediaCount >= 500 ? `${mediaCount}+` : mediaCount}</p>
-            <p className="text-gray-300 text-xs mt-1">Media</p>
-          </div>
-        </div>
-      </div>
 
       {/* Gift Options */}
       <div className="bg-[#1B1B1B] flex justify-start gap-3 p-4 rounded-xl flex-wrap">
@@ -190,13 +155,12 @@ const FundRaiserCard = ({
             key={i}
             onClick={() => handleGiftClick(gift)}
             disabled={isAddingGift}
-            className={`px-4 py-2 rounded-full text-white cursor-pointer transition text-sm flex items-center gap-2 ${
-              isAddingGift
+            className={`px-4 py-2 rounded-full text-white cursor-pointer transition text-sm flex items-center gap-2 ${isAddingGift
                 ? "opacity-50 cursor-not-allowed"
                 : selectedGift === gift.label
-                ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
-                : "bg-[#303030] hover:bg-[#404040]"
-            }`}
+                  ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
+                  : "bg-[#303030] hover:bg-[#404040]"
+              }`}
           >
             {gift.icon && (
               <Image src={gift.icon} alt={gift.label} height={20} width={20} />

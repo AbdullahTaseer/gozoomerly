@@ -21,7 +21,7 @@ const ShareModalTrigger = ({ shareUrl, title, className }: Props) => {
         className={`flex items-center gap-2 p-2 rounded-full hover:bg-white/10 ${className || ''}`}
         aria-label="Share"
       >
-        <Share2 size={18} className="text-white" />
+        <Share2 size={24} className="text-black cursor-pointer" />
       </button>
 
       <GlobalModal isOpen={isOpen} onClose={() => setIsOpen(false)} title={title ? `Share ${title}` : 'Share'} className="w-[520px] max-w-[95vw]">

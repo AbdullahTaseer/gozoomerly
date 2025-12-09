@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import { getBoardBySlug } from '@/lib/supabase/boards';
 import { createClient } from '@/lib/supabase/server';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
@@ -118,7 +118,6 @@ export async function generateMetadata(props: any): Promise<Metadata> {
 }
 
 export default async function BoardPage(props: any) {
-  // await props.params because it might be a Promise for dynamic routes
   const params = await props.params;
   const slug = params.slug;
   const { data: board } = await getBoardBySlug(slug);
@@ -174,7 +173,7 @@ export default async function BoardPage(props: any) {
       `, { count: 'exact' })
       .eq('board_id', board.id)
       .order('created_at', { ascending: false });
-    
+
     mediaCount = media || 0;
 
     if (allMedia) {
@@ -190,17 +189,15 @@ export default async function BoardPage(props: any) {
   const wishes = board?.wishes_count || 0;
   const gifters = board?.contributors_count || 0;
 
-  // Get honoree's information
   const honoreeFirstName = board?.honoree_details?.first_name || '';
   const honoreeLastName = board?.honoree_details?.last_name || '';
-  const honoreeName = honoreeFirstName && honoreeLastName 
+  const honoreeName = honoreeFirstName && honoreeLastName
     ? `${honoreeFirstName} ${honoreeLastName}`.trim()
     : honoreeFirstName || honoreeLastName || 'Unknown';
   const honoreeProfilePhoto = board?.honoree_details?.profile_photo_url || staticProfileAvatar;
   const honoreeHometown = board?.honoree_details?.hometown || '';
   const honoreeDateOfBirth = board?.honoree_details?.date_of_birth || '';
-  
-  // Format date of birth
+
   const formatDateOfBirth = (dateString?: string) => {
     if (!dateString) return '';
     try {
@@ -211,7 +208,6 @@ export default async function BoardPage(props: any) {
     }
   };
 
-  // Format deadline date
   const formatDeadlineDate = (dateString?: string) => {
     if (!dateString) return '';
     try {
@@ -229,6 +225,35 @@ export default async function BoardPage(props: any) {
 
   return (
     <div className="w-full min-h-screen bg-white">
+      <div className='flex justify-between items-center p-4 max-w-[1200px] mx-auto'>
+        <div className='flex gap-4 items-center'>
+          <ArrowLeft />
+          <p className='text-[52px]'>{honoreeName}</p>
+        </div>
+        <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
+      </div>
+      <div className='bg-[#18171F] text-white flex justify-center gap-8 px-4 py-6'>
+        <p>
+          <span className='mr-1'>{invitedCount || 0}</span>
+          <span>Invited</span>
+        </p>
+        <p>
+          <span className='mr-1'>{participantsCount || 0}</span>
+          <span>Participants</span>
+        </p>
+        <p>
+          <span className='mr-1'>{wishes || 0}</span>
+          <span>Wishes</span>
+        </p>
+        <p>
+          <span className='mr-1'>{gifters || 0}</span>
+          <span>Gifts</span>
+        </p>
+        <p>
+          <span className='mr-1'>{mediaCount >= 500 ? `${mediaCount}+` : 0}</span>
+          <span>Media</span>
+        </p>
+      </div>
       <div className="relative w-full overflow-hidden mb-6 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
         <Image
           src={backgroundcake}
@@ -237,14 +262,7 @@ export default async function BoardPage(props: any) {
         />
         <div className="relative p-8 max-w-[1200px] mx-auto z-20">
           <div className="flex items-start justify-between w-full flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard">
-                <ArrowLeft size={26} className="text-white" />
-              </Link>
-              <h1 className="text-white text-[46px] max-[1024px]:text-[32px] max-[768px]:text-[24px] font-semibold">
-                {boardTitle}
-              </h1>
-            </div>
+
             <div className="flex items-center gap-4">
               <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
                 Post Media
@@ -252,7 +270,6 @@ export default async function BoardPage(props: any) {
               <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
                 Wish
               </button>
-              <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
             </div>
           </div>
 
@@ -314,11 +331,6 @@ export default async function BoardPage(props: any) {
           target={target}
           giftOptions={giftOptions}
           topContributors={topContributors}
-          invitedCount={invitedCount}
-          participantsCount={participantsCount}
-          mediaCount={mediaCount}
-          wishes={wishes}
-          gifters={gifters}
           boardId={board?.id}
         />
 
@@ -327,7 +339,7 @@ export default async function BoardPage(props: any) {
             {boardImages.length > 0 && (
               <PostsImagesCarouselCard images={boardImages} />
             )}
-            
+
             {boardVideos.length > 0 && (
               <PostsVideoCard videos={boardVideos} />
             )}
