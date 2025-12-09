@@ -228,11 +228,11 @@ export default async function BoardPage(props: any) {
       <div className='flex justify-between items-center p-4 max-w-[1200px] mx-auto'>
         <div className='flex gap-4 items-center'>
           <ArrowLeft />
-          <p className='text-[52px]'>{honoreeName}</p>
+          <p className='max-[450px]:text-[24px] max-[768px]:text-[32px] max-[1024px]:text-[42px] text-[52px]'>{honoreeName}</p>
         </div>
         <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
       </div>
-      <div className='bg-[#18171F] text-white flex justify-center gap-8 px-4 py-6'>
+      <div className='bg-[#18171F] text-white flex flex-wrap justify-center gap-8 px-4 py-6'>
         <p>
           <span className='mr-1'>{invitedCount || 0}</span>
           <span>Invited</span>
@@ -261,18 +261,22 @@ export default async function BoardPage(props: any) {
           className="w-full absolute h-full opacity-75 object-cover z-10 object-bottom"
         />
         <div className="relative p-8 max-w-[1200px] mx-auto z-20">
-          <div className="flex items-start justify-between w-full flex-wrap gap-2">
-
-            <div className="flex items-center gap-4">
-              <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
-                Post Media
-              </button>
-              <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
-                Wish
-              </button>
+          <div className='flex justify-between items-center flex-wrap gap-4'>
+            <p className='bg-black rounded-full text-white py-1 px-3 text-sm'>Time left to wish : {formatDeadlineDate(board.deadline_date) || "00-00-00"}</p>
+            <div className="flex items-center gap-2 mt-6">
+              <p className="text-white text-[15px]">Created by</p>
+              <div className="flex items-center gap-2">
+                <Image
+                  src={creatorAvatar}
+                  alt={creatorName}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
+                />
+                <p className="text-white font-semibold text-sm">{creatorName}</p>
+              </div>
             </div>
           </div>
-
           <div className="flex items-center mt-6 gap-4">
             <Image
               src={honoreeProfilePhoto}
@@ -291,48 +295,36 @@ export default async function BoardPage(props: any) {
             </div>
           </div>
 
-          <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
+          {/* <p className="text-white/95 mt-5 max-w-[70%] max-[768px]:max-w-full leading-relaxed text-[15px]">
             {boardDescription}
             {target > 0 && ` and the goal is $${target.toLocaleString()}`}
-          </p>
+          </p> */}
 
-          <div className="flex items-center gap-2 mt-6">
-            <p className="text-white text-[15px]">Created by</p>
-            <div className="flex items-center gap-2">
-              <Image
-                src={creatorAvatar}
-                alt={creatorName}
-                width={32}
-                height={32}
-                className="rounded-full object-cover"
-              />
-              <p className="text-white font-semibold text-sm">{creatorName}</p>
-            </div>
+          <FundRaiserCard
+            raised={raised}
+            target={target}
+            giftOptions={giftOptions}
+            topContributors={topContributors}
+            boardId={board?.id}
+          />
+
+          <div className="flex items-start w-full flex-wrap gap-2">
+            <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
+              Send Gift
+            </button>
+            <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
+              Wish Sean
+            </button>
+            <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
+              Share Memories
+            </button>
           </div>
 
-          {board?.deadline_date && (
-            <div className="mt-6 flex items-center flex-wrap gap-2 justify-between">
-              <p className="text-white font-semibold text-lg">
-                This surprise board will be delivered to {honoreeName} on {formatDeadlineDate(board.deadline_date)}
-              </p>
-              <div className="bg-black text-white text-xs px-4 py-2 rounded-full">
-                Time left to wish : 00-00-00
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
 
       <div className='max-w-[900px] mx-auto px-4 py-8'>
-
-        <FundRaiserCard
-          raised={raised}
-          target={target}
-          giftOptions={giftOptions}
-          topContributors={topContributors}
-          boardId={board?.id}
-        />
 
         {(boardImages.length > 0 || boardVideos.length > 0) && (
           <div className='mt-6 space-y-6'>

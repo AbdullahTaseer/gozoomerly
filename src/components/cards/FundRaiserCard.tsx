@@ -131,13 +131,12 @@ const FundRaiserCard = ({
   const displayRaised = localRaised !== raised ? localRaised : raised;
 
   return (
-    <div className="bg-black p-6 rounded-[24px]">
-      {/* Goal Progress */}
-      <div className="mb-6">
-        <p className="text-white text-[24px] font-bold mb-4">Goal Progress</p>
-        <div className="w-full h-[6px] bg-[#D9D9D9] rounded-full">
+    <div>
+      <div className="my-6">
+        <p className="text-lg text-white font-semibold mb-2">Lets make Seans 40th unforgettable! Help him buy his dream guitar on his birthday 🎸</p>
+        <div className="w-full h-[12px] bg-[#9B57AF]/50 rounded-full">
           <div
-            className="h-[6px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
+            className="h-[12px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
             style={{ width: `${target > 0 ? Math.min((displayRaised / target) * 100, 100) : 0}%` }}
           ></div>
         </div>
@@ -149,17 +148,17 @@ const FundRaiserCard = ({
 
 
       {/* Gift Options */}
-      <div className="bg-[#1B1B1B] flex justify-start gap-3 p-4 rounded-xl flex-wrap">
+      {/* <div className="bg-[#1B1B1B] flex justify-start gap-3 p-4 rounded-xl flex-wrap">
         {displayGifts.map((gift, i) => (
           <button
             key={i}
             onClick={() => handleGiftClick(gift)}
             disabled={isAddingGift}
             className={`px-4 py-2 rounded-full text-white cursor-pointer transition text-sm flex items-center gap-2 ${isAddingGift
-                ? "opacity-50 cursor-not-allowed"
-                : selectedGift === gift.label
-                  ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
-                  : "bg-[#303030] hover:bg-[#404040]"
+              ? "opacity-50 cursor-not-allowed"
+              : selectedGift === gift.label
+                ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
+                : "bg-[#303030] hover:bg-[#404040]"
               }`}
           >
             {gift.icon && (
@@ -171,10 +170,10 @@ const FundRaiserCard = ({
             )}
           </button>
         ))}
-      </div>
+      </div> */}
 
       {/* Top Contributors */}
-      {topContributors.length > 0 && (
+      {/* {topContributors.length > 0 && (
         <div className="mt-6">
           <p className="text-white text-[18px] font-bold">Top Contributors</p>
           <div className="flex gap-3 flex-wrap mt-4">
@@ -194,7 +193,7 @@ const FundRaiserCard = ({
             })}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
