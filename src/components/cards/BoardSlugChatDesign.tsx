@@ -14,67 +14,65 @@ const BoardSlugChatDesign = () => {
 
       <div className="flex-1 w-full max-w-4xl overflow-y-auto px-6 space-y-10">
         <div className="flex justify-end">
-          <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-xl">
+          <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-[8px]">
             Hi, how are you?
           </div>
         </div>
         <p className="text-xs text-gray-400 text-right pr-6 -mt-2">8:58 PM</p>
 
-        <div className="flex items-start gap-3">
-          <div>
+          <div className="space-y-2">
             <div className="flex items-center gap-3">
               <Image src={DummyAvatar} className="h-10 w-10 rounded-full" alt="img" />
               <p className="text-sm font-semibold">John</p>
             </div>
-            <div className="bg-gray-100 px-4 py-3 rounded-xl mt-1 max-w-sm">
+            <div className="bg-gray-100 px-4 py-3 rounded-[8px] max-w-sm">
               I am good thanks.
             </div>
-            <p className="text-xs text-gray-400 mt-1">9:00 PM</p>
+            <p className="text-xs text-gray-400">9:00 PM</p>
           </div>
-        </div>
 
         <div className="flex justify-end">
-          <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-xl">
+          <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-[8px]">
             🎉 Happy Birthday! Wishing you a day filled with love, laughter, and unforgettable.
           </div>
         </div>
         <p className="text-xs text-gray-400 text-right pr-6 -mt-2">9:10 PM</p>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Image src={DummyAvatar} className="h-10 w-10 rounded-full" alt="img" />
             <p className="text-sm font-semibold">Maria</p>
           </div>
-          <div className="bg-gray-100 px-4 py-3 rounded-xl mt-1 max-w-sm">
+          <div className="bg-gray-100 px-4 py-3 rounded-[8px] max-w-sm">
             Thanks!
           </div>
-          <p className="text-xs text-gray-400 mt-1">9:30 PM</p>
+          <p className="text-xs text-gray-400">9:30 PM</p>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Image src={DummyAvatar} className="h-10 w-10 rounded-full" alt="img" />
             <p className="text-sm font-semibold">Alex</p>
           </div>
-          <div className="bg-gray-100 px-4 py-3 rounded-xl mt-1 max-w-sm">
+          <div className="bg-gray-100 px-4 py-3 rounded-[8px] max-w-sm">
             🎉 Happy Birthday! Wishing you a day filled with love, laughter, and unforgettable.
           </div>
-          <p className="text-xs text-gray-400 mt-1">9:30 PM</p>
+          <p className="text-xs text-gray-400">9:30 PM</p>
         </div>
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Image src={DummyAvatar} className="h-10 w-10 rounded-full" alt="img" />
             <p className="text-sm font-semibold">Alex Johnson</p>
           </div>
-          <div className="bg-gray-100 px-4 py-3 rounded-xl mt-1 max-w-sm">
+          <div className="bg-gray-100 px-4 py-3 rounded-[8px] max-w-sm">
             🎉 Happy Birthday! Wishing you a day filled with love, laughter, and unforgettable.
           </div>
-          <p className="text-xs text-gray-400 mt-1">9:30 PM</p>
+          <p className="text-xs text-gray-400">9:30 PM</p>
         </div>
       </div>
 
-      <div className="w-full border-t bg-[#F7F7F7] p-4 flex items-center gap-3">
+      <div className="w-full mt-4 rounded-t-2xl bg-[#F7F7F7] p-4 flex items-center gap-3">
         <button className="w-10 h-10 shrink-0 bg-white flex items-center cursor-pointer justify-center rounded-full text-lg">
           <Plus />
         </button>

@@ -24,7 +24,7 @@ const BoardSlugTabsCard = ({
   const [activeTab, setActiveTab] = useState("wishes");
 
   return (
-    <div className="bg-white max-w-[1100px] mx-auto p-4">
+    <div className="bg-white max-w-[1100px] mx-auto p-4 pb-0">
       <div className="border-b border-gray-200 overflow-x-auto scrollbar-hide">
         <div className="flex items-center justify-between gap-6">
           {TABS.map((tab) => (

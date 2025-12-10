@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Image from 'next/image';
 import { Metadata } from 'next';
@@ -14,6 +15,7 @@ import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard'
 import ImageWithFallback from '@/components/images/ImageWithFallback';
 import BoardSlugTabsCard from '@/components/cards/BoardSlugTabsCard';
 import BoardSlugChatDesign from '@/components/cards/BoardSlugChatDesign';
+import BoardSlugGifts from '@/components/cards/BoardSlugGifts';
 
 interface PageProps {
   params: { slug: string }
@@ -225,11 +227,14 @@ export default async function BoardPage(props: any) {
   const creatorName = (board as any)?.profiles?.name || 'Unknown';
   const creatorAvatar = (board as any)?.profiles?.profile_pic_url || staticProfileAvatar;
 
+
   return (
     <div className="w-full min-h-screen bg-white">
       <div className='flex justify-between items-center p-4 max-w-[1200px] mx-auto'>
         <div className='flex gap-4 items-center'>
-          <ArrowLeft />
+          <Link href={"/dashboard/boards"}>
+            <ArrowLeft className='cursor-pointer' />
+          </Link>
           <p className='max-[450px]:text-[24px] max-[768px]:text-[32px] max-[1024px]:text-[42px] text-[52px]'>{honoreeName}</p>
         </div>
         <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
@@ -325,7 +330,10 @@ export default async function BoardPage(props: any) {
         </div>
       </div>
 
-      <BoardSlugTabsCard chatsChildren={<BoardSlugChatDesign />} />
+      <BoardSlugTabsCard
+        giftsChildren={<BoardSlugGifts />}
+        chatsChildren={<BoardSlugChatDesign />}
+      />
 
       {/* <div className='max-w-[900px] mx-auto px-4 py-8'>
 
