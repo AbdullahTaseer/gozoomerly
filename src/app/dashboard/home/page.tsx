@@ -91,7 +91,7 @@ const Home = () => {
   };
 
   return (
-    <div className='px-[7%] max-[769px]:px-6'>
+    <div className='px-[7%] max-[769px]:px-3'>
       <AvatarList />
 
       <div className='py-8'>

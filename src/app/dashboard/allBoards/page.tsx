@@ -9,7 +9,7 @@ import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 
 const AllBoards = () => {
   return (
-    <div className='px-[7%] max-[769px]:px-6'>
+    <div className='px-[7%] max-[769px]:px-3'>
       <div className='py-4'>
         <div className='flex justify-between max-[870px]:flex-col gap-6'>
           <TitleCard title='Personal Boards' className='text-left' />

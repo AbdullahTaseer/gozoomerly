@@ -18,11 +18,11 @@ const Boards = () => {
   const [error, setError] = useState<string | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<{ slug: string; title: string } | null>(null);
-  
+
   useEffect(() => {
     fetchUserBoards();
   }, []);
-  
+
   const fetchUserBoards = async () => {
     try {
       const user = await authService.getUser();
@@ -30,13 +30,13 @@ const Boards = () => {
         router.push('/signin');
         return;
       }
-      
+
       const { data, error } = await getUserBoards(user.id);
       if (error) {
         setError('Failed to load boards');
         return;
       }
-      
+
       setBoards(data || []);
     } catch (err) {
       console.error('Error fetching boards:', err);
@@ -58,12 +58,12 @@ const Boards = () => {
     setInviteModalOpen(false);
     setSelectedBoard(null);
   };
-  
+
   return (
     <div className='px-[7%] max-[769px]:px-6 pb-4'>
       <div className='flex justify-between items-center max-[870px]:flex-col gap-6'>
         <TitleCard title='Boards' className='text-left' />
-        <div className='flex gap-4 items-center'>
+        <div className='flex gap-4 items-center flex-wrap'>
           <div className='relative w-[260px]'>
             <Search size={18} className='absolute top-3 left-3' />
             <GlobalInput placeholder='Search boards...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
@@ -72,7 +72,7 @@ const Boards = () => {
             title='Create Campaign'
             onClick={() => router.push('/compaign')}
             height='42px'
-            className='min-w-[140px]'
+            className='min-w-[160px]'
           />
         </div>
       </div>
@@ -84,8 +84,8 @@ const Boards = () => {
         ) : boards.length === 0 ? (
           <div className='col-span-3 text-center py-8'>
             <p className='text-gray-500 mb-4'>You haven't created any boards yet</p>
-            <GlobalButton 
-              title='Create Your First Campaign' 
+            <GlobalButton
+              title='Create Your First Campaign'
               onClick={() => router.push('/compaign')}
             />
           </div>
@@ -94,13 +94,13 @@ const Boards = () => {
             // Get honoree's name from honoree_details
             const honoreeFirstName = board.honoree_details?.first_name || '';
             const honoreeLastName = board.honoree_details?.last_name || '';
-            const honoreeName = honoreeFirstName && honoreeLastName 
+            const honoreeName = honoreeFirstName && honoreeLastName
               ? `${honoreeFirstName} ${honoreeLastName}`.trim()
               : honoreeFirstName || honoreeLastName || 'Unknown';
-            
+
             // Get honoree's profile photo
             const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || '/default-avatar.jpg';
-            
+
             return (
               <BoardCard
                 key={board.id}
@@ -108,7 +108,7 @@ const Boards = () => {
                 avatar={honoreeProfilePhoto}
                 name={honoreeName}
                 location={board.honoree_details?.hometown || ''}
-                date={board.honoree_details?.date_of_birth 
+                date={board.honoree_details?.date_of_birth
                   ? new Date(board.honoree_details.date_of_birth).toLocaleDateString()
                   : new Date(board.created_at).toLocaleDateString()}
                 description={board.description || ''}
