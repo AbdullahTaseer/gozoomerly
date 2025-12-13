@@ -23,6 +23,8 @@ type props = {
   validationRegex?: RegExp;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
   onValidationError?: (message: string) => void;
 };
 
@@ -34,6 +36,8 @@ const GlobalInput = ({
   error,
   onChange,
   onKeyDown,
+  onFocus,
+  disabled,
   className,
   placeholder,
   validationType,
@@ -101,6 +105,8 @@ const GlobalInput = ({
         ref={ref}
         value={value}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        disabled={disabled}
         placeholder={placeholder}
         onChange={handleInputChange}
         min={type === "number" ? 0 : undefined}

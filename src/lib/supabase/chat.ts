@@ -28,6 +28,21 @@ export interface ConversationParticipant {
   };
 }
 
+// Raw participant data from database (may or may not have last_read_at)
+type RawParticipantData = {
+  id: any;
+  conversation_id: any;
+  user_id: any;
+  joined_at: any;
+  last_read_at?: any;
+};
+
+// Minimal participant data (for fetching conversation IDs only)
+type MinimalParticipantData = {
+  conversation_id: any;
+  last_read_at?: any;
+};
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -263,10 +278,16 @@ export async function getUserConversations(
   try {
     // First, get conversation IDs where user is a participant
     // Try with last_read_at first, fallback to just conversation_id if column doesn't exist
-    let { data: participantData, error: participantError } = await supabase
+    let participantData: MinimalParticipantData[] | null;
+    let participantError: any;
+    
+    const initialQuery = await supabase
       .from('conversation_participants')
       .select('conversation_id, last_read_at')
       .eq('user_id', userId);
+    
+    participantData = initialQuery.data;
+    participantError = initialQuery.error;
 
     // If last_read_at column doesn't exist, try without it
     if (participantError && (participantError.message?.includes('last_read_at') || participantError.code === '42703')) {
@@ -276,7 +297,7 @@ export async function getUserConversations(
         .select('conversation_id')
         .eq('user_id', userId);
       
-      participantData = retry.data;
+      participantData = retry.data as MinimalParticipantData[] | null;
       participantError = retry.error;
     }
 
@@ -318,10 +339,16 @@ export async function getUserConversations(
     const conversationsWithParticipants = await Promise.all(
       conversationsData.map(async (conv) => {
         // Get participants - try with all columns first, fallback if columns don't exist
-        let { data: participantsData, error: participantsError } = await supabase
+        let participantsData: RawParticipantData[] | null;
+        let participantsError: any;
+        
+        const initialQuery = await supabase
           .from('conversation_participants')
           .select('id, conversation_id, user_id, joined_at, last_read_at')
           .eq('conversation_id', conv.id);
+        
+        participantsData = initialQuery.data;
+        participantsError = initialQuery.error;
 
         // If columns don't exist, try with minimal columns
         if (participantsError && (participantsError.message?.includes('last_read_at') || participantsError.code === '42703')) {
@@ -330,7 +357,7 @@ export async function getUserConversations(
             .select('id, conversation_id, user_id, joined_at')
             .eq('conversation_id', conv.id);
           
-          participantsData = retry.data;
+          participantsData = retry.data as RawParticipantData[] | null;
           participantsError = retry.error;
         }
 
@@ -552,6 +579,127 @@ export async function searchUsers(
   }
 
   return { users: data || [], error: null };
+}
+
+/**
+ * Get or create a board conversation (group chat for a board)
+ */
+export async function getOrCreateBoardConversation(
+  boardId: string,
+  boardName: string,
+  userId: string
+): Promise<{ conversation: Conversation | null; error: any }> {
+  const supabase = createClient();
+
+  try {
+    // First, try to find an existing group conversation for this board
+    // We'll use the board name to identify it (assuming board_id might not exist in conversations table)
+    const { data: existingConversations, error: searchError } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('type', 'group')
+      .eq('name', boardName)
+      .limit(1);
+
+    if (searchError && !searchError.message?.includes('does not exist')) {
+      console.error('Error searching for board conversation:', searchError);
+    }
+
+    // If we found an existing conversation, check if user is a participant
+    if (existingConversations && existingConversations.length > 0) {
+      const existingConv = existingConversations[0];
+      
+      // Check if user is already a participant
+      const { data: participant } = await supabase
+        .from('conversation_participants')
+        .select('*')
+        .eq('conversation_id', existingConv.id)
+        .eq('user_id', userId)
+        .single();
+
+      // If not a participant, add them
+      if (!participant) {
+        await supabase
+          .from('conversation_participants')
+          .insert({
+            conversation_id: existingConv.id,
+            user_id: userId,
+          });
+      }
+
+      return { conversation: existingConv as Conversation, error: null };
+    }
+
+    // Create new group conversation for the board
+    const conversationData: any = {
+      type: 'group',
+      name: boardName,
+    };
+
+    let { data: newConversation, error: createError } = await supabase
+      .from('conversations')
+      .insert({
+        ...conversationData,
+        created_by: userId,
+      })
+      .select()
+      .single();
+
+    if (createError && (createError.message?.includes('created_by') || createError.message?.includes('column'))) {
+      ({ data: newConversation, error: createError } = await supabase
+        .from('conversations')
+        .insert(conversationData)
+        .select()
+        .single());
+    }
+
+    if (createError || !newConversation) {
+      console.error('Error creating board conversation:', createError);
+      return { 
+        conversation: null, 
+        error: new Error(
+          `Failed to create board conversation: ${createError?.message || 'Unknown error'}`
+        )
+      };
+    }
+
+    // Add the creator as a participant
+    const { error: participantsError } = await supabase
+      .from('conversation_participants')
+      .insert({
+        conversation_id: newConversation.id,
+        user_id: userId,
+      });
+
+    if (participantsError) {
+      console.error('Error adding participant:', participantsError);
+      await supabase.from('conversations').delete().eq('id', newConversation.id);
+      return { 
+        conversation: null, 
+        error: new Error('Failed to add participant to board conversation')
+      };
+    }
+
+    const conversation: Conversation = {
+      id: newConversation.id,
+      type: 'group',
+      name: boardName,
+      created_by: newConversation.created_by || userId,
+      created_at: newConversation.created_at || new Date().toISOString(),
+      updated_at: newConversation.updated_at || new Date().toISOString(),
+      last_message_at: newConversation.last_message_at,
+      last_message: newConversation.last_message,
+      participants: [],
+    };
+
+    return { conversation, error: null };
+  } catch (err: any) {
+    console.error('Error in getOrCreateBoardConversation:', err);
+    return { 
+      conversation: null, 
+      error: new Error(err?.message || 'Unknown error creating board conversation')
+    };
+  }
 }
 
 /**
@@ -850,9 +998,12 @@ export async function uploadMessageFile(
       console.error('Storage upload error:', uploadError);
       
       // Check if bucket doesn't exist
-      if (uploadError.message?.includes('Bucket not found') || 
-          uploadError.message?.includes('does not exist') ||
-          uploadError.statusCode === 404) {
+      const errorMessage = uploadError.message || '';
+      const statusCode = (uploadError as any).statusCode || (uploadError as any).status;
+      
+      if (errorMessage.includes('Bucket not found') || 
+          errorMessage.includes('does not exist') ||
+          statusCode === 404) {
         return { 
           fileUrl: null, 
           error: new Error(
@@ -863,7 +1014,8 @@ export async function uploadMessageFile(
       }
       
       // Check for permission errors
-      if (uploadError.statusCode === 400 || uploadError.statusCode === 403) {
+      if (statusCode === 400 || statusCode === 403 || 
+          errorMessage.includes('403') || errorMessage.includes('400')) {
         return {
           fileUrl: null,
           error: new Error(

@@ -330,10 +330,7 @@ export default async function BoardPage(props: any) {
         </div>
       </div>
 
-      <BoardSlugTabsCard
-        giftsChildren={<BoardSlugGifts />}
-        chatsChildren={<BoardSlugChatDesign />}
-      />
+      <BoardSlugTabsCard chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />} />
 
       {/* <div className='max-w-[900px] mx-auto px-4 py-8'>
 

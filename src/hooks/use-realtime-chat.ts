@@ -216,7 +216,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
           filter: `conversation_id=eq.${conversationId}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          onMessageDeletedRef.current?.(payload.old.id);
+          if (payload.old && typeof payload.old === 'object' && 'id' in payload.old) {
+            onMessageDeletedRef.current?.(payload.old.id as string);
+          }
         }
       )
       .subscribe(async (status, err) => {
