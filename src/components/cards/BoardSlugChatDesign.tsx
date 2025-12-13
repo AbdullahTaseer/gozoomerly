@@ -6,11 +6,11 @@ import { Send, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { AuthService } from "@/lib/supabase/auth";
-import { 
-  getOrCreateBoardConversation, 
-  getConversationMessages, 
+import {
+  getOrCreateBoardConversation,
+  getConversationMessages,
   sendMessage as sendChatMessage,
-  markConversationAsRead 
+  markConversationAsRead
 } from "@/lib/supabase/chat";
 import { useRealtimeChat, ChatMessage } from "@/hooks/use-realtime-chat";
 import staticProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
@@ -101,7 +101,7 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
       const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
         const senderName = msg.sender?.name || 'Unknown';
         const senderAvatar = msg.sender?.profile_pic_url || staticProfileAvatar;
-        
+
         return {
           id: msg.id,
           content: msg.content || '',
@@ -138,7 +138,7 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
 
   // Handle message updated
   const handleMessageUpdated = (message: ChatMessage) => {
-    setMessages(prev => 
+    setMessages(prev =>
       prev.map(m => m.id === message.id ? message : m)
     );
   };
@@ -231,10 +231,10 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
   const formatTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       });
     } catch {
       return '';
@@ -244,13 +244,13 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
   // Group messages by date
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
     const groups: { [key: string]: ChatMessage[] } = {};
-    
+
     msgs.forEach(msg => {
       const date = new Date(msg.createdAt);
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      
+
       let dateKey: string;
       if (date.toDateString() === today.toDateString()) {
         dateKey = 'Today';
@@ -259,13 +259,13 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
       } else {
         dateKey = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       }
-      
+
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
       groups[dateKey].push(msg);
     });
-    
+
     return groups;
   };
 
@@ -294,14 +294,14 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
   return (
     <div className="w-full h-screen bg-white flex flex-col items-center overflow-hidden">
       {dateKeys.length > 0 && (
-      <div className="py-4">
+        <div className="py-4">
           <span className="px-4 py-1 text-sm bg-neutral-900 text-white rounded-full">
             {dateKeys[0]}
           </span>
-      </div>
+        </div>
       )}
 
-      <div 
+      <div
         ref={messagesContainerRef}
         className="flex-1 w-full max-w-4xl overflow-y-auto px-6 space-y-10"
       >
@@ -317,48 +317,50 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
                   {isCurrentUser ? (
                     <div className="flex justify-end items-end gap-2">
                       <div className="flex flex-col items-end">
-          <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-xl">
+                        <div className="max-w-sm bg-neutral-900 text-white px-4 py-3 rounded-xl">
                           {message.content}
-          </div>
+                        </div>
                         {showTime && (
                           <p className="text-xs text-gray-400 mt-1">
                             {formatTime(message.createdAt)}
                           </p>
                         )}
-        </div>
-                      <ImageWithFallback
+                      </div>
+                      {/* <ImageWithFallback
                         src={message.user.avatar || staticProfileAvatar}
                         alt={message.user.name}
                         width={40}
                         height={40}
                         className="h-10 w-10 rounded-full object-cover shrink-0"
                         fallbackSrc={staticProfileAvatar}
-                      />
-            </div>
+                      /> */}
+                    </div>
                   ) : (
-                    <div className="flex items-start gap-2">
-                      <ImageWithFallback
-                        src={message.user.avatar || staticProfileAvatar}
-                        alt={message.user.name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full object-cover shrink-0"
-                        fallbackSrc={staticProfileAvatar}
-                      />
-                      <div className="flex flex-col">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <ImageWithFallback
+                          src={message.user.avatar || staticProfileAvatar}
+                          alt={message.user.name}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-full object-cover shrink-0"
+                          fallbackSrc={staticProfileAvatar}
+                        />
                         <p className="text-sm font-semibold mb-1">{message.user.name}</p>
+                      </div>
+                      <div className="flex flex-col">
                         <div className="bg-gray-100 px-4 py-3 rounded-xl max-w-sm">
                           {message.content}
-            </div>
-                        {showTime && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            {formatTime(message.createdAt)}
-                          </p>
-                        )}
-          </div>
-        </div>
+                        </div>
+                        {/* {showTime && ( */}
+                        <p className="text-xs text-gray-400 mt-1">
+                          {formatTime(message.createdAt)}
+                        </p>
+                        {/* )} */}
+                      </div>
+                    </div>
                   )}
-          </div>
+                </div>
               );
             })}
           </div>

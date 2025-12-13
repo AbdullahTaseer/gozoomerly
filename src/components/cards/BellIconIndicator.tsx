@@ -11,8 +11,8 @@ const BellIconIndicator = () => {
 
   return (
     <div onClick={() => router.push("/dashboard/notifications")} className='relative cursor-pointer'>
-      <Image src={bellIcon} alt='' />
-      <span className='p-1.5 absolute top-0 right-0 rounded-full bg-pink-500 animate-bounce' />
+      <Image src={bellIcon} alt='' height={24} width={24} />
+      <span className='p-1 absolute top-0 right-0 rounded-full bg-pink-500 animate-bounce' />
     </div>
   );
 };
