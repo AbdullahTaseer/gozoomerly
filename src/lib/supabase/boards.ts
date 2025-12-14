@@ -813,39 +813,58 @@ export async function fetchActiveBoards(options?: {
     }
   }
 
-  const { data, error } = await query
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await query
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching active boards:', error);
-    return { boards: [], error };
+    if (error) {
+      console.error('Error fetching active boards:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      return { boards: [], error };
+    }
+
+    if (data) {
+      const boardsWithCounts = await Promise.all(
+        data.map(async (board) => {
+          try {
+            const { count: invitedCount } = await supabase
+              .from('board_invitations')
+              .select('*', { count: 'exact', head: true })
+              .eq('board_id', board.id);
+
+            const { count: mediaCount } = await supabase
+              .from('media')
+              .select('*', { count: 'exact', head: true })
+              .eq('board_id', board.id);
+
+            return {
+              ...board,
+              invited_count: invitedCount || 0,
+              media_count: mediaCount || 0
+            };
+          } catch (err) {
+            console.error('Error fetching counts for board:', board.id, err);
+            return {
+              ...board,
+              invited_count: 0,
+              media_count: 0
+            };
+          }
+        })
+      );
+
+      return { boards: boardsWithCounts || [], error: null };
+    }
+
+    return { boards: [], error: null };
+  } catch (err) {
+    console.error('Unexpected error in fetchActiveBoards:', err);
+    return { boards: [], error: err };
   }
-
-  if (data) {
-    const boardsWithCounts = await Promise.all(
-      data.map(async (board) => {
-        const { count: invitedCount } = await supabase
-          .from('board_invitations')
-          .select('*', { count: 'exact', head: true })
-          .eq('board_id', board.id);
-
-        const { count: mediaCount } = await supabase
-          .from('media')
-          .select('*', { count: 'exact', head: true })
-          .eq('board_id', board.id);
-
-        return {
-          ...board,
-          invited_count: invitedCount || 0,
-          media_count: mediaCount || 0
-        };
-      })
-    );
-
-    return { boards: boardsWithCounts || [], error: null };
-  }
-
-  return { boards: [], error: null };
 }
 
 export async function fetchUserBoards(userId: string) {
