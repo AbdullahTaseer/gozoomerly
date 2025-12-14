@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
-import BoardCard from '@/components/cards/BoardCard';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AvatarList from '@/components/cards/AvatarList';
@@ -12,9 +11,9 @@ import { spotlightCampaigns, boardInvitations } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
-import GlobalModal from '@/components/modals/GlobalModal';
 import { authService } from '@/lib/supabase/auth';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
+import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 
 const Home = () => {
   const router = useRouter();
@@ -124,18 +123,17 @@ const Home = () => {
         ) : boards.length > 0 ? (
           <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
             {boards.map((board) => {
-              // Get honoree's name from honoree_details
+
               const honoreeFirstName = board.honoree_details?.first_name || '';
               const honoreeLastName = board.honoree_details?.last_name || '';
               const honoreeName = honoreeFirstName && honoreeLastName
                 ? `${honoreeFirstName} ${honoreeLastName}`.trim()
                 : honoreeFirstName || honoreeLastName || 'Unknown';
 
-              // Get honoree's profile photo
               const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || ProfileAvatar;
 
               return (
-                <BoardCard
+                <DynamicBoardCard
                   key={board.id}
                   title={board.title}
                   avatar={honoreeProfilePhoto}
@@ -154,15 +152,15 @@ const Home = () => {
                   gifters={board.contributors_count || 0}
                   media={(board as any).media_count || 0}
                   topContributors={[]}
-                  buttonText="View Board"
-                  onButtonClick={() => handleViewBoard(board)}
                   onCreatorClick={() => handleCreatorClick(board.creator_id)}
                   onInviteClick={() => handleInviteClick(board)}
                   slug={board.slug}
+                  primaryColor={board.honoree_details.theme_color}
                   className='min-w-[340px] h-full'
                 />
               );
             })}
+   
           </div>
         ) : (
           <div className='text-center py-12'>

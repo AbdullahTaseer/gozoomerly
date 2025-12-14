@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import BoardCard from '@/components/cards/BoardCard';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteModal from '@/components/modals/InviteModal';
 import { getUserBoards } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
+import DefaultAvatar from "@/assets/svgs/boy-avatar.svg"
+import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 
 const Boards = () => {
   const router = useRouter();
@@ -91,18 +92,16 @@ const Boards = () => {
           </div>
         ) : (
           boards.map((board) => {
-            // Get honoree's name from honoree_details
             const honoreeFirstName = board.honoree_details?.first_name || '';
             const honoreeLastName = board.honoree_details?.last_name || '';
             const honoreeName = honoreeFirstName && honoreeLastName
               ? `${honoreeFirstName} ${honoreeLastName}`.trim()
               : honoreeFirstName || honoreeLastName || 'Unknown';
 
-            // Get honoree's profile photo
-            const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || '/default-avatar.jpg';
+            const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || DefaultAvatar;
 
             return (
-              <BoardCard
+              <DynamicBoardCard
                 key={board.id}
                 title={board.title}
                 avatar={honoreeProfilePhoto}
@@ -120,8 +119,8 @@ const Boards = () => {
                 gifters={board.contributors_count || 0}
                 media={(board as any).media_count || 0}
                 topContributors={[]}
-                buttonText="View Board"
-                onButtonClick={() => router.push(`/dashboard/boards/${board.slug}`)}
+                gradient={board.board_types.color_scheme.gradient}
+                primaryColor={board.honoree_details.theme_color}
                 onInviteClick={() => handleInviteClick(board)}
                 slug={board.slug}
               />

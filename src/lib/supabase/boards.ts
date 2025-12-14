@@ -19,6 +19,7 @@ export interface BoardType {
 }
 
 export interface Board {
+  profiles: any;
   id: string;
   creator_id: string;
   board_type_id?: string;

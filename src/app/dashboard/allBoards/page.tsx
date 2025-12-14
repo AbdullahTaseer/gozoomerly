@@ -5,14 +5,15 @@ import Image from 'next/image';
 import { Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { homeBoardsSwiper, boardInvitations } from '@/lib/MockData';
-import BoardCard from '@/components/cards/BoardCard';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 import { fetchActiveBoards, fetchUserBoards, type Board } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
+import { createClient } from '@/lib/supabase/client';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
+import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 
 const TABS = [
   { id: 'active', label: 'Active Boards' },
@@ -98,7 +99,59 @@ const AllBoards = () => {
           fetchedBoards = [];
       }
 
-      setBoards(fetchedBoards);
+      // Fetch top contributors for each board
+      const supabase = createClient();
+      const boardsWithContributors = await Promise.all(
+        fetchedBoards.map(async (board) => {
+          try {
+            // Fetch board participants (top 10)
+            const { data: participants } = await supabase
+              .from('board_participants')
+              .select('user_id')
+              .eq('board_id', board.id)
+              .limit(10);
+
+            const contributorAvatars: (string | typeof ProfileAvatar)[] = [];
+
+            if (participants && participants.length > 0) {
+              // Fetch profile pictures for each participant
+              const userIds = participants.map(p => p.user_id);
+              const { data: profiles } = await supabase
+                .from('profiles')
+                .select('profile_pic_url')
+                .in('id', userIds);
+
+              if (profiles) {
+                profiles.forEach((profile) => {
+                  if (profile.profile_pic_url) {
+                    contributorAvatars.push(profile.profile_pic_url);
+                  } else {
+                    contributorAvatars.push(ProfileAvatar);
+                  }
+                });
+              } else {
+                // If no profiles found, add default avatars
+                participants.forEach(() => {
+                  contributorAvatars.push(ProfileAvatar);
+                });
+              }
+            }
+
+            return {
+              ...board,
+              topContributors: contributorAvatars,
+            };
+          } catch (err) {
+            console.error('Error fetching contributors for board:', board.id, err);
+            return {
+              ...board,
+              topContributors: [],
+            };
+          }
+        })
+      );
+
+      setBoards(boardsWithContributors);
     } catch (err) {
       console.error('Error loading boards:', err);
       setBoards([]);
@@ -108,6 +161,16 @@ const AllBoards = () => {
   };
 
   const formatDate = (dateString?: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  const formatBirthdayDate = (dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -197,8 +260,9 @@ const AllBoards = () => {
 
                 const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || ProfileAvatar;
 
+
                 return (
-                  <BoardCard
+                  <DynamicBoardCard
                     key={board.id}
                     title={board.title}
                     avatar={honoreeProfilePhoto}
@@ -206,19 +270,20 @@ const AllBoards = () => {
                     creatorId={board.creator_id}
                     location={board.honoree_details?.hometown || 'No location'}
                     date={board.honoree_details?.date_of_birth
-                      ? formatDate(board.honoree_details.date_of_birth)
+                      ? formatBirthdayDate(board.honoree_details.date_of_birth)
                       : formatDate(board.deadline_date || board.created_at)}
                     description={board.description}
-                    fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
                     raised={board.total_raised || 0}
                     target={board.goal_amount || 0}
-                    invited={board.shares_count || 0}
-                    wishes={board.views_count || 0}
+                    participants={board.shares_count || 0}
+                    wishes={board.wishes_count || 0}
                     gifters={board.contributors_count || 0}
-                    media={(board as any).media_count || 0}
-                    topContributors={[]}
-                    buttonText="View Full Board"
-                    onButtonClick={() => handleViewBoard(board)}
+                    memories={(board as any).media_count || 0}
+                    chats={board.views_count || 0}
+                    topContributors={(board as any).topContributors || []}
+                    primaryColor={board.honoree_details.theme_color}
+                    gradient={board.board_types?.color_scheme.gradient}
+                    onNameClick={() => handleViewBoard(board)}
                     onCreatorClick={() => handleCreatorClick(board.creator_id)}
                     className='min-w-[340px] h-full'
                   />
