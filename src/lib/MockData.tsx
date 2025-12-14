@@ -545,3 +545,49 @@ export const chatListData = [
   { id: 13, name: 'kiero_d', message: 'The new design looks cool, b...', time: '3h', avatar: chatAvatar_1 },
   { id: 14, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
 ];
+
+// board invitations data
+export const boardInvitations = [
+  {
+    id: 1,
+    title: "Sofia & Omar's Wedding",
+    backgroundImage: FamilyBG,
+    profileImage: Community_2_avatar,
+    inviterName: "Omar Hassan",
+  },
+  {
+    id: 2,
+    title: "Asha & David's Wedding",
+    backgroundImage: FamilyBG,
+    profileImage: Community_2_avatar,
+    inviterName: "David Smith",
+  },
+  {
+    id: 3,
+    title: "Emily's Graduation Party",
+    backgroundImage: FriendsBG,
+    profileImage: Community_1_avatar,
+    inviterName: "Emily Johnson",
+  },
+   {
+    id: 4,
+    title: "Sofia & Omar's Wedding",
+    backgroundImage: FamilyBG,
+    profileImage: Community_2_avatar,
+    inviterName: "Omar Hassan",
+  },
+  {
+    id: 5,
+    title: "Asha & David's Wedding",
+    backgroundImage: FamilyBG,
+    profileImage: Community_2_avatar,
+    inviterName: "David Smith",
+  },
+  {
+    id: 6,
+    title: "Emily's Graduation Party",
+    backgroundImage: FriendsBG,
+    profileImage: Community_1_avatar,
+    inviterName: "Emily Johnson",
+  },
+];

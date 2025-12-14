@@ -8,12 +8,13 @@ import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AvatarList from '@/components/cards/AvatarList';
 import InviteModal from '@/components/modals/InviteModal';
-import { spotlightCampaigns } from '@/lib/MockData';
+import { spotlightCampaigns, boardInvitations } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import GlobalModal from '@/components/modals/GlobalModal';
 import { authService } from '@/lib/supabase/auth';
+import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 
 const Home = () => {
   const router = useRouter();
@@ -30,20 +31,20 @@ const Home = () => {
   const loadBoards = async () => {
     try {
       setLoading(true);
-      
+
       const user = await authService.getUser();
-      
+
       if (!user) {
         console.error('No user logged in');
         setLoading(false);
         return;
       }
-      
-      const { boards: fetchedBoards, error } = await fetchActiveBoards({ 
+
+      const { boards: fetchedBoards, error } = await fetchActiveBoards({
         userId: user.id,
-        showAll: true 
+        showAll: true
       });
-      
+
       if (error) {
         console.error('Supabase error:', error);
       } else {
@@ -83,10 +84,10 @@ const Home = () => {
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
   };
 
@@ -95,8 +96,25 @@ const Home = () => {
       <AvatarList />
 
       <div className='py-8'>
+        <TitleCard title="New Boards" className='text-left' />
+        <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
+          {boardInvitations.map((invitation) => (
+            <InvitationBoardCard
+              key={invitation.id}
+              title={invitation.title}
+              backgroundImage={invitation.backgroundImage}
+              profileImage={invitation.profileImage}
+              inviterName={invitation.inviterName}
+              onAccept={() => console.log('Accept invitation', invitation.id)}
+              onDecline={() => console.log('Decline invitation', invitation.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className='py-8'>
         <TitleCard title='Active Boards' className='text-left' />
-        
+
         {loading ? (
           <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
             {[1, 2, 3, 4].map((i) => (
@@ -109,13 +127,13 @@ const Home = () => {
               // Get honoree's name from honoree_details
               const honoreeFirstName = board.honoree_details?.first_name || '';
               const honoreeLastName = board.honoree_details?.last_name || '';
-              const honoreeName = honoreeFirstName && honoreeLastName 
+              const honoreeName = honoreeFirstName && honoreeLastName
                 ? `${honoreeFirstName} ${honoreeLastName}`.trim()
                 : honoreeFirstName || honoreeLastName || 'Unknown';
-              
+
               // Get honoree's profile photo
               const honoreeProfilePhoto = board.honoree_details?.profile_photo_url || ProfileAvatar;
-              
+
               return (
                 <BoardCard
                   key={board.id}
@@ -124,7 +142,7 @@ const Home = () => {
                   name={honoreeName}
                   creatorId={board.creator_id}
                   location={board.honoree_details?.hometown || 'No location'}
-                  date={board.honoree_details?.date_of_birth 
+                  date={board.honoree_details?.date_of_birth
                     ? formatDate(board.honoree_details.date_of_birth)
                     : formatDate(board.deadline_date || board.created_at)}
                   description={board.description}
@@ -149,7 +167,7 @@ const Home = () => {
         ) : (
           <div className='text-center py-12'>
             <p className='text-gray-500'>No active boards found</p>
-            <button 
+            <button
               onClick={() => router.push('/dashboard/boards')}
               className='mt-4 px-6 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
             >
