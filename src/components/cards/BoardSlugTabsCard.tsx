@@ -6,6 +6,7 @@ const TABS = [
   { id: "gifts", label: "Gifts" },
   { id: "memories", label: "Memories" },
   { id: "chats", label: "Chats (8)" },
+  { id: "participants", label: "Participants" },
 ];
 
 interface BoardSlugTabsCardProps {
@@ -13,6 +14,7 @@ interface BoardSlugTabsCardProps {
   giftsChildren?: React.ReactNode;
   memoriesChildren?: React.ReactNode;
   chatsChildren?: React.ReactNode;
+  participantsChildren?: React.ReactNode;
 }
 
 const BoardSlugTabsCard = ({
@@ -20,6 +22,7 @@ const BoardSlugTabsCard = ({
   giftsChildren,
   memoriesChildren,
   chatsChildren,
+  participantsChildren,
 }: BoardSlugTabsCardProps) => {
   const [activeTab, setActiveTab] = useState("wishes");
 
@@ -31,7 +34,7 @@ const BoardSlugTabsCard = ({
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-2 text-[24px] max-[768px]:text-[18px] whitespace-nowrap font-semibold transition-all
+              className={`pb-2 text-[24px] max-[769px]:text-[18px] max-[500px]:text-[15px] whitespace-nowrap font-semibold transition-all
               ${activeTab === tab.id
                   ? "text-black border-b-2 border-black"
                   : "text-black"
@@ -48,6 +51,7 @@ const BoardSlugTabsCard = ({
         {activeTab === "gifts" && <>{giftsChildren}</>}
         {activeTab === "memories" && <>{memoriesChildren}</>}
         {activeTab === "chats" && <>{chatsChildren}</>}
+        {activeTab === "participants" && <>{participantsChildren}</>}
       </div>
     </div>
   );

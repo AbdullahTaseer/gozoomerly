@@ -16,6 +16,7 @@ import ImageWithFallback from '@/components/images/ImageWithFallback';
 import BoardSlugTabsCard from '@/components/cards/BoardSlugTabsCard';
 import BoardSlugChatDesign from '@/components/cards/BoardSlugChatDesign';
 import BoardSlugGifts from '@/components/cards/BoardSlugGifts';
+import BoardSlugParticipants from '@/components/cards/BoardSlugParticipants';
 
 interface PageProps {
   params: { slug: string }
@@ -261,7 +262,7 @@ export default async function BoardPage(props: any) {
           <span>Media</span>
         </p>
       </div>
-      <div className="relative w-full overflow-hidden mb-6 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
+      <div className="relative w-full overflow-hidden mb-4 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
         <Image
           src={backgroundcake}
           alt="Birthday Cake"
@@ -330,7 +331,11 @@ export default async function BoardPage(props: any) {
         </div>
       </div>
 
-      <BoardSlugTabsCard chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />} />
+      <BoardSlugTabsCard
+        giftsChildren={<BoardSlugGifts />}
+        chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />}
+        participantsChildren={<BoardSlugParticipants/>}
+      />
 
       {/* <div className='max-w-[900px] mx-auto px-4 py-8'>
 
