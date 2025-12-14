@@ -161,7 +161,7 @@ const Home = () => {
 
       <div className='py-8'>
         <TitleCard title='Spotlight Campaigns' className='text-left' />
-        <div className='flex mt-4 gap-6 overflow-x-auto scrollbar-hide h-full'>
+        <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full'>
           {spotlightCampaigns.map((campaign) => (
             <SpotLightCard
               key={campaign.id}
@@ -169,8 +169,16 @@ const Home = () => {
               description={campaign.description}
               spotLightImg={campaign.spotLightImg}
               participants={campaign.participants}
-              gifted={campaign.gifted}
               wished={campaign.wished}
+              supports={campaign.supports}
+              memories={campaign.memories}
+              chats={campaign.chats}
+              raised={campaign.raised}
+              target={campaign.target}
+              organizerName={campaign.organizerName}
+              organizerAvatar={campaign.organizerAvatar}
+              organizerHometown={campaign.organizerHometown}
+              topContributors={campaign.topContributors}
             />
           ))}
         </div>
