@@ -7,7 +7,7 @@ import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteModal from '@/components/modals/InviteModal';
-import { getUserBoards } from '@/lib/supabase/boards';
+import { Board, getUserBoards } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 import DefaultAvatar from "@/assets/svgs/boy-avatar.svg"
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
@@ -58,6 +58,10 @@ const Boards = () => {
   const handleCloseInviteModal = () => {
     setInviteModalOpen(false);
     setSelectedBoard(null);
+  };
+
+  const handleViewBoard = (board: Board) => {
+    router.push(`/dashboard/boards/${board.slug}`);
   };
 
   return (
@@ -118,10 +122,11 @@ const Boards = () => {
                 wishes={board.views_count || 0}
                 gifters={board.contributors_count || 0}
                 media={(board as any).media_count || 0}
-                topContributors={[]}
+                topContributors={(board as any).topContributors || []}
                 gradient={board.board_types.color_scheme.gradient}
                 primaryColor={board.honoree_details.theme_color}
                 onInviteClick={() => handleInviteClick(board)}
+                onNameClick={() => handleViewBoard(board)}
                 slug={board.slug}
               />
             );

@@ -78,7 +78,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
   const progressFillColor = gradientColors[1] || gradientColors[0] || defaultGradient[1];
 
   return (
-    <div className={`${className} bg-white rounded-xl overflow-hidden shadow-lg flex flex-col`}>
+    <div className={`${className} bg-white rounded-xl overflow-hidden shadow-lg shrink-0 flex flex-col`}>
       <div
         className="text-white p-6 relative overflow-hidden"
         style={topSectionStyle}

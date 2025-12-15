@@ -154,6 +154,7 @@ const Home = () => {
                   topContributors={[]}
                   onCreatorClick={() => handleCreatorClick(board.creator_id)}
                   onInviteClick={() => handleInviteClick(board)}
+                  onNameClick={() => handleViewBoard(board)}
                   slug={board.slug}
                   primaryColor={board.honoree_details.theme_color}
                   className='w-[340px] h-full'
