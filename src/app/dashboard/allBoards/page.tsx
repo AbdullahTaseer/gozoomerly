@@ -285,7 +285,7 @@ const AllBoards = () => {
                     gradient={board.board_types?.color_scheme.gradient}
                     onNameClick={() => handleViewBoard(board)}
                     onCreatorClick={() => handleCreatorClick(board.creator_id)}
-                    className='min-w-[340px] h-full'
+                    className='w-[340px] h-full'
                   />
                 );
               })

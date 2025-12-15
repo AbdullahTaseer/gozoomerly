@@ -156,11 +156,11 @@ const Home = () => {
                   onInviteClick={() => handleInviteClick(board)}
                   slug={board.slug}
                   primaryColor={board.honoree_details.theme_color}
-                  className='min-w-[340px] h-full'
+                  className='w-[340px] h-full'
                 />
               );
             })}
-   
+
           </div>
         ) : (
           <div className='text-center py-12'>
