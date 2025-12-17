@@ -39,7 +39,7 @@ const SignIn = () => {
 
     if (response.success) {
       console.log("Sign in successful, redirecting...");
-      router.push('/');
+      router.push('/dashboard');
     } else {
       console.log("Sign in failed:", response.error);
       setError(response.error || 'Sign in failed');

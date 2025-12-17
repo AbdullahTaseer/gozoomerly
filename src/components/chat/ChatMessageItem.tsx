@@ -13,31 +13,14 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
   return (
     <div className={`flex mt-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={cn('max-w-[75%] w-fit flex flex-col gap-1', {
-          'items-end': isOwnMessage,
-        })}
+        className={cn('max-w-[75%] w-fit flex flex-col gap-1', { 'items-end': isOwnMessage, })}
       >
         {showHeader && (
           <div
-            className={cn('flex items-center gap-2 text-xs px-3', {
-              'justify-end flex-row-reverse': isOwnMessage,
-            })}
+            className={cn('flex items-center gap-2 text-xs px-3', { 'justify-end flex-row-reverse': isOwnMessage, })}
           >
-            {!isOwnMessage && (
-              <Image
-                src={message.user.avatar || ProfileAvatar}
-                alt={message.user.name}
-                width={16}
-                height={16}
-                className="rounded-full object-cover"
-                onError={(e) => {
-                  const target = e.currentTarget as HTMLImageElement;
-                  target.src = ProfileAvatar.src || ProfileAvatar;
-                }}
-              />
-            )}
-            <span className={'font-medium'}>{message.user.name}</span>
-            <span className="text-foreground/50 text-xs">
+
+            <span className="text-foreground/50 text-xs text-left">
               {new Date(message.createdAt).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -54,7 +37,7 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
           )}
         >
           {message.content && <p className="break-words">{message.content}</p>}
-          
+
           {message.fileUrl && (
             <div className={message.content ? "mt-2" : ""}>
               {message.messageType === 'image' ? (
