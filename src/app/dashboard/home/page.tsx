@@ -14,7 +14,7 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { authService } from '@/lib/supabase/auth';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
-import HomeFeedFilters from '@/components/cards/HomeFeedFilters';
+import HomeFeedFilters from '@/components/filters/HomeFeedFilters';
 
 const Home = () => {
   const router = useRouter();
