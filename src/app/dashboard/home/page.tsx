@@ -14,6 +14,7 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { authService } from '@/lib/supabase/auth';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
+import HomeFeedFilters from '@/components/cards/HomeFeedFilters';
 
 const Home = () => {
   const router = useRouter();
@@ -76,9 +77,6 @@ const Home = () => {
     setInviteModalOpen(false);
     setSelectedBoard(null);
   };
-
-
-  const feedFilters = ['All', 'Friends', 'Family', 'Public', 'Private'];
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -176,7 +174,7 @@ const Home = () => {
         )}
       </div>
 
-      <div className='py-8'>
+      {/* <div className='py-8'>
         <TitleCard title='Spotlight Campaigns' className='text-left' />
         <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full'>
           {spotlightCampaigns.map((campaign) => (
@@ -199,23 +197,15 @@ const Home = () => {
             />
           ))}
         </div>
-      </div>
+      </div> */}
 
       <div>
         <div className='flex max-[550px]:flex-col justify-between gap-4'>
           <TitleCard title='Feed' className='text-left' />
-          <div className='flex items-center gap-6 max-[500px]:gap-3 justify-center'>
-            {feedFilters.map((item) => (
-              <p
-                key={item}
-                onClick={() => setSelectedFilter(item)}
-                className={`text-[20px] max-[768px]:text-[16px] cursor-pointer font-bold transition-colors
-                  ${selectedFilter === item ? 'text-pink-500' : 'text-gray-700 hover:text-pink-400'}`}
-              >
-                {item}
-              </p>
-            ))}
-          </div>
+          <HomeFeedFilters
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
         </div>
 
         <div className='max-w-[745px] mx-auto py-6 space-y-6'>

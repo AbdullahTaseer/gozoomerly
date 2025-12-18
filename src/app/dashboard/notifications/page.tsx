@@ -1,4 +1,3 @@
-import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import TitleCard from '@/components/cards/TitleCard';
 import { Star } from 'lucide-react';
 import React from 'react';
@@ -48,7 +47,6 @@ const Notifications = () => {
 
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Notifications' className='text-left' />
-        <BellIconIndicator />
       </div>
 
 

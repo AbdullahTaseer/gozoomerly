@@ -26,7 +26,6 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 import PaymentMethodCard from '@/components/cards/PaymentMethodCard';
 import * as Switch from '@radix-ui/react-switch';
-import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -224,7 +223,6 @@ const Profile = () => {
 
       <div className='flex items-center justify-between gap-3'>
         <TitleCard title='Profile' className='text-left' />
-        <BellIconIndicator />
       </div>
 
       <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>

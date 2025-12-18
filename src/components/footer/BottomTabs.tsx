@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Layers, MessageCircle, Plus } from "lucide-react";
+import { Home, Layers, MessageCircle, Plus, UserPlus } from "lucide-react";
 import { ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
@@ -15,7 +15,7 @@ const TabItem = ({ icon, label, active, onClick }: TabItemProps) => {
   return (
     <div
       onClick={onClick}
-      className="flex flex-col items-center gap-1 cursor-pointer select-none"
+      className="flex flex-col justify-center items-center gap-1 cursor-pointer select-none"
     >
       <div className={active ? "text-white" : "text-gray-300"}>
         {icon}
@@ -37,13 +37,6 @@ const BottomTabs = () => {
 
         <div className="h-[70px] bg-[#18171f] rounded-t-3xl flex items-center justify-between px-8 max-[380px]:px-4 shadow-xl">
 
-          <TabItem
-            icon={<Home size={22} />}
-            label="Home"
-            active={pathname === "/dashboard/home"}
-            onClick={() => router.push("/dashboard/home")}
-          />
-
           <div className="relative">
             <TabItem
               icon={<Layers size={22} />}
@@ -56,6 +49,13 @@ const BottomTabs = () => {
               2
             </span>
           </div>
+
+          <TabItem
+            icon={<UserPlus />}
+            label="Connections"
+            active={pathname === "/dashboard/connections"}
+            onClick={() => router.push("/dashboard/connections")}
+          />
 
           <div className="w-12" />
 

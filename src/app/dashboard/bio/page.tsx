@@ -10,7 +10,6 @@ import TitleCard from '@/components/cards/TitleCard';
 import MyWorkIcon from "@/assets/svgs/my-work.svg";
 import LanguageSpeaksIcon from "@/assets/svgs/language.svg";
 import LivesInIcon from "@/assets/svgs/lives-in.svg";
-import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 
@@ -105,7 +104,6 @@ const BioPage = () => {
           </button>
           <TitleCard title="Bio" className="text-left" />
         </div>
-        <BellIconIndicator />
       </div>
 
       <div className="bg-[#1B1D26] px-6 py-16 max-[1100px]:py-10 mt-4 relative rounded-[24px] overflow-hidden">
