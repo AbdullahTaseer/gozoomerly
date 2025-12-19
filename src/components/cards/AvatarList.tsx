@@ -3,10 +3,9 @@ import { avatarListData } from '@/lib/MockData';
 import MainAvatar from "@/assets/svgs/avatar-list-main.svg";
 import AvatarCard from '@/components/cards/AvatarCard';
 
-
 const AvatarList = () => {
   return (
-    <div className='mt-6'>
+    <div className='mt-6 max-[769px]:hidden'>
       <div className='flex gap-4 overflow-x-auto scrollbar-hide'>
         <AvatarCard
           imgPath={MainAvatar}

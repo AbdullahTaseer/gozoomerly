@@ -15,6 +15,7 @@ import { authService } from '@/lib/supabase/auth';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 import HomeFeedFilters from '@/components/filters/HomeFeedFilters';
+import FeedMobileCard from '@/components/cards/FeedMobileCard';
 
 const Home = () => {
   const router = useRouter();
@@ -200,7 +201,7 @@ const Home = () => {
       </div> */}
 
       <div>
-        <div className='flex max-[550px]:flex-col justify-between gap-4'>
+        <div className='flex items-center justify-between gap-4'>
           <TitleCard title='Feed' className='text-left' />
           <HomeFeedFilters
             selectedFilter={selectedFilter}
@@ -223,6 +224,8 @@ const Home = () => {
           boardTitle={selectedBoard.title}
         />
       )}
+
+      <FeedMobileCard/>
 
     </div>
   );
