@@ -12,6 +12,7 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import { useChat } from '@/hooks/use-chat';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 const ChatPage = () => {
   const {
@@ -44,11 +45,12 @@ const ChatPage = () => {
 
   return (
     <>
-      <MobileHeader title={selectedTab === "Connections" ? "Chat" : "Boards"} RightIcon={Plus} />
+      <DashNavbar />
+      <MobileHeader title={selectedTab === "Connections" ? "Connections" : "Boards"} RightIcon={Plus} />
       <div className='px-[7%] max-[900px]:px-3 text-white'>
         <div className='px-4 flex items-center justify-between max-[769px]:justify-center gap-2 mt-6'>
           <div className='max-[769px]:hidden'>
-            <TitleCard title={selectedTab === "Connections" ? "Chat" : "Boards"} className='text-left' />
+            <TitleCard title={selectedTab === "Connections" ? "Connections" : "Boards"} className='text-left' />
           </div>
           <div className='relative w-[270px] max-[500px]:mx-auto'>
             <div className="relative">
@@ -184,7 +186,7 @@ const ChatPage = () => {
             <div className={`flex-1 border border-l-0 flex-col ${selectedConversation ? 'flex' : 'max-[900px]:hidden'}`}>
               {selectedConversation ? (
                 <>
-                  <div className='flex items-center gap-4 bg-[#2A2D3A] p-4 border-b border-gray-700'>
+                  <div className='flex items-center gap-4 bg-[#2A2D3A] p-3.5 border-b border-gray-700'>
                     <ArrowLeft
                       onClick={() => setSelectedConversation(null)}
                       className='cursor-pointer lg:hidden'

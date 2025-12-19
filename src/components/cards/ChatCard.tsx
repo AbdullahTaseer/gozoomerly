@@ -34,7 +34,7 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, onClick }: P
 
       <div className='flex-1'>
         <div className='flex justify-between items-center'>
-          <p className='font-bold text-sm'>{name}</p>
+          <p className='font-bold line-clamp-1 text-sm'>{name}</p>
           <p className='text-xs '>{time}</p>
         </div>
         <p className='text-xs truncate pr-4'>{message}</p>

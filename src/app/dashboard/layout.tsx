@@ -13,7 +13,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen max-[769px]:pb-20 flex flex-col">
-      {!hideNavbarForBoardDetail && <DashNavbar />}
+      {/* {!hideNavbarForBoardDetail && <DashNavbar />} */}
       <main className="flex-1">
         {children}
       </main>

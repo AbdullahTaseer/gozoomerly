@@ -12,6 +12,7 @@ import storyBackground1 from "@/assets/svgs/gifts/gift-5.svg";
 import storyBackground2 from "@/assets/svgs/gifts/gift-3.svg";
 import storyBackground3 from "@/assets/svgs/gifts/gift-1.svg";
 import MobileHeader from '@/components/navbar/MobileHeader';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 const statusCards = [
   {
@@ -111,6 +112,7 @@ const Connections = () => {
 
   return (
     <>
+    <DashNavbar/>
       <MobileHeader title="Connections" />
       <div className='px-[7%] max-[769px]:px-4 pb-8'>
         <div className='mt-6'>

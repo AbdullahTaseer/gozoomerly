@@ -7,9 +7,13 @@ import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import AnimatedButton from '../buttons/AnimatedButton';
 import BellIconIndicator from '../cards/BellIconIndicator';
 
-const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections"];
+const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Profile"];
 
-const DashNavbar = () => {
+type props = {
+  hide?: boolean;
+}
+
+const DashNavbar = ({ hide = true }: props) => {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -28,6 +32,9 @@ const DashNavbar = () => {
     }
     if (option === "Connections") {
       return pathname === "/dashboard/connections";
+    }
+    if (option === "Profile") {
+      return pathname === "/dashboard/profile";
     }
 
     return false;
@@ -56,6 +63,9 @@ const DashNavbar = () => {
       case "Connections":
         router.push("/dashboard/connections");
         break;
+      case "Profile":
+        router.push("/dashboard/profile");
+        break;
       default:
         break;
     }
@@ -63,9 +73,9 @@ const DashNavbar = () => {
 
   return (
     <>
-      <div className='flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-4 max-[1024px]:pb-3 bg-white sticky shadow-sm top-0 z-[100]'>
+      <div className={`${hide ? "max-[769px]:hidden" : ""} flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-4 max-[1024px]:pb-3 bg-white sticky shadow-sm top-0 z-[100]`}>
         <Image src={AppLogo} onClick={() => router.push("/dashboard")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
-        <div className='flex items-center gap-6 max-[769px]:hidden'>
+        <div className='flex items-center gap-6 max-[900px]:gap-4 max-[769px]:hidden'>
           {desktopOptions.map((option, i) => (
             <p
               key={i}

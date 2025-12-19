@@ -37,6 +37,8 @@ import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 import FollowersModalContent from '@/components/modals/FollowersModalContent';
 import FollowingModalContent from '@/components/modals/FollowingModalContent';
 import { recalculateFollowingCount, recalculateFollowersCount } from '@/lib/supabase/followUtils';
+import DashNavbar from '@/components/navbar/DashNavbar';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 interface UserProfile {
   id: string;
@@ -219,246 +221,248 @@ const Profile = () => {
   }
 
   return (
-    <div className='px-[7%] max-[768px]:px-6'>
+    <div>
+      <DashNavbar />
+      <MobileHeader title={'Profile'} rightText='Edit' rightTextClick={handleEdit} />
+      <div className='px-[7%] max-[768px]:px-6'>
 
-      <div className='flex items-center justify-between gap-3'>
-        <TitleCard title='Profile' className='text-left' />
-      </div>
+        <TitleCard title='Profile' className='text-left max-[769px]:hidden' />
 
-      <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>
-        <Image src={Particles} alt="" className='absolute object-cover' />
+        <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>
+          <Image src={Particles} alt="" className='absolute object-cover' />
 
-        <div className='relative z-10'>
-          <button
-            onClick={handleEdit}
-            className='absolute -top-10 max-[1100px]:-top-4 -right-10 max-[1100px]:-right-4 cursor-pointer p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
-          >
-            <Edit2 size={20} className='text-white' />
-          </button>
+          <div className='relative z-10'>
+            <button
+              onClick={handleEdit}
+              className='absolute max-[769px]:hidden -top-10 max-[1100px]:-top-4 -right-10 max-[1100px]:-right-4 cursor-pointer p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
+            >
+              <Edit2 size={20} className='text-white' />
+            </button>
 
-          <div className='grid grid-cols-5 max-[900px]:grid-cols-3 gap-4'>
-            <div className='flex items-center max-[500px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
-              <ProfilePictureUpload
-                profile={profile}
-                onUpdate={(updatedProfile) => setProfile(updatedProfile)}
-                userId={user?.id || ''}
-              />
-              <span>
-                <p className='text-white text-[24px] font-bold'>{profile?.name || 'User'}</p>
-                <p className='text-[#F0F0F0] text-sm'>{formatBirthDate(profile?.birth_date)}</p>
-                <p className='text-[#F0F0F0] text-sm'>{formatLocation(profile?.country, profile?.state, profile?.city)}</p>
+            <div className='grid grid-cols-5 max-[900px]:grid-cols-3 gap-4'>
+              <div className='flex items-center max-[500px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
+                <ProfilePictureUpload
+                  profile={profile}
+                  onUpdate={(updatedProfile) => setProfile(updatedProfile)}
+                  userId={user?.id || ''}
+                />
+                <span>
+                  <p className='text-white text-[24px] font-bold'>{profile?.name || 'User'}</p>
+                  <p className='text-[#F0F0F0] text-sm'>{formatBirthDate(profile?.birth_date)}</p>
+                  <p className='text-[#F0F0F0] text-sm'>{formatLocation(profile?.country, profile?.state, profile?.city)}</p>
+                </span>
+              </div>
+              <span className='my-auto'>
+                <p className='text-white text-[24px] font-bold'>{profile?.boards_created_count || 0}</p>
+                <p className='text-[#F0F0F0] text-sm'>Campaigns</p>
+              </span>
+              <span className='my-auto'>
+                <p className='text-white text-[24px] font-bold'>{profile?.followers_count || 0}</p>
+                <p className='text-[#F0F0F0] text-sm'>Followers</p>
+              </span>
+              <span className='my-auto'>
+                <p className='text-white text-[24px] font-bold'>{profile?.following_count || 0}</p>
+                <p className='text-[#F0F0F0] text-sm'>Following</p>
               </span>
             </div>
-            <span className='my-auto'>
-              <p className='text-white text-[24px] font-bold'>{profile?.boards_created_count || 0}</p>
-              <p className='text-[#F0F0F0] text-sm'>Campaigns</p>
-            </span>
-            <span className='my-auto'>
-              <p className='text-white text-[24px] font-bold'>{profile?.followers_count || 0}</p>
-              <p className='text-[#F0F0F0] text-sm'>Followers</p>
-            </span>
-            <span className='my-auto'>
-              <p className='text-white text-[24px] font-bold'>{profile?.following_count || 0}</p>
-              <p className='text-[#F0F0F0] text-sm'>Following</p>
-            </span>
-          </div>
 
-          <div className='mt-6'>
-            <p className='text-white font-semibold mb-2'>Bio</p>
-            <p className='text-[#F0F0F0] text-sm'>{profile?.bio || 'No bio added yet'}</p>
-          </div>
-
-          {profile?.work && (
-            <div className='mt-4'>
-              <p className='text-white font-semibold mb-2'>Work</p>
-              <p className='text-[#F0F0F0] text-sm'>{profile?.work}</p>
+            <div className='mt-6'>
+              <p className='text-white font-semibold mb-2'>Bio</p>
+              <p className='text-[#F0F0F0] text-sm'>{profile?.bio || 'No bio added yet'}</p>
             </div>
-          )}
 
+            {profile?.work && (
+              <div className='mt-4'>
+                <p className='text-white font-semibold mb-2'>Work</p>
+                <p className='text-[#F0F0F0] text-sm'>{profile?.work}</p>
+              </div>
+            )}
+
+          </div>
         </div>
-      </div>
 
-      <div className='mt-4 bg-white border-b pb-4'>
-        {menuItems.map((item, idx) => (
-          <button
-            key={idx}
-            type="button"
-            onClick={() => {
-              if (item.href) {
-                router.push(item.href);
-              } else if (item.onClick) {
-                item.onClick();
-              }
-            }}
-            className="w-full text-left flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100"
+        <div className='mt-4 bg-white border-b pb-4'>
+          {menuItems.map((item, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                if (item.href) {
+                  router.push(item.href);
+                } else if (item.onClick) {
+                  item.onClick();
+                }
+              }}
+              className="w-full text-left flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <Image src={item.icon} alt="" width={20} height={20} />
+                <span className="text-gray-800 font-medium">{item.label}</span>
+              </div>
+              <ChevronRight className="text-[#8A8A8A]" size={22} />
+            </button>
+          ))}
+        </div>
+
+        <div className='py-4 border-b'>
+          <div className='flex justify-between gap-3 items-center mb-2'>
+            <p className='text-[20px] font-semibold'>Payment Method</p>
+            <Link href='/dashboard/paymentMethod' className='cursor-pointer hover:text-pink-500'>Change</Link>
+          </div>
+          <PaymentMethodCard
+            showRadio={false}
+            cardImg={MastercardImg}
+            cardName='Mastercard'
+            cardNumber='**** 5930'
+          />
+        </div>
+
+        <div className='py-4 border-b'>
+          <p className='text-[20px] font-semibold mb-3'>Notification Settings</p>
+          <div className='flex items-center justify-between px-1 py-2'>
+            <div className='flex items-center gap-3'>
+              <Bell size={20} />
+              <span className='text-gray-800'>In-app Notifications</span>
+            </div>
+            <Switch.Root defaultChecked className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500">
+              <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
+            </Switch.Root>
+          </div>
+          <div className='flex items-center justify-between px-1 py-2'>
+            <div className='flex items-center gap-3'>
+              <Smartphone size={20} />
+              <span className='text-gray-800'>SMS Notifications</span>
+            </div>
+            <Switch.Root className="w-11 h-6 rounded-full bg-[#0D0C10] relative data-[state=checked]:bg-pink-500">
+              <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
+            </Switch.Root>
+          </div>
+        </div>
+
+        <div className='py-4 border-b'>
+          <p className='text-[20px] font-semibold mb-3'>Account Settings</p>
+          <div
+            className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
+            onClick={() => setShowEmailModal(true)}
           >
-            <div className="flex items-center gap-3">
-              <Image src={item.icon} alt="" width={20} height={20} />
-              <span className="text-gray-800 font-medium">{item.label}</span>
+            <div className='flex items-center gap-3'>
+              <Mail size={20} />
+              <span className='text-gray-800'>Email: {user?.email || 'Not set'}</span>
             </div>
-            <ChevronRight className="text-[#8A8A8A]" size={22} />
-          </button>
-        ))}
-      </div>
-
-      <div className='py-4 border-b'>
-        <div className='flex justify-between gap-3 items-center mb-2'>
-          <p className='text-[20px] font-semibold'>Payment Method</p>
-          <Link href='/dashboard/paymentMethod' className='cursor-pointer hover:text-pink-500'>Change</Link>
-        </div>
-        <PaymentMethodCard
-          showRadio={false}
-          cardImg={MastercardImg}
-          cardName='Mastercard'
-          cardNumber='**** 5930'
-        />
-      </div>
-
-      <div className='py-4 border-b'>
-        <p className='text-[20px] font-semibold mb-3'>Notification Settings</p>
-        <div className='flex items-center justify-between px-1 py-2'>
-          <div className='flex items-center gap-3'>
-            <Bell size={20} />
-            <span className='text-gray-800'>In-app Notifications</span>
+            <ChevronRight className='text-[#8A8A8A]' size={22} />
           </div>
-          <Switch.Root defaultChecked className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500">
-            <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
-          </Switch.Root>
-        </div>
-        <div className='flex items-center justify-between px-1 py-2'>
-          <div className='flex items-center gap-3'>
-            <Smartphone size={20} />
-            <span className='text-gray-800'>SMS Notifications</span>
+          <div
+            className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
+            onClick={() => setShowPasswordModal(true)}
+          >
+            <div className='flex items-center gap-3'>
+              <LockKeyhole size={20} />
+              <span className='text-gray-800'>Change password</span>
+            </div>
+            <ChevronRight className='text-[#8A8A8A]' size={22} />
           </div>
-          <Switch.Root className="w-11 h-6 rounded-full bg-[#0D0C10] relative data-[state=checked]:bg-pink-500">
-            <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
-          </Switch.Root>
         </div>
-      </div>
 
-      <div className='py-4 border-b'>
-        <p className='text-[20px] font-semibold mb-3'>Account Settings</p>
-        <div
-          className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
-          onClick={() => setShowEmailModal(true)}
-        >
-          <div className='flex items-center gap-3'>
-            <Mail size={20} />
-            <span className='text-gray-800'>Email: {user?.email || 'Not set'}</span>
+        <div className='py-4'>
+          <div className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'>
+            <Trash2 size={20} className='text-red-500' />
+            <span className='text-red-500'>Delete Account</span>
           </div>
-          <ChevronRight className='text-[#8A8A8A]' size={22} />
-        </div>
-        <div
-          className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
-          onClick={() => setShowPasswordModal(true)}
-        >
-          <div className='flex items-center gap-3'>
-            <LockKeyhole size={20} />
-            <span className='text-gray-800'>Change password</span>
+          <div
+            onClick={handleLogout}
+            className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'
+          >
+            <UserLock size={20} />
+            <span className='text-gray-800'>Log out</span>
           </div>
-          <ChevronRight className='text-[#8A8A8A]' size={22} />
         </div>
-      </div>
 
-      <div className='py-4'>
-        <div className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'>
-          <Trash2 size={20} className='text-red-500' />
-          <span className='text-red-500'>Delete Account</span>
-        </div>
-        <div
-          onClick={handleLogout}
-          className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'
-        >
-          <UserLock size={20} />
-          <span className='text-gray-800'>Log out</span>
-        </div>
-      </div>
-
-      <GlobalModal
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        title="Change Email"
-        className='w-[400px] max-[420px]:w-[95vw]'
-      >
-        <EmailChangeForm
-          currentEmail={user?.email || ''}
+        <GlobalModal
+          isOpen={showEmailModal}
           onClose={() => setShowEmailModal(false)}
-          onSuccess={async () => {
-            // Refresh user data
+          title="Change Email"
+          className='w-[400px] max-[420px]:w-[95vw]'
+        >
+          <EmailChangeForm
+            currentEmail={user?.email || ''}
+            onClose={() => setShowEmailModal(false)}
+            onSuccess={async () => {
+              // Refresh user data
+              await fetchUserData();
+            }}
+          />
+        </GlobalModal>
+
+        <GlobalModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+          title="Change Password"
+          className='w-[400px] max-[420px]:w-[95vw]'
+        >
+          <PasswordChangeForm
+            onClose={() => setShowPasswordModal(false)}
+            onSuccess={() => {
+
+            }}
+          />
+        </GlobalModal>
+
+        <EditProfileModal
+          isOpen={showEditProfileModal}
+          onClose={() => setShowEditProfileModal(false)}
+          profile={profile}
+          onSuccess={async (updatedProfile) => {
+            if (updatedProfile) setProfile(updatedProfile);
             await fetchUserData();
           }}
         />
-      </GlobalModal>
 
-      <GlobalModal
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-        title="Change Password"
-        className='w-[400px] max-[420px]:w-[95vw]'
-      >
-        <PasswordChangeForm
-          onClose={() => setShowPasswordModal(false)}
-          onSuccess={() => {
-            
+        <GlobalModal
+          title='Followers'
+          isOpen={showFollowerModal}
+          onClose={async () => {
+            setIsShowFollowerModal(false);
+            if (user?.id) {
+              const [actualFollowingCount, actualFollowersCount] = await Promise.all([
+                recalculateFollowingCount(user.id),
+                recalculateFollowersCount(user.id)
+              ]);
+              setProfile(prev => prev ? {
+                ...prev,
+                following_count: actualFollowingCount,
+                followers_count: actualFollowersCount
+              } : null);
+            }
           }}
-        />
-      </GlobalModal>
+          className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+        >
+          <FollowersModalContent userId={user?.id} />
+        </GlobalModal>
 
-      <EditProfileModal
-        isOpen={showEditProfileModal}
-        onClose={() => setShowEditProfileModal(false)}
-        profile={profile}
-        onSuccess={async (updatedProfile) => {
-          if (updatedProfile) setProfile(updatedProfile);
-          await fetchUserData();
-        }}
-      />
+        <GlobalModal
+          title='Following'
+          isOpen={showFollowingModal}
+          onClose={async () => {
+            setIsShowFollowingModal(false);
+            // Recalculate counts when modal closes
+            if (user?.id) {
+              const [actualFollowingCount, actualFollowersCount] = await Promise.all([
+                recalculateFollowingCount(user.id),
+                recalculateFollowersCount(user.id)
+              ]);
+              setProfile(prev => prev ? {
+                ...prev,
+                following_count: actualFollowingCount,
+                followers_count: actualFollowersCount
+              } : null);
+            }
+          }}
+          className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+        >
+          <FollowingModalContent userId={user?.id} />
+        </GlobalModal>
 
-      <GlobalModal
-        title='Followers'
-        isOpen={showFollowerModal}
-        onClose={async () => {
-          setIsShowFollowerModal(false);
-          if (user?.id) {
-            const [actualFollowingCount, actualFollowersCount] = await Promise.all([
-              recalculateFollowingCount(user.id),
-              recalculateFollowersCount(user.id)
-            ]);
-            setProfile(prev => prev ? {
-              ...prev,
-              following_count: actualFollowingCount,
-              followers_count: actualFollowersCount
-            } : null);
-          }
-        }}
-        className='w-[550px] pb-0 max-[600px]:w-[90vw]'
-      >
-        <FollowersModalContent userId={user?.id} />
-      </GlobalModal>
-
-      <GlobalModal
-        title='Following'
-        isOpen={showFollowingModal}
-        onClose={async () => {
-          setIsShowFollowingModal(false);
-          // Recalculate counts when modal closes
-          if (user?.id) {
-            const [actualFollowingCount, actualFollowersCount] = await Promise.all([
-              recalculateFollowingCount(user.id),
-              recalculateFollowersCount(user.id)
-            ]);
-            setProfile(prev => prev ? {
-              ...prev,
-              following_count: actualFollowingCount,
-              followers_count: actualFollowersCount
-            } : null);
-          }
-        }}
-        className='w-[550px] pb-0 max-[600px]:w-[90vw]'
-      >
-        <FollowingModalContent userId={user?.id} />
-      </GlobalModal>
-
+      </div>
     </div>
   );
 };

@@ -5,6 +5,8 @@ import { fetchActiveBoards, fetchUserBoards, type Board } from '@/lib/supabase/b
 import { boardInvitations } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
+import DashNavbar from '@/components/navbar/DashNavbar';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const AllBoards = () => {
   const [counts, setCounts] = useState({
@@ -71,43 +73,43 @@ const AllBoards = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className='px-[7%] max-[769px]:px-3 py-8'>
-        <div className='grid grid-cols-2 gap-6 max-w-4xl mx-auto'>
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className='h-48 bg-gray-100 rounded-2xl animate-pulse' />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className='px-[7%] max-[769px]:px-3 py-8'>
-      <div className='grid grid-cols-4 gap-6'>
-        <BoardCategoryCard
-          count={counts.new}
-          label="New Boards"
-          path="/dashboard/allBoards/new"
-        />
-        <BoardCategoryCard
-          count={counts.active}
-          label="Active Boards"
-          path="/dashboard/allBoards/active"
-        />
-        <BoardCategoryCard
-          count={counts.your}
-          label="Your Boards"
-          path="/dashboard/allBoards/your"
-        />
-        <BoardCategoryCard
-          count={counts.past}
-          label="Past Boards"
-          path="/dashboard/allBoards/past"
-        />
+    <>
+      <DashNavbar />
+      <MobileHeader title="Boards" />
+      <div className='px-[7%] max-[769px]:px-3 py-8'>
+        {loading ? (
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6'>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className='h-48 bg-gray-100 rounded-2xl animate-pulse' />
+            ))}
+          </div>
+        ) : (
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6'>
+            <BoardCategoryCard
+              count={counts.new}
+              label="New Boards"
+              path="/dashboard/allBoards/new"
+            />
+            <BoardCategoryCard
+              count={counts.active}
+              label="Active Boards"
+              path="/dashboard/allBoards/active"
+            />
+            <BoardCategoryCard
+              count={counts.your}
+              label="Your Boards"
+              path="/dashboard/allBoards/your"
+            />
+            <BoardCategoryCard
+              count={counts.past}
+              label="Past Boards"
+              path="/dashboard/allBoards/past"
+            />
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 };
 

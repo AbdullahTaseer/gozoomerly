@@ -21,7 +21,7 @@ import Compaign_8 from "@/assets/svgs/compaign/compaign-8.svg";
 import Compaign_9 from "@/assets/svgs/compaign/compaign-9.svg";
 
 const defaultImages = [
-  Compaign_1, Compaign_2, Compaign_3, Compaign_4, 
+  Compaign_1, Compaign_2, Compaign_3, Compaign_4,
   Compaign_5, Compaign_6, Compaign_7, Compaign_8, Compaign_9
 ];
 
@@ -30,19 +30,19 @@ const Compaign = () => {
   const router = useRouter();
   const [boardTypes, setBoardTypes] = useState<BoardType[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     checkAuth();
     fetchBoardTypes();
   }, []);
-  
+
   const checkAuth = async () => {
     const user = await authService.getUser();
     if (!user) {
       router.push('/signin');
     }
   };
-  
+
   const fetchBoardTypes = async () => {
     try {
       const { data, error } = await getBoardTypes();
@@ -55,24 +55,24 @@ const Compaign = () => {
       setLoading(false);
     }
   };
-  
+
   const handleCampaignSelect = (boardType: BoardType) => {
     console.log('Board type selected:', boardType);
-    
+
     // Clear any previous board creation data when starting a new board
     localStorage.removeItem('boardTypeFields');
     localStorage.removeItem('currentBoardId');
-    
+
     // Store the selected board type info
     const boardTypeData = {
       id: boardType.id,
       name: boardType.name,
       slug: boardType.slug
     };
-    
+
     localStorage.setItem('selectedBoardType', JSON.stringify(boardTypeData));
     console.log('Stored in localStorage:', boardTypeData);
-    
+
     // Navigate to the creation page
     console.log('Navigating to /createBirthdayBoard');
     router.push('/createBirthdayBoard');
@@ -107,11 +107,11 @@ const Compaign = () => {
             >
               <div className="relative w-full h-[180px]">
                 {/* Use default images based on index, or a placeholder */}
-                <Image 
-                  src={defaultImages[i % defaultImages.length]} 
-                  alt={boardType.name} 
-                  fill 
-                  className="object-cover" 
+                <Image
+                  src={defaultImages[i % defaultImages.length]}
+                  alt={boardType.name}
+                  fill
+                  className="object-cover"
                 />
                 {/* Show the board type icon if available */}
                 {boardType.icon && (
