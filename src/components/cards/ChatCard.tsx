@@ -19,17 +19,18 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, onClick }: P
       className={`flex items-center gap-4 p-3 cursor-pointer transition-colors duration-200 ${isActive ? 'bg-[#2A2D3A] text-white' : 'text-black'
         }`}
     >
-      <Image
-        src={imgPath || ProfileAvatar}
-        alt={name}
-        width={48}
-        height={48}
-        className='rounded-full border border-[#48484A] p-[2px] object-cover'
-        onError={(e) => {
-          const target = e.currentTarget as HTMLImageElement;
-          target.src = ProfileAvatar.src || ProfileAvatar;
-        }}
-      />
+      <div className='relative h-[45px] w-[45px] rounded-full border border-[#48484A]'>
+        <Image
+          src={imgPath || ProfileAvatar}
+          alt={name}
+          fill
+          className='rounded-full object-cover p-[2px]'
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.src = ProfileAvatar.src || ProfileAvatar;
+          }}
+        />
+      </div>
 
       <div className='flex-1'>
         <div className='flex justify-between items-center'>

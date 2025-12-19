@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
-import { PlusCircle, Send, ArrowLeft, Search, X } from 'lucide-react';
+import { PlusCircle, Send, ArrowLeft, Search, X, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ChatCard from '@/components/cards/ChatCard';
+import ChatTabs from '@/components/filters/ChatFilters';
 import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
@@ -24,6 +25,7 @@ import {
 } from '@/lib/supabase/chat';
 import { AuthService } from '@/lib/supabase/auth';
 import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const authService = new AuthService();
 
@@ -40,6 +42,7 @@ const ChatPage = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [selectedTab, setSelectedTab] = useState<'Connections' | 'Boards'>('Connections');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -64,7 +67,7 @@ const ChatPage = () => {
       const { conversations: convs, error } = await getUserConversations(userId);
       if (error) {
         console.error('Error loading conversations:', error);
-        
+
         // Check if tables exist
         const diagnostics = await checkChatTablesSetup();
         if (!diagnostics.tablesExist) {
@@ -77,10 +80,10 @@ const ChatPage = () => {
         }
       } else {
         // Remove duplicates by conversation ID first
-        let uniqueConversations = (convs || []).filter((conv, index, self) => 
+        let uniqueConversations = (convs || []).filter((conv, index, self) =>
           index === self.findIndex(c => c.id === conv.id)
         );
-        
+
         // Also remove duplicates by participant combination (same two users in direct conversations)
         if (currentUserId) {
           const seenPairs = new Set<string>();
@@ -88,23 +91,23 @@ const ChatPage = () => {
             if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
               return true; // Keep non-direct or group conversations
             }
-            
+
             // Create a unique key for the participant pair
             const participantIds = conv.participants
               .map((p: any) => p.user_id)
               .sort()
               .join('-');
-            
+
             if (seenPairs.has(participantIds)) {
               // Duplicate conversation for same user pair - keep the one with most recent message
               return false;
             }
-            
+
             seenPairs.add(participantIds);
             return true;
           });
         }
-        
+
         setConversations(uniqueConversations);
       }
     } catch (err) {
@@ -137,10 +140,10 @@ const ChatPage = () => {
         // Transform messages to ChatMessage format
         const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
           // Fetch sender profile if not included
-          const senderName = msg.sender?.name || 
-                            (msg.sender_id ? 'Loading...' : 'Unknown');
+          const senderName = msg.sender?.name ||
+            (msg.sender_id ? 'Loading...' : 'Unknown');
           const senderAvatar = msg.sender?.profile_pic_url || undefined;
-          
+
           return {
             id: msg.id,
             content: msg.content || '',
@@ -157,16 +160,16 @@ const ChatPage = () => {
             fileName: msg.file_name,
           };
         });
-        
+
         // If any messages have "Loading..." or "Unknown" or missing avatar, fetch profile data
         const messagesNeedingProfiles = chatMessages.filter(
           m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
         );
-        
+
         if (messagesNeedingProfiles.length > 0 && currentUserId) {
           const { createClient } = await import('@/lib/supabase/client');
           const supabase = createClient();
-          
+
           await Promise.all(
             messagesNeedingProfiles.map(async (msg) => {
               try {
@@ -175,7 +178,7 @@ const ChatPage = () => {
                   .select('id, name, profile_pic_url')
                   .eq('id', msg.senderId)
                   .single();
-                
+
                 if (profileData) {
                   const index = chatMessages.findIndex(m => m.id === msg.id);
                   if (index !== -1) {
@@ -207,19 +210,19 @@ const ChatPage = () => {
   const handleMessageReceived = useCallback((message: ChatMessage) => {
     console.log('📨 handleMessageReceived called with:', message);
     console.log('Current conversation:', selectedConversation?.id, 'Message conversation:', message.conversationId);
-    
+
     // Only process messages for the currently selected conversation
     if (selectedConversation && message.conversationId !== selectedConversation.id) {
       console.log('⚠️ Message is for a different conversation, updating conversation list only');
       // Still update the conversation list
       setConversations(prev => {
-        const updated = prev.map(conv => 
-          conv.id === message.conversationId 
-            ? { 
-                ...conv, 
-                last_message: message.content || message.fileName || 'Media',
-                last_message_at: message.createdAt 
-              }
+        const updated = prev.map(conv =>
+          conv.id === message.conversationId
+            ? {
+              ...conv,
+              last_message: message.content || message.fileName || 'Media',
+              last_message_at: message.createdAt
+            }
             : conv
         );
         const updatedConv = updated.find(c => c.id === message.conversationId);
@@ -230,17 +233,17 @@ const ChatPage = () => {
       });
       return;
     }
-    
+
     setMessages(prev => {
       // Remove any temporary/optimistic messages with same content from current user
       // and avoid duplicates based on message id
       const filtered = prev.filter(m => {
         // Remove temp messages from current user if real message arrived (match by content and sender)
-        if (m.id.startsWith('temp-') && 
-            m.senderId === currentUserId && 
-            m.senderId === message.senderId &&
-            m.content === message.content &&
-            Math.abs(new Date(m.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000) {
+        if (m.id.startsWith('temp-') &&
+          m.senderId === currentUserId &&
+          m.senderId === message.senderId &&
+          m.content === message.content &&
+          Math.abs(new Date(m.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000) {
           return false;
         }
         // Remove duplicates by ID
@@ -249,33 +252,33 @@ const ChatPage = () => {
         }
         return true;
       });
-      
+
       // Add the new message and sort by timestamp
       const updated = [...filtered, message];
       const sorted = updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
       console.log(`✅ Message added. Total messages: ${sorted.length}`);
       return sorted;
     });
-    
+
     // Scroll to bottom
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-    
+
     // Mark as read if it's not from current user
     if (message.senderId !== currentUserId && selectedConversation) {
       markConversationAsRead(selectedConversation.id, currentUserId!);
     }
-    
+
     // Update conversation in list immediately (no loading, no refresh)
     setConversations(prev => {
-      const updated = prev.map(conv => 
-        conv.id === message.conversationId 
-          ? { 
-              ...conv, 
-              last_message: message.content || message.fileName || 'Media',
-              last_message_at: message.createdAt 
-            }
+      const updated = prev.map(conv =>
+        conv.id === message.conversationId
+          ? {
+            ...conv,
+            last_message: message.content || message.fileName || 'Media',
+            last_message_at: message.createdAt
+          }
           : conv
       );
       // Move updated conversation to top
@@ -292,12 +295,12 @@ const ChatPage = () => {
       }
       return updated;
     });
-    
+
     // Update selected conversation if it matches
     setSelectedConversation(prev => {
       if (prev && message.conversationId === prev.id) {
         return {
-      ...prev,
+          ...prev,
           last_message: message.content || message.fileName || 'Media',
           last_message_at: message.createdAt,
         };
@@ -352,33 +355,33 @@ const ChatPage = () => {
     pollInterval = setInterval(async () => {
       if (isPolling) return; // Prevent overlapping polls
       isPolling = true;
-      
+
       try {
         const { messages: msgs } = await getConversationMessages(
           conversationId,
           currentUserId,
           100
         );
-        
+
         if (msgs && msgs.length > 0) {
           // Check if we have new messages by comparing with current state
           setMessages(prev => {
             const prevIds = new Set(prev.map(m => m.id));
             const newMessages = msgs.filter(m => !prevIds.has(m.id));
-            
+
             if (newMessages.length > 0) {
               // Get the latest new message to update conversation list
               const latestNewMessage = newMessages[newMessages.length - 1];
-              
+
               // Update conversation list with latest message (only update, don't reload)
               setConversations(prevConvs => {
-                const updated = prevConvs.map(conv => 
-                  conv.id === conversationId 
-                    ? { 
-                        ...conv, 
-                        last_message: latestNewMessage.content || latestNewMessage.file_name || 'Media',
-                        last_message_at: latestNewMessage.created_at 
-                      }
+                const updated = prevConvs.map(conv =>
+                  conv.id === conversationId
+                    ? {
+                      ...conv,
+                      last_message: latestNewMessage.content || latestNewMessage.file_name || 'Media',
+                      last_message_at: latestNewMessage.created_at
+                    }
                     : conv
                 );
                 // Move updated conversation to top
@@ -394,7 +397,7 @@ const ChatPage = () => {
                 }
                 return updated;
               });
-              
+
               // Transform and add new messages
               const transformedNewMessages: ChatMessage[] = newMessages.map((msg: any) => ({
                 id: msg.id,
@@ -411,10 +414,10 @@ const ChatPage = () => {
                 fileUrl: msg.file_url,
                 fileName: msg.file_name,
               }));
-              
+
               // Merge and sort
               const allMessages = [...prev, ...transformedNewMessages];
-              return allMessages.sort((a, b) => 
+              return allMessages.sort((a, b) =>
                 new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
               );
             }
@@ -485,17 +488,17 @@ const ChatPage = () => {
       } else if (conversation) {
         setSearchQuery("");
         setShowSearchResults(false);
-        
+
         // Check if conversation already exists in the list and update/add it
         setConversations(prev => {
           // Remove any duplicates first (by conversation ID)
-          const unique = prev.filter((conv, index, self) => 
+          const unique = prev.filter((conv, index, self) =>
             index === self.findIndex(c => c.id === conv.id)
           );
-          
+
           // Check if this conversation already exists
           const existingIndex = unique.findIndex(c => c.id === conversation.id);
-          
+
           if (existingIndex !== -1) {
             // Update existing conversation in place
             const updated = [...unique];
@@ -506,7 +509,7 @@ const ChatPage = () => {
             return [conversation, ...unique];
           }
         });
-        
+
         setSelectedConversation(conversation);
       } else {
         alert('Failed to start conversation. No conversation was created.');
@@ -524,7 +527,7 @@ const ChatPage = () => {
     const messageContent = newMessage.trim();
     const tempMessageId = `temp-${Date.now()}`;
     const now = new Date().toISOString();
-    
+
     // Create optimistic message immediately
     const optimisticMessage: ChatMessage = {
       id: tempMessageId,
@@ -539,16 +542,16 @@ const ChatPage = () => {
       senderId: currentUserId,
       messageType: 'text',
     };
-    
+
     // Add message to UI immediately
     setMessages(prev => [...prev, optimisticMessage]);
     setNewMessage("");
-    
+
     // Scroll to bottom
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-    
+
     // Update the selected conversation's last_message immediately
     const updatedConversation = {
       ...selectedConversation,
@@ -556,11 +559,11 @@ const ChatPage = () => {
       last_message_at: now,
     };
     setSelectedConversation(updatedConversation);
-    
+
     // Update conversation in the list immediately (no loading, no refresh)
     setConversations(prev => {
-      const updated = prev.map(conv => 
-        conv.id === selectedConversation.id 
+      const updated = prev.map(conv =>
+        conv.id === selectedConversation.id
           ? { ...conv, last_message: messageContent, last_message_at: now }
           : conv
       );
@@ -571,7 +574,7 @@ const ChatPage = () => {
       }
       return updated;
     });
-    
+
     // Send message in background (no loading state, no UI blocking)
     // The optimistic message will be replaced by the real one via real-time subscription
     sendMessage(currentUserId, {
@@ -584,7 +587,7 @@ const ChatPage = () => {
         // Remove optimistic message on error
         setMessages(prev => prev.filter(m => m.id !== tempMessageId));
         // Revert conversation update
-        setConversations(prev => prev.map(conv => 
+        setConversations(prev => prev.map(conv =>
           conv.id === selectedConversation.id ? selectedConversation : conv
         ));
         setSelectedConversation(selectedConversation);
@@ -622,7 +625,7 @@ const ChatPage = () => {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== tempMessageId));
       // Revert conversation update
-      setConversations(prev => prev.map(conv => 
+      setConversations(prev => prev.map(conv =>
         conv.id === selectedConversation.id ? selectedConversation : conv
       ));
       setSelectedConversation(selectedConversation);
@@ -642,15 +645,15 @@ const ChatPage = () => {
 
     try {
       setUploading(true);
-      
+
       // Create optimistic message for images
       const messageType = file.type.startsWith('image/') ? 'image' :
-                         file.type.startsWith('video/') ? 'video' :
-                         file.type.startsWith('audio/') ? 'audio' : 'file';
-      
+        file.type.startsWith('video/') ? 'video' :
+          file.type.startsWith('audio/') ? 'audio' : 'file';
+
       const tempMessageId = `temp-file-${Date.now()}`;
       const now = new Date().toISOString();
-      
+
       // For images, show preview immediately
       if (messageType === 'image') {
         const reader = new FileReader();
@@ -675,7 +678,7 @@ const ChatPage = () => {
         };
         reader.readAsDataURL(file);
       }
-      
+
       // Upload file
       const { fileUrl, error: uploadError } = await uploadMessageFile(
         selectedConversation.id,
@@ -689,7 +692,7 @@ const ChatPage = () => {
         if (messageType === 'image') {
           setMessages(prev => prev.filter(m => m.id !== tempMessageId));
         }
-        
+
         // Show helpful error message
         const errorMessage = uploadError?.message || 'Failed to upload file';
         if (errorMessage.includes('Bucket not found') || errorMessage.includes('chat-files')) {
@@ -740,23 +743,23 @@ const ChatPage = () => {
         alert('Failed to send file. Please try again.');
       } else {
         const now = new Date().toISOString();
-        const lastMessageText = messageType === 'image' ? '📷 Image' : 
-                               messageType === 'video' ? '🎥 Video' :
-                               messageType === 'audio' ? '🎵 Audio' : 
-                               file.name || 'Media';
+        const lastMessageText = messageType === 'image' ? '📷 Image' :
+          messageType === 'video' ? '🎥 Video' :
+            messageType === 'audio' ? '🎵 Audio' :
+              file.name || 'Media';
         const updatedConv = {
           ...selectedConversation,
           last_message: lastMessageText,
           last_message_at: now,
         };
-        
+
         // Update the selected conversation immediately
         setSelectedConversation(updatedConv);
-        
+
         // Update conversation in the list immediately (no loading, no refresh)
         setConversations(prev => {
-          const updated = prev.map(conv => 
-            conv.id === selectedConversation.id 
+          const updated = prev.map(conv =>
+            conv.id === selectedConversation.id
               ? { ...conv, last_message: lastMessageText, last_message_at: now }
               : conv
           );
@@ -773,7 +776,7 @@ const ChatPage = () => {
           }
           return updated;
         });
-        
+
         // Scroll to bottom
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -794,13 +797,13 @@ const ChatPage = () => {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
       );
-      
+
       if (otherParticipant) {
         // If user data is already loaded, use it
         if (otherParticipant.user?.name) {
           return otherParticipant.user.name;
         }
-        
+
         // Otherwise, try to fetch it (this will be async, so we'll show a fallback)
         // The profile should be loaded in getUserConversations, but if not, show partial ID
         if (otherParticipant.user_id) {
@@ -817,7 +820,7 @@ const ChatPage = () => {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
       );
-      
+
       // Return profile_pic_url if it exists and is not empty
       if (otherParticipant?.user?.profile_pic_url) {
         const picUrl = otherParticipant.user.profile_pic_url.trim();
@@ -836,7 +839,7 @@ const ChatPage = () => {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    
+
     if (diffMins < 1) return 'now';
     if (diffMins < 60) return `${diffMins}m`;
     const diffHours = Math.floor(diffMins / 60);
@@ -860,7 +863,7 @@ const ChatPage = () => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
     return prevMessage.senderId !== message.senderId ||
-           new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; // 5 minutes
+      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; // 5 minutes
   };
 
   if (loading) {
@@ -875,236 +878,251 @@ const ChatPage = () => {
   }
 
   return (
-    <div className='px-[7%] max-[900px]:px-3 text-white'>
-      <div className='px-4 flex items-center justify-between max-[500px]:flex-col gap-2'>
-        <TitleCard title='Chat' className='text-left' />
-        <div className='relative w-[270px] max-[500px]:mx-auto'>
-          <div className="relative">
-            <Search size={18} className='absolute top-3 left-3 text-gray-400' />
-          <GlobalInput
-              placeholder='Search users or conversations...'
-            height='42px'
-            width='100%'
-            borderRadius='100px'
-              inputClassName="pl-10 pr-10"
-              value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setSearchQuery(e.target.value);
-                if (e.target.value.trim()) {
-                  setShowSearchResults(true);
-                } else {
-                  setShowSearchResults(false);
-                }
-              }}
-              onFocus={() => {
-                if (searchQuery.trim()) {
-                  setShowSearchResults(true);
-                }
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setShowSearchResults(false);
+    <>
+      <MobileHeader title="Chat" RightIcon={Plus} />
+      <div className='px-[7%] max-[900px]:px-3 text-white'>
+        <div className='px-4 flex items-center justify-between max-[769px]:justify-center gap-2 mt-6'>
+          <div className='max-[769px]:hidden'>
+            <TitleCard title='Chat' className='text-left' />
+          </div>
+          <div className='relative w-[270px] max-[500px]:mx-auto'>
+            <div className="relative">
+              <Search size={18} className='absolute top-3 left-3 text-gray-400' />
+              <GlobalInput
+                placeholder='Search friends & family'
+                height='42px'
+                width='100%'
+                borderRadius='100px'
+                inputClassName="pl-10 pr-10"
+                value={searchQuery}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    setShowSearchResults(true);
+                  } else {
+                    setShowSearchResults(false);
+                  }
                 }}
-                className="absolute top-2.5 right-3 text-gray-400 hover:text-white"
-              >
-                <X size={18} />
-              </button>
+                onFocus={() => {
+                  if (searchQuery.trim()) {
+                    setShowSearchResults(true);
+                  }
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setShowSearchResults(false);
+                  }}
+                  className="absolute top-2.5 right-3 text-gray-400 hover:text-white"
+                >
+                  <X size={18} />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#2A2D3A] rounded-lg shadow-lg border border-gray-700 max-h-64 overflow-y-auto z-50">
+                {searching ? (
+                  <div className="p-4 text-center text-gray-400">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
+                    <p className="mt-2 text-sm">Searching...</p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="py-2">
+                    <p className="px-4 py-2 text-xs text-gray-400 font-semibold">Users</p>
+                    {searchResults.map((user) => (
+                      <button
+                        key={user.id}
+                        onClick={() => handleStartConversation(user.id)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3A3D4A] transition-colors"
+                      >
+                        <Image
+                          src={user.profile_pic_url || ProfileAvatar}
+                          alt={user.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
+                          }}
+                        />
+                        <div className="flex-1 text-left">
+                          <p className="font-medium text-sm">{user.name}</p>
+                          {user.email && (
+                            <p className="text-xs text-gray-400">{user.email}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-400">
+                    <p className="text-sm">No users found</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Chat Tabs */}
+        <div className='px-4 mt-4'>
+          <ChatTabs
+            selectedTab={selectedTab}
+            onTabChange={setSelectedTab}
+          />
+        </div>
+
+        <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
+
+          <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
+            {filteredConversations.length === 0 ? (
+              <div className="p-4 text-center text-gray-400">
+                <p>No conversations found</p>
+                <p className="text-sm mt-2">Search for users to start a conversation</p>
+              </div>
+            ) : (
+              filteredConversations.map(conv => {
+                console.log("🚀 ~ ChatPage ~ conv:", conv)
+                // Get the last message - prefer from messages if this conversation is selected, otherwise from conversation
+                let lastMessageText = conv.last_message;
+                let lastMessageTime = conv.last_message_at;
+
+                // If this conversation is selected and has messages, use the latest message from the messages array
+                if (selectedConversation?.id === conv.id && messages.length > 0) {
+                  const lastMsg = messages[messages.length - 1];
+                  lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
+                  lastMessageTime = lastMsg.createdAt;
+                }
+
+                return (
+                  <ChatCard
+                    key={conv.id}
+                    imgPath={getConversationAvatar(conv)}
+                    name={getConversationName(conv)}
+                    message={lastMessageText || 'No messages yet'}
+                    time={formatTime(lastMessageTime)}
+                    isActive={selectedConversation?.id === conv.id}
+                    onClick={() => setSelectedConversation(conv)}
+                  />
+                );
+              })
             )}
           </div>
 
-          {/* Search Results Dropdown */}
-          {showSearchResults && searchQuery.trim() && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-[#2A2D3A] rounded-lg shadow-lg border border-gray-700 max-h-64 overflow-y-auto z-50">
-              {searching ? (
-                <div className="p-4 text-center text-gray-400">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
-                  <p className="mt-2 text-sm">Searching...</p>
+          <div className={`flex-1 border border-l-0 flex-col ${selectedConversation ? 'flex' : 'max-[900px]:hidden'}`}>
+            {selectedConversation ? (
+              <>
+                <div className='flex items-center gap-4 bg-[#2A2D3A] p-4 border-b border-gray-700'>
+                  <ArrowLeft
+                    onClick={() => setSelectedConversation(null)}
+                    className='cursor-pointer lg:hidden'
+                  />
+                  <div className='relative rounded-full h-10 w-10'>
+                    <Image
+                      src={getConversationAvatar(selectedConversation)}
+                      alt={getConversationName(selectedConversation)}
+                      fill
+                      className='rounded-full object-cover'
+                      onError={(e) => {
+                        const target = e.currentTarget as HTMLImageElement;
+                        target.src = ProfileAvatar.src || ProfileAvatar;
+                      }}
+                    />
+                  </div>
+                  <div className='flex-1'>
+                    <p className='font-bold'>{getConversationName(selectedConversation)}</p>
+                  </div>
                 </div>
-              ) : searchResults.length > 0 ? (
-                <div className="py-2">
-                  <p className="px-4 py-2 text-xs text-gray-400 font-semibold">Users</p>
-                  {searchResults.map((user) => (
-                    <button
-                      key={user.id}
-                      onClick={() => handleStartConversation(user.id)}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3A3D4A] transition-colors"
+
+                <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>
+                  {messages.length === 0 ? (
+                    <div className="text-center text-gray-400 mt-8">
+                      <p>No messages yet</p>
+                      <p className="text-xs mt-2">Start the conversation!</p>
+                    </div>
+                  ) : (
+                    <>
+                      {messages.map((msg, index) => (
+                        <ChatMessageItem
+                          key={msg.id}
+                          message={msg}
+                          isOwnMessage={msg.senderId === currentUserId}
+                          showHeader={shouldShowHeader(msg, index)}
+                        />
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </>
+                  )}
+                </div>
+
+                <div className='p-4 bg-[#F7F7F7] flex items-center gap-4'>
+                  <div className='bg-white p-2 rounded-full relative'>
+                    <input
+                      type="file"
+                      id="fileUpload"
+                      className="hidden"
+                      disabled={uploading}
+                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+                      multiple={false}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          handleFileUpload(e.target.files[0]);
+                          // Reset input so same file can be selected again
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor="fileUpload"
+                      className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                      title="Upload file or image"
                     >
-                      <Image
-                        src={user.profile_pic_url || ProfileAvatar}
-                        alt={user.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
-                        }}
-                      />
-                      <div className="flex-1 text-left">
-                        <p className="font-medium text-sm">{user.name}</p>
-                        {user.email && (
-                          <p className="text-xs text-gray-400">{user.email}</p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-4 text-center text-gray-400">
-                  <p className="text-sm">No users found</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+                      <PlusCircle size={24} className='text-black' />
+                    </label>
+                  </div>
 
-      <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
-
-        <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
-          {filteredConversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-400">
-              <p>No conversations found</p>
-              <p className="text-sm mt-2">Search for users to start a conversation</p>
-            </div>
-          ) : (
-            filteredConversations.map(conv => {
-              // Get the last message - prefer from messages if this conversation is selected, otherwise from conversation
-              let lastMessageText = conv.last_message;
-              let lastMessageTime = conv.last_message_at;
-              
-              // If this conversation is selected and has messages, use the latest message from the messages array
-              if (selectedConversation?.id === conv.id && messages.length > 0) {
-                const lastMsg = messages[messages.length - 1];
-                lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
-                lastMessageTime = lastMsg.createdAt;
-              }
-              
-              return (
-            <ChatCard
-                  key={conv.id}
-                  imgPath={getConversationAvatar(conv)}
-                  name={getConversationName(conv)}
-                  message={lastMessageText || 'No messages yet'}
-                  time={formatTime(lastMessageTime)}
-                  isActive={selectedConversation?.id === conv.id}
-                  onClick={() => setSelectedConversation(conv)}
-                />
-              );
-            })
-          )}
-        </div>
-
-        <div className={`flex-1 border border-l-0 flex-col ${selectedConversation ? 'flex' : 'max-[900px]:hidden'}`}>
-          {selectedConversation ? (
-            <>
-              <div className='flex items-center gap-4 bg-[#2A2D3A] p-4 border-b border-gray-700'>
-                <ArrowLeft 
-                  onClick={() => setSelectedConversation(null)} 
-                  className='cursor-pointer lg:hidden' 
-                />
-                <Image 
-                  src={getConversationAvatar(selectedConversation)} 
-                  alt={getConversationName(selectedConversation)} 
-                  width={40} 
-                  height={40} 
-                  className='rounded-full object-cover'
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.src = ProfileAvatar.src || ProfileAvatar;
-                  }}
-                />
-                <div className='flex-1'>
-                  <p className='font-bold'>{getConversationName(selectedConversation)}</p>
-                </div>
-              </div>
-
-              <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>
-                {messages.length === 0 ? (
-                  <div className="text-center text-gray-400 mt-8">
-                    <p>No messages yet</p>
-                    <p className="text-xs mt-2">Start the conversation!</p>
-                </div>
-                ) : (
-                  <>
-                    {messages.map((msg, index) => (
-                      <ChatMessageItem
-                        key={msg.id}
-                        message={msg}
-                        isOwnMessage={msg.senderId === currentUserId}
-                        showHeader={shouldShowHeader(msg, index)}
-                      />
-                    ))}
-                    <div ref={messagesEndRef} />
-                        </>
-                      )}
-              </div>
-
-              <div className='p-4 bg-[#F7F7F7] flex items-center gap-4'>
-                <div className='bg-white p-2 rounded-full relative'>
-                  <input
-                    type="file"
-                    id="fileUpload"
-                    className="hidden"
-                    disabled={uploading}
-                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
-                    multiple={false}
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        handleFileUpload(e.target.files[0]);
-                        // Reset input so same file can be selected again
-                        e.target.value = '';
-                      }
-                    }}
-                  />
-                  <label 
-                    htmlFor="fileUpload" 
-                    className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                    title="Upload file or image"
-                  >
-                    <PlusCircle size={24} className='text-black' />
-                  </label>
-                </div>
-
-                <div className='flex-1 relative'>
-                  <GlobalInput
-                    placeholder={uploading ? 'Uploading...' : 'Write your message...'}
-                    height='40px'
-                    width='100%'
-                    borderRadius='100px'
-                    bgColor='white'
-                    inputClassName="pl-4 pr-12 border-none"
-                    value={newMessage}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
-                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                      if (e.key === "Enter" && !e.shiftKey && !uploading) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    disabled={uploading}
-                  />
-                </div>
-                <button
-                  className='bg-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed'
-                  onClick={handleSend}
+                  <div className='flex-1 relative'>
+                    <GlobalInput
+                      placeholder={uploading ? 'Uploading...' : 'Write your message...'}
+                      height='40px'
+                      width='100%'
+                      borderRadius='100px'
+                      bgColor='white'
+                      inputClassName="pl-4 pr-12 border-none"
+                      value={newMessage}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === "Enter" && !e.shiftKey && !uploading) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      disabled={uploading}
+                    />
+                  </div>
+                  <button
+                    className='bg-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed'
+                    onClick={handleSend}
                     disabled={uploading || !newMessage.trim()}
-                >
-                  <Send size={18} className='text-black' />
-                </button>
+                  >
+                    <Send size={18} className='text-black' />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="max-[900px]:hidden flex flex-col items-center justify-center h-full text-gray-400">
+                <Image src={ZoomerlyLogo} alt='' />
+                <p>Select a conversation to start messaging</p>
               </div>
-            </>
-          ) : (
-            <div className="max-[900px]:hidden flex flex-col items-center justify-center h-full text-gray-400">
-              <Image src={ZoomerlyLogo} alt='' />
-              <p>Select a conversation to start messaging</p>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -11,6 +11,7 @@ import GlobalInput from '@/components/inputs/GlobalInput';
 import storyBackground1 from "@/assets/svgs/gifts/gift-5.svg";
 import storyBackground2 from "@/assets/svgs/gifts/gift-3.svg";
 import storyBackground3 from "@/assets/svgs/gifts/gift-1.svg";
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const statusCards = [
   {
@@ -109,53 +110,56 @@ const Connections = () => {
   };
 
   return (
-    <div className='px-[7%] max-[769px]:px-4 pb-8'>
-      <div className='mt-6'>
-        <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
-          {statusCards.map((status, index) => (
-            <StatusCard
+    <>
+      <MobileHeader title="Connections" />
+      <div className='px-[7%] max-[769px]:px-4 pb-8'>
+        <div className='mt-6'>
+          <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
+            {statusCards.map((status, index) => (
+              <StatusCard
+                key={index}
+                type={status.type}
+                profileImage={status.profileImage}
+                backgroundImage={status.backgroundImage}
+                name={status.name}
+                onClick={() =>
+                  status.type === 'add'
+                    ? handleAddStatus()
+                    : handleStatusClick(status.name)
+                }
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className='my-6 max-[500px]:my-4 flex justify-between max-[660px]:flex-col-reverse gap-4 max-[660px]:items-center'>
+          <ConnectionFilter
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
+          <div className='relative w-[300px] max-[430px]:w-full'>
+            <Search size={18} className='absolute top-3 left-3' />
+            <GlobalInput placeholder='Search circles...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
+          </div>
+        </div>
+
+        <div className='space-y-4 mt-4'>
+          {connectionCards.map((connection, index) => (
+            <ConnectionCard
               key={index}
-              type={status.type}
-              profileImage={status.profileImage}
-              backgroundImage={status.backgroundImage}
-              name={status.name}
-              onClick={() =>
-                status.type === 'add'
-                  ? handleAddStatus()
-                  : handleStatusClick(status.name)
-              }
+              profileImage={connection.profileImage}
+              name={connection.name}
+              username={connection.username}
+              isFollowing={true}
+              onFollowingClick={() => handleFollowingClick(connection.name)}
+              onChatClick={() => handleChatClick(connection.name)}
+              onUnfollowClick={() => handleUnfollowClick(connection.name)}
+              onBlockClick={() => handleBlockClick(connection.name)}
             />
           ))}
         </div>
       </div>
-
-      <div className='my-6 max-[500px]:my-4 flex justify-between max-[660px]:flex-col-reverse gap-4 max-[660px]:items-center'>
-        <ConnectionFilter
-          selectedFilter={selectedFilter}
-          onFilterChange={setSelectedFilter}
-        />
-        <div className='relative w-[300px] max-[430px]:w-full'>
-          <Search size={18} className='absolute top-3 left-3' />
-          <GlobalInput placeholder='Search circles...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
-        </div>
-      </div>
-
-      <div className='space-y-4 mt-4'>
-        {connectionCards.map((connection, index) => (
-          <ConnectionCard
-            key={index}
-            profileImage={connection.profileImage}
-            name={connection.name}
-            username={connection.username}
-            isFollowing={true}
-            onFollowingClick={() => handleFollowingClick(connection.name)}
-            onChatClick={() => handleChatClick(connection.name)}
-            onUnfollowClick={() => handleUnfollowClick(connection.name)}
-            onBlockClick={() => handleBlockClick(connection.name)}
-          />
-        ))}
-      </div>
-    </div>
+    </>
   );
 };
 
