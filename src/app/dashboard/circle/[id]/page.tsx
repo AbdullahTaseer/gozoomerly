@@ -156,7 +156,7 @@ const CircleById = ({ params }: CircleByIdProps) => {
 
   return (
     <>
-      <DashNavbar className="max-[769px]:hidden" />
+      <DashNavbar />
       <MobileHeader title="Family" RightIcon={Plus} rightIconClick={() => setIsMemberModalOpen(true)} />
       <div className="px-[7%] max-[769px]:px-4 py-6">
 
