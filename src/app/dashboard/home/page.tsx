@@ -7,7 +7,7 @@ import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import AvatarList from '@/components/cards/AvatarList';
 import InviteModal from '@/components/modals/InviteModal';
-import { spotlightCampaigns, boardInvitations } from '@/lib/MockData';
+import { spotlightCampaigns, boardInvitations, feedCardData } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
 import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
@@ -15,7 +15,7 @@ import { authService } from '@/lib/supabase/auth';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 import HomeFeedFilters from '@/components/filters/HomeFeedFilters';
-import FeedMobileCard from '@/components/cards/FeedMobileCard';
+import FeedCard from '@/components/cards/FeedCard';
 
 const Home = () => {
   const router = useRouter();
@@ -213,6 +213,27 @@ const Home = () => {
           <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
           <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
           <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+          {feedCardData.map((feed) => (
+            <FeedCard
+              key={feed.id}
+              userName={feed.userName}
+              userAvatar={feed.userAvatar}
+              timestamp={feed.timestamp}
+              layout={feed.layout}
+              title={feed.title}
+              description={feed.description}
+              actionTag={feed.actionTag}
+              videoThumbnail={feed.videoThumbnail}
+              videoUrl={feed.videoUrl}
+              thumbnailImage={feed.thumbnailImage}
+              mediaItems={feed.mediaItems}
+              likes={feed.likes}
+              comments={feed.comments}
+              shares={feed.shares}
+              memories={feed.memories}
+              onUserClick={() => router.push("/dashboard/visitProfile")}
+            />
+          ))}
         </div>
       </div>
 
@@ -224,8 +245,6 @@ const Home = () => {
           boardTitle={selectedBoard.title}
         />
       )}
-
-      <FeedMobileCard/>
 
     </div>
   );

@@ -591,3 +591,282 @@ export const boardInvitations = [
     inviterName: "Emily Johnson",
   },
 ];
+
+// Feed Card mock data
+
+export interface FeedCardData {
+  id: number;
+  userName: string;
+  userAvatar?: string;
+  timestamp: string;
+  layout: 'horizontal' | 'carousel';
+  title: string;
+  description: string;
+  actionTag?: string;
+  // For horizontal layout
+  videoThumbnail?: string;
+  videoUrl?: string;
+  // For carousel layout
+  thumbnailImage?: string;
+  mediaItems?: Array<{
+    type: 'image' | 'video';
+    url: string;
+    thumbnail?: string;
+  }>;
+  // Footer stats
+  likes: number;
+  comments: number;
+  shares: number;
+  memories: number;
+}
+
+export const feedCardData: FeedCardData[] = [
+  {
+    id: 1,
+    userName: 'Samantha Carter',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
+    timestamp: '5 Minutes ago',
+    layout: 'horizontal',
+    title: "Sean Parker birthday",
+    description: "Sean, you're the most deserving person I know. Here's to your dream trip",
+    actionTag: "Gifted : $250",
+    videoThumbnail: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80',
+    videoUrl: 'https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4',
+    likes: 1,
+    comments: 1,
+    shares: 1,
+    memories: 1,
+  },
+  {
+    id: 2,
+    userName: 'Priya K.',
+    userAvatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80',
+    timestamp: '10 hours ago',
+    layout: 'carousel',
+    title: "Friends trip",
+    description: "Packing joy, leaving stress. Here's to a trip of fun, jokes, and lasting memories.",
+    thumbnailImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&q=80',
+    mediaItems: [
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&q=80',
+      },
+      {
+        type: 'video',
+        url: 'https://videos.pexels.com/video-files/1448735/1448735-hd_1920_1080_30fps.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&q=80',
+      },
+    ],
+    likes: 1,
+    comments: 1,
+    shares: 1,
+    memories: 1,
+  },
+  {
+    id: 3,
+    userName: 'Michael Chen',
+    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80',
+    timestamp: '2 hours ago',
+    layout: 'horizontal',
+    title: "Birthday celebration",
+    description: "Celebrating another year of amazing adventures and great memories!",
+    actionTag: "Gifted : $150",
+    videoThumbnail: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=800&q=80',
+    videoUrl: 'https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4',
+    likes: 24,
+    comments: 8,
+    shares: 5,
+    memories: 12,
+  },
+  {
+    id: 4,
+    userName: 'Emma Wilson',
+    userAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&q=80',
+    timestamp: '1 day ago',
+    layout: 'carousel',
+    title: "Wedding memories",
+    description: "The most beautiful day of our lives. Thank you to everyone who shared this moment with us!",
+    thumbnailImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=200&q=80',
+    mediaItems: [
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&q=80',
+      },
+      {
+        type: 'video',
+        url: 'https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_25fps.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&q=80',
+      },
+    ],
+    likes: 89,
+    comments: 23,
+    shares: 15,
+    memories: 45,
+  },
+  {
+    id: 5,
+    userName: 'David Rodriguez',
+    userAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&q=80',
+    timestamp: '3 hours ago',
+    layout: 'horizontal',
+    title: "Graduation day",
+    description: "Four years of hard work paid off! So grateful for all the support along the way.",
+    actionTag: "Gifted : $500",
+    videoThumbnail: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80',
+    videoUrl: 'https://videos.pexels.com/video-files/3044147/3044147-hd_1920_1080_25fps.mp4',
+    likes: 156,
+    comments: 34,
+    shares: 28,
+    memories: 67,
+  },
+  {
+    id: 6,
+    userName: 'Sarah Thompson',
+    userAvatar: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&q=80',
+    timestamp: '6 hours ago',
+    layout: 'carousel',
+    title: "Summer vacation",
+    description: "Beach days, sunsets, and endless laughter. Best summer ever!",
+    thumbnailImage: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=200&q=80',
+    mediaItems: [
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?w=1200&q=80',
+      },
+    ],
+    likes: 42,
+    comments: 12,
+    shares: 9,
+    memories: 31,
+  },
+  {
+    id: 7,
+    userName: 'James Anderson',
+    userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80',
+    timestamp: '12 hours ago',
+    layout: 'horizontal',
+    title: "New job celebration",
+    description: "Starting a new chapter! Excited for what's ahead. Thanks for all the support!",
+    actionTag: "Gifted : $100",
+    videoThumbnail: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&q=80',
+    videoUrl: 'https://videos.pexels.com/video-files/3191555/3191555-hd_1920_1080_25fps.mp4',
+    likes: 78,
+    comments: 19,
+    shares: 14,
+    memories: 52,
+  },
+  {
+    id: 8,
+    userName: 'Lisa Park',
+    userAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80',
+    timestamp: '4 hours ago',
+    layout: 'carousel',
+    title: "Music festival",
+    description: "Amazing vibes, great music, and even better friends. Unforgettable weekend!",
+    thumbnailImage: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=200&q=80',
+    mediaItems: [
+      {
+        type: 'video',
+        url: 'https://videos.pexels.com/video-files/3045163/3045163-hd_1920_1080_25fps.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1478147427282-58a87a120781?w=1200&q=80',
+      },
+      {
+        type: 'video',
+        url: 'https://videos.pexels.com/video-files/1448735/1448735-hd_1920_1080_30fps.mp4',
+        thumbnail: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200&q=80',
+      },
+    ],
+    likes: 203,
+    comments: 45,
+    shares: 32,
+    memories: 128,
+  },
+  {
+    id: 9,
+    userName: 'Alex Johnson',
+    userAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&q=80',
+    timestamp: '8 hours ago',
+    layout: 'horizontal',
+    title: "Anniversary dinner",
+    description: "Two years of happiness and counting. Here's to many more!",
+    actionTag: "Gifted : $200",
+    videoThumbnail: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80',
+    videoUrl: 'https://videos.pexels.com/video-files/3044147/3044147-hd_1920_1080_25fps.mp4',
+    likes: 67,
+    comments: 18,
+    shares: 11,
+    memories: 38,
+  },
+  {
+    id: 10,
+    userName: 'Maria Garcia',
+    userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&q=80',
+    timestamp: '1 day ago',
+    layout: 'carousel',
+    title: "Food adventure",
+    description: "Exploring new restaurants and cuisines. Food brings people together!",
+    thumbnailImage: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80',
+    mediaItems: [
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=1200&q=80',
+      },
+      {
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=1200&q=80',
+      },
+    ],
+    likes: 124,
+    comments: 28,
+    shares: 19,
+    memories: 73,
+  },
+];

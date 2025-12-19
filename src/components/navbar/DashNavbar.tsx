@@ -1,15 +1,13 @@
 'use client'
-import React, { useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
-import { X } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
-import MenuIcon from "@/assets/svgs/menu-icon.svg";
 import AnimatedButton from '../buttons/AnimatedButton';
 import BellIconIndicator from '../cards/BellIconIndicator';
 
-const desktopOptions = ["Home", "Boards", "Chat", "Circles"];
+const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections"];
 
 const DashNavbar = () => {
   const pathname = usePathname();
@@ -27,6 +25,9 @@ const DashNavbar = () => {
     }
     if (option === "Circles") {
       return pathname === "/dashboard/circles";
+    }
+    if (option === "Connections") {
+      return pathname === "/dashboard/connections";
     }
 
     return false;
@@ -51,6 +52,9 @@ const DashNavbar = () => {
         break;
       case "Circles":
         router.push("/dashboard/circles");
+        break;
+      case "Connections":
+        router.push("/dashboard/connections");
         break;
       default:
         break;
