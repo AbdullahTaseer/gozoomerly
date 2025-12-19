@@ -17,10 +17,10 @@ const TabItem = ({ icon, label, active, onClick }: TabItemProps) => {
       onClick={onClick}
       className="flex flex-col justify-center items-center gap-1 cursor-pointer select-none"
     >
-      <div className={active ? "text-white" : "text-gray-300"}>
+      <div className={active ? "text-white" : "text-white"}>
         {icon}
       </div>
-      <span className={`text-xs ${active ? "text-white" : "text-gray-300"}`}>
+      <span className={`text-xs ${active ? "text-white" : "text-white"}`}>
         {label}
       </span>
     </div>

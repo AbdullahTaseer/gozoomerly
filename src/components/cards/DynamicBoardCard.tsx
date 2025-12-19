@@ -148,7 +148,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
       {/* Bottom Section - Dark Grey Background */}
       <div className="bg-[#2A2A2A] text-white p-6 flex-1 flex flex-col">
         {/* Statistics */}
-        <div className="flex items-center justify-around gap-4 mb-6">
+        <div className="flex items-center justify-around gap-4">
           <div className="flex flex-col items-center">
             <p className="text-lg font-semibold">{participants ?? 0}</p>
             <p className="text-xs text-gray-300 mt-1">Participants</p>
@@ -165,14 +165,14 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
             <p className="text-lg font-semibold">{memories ?? media ?? 0}</p>
             <p className="text-xs text-gray-300 mt-1">Memories</p>
           </div>
-          <div className="flex flex-col items-center">
+          {/* <div className="flex flex-col items-center">
             <p className="text-lg font-semibold">{chats ?? 0}</p>
             <p className="text-xs text-gray-300 mt-1">Chats</p>
-          </div>
+          </div> */}
         </div>
 
         {/* Top Contributors */}
-        <div className="space-y-3 mb-6">
+        {/* <div className="space-y-3 mb-6">
           <p className="text-lg font-bold">Top Contributors</p>
           {topContributors.length > 0 ? (
             <div className="flex items-center ml-5">
@@ -198,7 +198,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
           ) : (
             <p className="text-center">No Contributor</p>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );
