@@ -1,13 +1,20 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import DashNavbar from '@/components/navbar/DashNavbar';
 import DashFooter from '@/components/footer/DashFooter';
 import BottomTabs from '@/components/footer/BottomTabs';
+import CreateOrShareModal from '@/components/modals/CreateOrShareModal';
+import { createOrShareModalState } from '@/lib/createOrShareModalState';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname() || '';
+  const [isCreateOrShareModalOpen, setIsCreateOrShareModalOpen] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = createOrShareModalState.subscribe(setIsCreateOrShareModalOpen);
+    return unsubscribe;
+  }, []);
 
   const hideNavbarForBoardDetail = /^\/dashboard\/boards\/[^\/]+$/.test(pathname);
 
@@ -19,6 +26,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       </main>
       {!hideNavbarForBoardDetail && <DashFooter />}
       <BottomTabs />
+      <CreateOrShareModal 
+        isOpen={isCreateOrShareModalOpen} 
+        onClose={() => createOrShareModalState.close()} 
+      />
     </div>
   );
 };

@@ -6,8 +6,9 @@ import { usePathname, useRouter } from 'next/navigation';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import AnimatedButton from '../buttons/AnimatedButton';
 import BellIconIndicator from '../cards/BellIconIndicator';
+import { createOrShareModalState } from '@/lib/createOrShareModalState';
 
-const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Profile"];
+const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Create", "Profile"];
 
 type props = {
   hide?: boolean;
@@ -32,6 +33,9 @@ const DashNavbar = ({ hide = true }: props) => {
     }
     if (option === "Connections") {
       return pathname === "/dashboard/connections";
+    }
+    if (option === "Create") {
+      return false;
     }
     if (option === "Profile") {
       return pathname === "/dashboard/profile";
@@ -63,6 +67,9 @@ const DashNavbar = ({ hide = true }: props) => {
       case "Connections":
         router.push("/dashboard/connections");
         break;
+      case "Create":
+        createOrShareModalState.open();
+        break;
       case "Profile":
         router.push("/dashboard/profile");
         break;
@@ -91,7 +98,6 @@ const DashNavbar = ({ hide = true }: props) => {
           <BellIconIndicator />
         </div>
       </div>
-
     </>
   );
 };

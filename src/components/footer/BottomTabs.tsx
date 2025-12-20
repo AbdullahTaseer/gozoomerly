@@ -3,6 +3,7 @@
 import { Home, Layers, MessageCircle, Plus, UserPlus } from "lucide-react";
 import { ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { createOrShareModalState } from '@/lib/createOrShareModalState';
 
 type TabItemProps = {
   icon: ReactNode;
@@ -88,7 +89,7 @@ const BottomTabs = () => {
 
         <div className="absolute left-1/2 -top-8 -translate-x-1/2">
           <button
-            onClick={() => router.push("/create")}
+            onClick={() => createOrShareModalState.open()}
             className="w-16 h-16 max-[380px]:h-14 max-[380px]:w-14 rounded-full border-5 max-[380px]:border-4 border-white bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg"
           >
             <Plus color="white" />
