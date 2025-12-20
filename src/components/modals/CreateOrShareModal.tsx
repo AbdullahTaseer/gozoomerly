@@ -101,7 +101,7 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
               onClick={card.onClick}
               className="bg-[#1b1d26] rounded-lg p-4 flex flex-col items-center gap-3 hover:bg-gray-800 active:bg-gray-800 transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center border-2 border-white">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
                 <IconComponent size={20} className="text-white" />
               </div>
               <span className="text-white text-sm font-medium text-center">{card.label}</span>

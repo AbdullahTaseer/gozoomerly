@@ -8,7 +8,7 @@ import AnimatedButton from '../buttons/AnimatedButton';
 import BellIconIndicator from '../cards/BellIconIndicator';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 
-const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Create", "Profile"];
+const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Profile"];
 
 type props = {
   hide?: boolean;
@@ -33,9 +33,6 @@ const DashNavbar = ({ hide = true }: props) => {
     }
     if (option === "Connections") {
       return pathname === "/dashboard/connections";
-    }
-    if (option === "Create") {
-      return false;
     }
     if (option === "Profile") {
       return pathname === "/dashboard/profile";
@@ -67,9 +64,6 @@ const DashNavbar = ({ hide = true }: props) => {
       case "Connections":
         router.push("/dashboard/connections");
         break;
-      case "Create":
-        createOrShareModalState.open();
-        break;
       case "Profile":
         router.push("/dashboard/profile");
         break;
@@ -92,7 +86,7 @@ const DashNavbar = ({ hide = true }: props) => {
               {option}
             </p>
           ))}
-          <AnimatedButton onClick={() => router.push("/compaign")} height='42px' title='Create a Board' width='150px' />
+          <AnimatedButton onClick={() => createOrShareModalState.open()} height='42px' title='Create' width='110px' />
         </div>
         <div className='hidden max-[769px]:block'>
           <BellIconIndicator />
