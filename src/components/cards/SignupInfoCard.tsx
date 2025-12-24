@@ -42,13 +42,11 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setUploadError('Image size should be less than 5MB');
         return;
       }
 
-      // Validate file type
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validTypes.includes(file.type)) {
         setUploadError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
@@ -58,7 +56,6 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
       setUploadError(null);
       setAvatarFile(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -88,17 +85,14 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
       const fileExt = avatarFile.name.split('.').pop();
       const fileName = `${currentUser.id}.${fileExt}`;
 
-      // Get session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No active session');
       }
 
-      // Convert file to array buffer
       const arrayBuffer = await avatarFile.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
 
-      // Upload using direct storage API endpoint
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
         {
@@ -117,7 +111,6 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
         throw new Error(`Failed to upload image: ${error}`);
       }
 
-      // Construct public URL
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
 
       return publicUrl;
@@ -134,7 +127,6 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
     const selectedCountry = countries.find(c => c.isoCode === countryCode);
     const selectedState = states.find(s => s.isoCode === stateCode);
     
-    // Upload avatar if one was selected
     const avatarUrl = await uploadAvatar();
     
     continueClick({

@@ -52,11 +52,9 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
       
-      // Generate unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}.${fileExt}`;
 
-      // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('circles-media')
         .upload(fileName, file);
@@ -66,7 +64,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
         return null;
       }
 
-      // Get public URL
       const { data: urlData } = supabase.storage
         .from('circles-media')
         .getPublicUrl(fileName);
@@ -88,7 +85,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
       setLoading(true);
       setError(null);
 
-      // Upload image if one is selected
       let imageUrl = formData.image_url;
       if (imageFile) {
         const uploadedUrl = await uploadImage(imageFile);
@@ -100,7 +96,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
       }
 
       if (editMode && circleData?.id) {
-        // Update existing circle
         const { error: updateError } = await updateCircle(circleData.id, {
           ...formData,
           image_url: imageUrl,
@@ -111,7 +106,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
           return;
         }
       } else {
-        // Create new circle
         const { error: createError } = await createCircle({
           ...formData,
           image_url: imageUrl,
@@ -123,7 +117,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
         }
       }
 
-      // Success - call the callback
       if (onCircleCreated) {
         onCircleCreated();
       }

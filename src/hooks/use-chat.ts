@@ -35,7 +35,6 @@ export const useChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get current user
   useEffect(() => {
     async function getCurrentUser() {
       const user = await authService.getUser();
@@ -49,7 +48,6 @@ export const useChat = () => {
     getCurrentUser();
   }, [router]);
 
-  // Load conversations
   const loadConversations = useCallback(async (userId: string) => {
     try {
       setLoading(true);
@@ -57,7 +55,6 @@ export const useChat = () => {
       if (error) {
         console.error('Error loading conversations:', error);
 
-        // Check if tables exist
         const diagnostics = await checkChatTablesSetup();
         if (!diagnostics.tablesExist) {
           console.error('Chat tables diagnostic:', diagnostics);
@@ -68,20 +65,17 @@ export const useChat = () => {
           );
         }
       } else {
-        // Remove duplicates by conversation ID first
         let uniqueConversations = (convs || []).filter((conv, index, self) =>
           index === self.findIndex(c => c.id === conv.id)
         );
 
-        // Also remove duplicates by participant combination (same two users in direct conversations)
         if (currentUserId) {
           const seenPairs = new Set<string>();
           uniqueConversations = uniqueConversations.filter(conv => {
             if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
-              return true; // Keep non-direct or group conversations
+              return true; 
             }
 
-            // Create a unique key for the participant pair
             const participantIds = conv.participants
               .map((p: any) => p.user_id)
               .sort()
@@ -105,7 +99,6 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
-  // Load messages when conversation is selected
   useEffect(() => {
     if (selectedConversation && currentUserId) {
       loadMessages(selectedConversation.id);
@@ -125,7 +118,6 @@ export const useChat = () => {
       if (error) {
         console.error('Error loading messages:', error);
       } else {
-        // Transform messages to ChatMessage format
         const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
           const senderName = msg.sender?.name ||
             (msg.sender_id ? 'Loading...' : 'Unknown');
@@ -148,7 +140,6 @@ export const useChat = () => {
           };
         });
 
-        // If any messages have "Loading..." or "Unknown" or missing avatar, fetch profile data
         const messagesNeedingProfiles = chatMessages.filter(
           m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
         );
@@ -183,7 +174,6 @@ export const useChat = () => {
           );
         }
         setMessages(chatMessages);
-        // Scroll to bottom
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
@@ -193,13 +183,9 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
-  // Real-time subscription handlers
   const handleMessageReceived = useCallback((message: ChatMessage) => {
-    console.log('📨 handleMessageReceived called with:', message);
 
-    // Only process messages for the currently selected conversation
     if (selectedConversation && message.conversationId !== selectedConversation.id) {
-      console.log('⚠️ Message is for a different conversation, updating conversation list only');
       setConversations(prev => {
         const updated = prev.map(conv =>
           conv.id === message.conversationId
@@ -292,7 +278,6 @@ export const useChat = () => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
   }, []);
 
-  // Real-time subscription
   const { isConnected, error: realtimeError } = useRealtimeChat({
     conversationId: selectedConversation?.id || null,
     currentUserId,
@@ -302,21 +287,8 @@ export const useChat = () => {
     enabled: !!selectedConversation && !!currentUserId,
   });
 
-  // Log real-time connection status
-  useEffect(() => {
-    if (selectedConversation) {
-      console.log('Real-time connection status:', isConnected, 'Error:', realtimeError);
-      if (realtimeError) {
-        console.error('❌ Real-time error:', realtimeError);
-        console.error('💡 To fix: Enable replication for the "messages" table in Supabase Dashboard → Database → Replication');
-      }
-      if (!isConnected && !realtimeError) {
-        console.warn('⚠️ Real-time not connected yet. Waiting for subscription...');
-      }
-    }
-  }, [isConnected, realtimeError, selectedConversation]);
+  
 
-  // Poll for new messages as a backup
   useEffect(() => {
     if (!selectedConversation || !currentUserId) return;
 
@@ -404,7 +376,6 @@ export const useChat = () => {
     };
   }, [selectedConversation?.id, currentUserId]);
 
-  // Search users
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -447,7 +418,7 @@ export const useChat = () => {
       if (error) {
         console.error('Error creating conversation:', error);
         const errorMessage = error?.message || JSON.stringify(error) || 'Unknown error';
-        alert(`Failed to start conversation: ${errorMessage}\n\nPlease make sure the database tables are set up correctly.`);
+        console.log(`Failed to start conversation: ${errorMessage}\n\nPlease make sure the database tables are set up correctly.`);
       } else if (conversation) {
         setSearchQuery('');
         setShowSearchResults(false);
@@ -784,11 +755,10 @@ export const useChat = () => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
     return prevMessage.senderId !== message.senderId ||
-      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; // 5 minutes
+      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; 
   }, [messages]);
 
   return {
-    // State
     currentUserId,
     conversations,
     selectedConversation,
@@ -804,13 +774,11 @@ export const useChat = () => {
     messagesEndRef,
     isConnected,
     realtimeError,
-    // Setters
     setSelectedConversation,
     setNewMessage,
     setSearchQuery,
     setShowSearchResults,
     setSelectedTab,
-    // Functions
     handleStartConversation,
     handleSend,
     handleFileUpload,

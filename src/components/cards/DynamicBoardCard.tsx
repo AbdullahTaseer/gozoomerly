@@ -145,9 +145,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
         </div>
       </div>
 
-      {/* Bottom Section - Dark Grey Background */}
       <div className="bg-[#2A2A2A] text-white p-6 flex-1 flex flex-col">
-        {/* Statistics */}
         <div className="flex items-center justify-around gap-4">
           <div className="flex flex-col items-center">
             <p className="text-lg font-semibold">{participants ?? 0}</p>

@@ -8,14 +8,12 @@ const ConfettiDemo = () => {
     <div className="p-8 space-y-8">
       <h2 className="text-2xl font-bold text-center mb-8">🎉 Confetti Component Examples</h2>
       
-      {/* Example 1: Basic auto-fire confetti */}
       <div className="relative h-32 bg-gray-100 rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">1. Basic Auto-Fire Confetti</h3>
         <p className="text-sm text-gray-600 mb-2">Automatically fires when component mounts</p>
         <Confetti autoFire={true} autoFireDelay={500} />
       </div>
 
-      {/* Example 2: Confetti with button */}
       <div className="relative h-32 bg-blue-100 rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">2. Confetti with Button</h3>
         <p className="text-sm text-gray-600 mb-2">Click the button to trigger confetti</p>
@@ -27,7 +25,6 @@ const ConfettiDemo = () => {
         />
       </div>
 
-      {/* Example 3: Custom colors and shapes */}
       <div className="relative h-32 bg-green-100 rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">3. Custom Colors & Shapes</h3>
         <p className="text-sm text-gray-600 mb-2">Only stars with custom colors</p>
@@ -46,7 +43,6 @@ const ConfettiDemo = () => {
         />
       </div>
 
-      {/* Example 4: Minimal confetti */}
       <div className="relative h-32 bg-purple-100 rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">4. Minimal Confetti</h3>
         <p className="text-sm text-gray-600 mb-2">Fewer particles, subtle effect</p>
@@ -64,7 +60,6 @@ const ConfettiDemo = () => {
         />
       </div>
 
-      {/* Example 5: Fireworks style */}
       <div className="relative h-32 bg-red-100 rounded-lg p-4">
         <h3 className="text-lg font-semibold mb-2">5. Fireworks Style</h3>
         <p className="text-sm text-gray-600 mb-2">High velocity, wide spread</p>

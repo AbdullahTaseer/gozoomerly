@@ -19,7 +19,6 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
       </div>
       <div className='w-[55%] overflow-y-auto relative max-[768px]:w-full flex flex-col justify-center items-center p-4'>
         {children}
-        {/* <div/> */}
       </div>
     </div>
   );

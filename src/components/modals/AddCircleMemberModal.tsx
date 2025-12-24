@@ -30,13 +30,11 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
   }, []);
 
   useEffect(() => {
-    // First filter out existing members
     let filtered = connections.filter((connection) => {
       const userId = connection.connected_user_id || connection.user_id;
       return !existingMemberIds.has(userId);
     });
 
-    // Then apply search filter
     if (searchQuery.trim() !== "") {
       filtered = filtered.filter((connection) =>
         connection.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -58,7 +56,6 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
         return;
       }
 
-      // Fetch user connections
       const { data, error: connectionError } = await getAllUserConnections(user.id);
       if (connectionError) {
         setError(`Failed to load connections: ${connectionError.message}`);
@@ -66,7 +63,6 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
         return;
       }
 
-      // Fetch existing circle members if circleId is provided
       if (circleId) {
         const { data: membersData, error: membersError } = await getCircleMembers(circleId);
         if (!membersError && membersData) {
@@ -106,10 +102,8 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
         return;
       }
 
-      // Successfully added - update the existing members set
       setExistingMemberIds(prev => new Set([...prev, userId]));
 
-      // Call the callback to refresh the parent component
       if (onMemberAdded) {
         onMemberAdded();
       }

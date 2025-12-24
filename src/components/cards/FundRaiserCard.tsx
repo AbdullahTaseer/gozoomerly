@@ -41,12 +41,10 @@ const FundRaiserCard = ({
   const [localRaised, setLocalRaised] = useState(raised);
   const router = useRouter();
 
-  // Sync localRaised with raised prop when it changes
   useEffect(() => {
     setLocalRaised(raised);
   }, [raised]);
 
-  // Map gift options to display format with icons
   const getGiftIcon = (label: string) => {
     const gift = giftsData.find(g =>
       label.toLowerCase().includes(g.label.toLowerCase()) ||
@@ -55,7 +53,6 @@ const FundRaiserCard = ({
     return gift?.icon || giftsData[0]?.icon;
   };
 
-  // Combine gift options with default gifts if needed
   const displayGifts = giftOptions.length > 0
     ? giftOptions.map(g => ({
       label: g.label || `$${g.amount}`,
@@ -70,17 +67,14 @@ const FundRaiserCard = ({
       isCustom: false
     }));
 
-  // Add Custom option
   displayGifts.push({ label: 'Custom', amount: 0, icon: null, isCustom: true });
 
   const handleGiftClick = async (gift: typeof displayGifts[0]) => {
     if (!boardId) {
-      // If no boardId, just select the gift (for display purposes)
       setSelectedGift(gift.label);
       return;
     }
 
-    // If it's the Custom option, don't add it automatically
     if (gift.isCustom || gift.amount === 0) {
       setSelectedGift(gift.label);
       return;
@@ -108,15 +102,12 @@ const FundRaiserCard = ({
         return;
       }
 
-      // Update local raised amount immediately for better UX
       setLocalRaised(prev => prev + gift.amount);
       setSelectedGift(gift.label);
 
-      // Refresh the page data
       if (onGiftAdded) {
         onGiftAdded();
       } else {
-        // Fallback: refresh the page to get updated data
         router.refresh();
       }
     } catch (error) {
@@ -127,7 +118,6 @@ const FundRaiserCard = ({
     }
   };
 
-  // Use localRaised if it's been updated, otherwise use the prop
   const displayRaised = localRaised !== raised ? localRaised : raised;
 
   return (

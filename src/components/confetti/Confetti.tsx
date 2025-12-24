@@ -67,25 +67,23 @@ const Confetti: React.FC<ConfettiProps> = ({
   }), [options]);
 
   const fireConfetti = useCallback((customOptions?: ConfettiOptions) => {
-    if (hasTriggered) return; // Prevent multiple triggers
+    if (hasTriggered) return; 
 
     setHasTriggered(true);
     const finalOptions = { ...defaultOptions, ...customOptions };
 
-    // Main explosion from center with ultra-wide spread
     confetti({
       ...finalOptions,
-      spread: 120, // Ultra-wide spread to cover beyond component boundaries
+      spread: 120, 
       origin: { y: 0.6, x: 0.5 }
     });
 
-    // Far left burst to cover left empty space
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.4),
         angle: 30,
         spread: 70,
-        origin: { y: 0.6, x: -0.1 }, // Start from beyond left edge
+        origin: { y: 0.6, x: -0.1 }, 
         colors: finalOptions.colors,
         startVelocity: 45,
         decay: 0.9,
@@ -93,13 +91,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 200);
 
-    // Far right burst to cover right empty space
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.4),
         angle: 150,
         spread: 70,
-        origin: { y: 0.6, x: 1.1 }, // Start from beyond right edge
+        origin: { y: 0.6, x: 1.1 }, 
         colors: finalOptions.colors,
         startVelocity: 45,
         decay: 0.9,
@@ -107,13 +104,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 400);
 
-    // Left edge burst for left coverage
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.3),
         angle: 60,
         spread: 60,
-        origin: { y: 0.6, x: 0.05 }, // Start from very left edge
+        origin: { y: 0.6, x: 0.05 }, 
         colors: finalOptions.colors,
         startVelocity: 40,
         decay: 0.9,
@@ -121,13 +117,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 300);
 
-    // Right edge burst for right coverage
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.3),
         angle: 120,
         spread: 60,
-        origin: { y: 0.6, x: 0.95 }, // Start from very right edge
+        origin: { y: 0.6, x: 0.95 }, 
         colors: finalOptions.colors,
         startVelocity: 40,
         decay: 0.9,
@@ -135,7 +130,6 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 500);
 
-    // Additional center-left burst
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.25),
@@ -149,7 +143,6 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 350);
 
-    // Additional center-right burst
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.25),
@@ -163,31 +156,27 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 450);
 
-    // Call completion callback after all animations finish
     if (onConfettiComplete) {
-      const totalDuration = 500 + (finalOptions.ticks || 200) * 16; // Convert ticks to milliseconds
+      const totalDuration = 500 + (finalOptions.ticks || 200) * 16; 
       setTimeout(onConfettiComplete, totalDuration);
     }
   }, [hasTriggered, defaultOptions, onConfettiComplete]);
 
-  // Separate function for manual button clicks that always works
   const handleButtonClick = useCallback(() => {
     const finalOptions = { ...defaultOptions, ...options };
 
-    // Main explosion from center with ultra-wide spread
     confetti({
       ...finalOptions,
-      spread: 120, // Ultra-wide spread to cover beyond component boundaries
+      spread: 120, 
       origin: { y: 0.6, x: 0.5 }
     });
 
-    // Far left burst to cover left empty space
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.4),
         angle: 30,
         spread: 70,
-        origin: { y: 0.6, x: -0.1 }, // Start from beyond left edge
+        origin: { y: 0.6, x: -0.1 },
         colors: finalOptions.colors,
         startVelocity: 45,
         decay: 0.9,
@@ -195,13 +184,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 200);
 
-    // Far right burst to cover right empty space
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.4),
         angle: 150,
         spread: 70,
-        origin: { y: 0.6, x: 1.1 }, // Start from beyond right edge
+        origin: { y: 0.6, x: 1.1 }, 
         colors: finalOptions.colors,
         startVelocity: 45,
         decay: 0.9,
@@ -209,13 +197,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 400);
 
-    // Left edge burst for left coverage
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.3),
         angle: 60,
         spread: 60,
-        origin: { y: 0.6, x: 0.05 }, // Start from very left edge
+        origin: { y: 0.6, x: 0.05 },
         colors: finalOptions.colors,
         startVelocity: 40,
         decay: 0.9,
@@ -223,13 +210,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 300);
 
-    // Right edge burst for right coverage
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.3),
         angle: 120,
         spread: 60,
-        origin: { y: 0.6, x: 0.95 }, // Start from very right edge
+        origin: { y: 0.6, x: 0.95 }, 
         colors: finalOptions.colors,
         startVelocity: 40,
         decay: 0.9,
@@ -237,7 +223,6 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 500);
 
-    // Additional center-left burst
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.25),
@@ -251,7 +236,6 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 350);
 
-    // Additional center-right burst
     setTimeout(() => {
       confetti({
         particleCount: Math.floor((finalOptions.particleCount || 100) * 0.25),
@@ -265,14 +249,12 @@ const Confetti: React.FC<ConfettiProps> = ({
       });
     }, 450);
 
-    // Call completion callback after all animations finish
     if (onConfettiComplete) {
-      const totalDuration = 500 + (finalOptions.ticks || 200) * 16; // Convert ticks to milliseconds
+      const totalDuration = 500 + (finalOptions.ticks || 200) * 16; 
       setTimeout(onConfettiComplete, totalDuration);
     }
   }, [defaultOptions, options, onConfettiComplete]);
 
-  // Intersection Observer for scroll-triggered confetti
   useEffect(() => {
     if (!triggerOnScroll || !containerRef.current) return;
 
@@ -282,17 +264,15 @@ const Confetti: React.FC<ConfettiProps> = ({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasTriggered) {
-            // Trigger confetti when component comes into view
             setTimeout(() => fireConfetti(), autoFireDelay);
           } else if (!entry.isIntersecting) {
-            // Reset trigger state when component goes out of view
             setHasTriggered(false);
           }
         });
       },
       {
         threshold: scrollThreshold,
-        rootMargin: '0px 0px -50px 0px' // Trigger slightly before fully in view
+        rootMargin: '0px 0px -50px 0px' 
       }
     );
 
@@ -303,11 +283,9 @@ const Confetti: React.FC<ConfettiProps> = ({
     };
   }, [triggerOnScroll, scrollThreshold, autoFireDelay, hasTriggered, fireConfetti]);
 
-  // Auto-fire on mount (if not scroll-triggered)
   useEffect(() => {
     if (!autoFire || triggerOnScroll || hasTriggered) return;
 
-    // Trigger confetti after component mounts
     const timer = setTimeout(() => fireConfetti(), autoFireDelay);
     return () => clearTimeout(timer);
   }, [autoFire, autoFireDelay, triggerOnScroll, hasTriggered, fireConfetti]);

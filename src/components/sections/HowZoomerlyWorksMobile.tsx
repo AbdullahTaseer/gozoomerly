@@ -21,7 +21,7 @@ const HowZoomerlyWorksMobile = () => {
       },
       {
         root: null,
-        threshold: 0.6, // means at least 60% of the step must be visible
+        threshold: 0.6, 
       }
     );
 
@@ -39,7 +39,6 @@ const HowZoomerlyWorksMobile = () => {
       <TitleCard title="How Zoomerly Works" />
 
       <div className="mt-6">
-        {/* Active Image */}
         <div className="flex justify-center p-4 mb-6">
           <Image
             src={steps[activeStep].img}
@@ -48,7 +47,6 @@ const HowZoomerlyWorksMobile = () => {
           />
         </div>
 
-        {/* Horizontal scrollable steps */}
         <div className="flex overflow-x-scroll space-x-4 px-4 scrollbar-hide snap-x snap-mandatory">
           {steps.map((step, index) => (
             <div

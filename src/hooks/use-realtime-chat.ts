@@ -43,25 +43,21 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
   const [error, setError] = useState<Error | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   
-  // Use refs to store callbacks so they're always up-to-date
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onMessageUpdatedRef = useRef(onMessageUpdated);
   const onMessageDeletedRef = useRef(onMessageDeleted);
   
-  // Update refs when callbacks change
   useEffect(() => {
     onMessageReceivedRef.current = onMessageReceived;
     onMessageUpdatedRef.current = onMessageUpdated;
     onMessageDeletedRef.current = onMessageDeleted;
   }, [onMessageReceived, onMessageUpdated, onMessageDeleted]);
   
-  // Create supabase client once
   const supabaseRef = useRef(createClient());
 
   useEffect(() => {
     if (!enabled || !conversationId || !currentUserId) {
       if (channelRef.current) {
-        console.log('Unsubscribing from channel:', channelRef.current.topic);
         channelRef.current.unsubscribe();
         channelRef.current = null;
         setIsConnected(false);
@@ -69,15 +65,12 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
       return;
     }
 
-    // Clean up any existing subscription first
     if (channelRef.current) {
-      console.log('Cleaning up existing subscription before creating new one');
       channelRef.current.unsubscribe();
       channelRef.current = null;
     }
 
     const channelName = `chat:${conversationId}`;
-    console.log('🔧 Setting up real-time subscription for conversation:', conversationId, 'Channel:', channelName);
 
     const channel = supabaseRef.current
       .channel(channelName)
@@ -91,17 +84,13 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
         },
         async (payload: RealtimePostgresChangesPayload<any>) => {
           try {
-            console.log('🔔 Real-time INSERT event received:', payload);
-            console.log('Message data:', payload.new);
             const message = payload.new;
             
-            // Validate message data
             if (!message || !message.id) {
               console.error('Invalid message payload:', payload);
               return;
             }
             
-            // Fetch sender info - try profiles table first
             let senderName = 'Unknown User';
             let senderAvatar: string | undefined;
             
@@ -114,7 +103,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
             if (senderData) {
               senderName = senderData.name || senderData.id || 'Unknown User';
               senderAvatar = senderData.profile_pic_url || undefined;
-              console.log('Fetched profile for sender:', senderName, senderAvatar);
             } else {
               console.warn('Profile not found for user:', message.sender_id, profileError);
               senderName = `User ${message.sender_id.substring(0, 8)}`;
@@ -136,10 +124,8 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               fileName: message.file_name,
             };
 
-            console.log('✅ Calling onMessageReceived with:', chatMessage);
             if (onMessageReceivedRef.current) {
               onMessageReceivedRef.current(chatMessage);
-              console.log('✅ onMessageReceived callback executed');
             } else {
               console.warn('⚠️ onMessageReceived callback is not set');
             }
@@ -166,7 +152,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               return;
             }
 
-            // Fetch sender info - try profiles table first
             let senderName = 'Unknown User';
             let senderAvatar: string | undefined;
             
@@ -226,31 +211,17 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           setError(null);
-          console.log('✅ Successfully subscribed to real-time updates for conversation:', conversationId);
-          
-          // Verify subscription by checking channel state
-          const channelState = channel.state;
-          console.log('📊 Channel state:', channelState);
-          
-          // Test if we can receive events by checking the channel
-          if (channel.topic) {
-            console.log('📢 Channel topic:', channel.topic);
-          }
+                            
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false);
           const error = new Error(`Channel subscription error: ${err?.message || 'Unknown error'}`);
           setError(error);
-          console.error('❌ Channel subscription error:', err);
-          console.error('💡 Make sure the "messages" table has replication enabled in Supabase Dashboard → Database → Replication');
         } else if (status === 'TIMED_OUT') {
           setIsConnected(false);
           const error = new Error('Channel subscription timed out');
           setError(error);
-          console.error('⏱️ Channel subscription timed out');
-          console.error('💡 This usually means real-time is not enabled for the messages table');
         } else if (status === 'CLOSED') {
           setIsConnected(false);
-          console.log('🔒 Channel closed');
         } else {
           console.log('ℹ️ Subscription status:', status);
         }
@@ -259,7 +230,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
     channelRef.current = channel;
 
     return () => {
-      console.log('Cleaning up real-time subscription for conversation:', conversationId);
       if (channelRef.current) {
         channelRef.current.unsubscribe();
         channelRef.current = null;

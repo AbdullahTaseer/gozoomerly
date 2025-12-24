@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import { Send, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { AuthService } from "@/lib/supabase/auth";
 import {
   getOrCreateBoardConversation,
@@ -34,7 +32,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get current user
   useEffect(() => {
     async function getCurrentUser() {
       const user = await authService.getUser();
@@ -47,7 +44,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     getCurrentUser();
   }, [router]);
 
-  // Get or create board conversation
   useEffect(() => {
     async function loadConversation() {
       if (!currentUserId || !boardId) return;
@@ -81,7 +77,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     loadConversation();
   }, [currentUserId, boardId, boardName]);
 
-  // Load messages
   const loadMessages = async (conversationId: string) => {
     if (!currentUserId) return;
 
@@ -97,7 +92,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
         return;
       }
 
-      // Transform messages to ChatMessage format
       const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
         const senderName = msg.sender?.name || 'Unknown';
         const senderAvatar = msg.sender?.profile_pic_url || staticProfileAvatar;
@@ -125,10 +119,8 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     }
   };
 
-  // Handle new message received via real-time
   const handleMessageReceived = (message: ChatMessage) => {
     setMessages(prev => {
-      // Check if message already exists (avoid duplicates)
       if (prev.some(m => m.id === message.id)) {
         return prev;
       }
@@ -136,19 +128,16 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     });
   };
 
-  // Handle message updated
   const handleMessageUpdated = (message: ChatMessage) => {
     setMessages(prev =>
       prev.map(m => m.id === message.id ? message : m)
     );
   };
 
-  // Handle message deleted
   const handleMessageDeleted = (messageId: string) => {
     setMessages(prev => prev.filter(m => m.id !== messageId));
   };
 
-  // Real-time subscription
   const { isConnected, error: realtimeError } = useRealtimeChat({
     conversationId: conversation?.id || null,
     currentUserId,
@@ -158,14 +147,12 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     enabled: !!conversation && !!currentUserId,
   });
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Handle send message
   const handleSend = async () => {
     if (!newMessage.trim() || !conversation || !currentUserId || sending) return;
 
@@ -183,10 +170,8 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
         return;
       }
 
-      // Clear input
       setNewMessage("");
 
-      // The message will be added via real-time subscription, but we can also add it optimistically
       if (message) {
         const chatMessage: ChatMessage = {
           id: message.id,
@@ -219,7 +204,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     }
   };
 
-  // Handle Enter key press
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -227,7 +211,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     }
   };
 
-  // Format time
   const formatTime = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -241,7 +224,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     }
   };
 
-  // Group messages by date
   const groupMessagesByDate = (msgs: ChatMessage[]) => {
     const groups: { [key: string]: ChatMessage[] } = {};
 
@@ -352,11 +334,9 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
                         <div className="bg-gray-100 px-4 py-3 rounded-xl max-w-sm">
                           {message.content}
                         </div>
-                        {/* {showTime && ( */}
                         <p className="text-xs text-gray-400 mt-1">
                           {formatTime(message.createdAt)}
                         </p>
-                        {/* )} */}
                       </div>
                     </div>
                   )}

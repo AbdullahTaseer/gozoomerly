@@ -1,8 +1,5 @@
 import { createClient } from './client';
 
-/**
- * Diagnostic function to check if chat tables exist and are accessible
- */
 export async function checkChatTablesSetup(): Promise<{
   tablesExist: boolean;
   errors: string[];
@@ -12,7 +9,6 @@ export async function checkChatTablesSetup(): Promise<{
   const errors: string[] = [];
   const details: any = {};
 
-  // Check conversations table
   try {
     const { data, error } = await supabase
       .from('conversations')
@@ -30,7 +26,6 @@ export async function checkChatTablesSetup(): Promise<{
     details.conversations = { error: err.message || err };
   }
 
-  // Check conversation_participants table
   try {
     const { data, error } = await supabase
       .from('conversation_participants')
@@ -48,7 +43,6 @@ export async function checkChatTablesSetup(): Promise<{
     details.conversation_participants = { error: err.message || err };
   }
 
-  // Check messages table
   try {
     const { data, error } = await supabase
       .from('messages')
@@ -66,7 +60,6 @@ export async function checkChatTablesSetup(): Promise<{
     details.messages = { error: err.message || err };
   }
 
-  // Check profiles table (needed for user info)
   try {
     const { data, error } = await supabase
       .from('profiles')

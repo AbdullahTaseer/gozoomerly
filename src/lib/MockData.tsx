@@ -22,7 +22,6 @@ export const compaignMainScreenData = [
   { imgSrc: Compaign_9, text: "Diwali" },
 ];
 
-// music list 
 
 interface MusicItem {
   id: number;
@@ -46,7 +45,6 @@ export const musicList: MusicItem[] = [
 ];
 
 
-// compaign 4th step gift data 
 import gift_one from "@/assets/svgs/gifts/gift-1.svg";
 import gift_two from "@/assets/svgs/gifts/gift-2.svg";
 import gift_three from "@/assets/svgs/gifts/gift-3.svg";
@@ -72,7 +70,6 @@ export const giftsData = [
 ];
 
 
-// swiper carousel homeBoardsSwiper
 
 import Community_1_avatar from "@/assets/svgs/community-1.svg";
 import Community_2_avatar from "@/assets/svgs/community-2.svg";
@@ -546,7 +543,6 @@ export const chatListData = [
   { id: 14, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
 ];
 
-// board invitations data
 export const boardInvitations = [
   {
     id: 1,

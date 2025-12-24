@@ -227,17 +227,14 @@ export async function getUserBoards(userId: string) {
     return { data: null, error };
   }
 
-  // Fetch invitation counts and media counts for each board
   if (data) {
     const boardsWithCounts = await Promise.all(
       data.map(async (board) => {
-        // Count invitations
         const { count: invitedCount } = await supabase
           .from('board_invitations')
           .select('*', { count: 'exact', head: true })
           .eq('board_id', board.id);
 
-        // Count media
         const { count: mediaCount } = await supabase
           .from('media')
           .select('*', { count: 'exact', head: true })
@@ -394,7 +391,6 @@ export async function publishBoard(boardId: string) {
   return { data, error: null };
 }
 
-// Publish multiple boards at once
 export async function publishMultipleBoards(boardIds: string[]) {
   const supabase = createClient();
   
@@ -425,7 +421,6 @@ export async function publishMultipleBoards(boardIds: string[]) {
   return { data, error: null };
 }
 
-// Board Gift Options
 export async function addBoardGiftOptions(boardId: string, giftOptions: Array<{
   amount: number;
   label?: string;
@@ -482,7 +477,6 @@ export async function addGiftContribution(
 ) {
   const supabase = createClient();
   
-  // First, get the current board to check current total_raised
   const { data: currentBoard, error: boardError } = await supabase
     .from('boards')
     .select('total_raised, contributors_count')
@@ -503,12 +497,10 @@ export async function addGiftContribution(
     display_order: 0
   };
 
-  // Add contributor_id if the column exists (for tracking unique contributors)
-  // Try to add it, but don't fail if the column doesn't exist
+  
   try {
     giftOptionData.contributor_id = contributorId;
   } catch (e) {
-    // Column might not exist, continue without it
   }
 
   const { data, error } = await supabase
@@ -522,9 +514,7 @@ export async function addGiftContribution(
     return { data: null, error };
   }
 
-  // Update board's total_raised and contributors_count
   if (data) {
-    // First, get the current board data
     const { data: currentBoard, error: fetchError } = await supabase
       .from('boards')
       .select('total_raised, contributors_count')
@@ -546,7 +536,6 @@ export async function addGiftContribution(
 
       if (updateError) {
         console.error('Error updating board raised amount:', updateError);
-        // Don't fail the whole operation if update fails, but log it
       }
     }
   }

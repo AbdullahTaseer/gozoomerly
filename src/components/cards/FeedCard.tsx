@@ -14,27 +14,22 @@ export interface MediaItem {
 }
 
 export interface FeedCardProps {
-  // Header props
   userName?: string;
   userAvatar?: string;
   timestamp?: string;
   onOptionsClick?: () => void;
   onUserClick?: () => void;
 
-  // Layout type
   layout?: FeedCardLayout;
-
-  // Main content props (for horizontal layout)
   videoThumbnail?: string;
   videoUrl?: string;
   title?: string;
   description?: string;
-  actionTag?: string; // e.g., "Gifted : $250"
+  actionTag?: string;
   onVideoClick?: () => void;
 
-  // Media carousel props (for carousel layout)
   mediaItems?: MediaItem[];
-  thumbnailImage?: string; // Small thumbnail for carousel layout
+  thumbnailImage?: string; 
 
   // Footer props
   likes?: number;
@@ -94,7 +89,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
 
   return (
     <div className="bg-[#F5F5F5] rounded-[24px] p-5 shadow-sm">
-      {/* Header Section */}
       <div className="flex items-start justify-between mb-4">
         <div
           onClick={onUserClick}
@@ -135,7 +129,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
         </button>
       </div>
 
-      {/* Main Content Section */}
       {layout === 'horizontal' ? (
         <div className="flex gap-4 max-[350px]:flex-col mb-4">
           <div className="relative w-[150px] max-[350px]:w-full h-[170px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
@@ -170,7 +163,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
             )}
           </div>
 
-          {/* Text Content (Right) */}
           <div className="flex-1 flex flex-col justify-between">
             <div>
               <h3 className="font-bold text-lg text-[#1B1D26] mb-2">{title}</h3>
@@ -187,9 +179,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
         </div>
       ) : (
         <>
-          {/* Carousel Layout: Description with small thumbnail */}
           <div className="flex gap-4 mb-4">
-            {/* Small Thumbnail (Left) */}
             {thumbnailImage && (
               <div className="relative w-[80px] h-[80px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
                 <Image
@@ -243,7 +233,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
                 </div>
               )}
 
-              {/* Carousel Indicators */}
               {mediaItems.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                   {mediaItems.map((_, idx) => (

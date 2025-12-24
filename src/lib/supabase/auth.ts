@@ -162,7 +162,6 @@ export class AuthService {
         };
       }
 
-      // Remove access token from localStorage on signout
       if (typeof window !== 'undefined') {
         localStorage.removeItem('access_token');
       }
@@ -220,7 +219,6 @@ export class AuthService {
         };
       }
 
-      // Update user password and metadata after successful OTP verification
       const updateData: any = {
         password: credentials.password,
       };
@@ -246,7 +244,6 @@ export class AuthService {
         };
       }
 
-      // Store access token in localStorage (for OTP verification/signup)
       if (data.session?.access_token) {
         localStorage.setItem('access_token', data.session.access_token);
       }

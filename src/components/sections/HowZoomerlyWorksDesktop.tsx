@@ -15,35 +15,28 @@ const HowZoomerlyWorksDesktop = () => {
       const el = wrapRef.current;
       if (!el) return;
 
-      // wrapper ke document me absolute start/end
       const start = el.offsetTop;
       const totalScrollable = el.offsetHeight - window.innerHeight;
 
-      // agar wrapper ki height screen se chhoti ho to first step par hi raho
       if (totalScrollable <= 0) {
         setActiveStep(0);
         return;
       }
 
-      // current scroll ko wrapper ki range me clamp karo
       const y = Math.min(Math.max(window.scrollY, start), start + totalScrollable);
 
-      // 0..1 progress
       const progress = (y - start) / totalScrollable;
 
-      // progress ko 0..(steps-1) me map karo
       const idx = Math.min(
-        Math.floor(progress * steps.length), // 0 inclusive, last exclusive
+        Math.floor(progress * steps.length), 
         steps.length - 1
       );
 
       setActiveStep(idx);
     };
 
-    // initial call taake first step immediately active rahe
     onScroll();
 
-    // passive for perf, resize par bhi recalc
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {

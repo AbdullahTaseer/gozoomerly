@@ -17,8 +17,8 @@ import { authService } from '@/lib/supabase/auth';
 export interface FileItem {
   id: number;
   src: string;
-  file?: File; // Add the actual File object
-  mediaId?: string; // Add uploaded media ID
+  file?: File; 
+  mediaId?: string; 
 }
 
 export type FontStyle = "modern" | "classic" | "signature";
@@ -28,9 +28,9 @@ export interface FileEditSettings {
   captionColor: string;
   captionBg: string;
   fontStyle: FontStyle;
-  fontSize: number; // in px
+  fontSize: number; 
   textAlign: "left" | "center" | "right";
-  zoom: number; // 1.0 - 3.0
+  zoom: number; 
 }
 
 type props = {

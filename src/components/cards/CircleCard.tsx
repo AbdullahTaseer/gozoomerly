@@ -24,7 +24,6 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
   const isColorValue = typeof backgroundImage === 'string' && (backgroundImage.startsWith('#') || backgroundImage.startsWith('rgb'));
   const isImageUrl = typeof backgroundImage === 'string' && (backgroundImage.startsWith('http') || backgroundImage.startsWith('/'));
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -43,7 +42,6 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
 
   return (
     <div onClick={onClick} className='relative w-full h-[400px] rounded-2xl overflow-hidden group cursor-pointer shadow-xl'>
-      {/* Background Image or Color */}
       {isImageUrl ? (
         <>
           <Image src={backgroundImage} alt={title} fill className='object-cover transition-transform duration-300 group-hover:scale-105' />
@@ -63,11 +61,9 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
         </>
       )}
 
-      {/* Content */}
       <div className='relative z-10 flex flex-col items-center justify-center h-full px-6 py-8 text-white'>
         <h2 className='text-2xl font-bold mb-8 text-center'>{title}</h2>
 
-        {/* Member Avatars - Separate Circles */}
         <div className='flex items-center justify-center mb-6'>
           {avatarsToShow.length > 0 ? (
             <>
@@ -97,7 +93,6 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
         </div>
       </div>
 
-      {/* Three Dots Menu */}
       <div className='absolute top-4 right-4 z-20' ref={menuRef}>
         <button
           onClick={(e) => {
