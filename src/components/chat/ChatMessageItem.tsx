@@ -11,15 +11,42 @@ interface ChatMessageItemProps {
 
 export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessageItemProps) => {
   return (
-    <div className={`flex mt-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex mt-2 gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+      {!isOwnMessage && (
+        <div className="flex-shrink-0">
+          <div className="relative h-8 w-8 rounded-full overflow-hidden">
+            <Image
+              src={message.user?.avatar || ProfileAvatar}
+              alt={message.user?.name || 'User'}
+              fill
+              className="object-cover"
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.src = ProfileAvatar.src || ProfileAvatar;
+              }}
+            />
+          </div>
+        </div>
+      )}
       <div
         className={cn('max-w-[75%] w-fit flex flex-col gap-1', { 'items-end': isOwnMessage, })}
       >
-        {showHeader && (
-          <div
-            className={cn('flex items-center gap-2 text-xs px-3', { 'justify-end flex-row-reverse': isOwnMessage, })}
-          >
-
+        {showHeader && !isOwnMessage && (
+          <div className="flex items-center gap-2 text-xs px-3">
+            <span className="text-foreground/70 font-medium">
+              {message.user?.name || 'Unknown User'}
+            </span>
+            <span className="text-foreground/50 text-xs">
+              {new Date(message.createdAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              })}
+            </span>
+          </div>
+        )}
+        {showHeader && isOwnMessage && (
+          <div className="flex items-center gap-2 text-xs px-3 justify-end flex-row-reverse">
             <span className="text-foreground/50 text-xs text-left">
               {new Date(message.createdAt).toLocaleTimeString('en-US', {
                 hour: '2-digit',

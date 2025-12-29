@@ -106,6 +106,16 @@ export const useChat = () => {
     }
   }, [selectedConversation, currentUserId]);
 
+  useEffect(() => {
+    if (selectedConversation) {
+      if (selectedTab === 'Connections' && selectedConversation.type !== 'direct') {
+        setSelectedConversation(null);
+      } else if (selectedTab === 'Boards' && selectedConversation.type !== 'group') {
+        setSelectedConversation(null);
+      }
+    }
+  }, [selectedTab, selectedConversation]);
+
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!currentUserId) return;
 
@@ -691,7 +701,6 @@ export const useChat = () => {
     }
   }, [selectedConversation, currentUserId, uploading]);
 
-  // Helper functions
   const getConversationName = useCallback((conv: Conversation): string => {
     if (conv.name) return conv.name;
     if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
@@ -744,6 +753,15 @@ export const useChat = () => {
   }, []);
 
   const filteredConversations = conversations.filter(conv => {
+    // Filter by tab type
+    if (selectedTab === 'Connections' && conv.type !== 'direct') {
+      return false;
+    }
+    if (selectedTab === 'Boards' && conv.type !== 'group') {
+      return false;
+    }
+    
+    // Apply search query filter if present
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     const name = getConversationName(conv).toLowerCase();

@@ -28,7 +28,6 @@ interface SignupInfoCardProps {
 
 const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
 
-  const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [fullName, setFullName] = useState<string>("");
