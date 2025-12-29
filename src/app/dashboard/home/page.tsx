@@ -20,10 +20,13 @@ import HomeMainTabs from '@/components/filters/HomeMainTabs';
 import ComingSoonCard from '@/components/cards/ComingSoonCard';
 import ZoiaxProCard from '@/components/zoiax/ZoiaxProCard';
 import AmbassadorForm from '@/components/zoiax/AmbassadorForm';
+import { Search, Grid3x3, Layers } from 'lucide-react';
+import GlobalInput from '@/components/inputs/GlobalInput';
 
 const Home = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
+  const [viewMode, setViewMode] = useState<'grid' | 'layers'>('grid');
   const [counts, setCounts] = useState({
     new: 0,
     active: 0,
@@ -159,10 +162,41 @@ const Home = () => {
         </div>
       </div> */}
 
-
         <HomeMainTabs
           boardsChildren={
             <div>
+              <div className='flex items-center gap-3 mb-6 flex-shrink-0 max-w-[400px] mx-auto'>
+                <div className="relative flex-1 min-w-0">
+                  <Search size={18} className='absolute top-1/2 left-3 -translate-y-1/2 text-black pointer-events-none' />
+                  <GlobalInput
+                    placeholder="Search boards..."
+                    height='42px'
+                    width='100%'
+                    borderRadius='100px'
+                    inputClassName="pl-10"
+                  />
+                </div>
+
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`w-10 h-10 flex-shrink-0 cursor-pointer rounded-full border border-gray-300 shadow-sm flex items-center justify-center transition-all ${viewMode === 'grid'
+                    ? 'bg-black'
+                    : 'bg-white hover:opacity-80'
+                    }`}
+                >
+                  <Grid3x3 size={18} className={viewMode === 'grid' ? 'text-white' : 'text-black'} />
+                </button>
+                <button
+                  onClick={() => setViewMode('layers')}
+                  className={`w-10 h-10 flex-shrink-0 cursor-pointer rounded-full border border-gray-300 shadow-sm flex items-center justify-center transition-all ${viewMode === 'layers'
+                    ? 'bg-black'
+                    : 'bg-white hover:opacity-80'
+                    }`}
+                >
+                  <Layers size={18} className={viewMode === 'layers' ? 'text-white' : 'text-black'} />
+                </button>
+              </div>
+
               <div className='flex items-center justify-between gap-4 mt-4'>
                 <TitleCard title='Feed' className='text-left' />
                 <HomeFeedFilters
