@@ -5,8 +5,6 @@ import { fetchActiveBoards, fetchUserBoards, type Board } from '@/lib/supabase/b
 import { boardInvitations } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
-import DashNavbar from '@/components/navbar/DashNavbar';
-import MobileHeader from '@/components/navbar/MobileHeader';
 
 const AllBoards = () => {
   const [counts, setCounts] = useState({
@@ -74,10 +72,7 @@ const AllBoards = () => {
   };
 
   return (
-    <>
-      <DashNavbar />
-      <MobileHeader title="Boards" />
-      <div className='px-[7%] max-[769px]:px-3 py-8'>
+    <div className='px-[7%] max-[769px]:px-3 py-8'>
         {loading ? (
           <div className='grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6'>
             {[1, 2, 3, 4].map((i) => (
@@ -109,7 +104,6 @@ const AllBoards = () => {
           </div>
         )}
       </div>
-    </>
   );
 };
 

@@ -111,7 +111,7 @@ const PastBoards = () => {
     <div className='px-[7%] max-[769px]:px-3'>
       <div className='py-4'>
         <div className='flex justify-between max-[870px]:flex-col gap-6'>
-          <TitleCard title='Boards' className='text-left' />
+          <TitleCard title='Past Boards' className='text-left' />
           <div className='flex gap-4 items-center max-[870px]:mx-auto max-[870px]:hidden'>
             <div className='relative w-[260px]'>
               <Search size={18} className='absolute top-3 left-3' />
@@ -128,4 +128,5 @@ const PastBoards = () => {
 };
 
 export default PastBoards;
+
 

@@ -16,6 +16,10 @@ import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
 import HomeFeedFilters from '@/components/filters/HomeFeedFilters';
 import FeedCard from '@/components/cards/FeedCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import HomeMainTabs from '@/components/filters/HomeMainTabs';
+import ComingSoonCard from '@/components/cards/ComingSoonCard';
+import ZoiaxProCard from '@/components/zoiax/ZoiaxProCard';
+import AmbassadorForm from '@/components/zoiax/AmbassadorForm';
 
 const Home = () => {
   const router = useRouter();
@@ -88,9 +92,9 @@ const Home = () => {
     <div>
       <DashNavbar hide={false} />
       <div className='px-[7%] max-[769px]:px-3'>
-        <AvatarList />
+        {/* <AvatarList /> */}
 
-        <div className='py-4'>
+        {/* <div className='py-4'>
           <TitleCard title='Boards' className='text-left' />
           {loading ? (
             <div className='grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mt-4'>
@@ -122,13 +126,13 @@ const Home = () => {
               />
             </div>
           )}
-        </div>
+        </div> */}
 
-        <BoardCategoryCard
+        {/* <BoardCategoryCard
           count={spotlightCampaigns.length}
           label="Spotlight Compaigns"
           path="/dashboard/spotlight-compaign"
-        />
+        /> */}
 
         {/* <div className='py-8'>
         <TitleCard title='Spotlight Campaigns' className='text-left' />
@@ -155,42 +159,56 @@ const Home = () => {
         </div>
       </div> */}
 
-        <div>
-          <div className='flex items-center justify-between gap-4 mt-4'>
-            <TitleCard title='Feed' className='text-left' />
-            <HomeFeedFilters
-              selectedFilter={selectedFilter}
-              onFilterChange={setSelectedFilter}
-            />
-          </div>
 
-          <div className='max-w-[745px] mx-auto py-4 space-y-6'>
-            <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-            <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-            <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-            {feedCardData.map((feed) => (
-              <FeedCard
-                key={feed.id}
-                userName={feed.userName}
-                userAvatar={feed.userAvatar}
-                timestamp={feed.timestamp}
-                layout={feed.layout}
-                title={feed.title}
-                description={feed.description}
-                actionTag={feed.actionTag}
-                videoThumbnail={feed.videoThumbnail}
-                videoUrl={feed.videoUrl}
-                thumbnailImage={feed.thumbnailImage}
-                mediaItems={feed.mediaItems}
-                likes={feed.likes}
-                comments={feed.comments}
-                shares={feed.shares}
-                memories={feed.memories}
-                onUserClick={() => router.push("/dashboard/visitProfile")}
-              />
-            ))}
-          </div>
-        </div>
+        <HomeMainTabs
+          boardsChildren={
+            <div>
+              <div className='flex items-center justify-between gap-4 mt-4'>
+                <TitleCard title='Feed' className='text-left' />
+                <HomeFeedFilters
+                  selectedFilter={selectedFilter}
+                  onFilterChange={setSelectedFilter}
+                />
+              </div>
+
+              <div className='max-w-[745px] mx-auto py-4 space-y-6'>
+                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                {feedCardData.map((feed) => (
+                  <FeedCard
+                    key={feed.id}
+                    userName={feed.userName}
+                    userAvatar={feed.userAvatar}
+                    timestamp={feed.timestamp}
+                    layout={feed.layout}
+                    title={feed.title}
+                    description={feed.description}
+                    actionTag={feed.actionTag}
+                    videoThumbnail={feed.videoThumbnail}
+                    videoUrl={feed.videoUrl}
+                    thumbnailImage={feed.thumbnailImage}
+                    mediaItems={feed.mediaItems}
+                    likes={feed.likes}
+                    comments={feed.comments}
+                    shares={feed.shares}
+                    memories={feed.memories}
+                    onUserClick={() => router.push("/dashboard/visitProfile")}
+                  />
+                ))}
+              </div>
+            </div>
+          }
+          marketplaceChildren={
+            <ComingSoonCard />
+          }
+          zoiaxProChildren={
+            <>
+              <ZoiaxProCard />
+              <AmbassadorForm />
+            </>
+          }
+        />
 
       </div>
     </div>

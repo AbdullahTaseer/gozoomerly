@@ -1,4 +1,5 @@
 import TitleCard from '@/components/cards/TitleCard';
+import DashNavbar from '@/components/navbar/DashNavbar';
 import { Star } from 'lucide-react';
 import React from 'react';
 
@@ -43,26 +44,27 @@ const data = [
 
 const Notifications = () => {
   return (
-    <div className='px-[7%] max-[768px]:px-6 pb-4'>
+    <>
+      <DashNavbar hide={false} />
+      <div className='px-[7%] max-[768px]:px-6 pb-4'>
 
-      <div className='flex items-center justify-between gap-3'>
-        <TitleCard title='Notifications' className='text-left' />
-      </div>
-
-
-      {data.map(({ title, time }, i) => (
-        <div key={i} className='bg-[#F7F7F7] p-4 flex items-center gap-4 rounded-[8px] mt-4'>
-          <div className='bg-white rounded-full p-2'>
-            <Star />
-          </div>
-          <div>
-            <p className='text-[24px] max-[768px]:text-[20px]'>{title}</p>
-            <p className='text-xs'>{time}</p>
-          </div>
+        <div className='flex items-center justify-between gap-3'>
+          <TitleCard title='Notifications' className='text-left' />
         </div>
-      ))}
 
-    </div>
+        {data.map(({ title, time }, i) => (
+          <div key={i} className='bg-[#F7F7F7] p-4 flex items-center gap-4 rounded-[8px] mt-4'>
+            <div className='bg-white rounded-full p-2'>
+              <Star />
+            </div>
+            <div>
+              <p className='text-[24px] max-[768px]:text-[20px]'>{title}</p>
+              <p className='text-xs'>{time}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   );
 };
 
