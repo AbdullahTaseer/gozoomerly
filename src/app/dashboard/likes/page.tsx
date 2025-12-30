@@ -10,6 +10,7 @@ import LikeAvatar2 from "@/assets/svgs/avatar-list-icon-1.svg";
 
 import TitleCard from '@/components/cards/TitleCard';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 const likesData = [
   {
@@ -58,21 +59,24 @@ const likesData = [
 
 const LikesPage = () => {
   return (
-    <div className="px-[7%] max-[768px]:px-6 pb-4">
-      <TitleCard title="Likes" className="text-left" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {likesData.map((like, index) => (
-          <LikesCommentsGiftsCard
-            key={index}
-            imgSrc={like.imgSrc}
-            whoLikeAvatar={like.whoLikeAvatar}
-            name={like.name}
-            time={like.time}
-            wishMessage={like.wishMessage}
-          />
-        ))}
+    <>
+      <DashNavbar hide={false} />
+      <div className="px-[7%] max-[768px]:px-6 pb-4">
+        <TitleCard title="Likes" className="text-left" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {likesData.map((like, index) => (
+            <LikesCommentsGiftsCard
+              key={index}
+              imgSrc={like.imgSrc}
+              whoLikeAvatar={like.whoLikeAvatar}
+              name={like.name}
+              time={like.time}
+              wishMessage={like.wishMessage}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

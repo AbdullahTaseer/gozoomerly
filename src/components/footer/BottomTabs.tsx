@@ -41,9 +41,9 @@ const BottomTabs = () => {
           <div className="relative">
             <TabItem
               icon={<Layers size={22} />}
-              label="Boards"
-              active={pathname.startsWith("/dashboard/allBoards")}
-              onClick={() => router.push("/dashboard/allBoards")}
+              label="Home"
+              active={pathname.startsWith("/dashboard")}
+              onClick={() => router.push("/dashboard")}
             />
 
             <span className="absolute -top-1 -right-2 bg-pink-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">

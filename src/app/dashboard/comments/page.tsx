@@ -6,6 +6,7 @@ import LikeAvatar2 from "@/assets/svgs/avatar-list-icon-1.svg";
 
 import TitleCard from '@/components/cards/TitleCard';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 const commentsData = [
   {
@@ -32,24 +33,27 @@ const commentsData = [
 
 const CommentsPage = () => {
   return (
-    <div className="px-[7%] max-[768px]:px-6 pb-4">
-      <TitleCard title="Comments" className="text-left" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {commentsData.map((comment, index) => (
-          <LikesCommentsGiftsCard
-            key={index}
-            imgSrc={comment.imgSrc}
-            whoLikeAvatar={comment.whoLikeAvatar}
-            name={comment.name}
-            time={comment.time}
-            wishMessage={comment.wishMessage}
-            whoCommentsAvatar={comment.whoCommentsAvatar}
-            whoCommentsName={comment.whoCommentName}
-            comment={comment.comment}
-          />
-        ))}
+    <>
+      <DashNavbar hide={false} />
+      <div className="px-[7%] max-[768px]:px-6 pb-4">
+        <TitleCard title="Comments" className="text-left" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {commentsData.map((comment, index) => (
+            <LikesCommentsGiftsCard
+              key={index}
+              imgSrc={comment.imgSrc}
+              whoLikeAvatar={comment.whoLikeAvatar}
+              name={comment.name}
+              time={comment.time}
+              wishMessage={comment.wishMessage}
+              whoCommentsAvatar={comment.whoCommentsAvatar}
+              whoCommentsName={comment.whoCommentName}
+              comment={comment.comment}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

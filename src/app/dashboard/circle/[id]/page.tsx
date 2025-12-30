@@ -10,6 +10,7 @@ import { getCircleById, getCircleMembers, removeCircleMember, Circle } from "@/l
 import DashNavbar from "@/components/navbar/DashNavbar";
 import MobileHeader from "@/components/navbar/MobileHeader";
 import { Plus } from "lucide-react";
+import DefaultAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
 
 interface CircleMember {
   id: string;
@@ -202,7 +203,7 @@ const CircleById = ({ params }: CircleByIdProps) => {
           ) : (
             members.map((member) => {
               // Handle both nested profiles and flat structure
-              const profilePic = member.profiles?.profile_pic_url || member.profile_pic_url || '/default-avatar.png';
+              const profilePic = member.profiles?.profile_pic_url || member.profile_pic_url || DefaultAvatar;
               const memberName = member.profiles?.name || member.name || member.profiles?.email || member.email || 'Unknown';
               const memberEmail = member.profiles?.email || member.email || '';
               // Try different possible field names for user ID

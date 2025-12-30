@@ -20,76 +20,126 @@ import HomeMainTabs from '@/components/filters/HomeMainTabs';
 import ComingSoonCard from '@/components/cards/ComingSoonCard';
 import ZoiaxProCard from '@/components/zoiax/ZoiaxProCard';
 import AmbassadorForm from '@/components/zoiax/AmbassadorForm';
-import { Search, Layers, Grid2x2 } from 'lucide-react';
+import { Search, Layers, Grid2x2, ChevronRight } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
+import { BoardsList } from '@/components/boards/BoardsList';
+import { createClient } from '@/lib/supabase/client';
+import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 
 const Home = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [viewMode, setViewMode] = useState<'grid' | 'layers'>('grid');
-  // const [counts, setCounts] = useState({
-  //   new: 0,
-  //   active: 0,
-  //   your: 0,
-  //   past: 0,
-  // });
-  // const [loading, setLoading] = useState(true);
+  const [activeBoards, setActiveBoards] = useState<Board[]>([]);
+  const [yourBoards, setYourBoards] = useState<Board[]>([]);
+  const [pastBoards, setPastBoards] = useState<Board[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // useEffect(() => {
-  //   loadCounts();
-  // }, []);
+  useEffect(() => {
+    loadBoards();
+  }, []);
 
-  // const loadCounts = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const user = await authService.getUser();
+  const loadBoards = async () => {
+    try {
+      setLoading(true);
+      const user = await authService.getUser();
 
-  //     if (!user) {
-  //       console.error('No user logged in');
-  //       setLoading(false);
-  //       return;
-  //     }
+      if (!user) {
+        console.error('No user logged in');
+        setLoading(false);
+        return;
+      }
 
-  //     const [
-  //       { boards: activeBoards },
-  //       { boards: userBoards },
-  //       { boards: allBoards },
-  //     ] = await Promise.all([
-  //       fetchActiveBoards({
-  //         userId: user.id,
-  //         includeStatus: ['published'],
-  //       }),
-  //       fetchUserBoards(user.id),
-  //       fetchActiveBoards({
-  //         userId: user.id,
-  //         showAll: true,
-  //       }),
-  //     ]);
+      const supabase = createClient();
 
-  //     const activeCount = activeBoards?.length || 0;
-  //     const yourCount = userBoards?.length || 0;
-  //     const newCount = boardInvitations.length;
+      // Fetch active boards
+      const { boards: activeBoardsData } = await fetchActiveBoards({
+        userId: user.id,
+        includeStatus: ['published'],
+      });
 
-  //     const pastCount = (allBoards || []).filter((board: Board) => {
-  //       if (board.status === 'completed' || board.status === 'cancelled') return true;
-  //       if (board.deadline_date) {
-  //         return new Date(board.deadline_date) < new Date();
-  //       }
-  //       return false;
-  //     }).length;
+      // Fetch user boards (boards created by the user)
+      const { boards: userBoardsData } = await fetchUserBoards(user.id);
 
-  //     setCounts({
-  //       new: newCount,
-  //       active: activeCount,
-  //       your: yourCount,
-  //       past: pastCount,
-  //     });
-  //   } catch (err) {
-  //     console.error('Error loading board counts:', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      // Fetch all boards for past boards
+      const { boards: allBoards } = await fetchActiveBoards({
+        userId: user.id,
+        showAll: true,
+      });
+
+      // Filter past boards
+      const pastBoardsData = (allBoards || []).filter((board: Board) => {
+        if (board.status === 'completed' || board.status === 'cancelled') return true;
+        if (board.deadline_date) {
+          return new Date(board.deadline_date) < new Date();
+        }
+        return false;
+      }).slice(0, 5);
+
+      // Fetch contributors for each board
+      const fetchContributors = async (boards: Board[]) => {
+        return Promise.all(
+          boards.map(async (board) => {
+            try {
+              const { data: participants } = await supabase
+                .from('board_participants')
+                .select('user_id')
+                .eq('board_id', board.id)
+                .limit(10);
+
+              const contributorAvatars: (string | typeof ProfileAvatar)[] = [];
+
+              if (participants && participants.length > 0) {
+                const userIds = participants.map(p => p.user_id);
+                const { data: profiles } = await supabase
+                  .from('profiles')
+                  .select('profile_pic_url')
+                  .in('id', userIds);
+
+                if (profiles) {
+                  profiles.forEach((profile) => {
+                    if (profile.profile_pic_url) {
+                      contributorAvatars.push(profile.profile_pic_url);
+                    } else {
+                      contributorAvatars.push(ProfileAvatar);
+                    }
+                  });
+                } else {
+                  participants.forEach(() => {
+                    contributorAvatars.push(ProfileAvatar);
+                  });
+                }
+              }
+
+              return {
+                ...board,
+                topContributors: contributorAvatars,
+              };
+            } catch (err) {
+              return {
+                ...board,
+                topContributors: [],
+              };
+            }
+          })
+        );
+      };
+
+      const [activeWithContributors, yourWithContributors, pastWithContributors] = await Promise.all([
+        fetchContributors(activeBoardsData || []),
+        fetchContributors(userBoardsData || []),
+        fetchContributors(pastBoardsData),
+      ]);
+
+      setActiveBoards(activeWithContributors.slice(0, 5));
+      setYourBoards(yourWithContributors.slice(0, 5));
+      setPastBoards(pastWithContributors);
+    } catch (err) {
+      console.error('Error loading boards:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
@@ -197,40 +247,120 @@ const Home = () => {
                 </button>
               </div>
 
-              <div className='flex max-w-[745px] mx-auto items-center justify-between gap-4 mt-4'>
-                <TitleCard title='Feed' className='text-left' />
-                <HomeFeedFilters
-                  selectedFilter={selectedFilter}
-                  onFilterChange={setSelectedFilter}
-                />
-              </div>
+              {viewMode === 'grid' ? (
+                <div className='space-y-8'>
+                  {/* New Boards Section */}
+                  <div>
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-xl md:text-3xl font-bold text-black'>New Boards</h3>
+                      <button
+                        onClick={() => router.push('/dashboard/allBoards/new')}
+                        className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
+                      >
+                        View all <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full'>
+                      {boardInvitations.length > 0 ? (
+                        boardInvitations.slice(0, 5).map((invitation) => (
+                          <InvitationBoardCard
+                            key={invitation.id}
+                            title={invitation.title}
+                            backgroundImage={invitation.backgroundImage}
+                            profileImage={invitation.profileImage}
+                            inviterName={invitation.inviterName}
+                            onAccept={() => console.log('Accept invitation', invitation.id)}
+                            onDecline={() => console.log('Decline invitation', invitation.id)}
+                          />
+                        ))
+                      ) : (
+                        <div className='text-center py-12 w-full'>
+                          <p className='text-gray-500'>No invitations found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
 
-              <div className='max-w-[745px] mx-auto py-4 space-y-6'>
-                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                {feedCardData.map((feed) => (
-                  <FeedCard
-                    key={feed.id}
-                    userName={feed.userName}
-                    userAvatar={feed.userAvatar}
-                    timestamp={feed.timestamp}
-                    layout={feed.layout}
-                    title={feed.title}
-                    description={feed.description}
-                    actionTag={feed.actionTag}
-                    videoThumbnail={feed.videoThumbnail}
-                    videoUrl={feed.videoUrl}
-                    thumbnailImage={feed.thumbnailImage}
-                    mediaItems={feed.mediaItems}
-                    likes={feed.likes}
-                    comments={feed.comments}
-                    shares={feed.shares}
-                    memories={feed.memories}
-                    onUserClick={() => router.push("/dashboard/visitProfile")}
-                  />
-                ))}
-              </div>
+                  {/* Active Boards Section */}
+                  <div>
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-xl md:text-3xl font-bold text-black'>Active Boards</h3>
+                      <button
+                        onClick={() => router.push('/dashboard/allBoards/active')}
+                        className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
+                      >
+                        View all <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <BoardsList boards={activeBoards} loading={loading} />
+                  </div>
+
+                  {/* Your Boards Section */}
+                  <div>
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-xl md:text-3xl font-bold text-black'>Your Boards</h3>
+                      <button
+                        onClick={() => router.push('/dashboard/allBoards/your')}
+                        className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
+                      >
+                        View all <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <BoardsList boards={yourBoards} loading={loading} />
+                  </div>
+
+                  {/* Past Boards Section */}
+                  <div>
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-xl md:text-3xl font-bold text-black'>Past Boards</h3>
+                      <button
+                        onClick={() => router.push('/dashboard/allBoards/past')}
+                        className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
+                      >
+                        View all <ChevronRight size={16} />
+                      </button>
+                    </div>
+                    <BoardsList boards={pastBoards} loading={loading} />
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className='flex max-w-[745px] mx-auto items-center justify-between gap-4 mt-4'>
+                    <TitleCard title='Feed' className='text-left' />
+                    <HomeFeedFilters
+                      selectedFilter={selectedFilter}
+                      onFilterChange={setSelectedFilter}
+                    />
+                  </div>
+
+                  <div className='max-w-[745px] mx-auto py-4 space-y-6'>
+                    <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                    <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                    <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
+                    {feedCardData.map((feed) => (
+                      <FeedCard
+                        key={feed.id}
+                        userName={feed.userName}
+                        userAvatar={feed.userAvatar}
+                        timestamp={feed.timestamp}
+                        layout={feed.layout}
+                        title={feed.title}
+                        description={feed.description}
+                        actionTag={feed.actionTag}
+                        videoThumbnail={feed.videoThumbnail}
+                        videoUrl={feed.videoUrl}
+                        thumbnailImage={feed.thumbnailImage}
+                        mediaItems={feed.mediaItems}
+                        likes={feed.likes}
+                        comments={feed.comments}
+                        shares={feed.shares}
+                        memories={feed.memories}
+                        onUserClick={() => router.push("/dashboard/visitProfile")}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           }
           marketplaceChildren={

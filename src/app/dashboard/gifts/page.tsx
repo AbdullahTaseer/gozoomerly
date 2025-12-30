@@ -8,6 +8,7 @@ import Money from "@/assets/svgs/Money.svg";
 
 import TitleCard from '@/components/cards/TitleCard';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 const giftsData = [
   {
@@ -46,24 +47,27 @@ const giftsData = [
 
 const GiftsPage = () => {
   return (
-    <div className="px-[7%] max-[768px]:px-6 pb-4">
-      <TitleCard title="Gifts" className="text-left" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {giftsData.map((gift, index) => (
-          <LikesCommentsGiftsCard
-            key={index}
-            imgSrc={gift.imgSrc}
-            whoLikeAvatar={gift.whoLikeAvatar}
-            name={gift.name}
-            time={gift.time}
-            wishMessage={gift.wishMessage}
-            whoGiftsAvatar={gift.whoGiftsAvatar}
-            whoGiftsName={gift.whoGiftsName}
-            giftsArray={gift.giftArray}
-          />
-        ))}
+    <>
+      <DashNavbar hide={false} />
+      <div className="px-[7%] max-[768px]:px-6 pb-4">
+        <TitleCard title="Gifts" className="text-left" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {giftsData.map((gift, index) => (
+            <LikesCommentsGiftsCard
+              key={index}
+              imgSrc={gift.imgSrc}
+              whoLikeAvatar={gift.whoLikeAvatar}
+              name={gift.name}
+              time={gift.time}
+              wishMessage={gift.wishMessage}
+              whoGiftsAvatar={gift.whoGiftsAvatar}
+              whoGiftsName={gift.whoGiftsName}
+              giftsArray={gift.giftArray}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
