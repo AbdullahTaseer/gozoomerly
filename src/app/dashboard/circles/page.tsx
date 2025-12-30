@@ -115,7 +115,7 @@ const Circles = () => {
 
   return (
     <>
-      <DashNavbar />
+      <DashNavbar hide={false}/>
       <div className='px-[7%] max-[769px]:px-4 py-4'>
 
         <div className='flex justify-between max-[1200px]:flex-col gap-6'>

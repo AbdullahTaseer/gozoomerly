@@ -70,7 +70,7 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
               {avatarsToShow.map((avatar, index) => (
                 <div
                   key={index}
-                  className='rounded-full -ml-4 border-[3px] border-white bg-white shadow-lg transition-transform hover:scale-110'
+                  className='rounded-full -ml-8 border-[3px] border-white bg-white shadow-lg transition-transform hover:scale-110'
                 >
                   <img
                     src={avatar as string}
@@ -80,7 +80,7 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
                 </div>
               ))}
               {remainingCount > 0 && (
-                <div className='w-[70px] h-[70px] rounded-full border-[3px] border-white bg-white flex items-center justify-center text-gray-800 text-2xl font-bold shadow-lg transition-transform hover:scale-110'>
+                <div className='w-[70px] -ml-8 h-[70px] rounded-full border-[3px] border-white bg-white flex items-center justify-center text-gray-800 text-2xl font-bold shadow-lg transition-transform hover:scale-110'>
                   +{remainingCount}
                 </div>
               )}
