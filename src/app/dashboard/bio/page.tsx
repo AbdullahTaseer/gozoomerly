@@ -12,6 +12,7 @@ import LanguageSpeaksIcon from "@/assets/svgs/language.svg";
 import LivesInIcon from "@/assets/svgs/lives-in.svg";
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 interface UserProfile {
   id: string;
@@ -81,19 +82,19 @@ const BioPage = () => {
     return parts.join(', ') || 'Location not set';
   };
 
-  if (loading) {
-    return (
-      <div className="px-[7%] max-[768px]:px-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-[7%] max-[768px]:px-6">
+    <div>
+      <DashNavbar hide={false} />
+      <div className="px-[7%] max-[768px]:px-6">
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading...</p>
+            </div>
+          </div>
+        ) : (
+          <>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
@@ -164,7 +165,10 @@ const BioPage = () => {
           <User />
           <p className="font-medium text-[18px]">About:</p>
         </div>
-        <p className="mt-2 font-medium text-[18px]">{profile?.bio || 'No bio added yet.'}</p>
+            <p className="mt-2 font-medium text-[18px]">{profile?.bio || 'No bio added yet.'}</p>
+          </div>
+          </>
+        )}
       </div>
     </div>
   );

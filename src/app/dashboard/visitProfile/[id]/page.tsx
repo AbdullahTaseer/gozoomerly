@@ -9,6 +9,7 @@ import TitleCard from '@/components/cards/TitleCard';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
 import { Camera, Video } from "lucide-react";
+import DashNavbar from '@/components/navbar/DashNavbar';
 
 interface UserProfile {
   id: string;
@@ -179,35 +180,31 @@ const VisitProfilePage = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className='px-[7%] max-[768px]:px-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto'></div>
-          <p className='mt-4 text-gray-600'>Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !profile) {
-    return (
-      <div className='px-[7%] max-[768px]:px-6 flex items-center justify-center min-h-screen'>
-        <div className='text-center'>
-          <p className='text-red-500 mb-4'>{error || 'Profile not found'}</p>
-          <button
-            onClick={() => router.back()}
-            className='px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
-          >
-            Go Back
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-[7%] max-[769px]:px-6 py-6">
+    <div>
+      <DashNavbar hide={false} />
+      <div className="px-[7%] max-[769px]:px-6 py-6">
+        {loading ? (
+          <div className='flex items-center justify-center min-h-[400px]'>
+            <div className='text-center'>
+              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto'></div>
+              <p className='mt-4 text-gray-600'>Loading profile...</p>
+            </div>
+          </div>
+        ) : error || !profile ? (
+          <div className='flex items-center justify-center min-h-[400px]'>
+            <div className='text-center'>
+              <p className='text-red-500 mb-4'>{error || 'Profile not found'}</p>
+              <button
+                onClick={() => router.back()}
+                className='px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600'
+              >
+                Go Back
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
       <div className="flex items-center gap-8 max-[768px]:flex-col max-[768px]:text-center">
         <div className="relative w-32 h-32 rounded-full overflow-hidden">
           {profile.profile_pic_url ? (
@@ -286,7 +283,10 @@ const VisitProfilePage = () => {
         </button>
       </div>
 
-      <RenderPosts />
+            <RenderPosts />
+          </>
+        )}
+      </div>
     </div>
   );
 };

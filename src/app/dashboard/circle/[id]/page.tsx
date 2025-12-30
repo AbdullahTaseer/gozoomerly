@@ -117,49 +117,39 @@ const CircleById = ({ params }: CircleByIdProps) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="px-[7%] max-[769px]:px-4 py-6">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p>Loading circle details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !circle) {
-    return (
-      <div className="px-[7%] max-[769px]:px-4 py-6">
-        <div className="text-center py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
-            <p className="text-red-600 font-semibold mb-2">Error Loading Circle</p>
-            <p className="text-red-500 text-sm">{error || 'Circle not found'}</p>
-            <div className="flex gap-4 justify-center mt-4">
-              <button
-                onClick={fetchCircleData}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Try Again
-              </button>
-              <button
-                onClick={() => router.push('/dashboard/circles')}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Back to Circles
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <DashNavbar />
       <MobileHeader title="Family" RightIcon={Plus} rightIconClick={() => setIsMemberModalOpen(true)} />
-      <div className="px-[7%] max-[769px]:px-4 py-6">
+      <div className="px-[7%] max-[769px]:px-4 py-3">
+        {loading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
+            <p>Loading circle details...</p>
+          </div>
+        ) : error || !circle ? (
+          <div className="text-center py-8">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+              <p className="text-red-600 font-semibold mb-2">Error Loading Circle</p>
+              <p className="text-red-500 text-sm">{error || 'Circle not found'}</p>
+              <div className="flex gap-4 justify-center mt-4">
+                <button
+                  onClick={fetchCircleData}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => router.push('/dashboard/circles')}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Back to Circles
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
 
         <div className="flex justify-between items-center flex-wrap gap-2 max-[769px]:hidden">
           <TitleCard title={circle.name} />
@@ -276,7 +266,8 @@ const CircleById = ({ params }: CircleByIdProps) => {
             </div>
           </div>
         </GlobalModal>
-
+          </>
+        )}
       </div>
     </>
   );
