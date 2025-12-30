@@ -6,12 +6,14 @@ import GlobalButton from '@/components/buttons/GlobalButton';
 import { authService } from '@/lib/supabase/auth';
 import AuthLayout from '@/components/authLayout/AuthLayout';
 import FloatingInput from '@/components/inputs/FloatingInput';
+import { Eye, EyeOff } from 'lucide-react';
 
 const SignIn = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -30,9 +32,9 @@ const SignIn = () => {
       return;
     }
     setLoading(true);
-    const response = loginMode === 'email' 
-    ? await authService.signInWithEmail({ email, password })
-    : await authService.signInWithPhone({ phone, password });
+    const response = loginMode === 'email'
+      ? await authService.signInWithEmail({ email, password })
+      : await authService.signInWithPhone({ phone, password });
     console.log("Sign in response:", response);
 
     setLoading(false);
@@ -79,22 +81,20 @@ const SignIn = () => {
           <button
             type="button"
             onClick={() => setLoginMode('email')}
-            className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-              loginMode === 'email' 
-                ? 'bg-pink-500 text-white' 
+            className={`flex-1 py-2 px-4 rounded-md transition-colors ${loginMode === 'email'
+                ? 'bg-pink-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Email
           </button>
           <button
             type="button"
             onClick={() => setLoginMode('phone')}
-            className={`flex-1 py-2 px-4 rounded-md transition-colors ${
-              loginMode === 'phone' 
-                ? 'bg-pink-500 text-white' 
+            className={`flex-1 py-2 px-4 rounded-md transition-colors ${loginMode === 'phone'
+                ? 'bg-pink-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+              }`}
           >
             Phone
           </button>
@@ -125,21 +125,34 @@ const SignIn = () => {
           />
         )}
 
-        <FloatingInput
-          id={"password"}
-          title='Password'
-          width='100%'
-          height='46px'
-          className="mt-6"
-          type='password'
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSignIn();
-            }
-          }}
-        />
+        <div className="relative mt-6">
+          <FloatingInput
+            id={"password"}
+            title='Password'
+            width='100%'
+            height='46px'
+            type={showPassword ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSignIn();
+              }
+            }}
+            inputClassName="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-black cursor-pointer focus:outline-none"
+          >
+            {showPassword ? (
+              <EyeOff size={18} />
+            ) : (
+              <Eye size={18} />
+            )}
+          </button>
+        </div>
 
         <p
           className='text-right font-medium text-sm my-3 cursor-pointer hover:text-pink-600'

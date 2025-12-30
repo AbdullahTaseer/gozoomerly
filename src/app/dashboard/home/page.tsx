@@ -27,69 +27,69 @@ const Home = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [viewMode, setViewMode] = useState<'grid' | 'layers'>('grid');
-  const [counts, setCounts] = useState({
-    new: 0,
-    active: 0,
-    your: 0,
-    past: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  // const [counts, setCounts] = useState({
+  //   new: 0,
+  //   active: 0,
+  //   your: 0,
+  //   past: 0,
+  // });
+  // const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadCounts();
-  }, []);
+  // useEffect(() => {
+  //   loadCounts();
+  // }, []);
 
-  const loadCounts = async () => {
-    try {
-      setLoading(true);
-      const user = await authService.getUser();
+  // const loadCounts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const user = await authService.getUser();
 
-      if (!user) {
-        console.error('No user logged in');
-        setLoading(false);
-        return;
-      }
+  //     if (!user) {
+  //       console.error('No user logged in');
+  //       setLoading(false);
+  //       return;
+  //     }
 
-      const [
-        { boards: activeBoards },
-        { boards: userBoards },
-        { boards: allBoards },
-      ] = await Promise.all([
-        fetchActiveBoards({
-          userId: user.id,
-          includeStatus: ['published'],
-        }),
-        fetchUserBoards(user.id),
-        fetchActiveBoards({
-          userId: user.id,
-          showAll: true,
-        }),
-      ]);
+  //     const [
+  //       { boards: activeBoards },
+  //       { boards: userBoards },
+  //       { boards: allBoards },
+  //     ] = await Promise.all([
+  //       fetchActiveBoards({
+  //         userId: user.id,
+  //         includeStatus: ['published'],
+  //       }),
+  //       fetchUserBoards(user.id),
+  //       fetchActiveBoards({
+  //         userId: user.id,
+  //         showAll: true,
+  //       }),
+  //     ]);
 
-      const activeCount = activeBoards?.length || 0;
-      const yourCount = userBoards?.length || 0;
-      const newCount = boardInvitations.length;
+  //     const activeCount = activeBoards?.length || 0;
+  //     const yourCount = userBoards?.length || 0;
+  //     const newCount = boardInvitations.length;
 
-      const pastCount = (allBoards || []).filter((board: Board) => {
-        if (board.status === 'completed' || board.status === 'cancelled') return true;
-        if (board.deadline_date) {
-          return new Date(board.deadline_date) < new Date();
-        }
-        return false;
-      }).length;
+  //     const pastCount = (allBoards || []).filter((board: Board) => {
+  //       if (board.status === 'completed' || board.status === 'cancelled') return true;
+  //       if (board.deadline_date) {
+  //         return new Date(board.deadline_date) < new Date();
+  //       }
+  //       return false;
+  //     }).length;
 
-      setCounts({
-        new: newCount,
-        active: activeCount,
-        your: yourCount,
-        past: pastCount,
-      });
-    } catch (err) {
-      console.error('Error loading board counts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setCounts({
+  //       new: newCount,
+  //       active: activeCount,
+  //       your: yourCount,
+  //       past: pastCount,
+  //     });
+  //   } catch (err) {
+  //     console.error('Error loading board counts:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div>
@@ -197,7 +197,7 @@ const Home = () => {
                 </button>
               </div>
 
-              <div className='flex items-center justify-between gap-4 mt-4'>
+              <div className='flex max-w-[745px] mx-auto items-center justify-between gap-4 mt-4'>
                 <TitleCard title='Feed' className='text-left' />
                 <HomeFeedFilters
                   selectedFilter={selectedFilter}
