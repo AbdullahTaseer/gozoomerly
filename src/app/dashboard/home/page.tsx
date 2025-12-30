@@ -20,7 +20,7 @@ import HomeMainTabs from '@/components/filters/HomeMainTabs';
 import ComingSoonCard from '@/components/cards/ComingSoonCard';
 import ZoiaxProCard from '@/components/zoiax/ZoiaxProCard';
 import AmbassadorForm from '@/components/zoiax/AmbassadorForm';
-import { Search, Grid3x3, Layers } from 'lucide-react';
+import { Search, Layers, Grid2x2 } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 
 const Home = () => {
@@ -184,7 +184,7 @@ const Home = () => {
                     : 'bg-white hover:opacity-80'
                     }`}
                 >
-                  <Grid3x3 size={18} className={viewMode === 'grid' ? 'text-white' : 'text-black'} />
+                  <Grid2x2 size={18} className={viewMode === 'grid' ? 'text-white' : 'text-black'} />
                 </button>
                 <button
                   onClick={() => setViewMode('layers')}

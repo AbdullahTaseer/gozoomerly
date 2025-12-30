@@ -1,29 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import GlobalButton from '@/components/buttons/GlobalButton';
 
-interface ComingSoonCardProps {
-  launchDate?: Date;
-}
-
-const ComingSoonCard: React.FC<ComingSoonCardProps> = ({ launchDate }) => {
-  // Default launch date: 10 days, 22 hours, 56 minutes from now
-  const defaultLaunchTimestamp =
-    Date.now() +
-    10 * 24 * 60 * 60 * 1000 +
-    22 * 60 * 60 * 1000 +
-    56 * 60 * 1000;
-
-  const launchTimestampRef = useRef<number>(
-    launchDate ? launchDate.getTime() : defaultLaunchTimestamp
-  );
-
-  useEffect(() => {
-    if (launchDate) {
-      launchTimestampRef.current = launchDate.getTime();
-    }
-  }, [launchDate]);
+const ComingSoonCard: React.FC = () => {
+  const launchDate = new Date('2026-01-10T00:00:00').getTime();
 
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -36,7 +17,7 @@ const ComingSoonCard: React.FC<ComingSoonCardProps> = ({ launchDate }) => {
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = Date.now();
-      const distance = launchTimestampRef.current - now;
+      const distance = launchDate - now;
 
       if (distance > 0) {
         setTimeLeft({
@@ -53,14 +34,11 @@ const ComingSoonCard: React.FC<ComingSoonCardProps> = ({ launchDate }) => {
       }
     };
 
-    // Initial calculation
     calculateTimeLeft();
-
-    // Update once per minute
-    const interval = setInterval(calculateTimeLeft, 60000);
+    const interval = setInterval(calculateTimeLeft, 60000); // update every minute
 
     return () => clearInterval(interval);
-  }, []);
+  }, [launchDate]);
 
   const formatNumber = (num: number) => num.toString().padStart(2, '0');
 
