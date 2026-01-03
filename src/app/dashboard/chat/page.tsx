@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Search, X, Plus } from 'lucide-react';
 import TitleCard from '@/components/cards/TitleCard';
@@ -15,6 +15,7 @@ import BoardsTab from '@/components/chat/BoardsTab';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteChatModal from '@/components/chat/InviteChatModal';
 import { getConversation } from '@/lib/supabase/chat';
+import { chatOpenState } from '@/lib/chatOpenState';
 
 const ChatPage = () => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -46,6 +47,15 @@ const ChatPage = () => {
     filteredConversations,
     shouldShowHeader,
   } = useChat();
+
+  // Update chat open state when conversation is selected/deselected
+  useEffect(() => {
+    chatOpenState.setOpen(!!selectedConversation);
+    return () => {
+      // Reset when component unmounts
+      chatOpenState.setOpen(false);
+    };
+  }, [selectedConversation]);
 
   const handleConversationStart = async (conversationId: string) => {
     if (!currentUserId) return;
