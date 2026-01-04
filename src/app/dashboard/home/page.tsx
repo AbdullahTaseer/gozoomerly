@@ -184,7 +184,7 @@ const Home = () => {
         {/* <BoardCategoryCard
           count={spotlightCampaigns.length}
           label="Spotlight Compaigns"
-          path="/dashboard/spotlight-compaign"
+          path="/dashboard/allBoards/spotlight-compaign"
         /> */}
 
         {/* <div className='py-8'>

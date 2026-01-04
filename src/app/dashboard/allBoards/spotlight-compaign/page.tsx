@@ -7,7 +7,6 @@ import React from 'react';
 const SpotlightCampaigns = () => {
   return (
     <>
-      <DashNavbar hide={false} />
       <div className='py-8 px-[7%] max-[769px]:px-3'>
         <TitleCard title='Spotlight Campaigns' className='text-left' />
         <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full'>
@@ -37,3 +36,4 @@ const SpotlightCampaigns = () => {
 };
 
 export default SpotlightCampaigns;
+
