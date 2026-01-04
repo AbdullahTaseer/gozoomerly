@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { X } from 'lucide-react';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
+import ConnectionCard from '@/components/cards/ConnectionCard';
 import { createClient } from '@/lib/supabase/client';
 import { AuthService } from '@/lib/supabase/auth';
 import { getOrCreateDirectConversation } from '@/lib/supabase/chat';
+import { inviteContacts } from '@/lib/MockData';
 
 interface User {
   id: string;
@@ -16,12 +17,6 @@ interface User {
   status?: string;
 }
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-  profile_pic_url?: string;
-}
 
 interface InviteChatModalProps {
   isOpen: boolean;
@@ -35,7 +30,6 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
   onStartConversation,
 }) => {
   const [contactsOnZoiax, setContactsOnZoiax] = useState<User[]>([]);
-  const [inviteContacts, setInviteContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const authService = new AuthService();
@@ -76,37 +70,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         setContactsOnZoiax(usersWithStatus);
       }
 
-      // TODO: Load phone contacts from device
-      // For now, using mock data for invite contacts
-      // In a real implementation, you would use a contacts API
-      const mockInviteContacts: Contact[] = [
-        {
-          id: '1',
-          name: 'Jordan',
-          phone: '555-0123',
-        },
-        {
-          id: '2',
-          name: 'Anna',
-          phone: '555-0123',
-        },
-        {
-          id: '3',
-          name: 'Jamie',
-          phone: '555-0123',
-        },
-        {
-          id: '4',
-          name: 'Casey',
-          phone: '555-0123',
-        },
-        {
-          id: '5',
-          name: 'Morgan',
-          phone: '555-0123',
-        },
-      ];
-      setInviteContacts(mockInviteContacts);
+      // Invite contacts are loaded from MockData
     } catch (err) {
       console.error('Error loading contacts:', err);
     } finally {
@@ -136,7 +100,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
     }
   };
 
-  const handleInvite = (contact: Contact) => {
+  const handleInvite = (contact: typeof inviteContacts[0]) => {
     console.log('Inviting contact:', contact);
     alert(`Invite sent to ${contact.name} at ${contact.phone}`);
   };
@@ -174,33 +138,19 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
           {/* Contacts on Zoiax */}
           <div>
             <h3 className="text-black text-base mb-3">Contacts on Zoiax</h3>
-            <div>
+            <div className="space-y-4">
               {contactsOnZoiax.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-4">No contacts found</p>
               ) : (
                 contactsOnZoiax.map((user) => (
-                  <button
+                  <ConnectionCard
                     key={user.id}
+                    profileImage={user.profile_pic_url || ProfileAvatar}
+                    name={user.name}
+                    username={user.status || user.email || 'Have a nice day!'}
+                    isFollowing={true}
                     onClick={() => handleStartConversation(user.id)}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 border-b transition-colors"
-                  >
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                      <Image
-                        src={user.profile_pic_url || ProfileAvatar}
-                        alt={user.name}
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          const target = e.currentTarget as HTMLImageElement;
-                          target.src = ProfileAvatar.src || ProfileAvatar;
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="font-medium text-sm text-black truncate">{user.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{user.status || 'Have a nice day!'}</p>
-                    </div>
-                  </button>
+                  />
                 ))
               )}
             </div>
@@ -209,42 +159,20 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
           {/* Invite to Zoiax */}
           <div>
             <h3 className="text-black text-base mb-3">Invite to Zoiax</h3>
-            <div>
+            <div className="space-y-4">
               {inviteContacts.length === 0 ? (
                 <p className="text-sm text-gray-500 text-center py-4">No contacts to invite</p>
               ) : (
                 inviteContacts.map((contact) => (
-                  <div
+                  <ConnectionCard
                     key={contact.id}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 border-b transition-colors"
-                  >
-                    <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-gray-200">
-                      {contact.profile_pic_url ? (
-                        <Image
-                          src={contact.profile_pic_url}
-                          alt={contact.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <span className="text-gray-500 text-xs font-medium">
-                            {contact.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="font-medium text-sm text-black truncate">{contact.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{contact.phone}</p>
-                    </div>
-                    <button
-                      onClick={() => handleInvite(contact)}
-                      className="text-pink-500 hover:text-pink-600 font-medium text-sm px-3 py-1.5 flex-shrink-0"
-                    >
-                      Invite
-                    </button>
-                  </div>
+                    profileImage={contact.profile_pic_url || ProfileAvatar}
+                    name={contact.name}
+                    username={contact.phone}
+                    isFollowing={false}
+                    buttonText="Invite"
+                    onClick={() => handleInvite(contact)}
+                  />
                 ))
               )}
             </div>
@@ -288,7 +216,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         onClick={onClose}
       >
         <div
-          className={`bg-white rounded-2xl shadow-2xl w-[90%] max-w-md transition-all duration-300 ${
+          className={`bg-white rounded-2xl shadow-2xl w-[90%] max-w-xl transition-all duration-300 ${
             isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
           }`}
           onClick={(e) => e.stopPropagation()}

@@ -866,3 +866,38 @@ export const feedCardData: FeedCardData[] = [
     memories: 73,
   },
 ];
+
+export interface InviteContact {
+  id: string;
+  name: string;
+  phone: string;
+  profile_pic_url?: string;
+}
+
+export const inviteContacts: InviteContact[] = [
+  {
+    id: '1',
+    name: 'Jordan',
+    phone: '555-0123',
+  },
+  {
+    id: '2',
+    name: 'Anna',
+    phone: '555-0123',
+  },
+  {
+    id: '3',
+    name: 'Jamie',
+    phone: '555-0123',
+  },
+  {
+    id: '4',
+    name: 'Casey',
+    phone: '555-0123',
+  },
+  {
+    id: '5',
+    name: 'Morgan',
+    phone: '555-0123',
+  },
+];

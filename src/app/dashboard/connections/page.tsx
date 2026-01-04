@@ -13,6 +13,7 @@ import storyBackground2 from "@/assets/svgs/gifts/gift-3.svg";
 import storyBackground3 from "@/assets/svgs/gifts/gift-1.svg";
 import MobileHeader from '@/components/navbar/MobileHeader';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import { inviteContacts } from '@/lib/MockData';
 
 const statusCards = [
   {
@@ -62,6 +63,7 @@ const connectionCards = [
     profileImage: ProfileAvatar,
     name: 'Anna',
     username: '@alexjohnson',
+    isFollowing: false
   },
   {
     profileImage: ProfileAvatar,
@@ -72,6 +74,7 @@ const connectionCards = [
     profileImage: ProfileAvatar,
     name: 'Alex',
     username: '@alex123',
+    isFollowing: false
   },
   {
     profileImage: ProfileAvatar,
@@ -82,7 +85,6 @@ const connectionCards = [
 
 const Connections = () => {
   const [selectedFilter, setSelectedFilter] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
 
   const handleAddStatus = () => {
     console.log('Add status clicked');
@@ -92,27 +94,19 @@ const Connections = () => {
     console.log('Status clicked:', name);
   };
 
-  const handleFollowingClick = (name: string) => {
-    console.log('Following clicked for:', name);
-  };
-
   const handleChatClick = (name: string) => {
     console.log('Chat clicked for:', name);
   };
 
-  const handleUnfollowClick = (name: string) => {
-    console.log('Unfollow clicked for:', name);
-    // Add your unfollow logic here
+  const handleInvite = (contact: { name: string; phone: string }) => {
+    console.log('Inviting contact:', contact);
+    alert(`Invite sent to ${contact.name} at ${contact.phone}`);
   };
 
-  const handleBlockClick = (name: string) => {
-    console.log('Block clicked for:', name);
-    // Add your block logic here
-  };
 
   return (
     <>
-    <DashNavbar/>
+      <DashNavbar />
       <MobileHeader title="Connections" />
       <div className='px-[7%] max-[769px]:px-4 pb-8'>
         <div className='mt-6'>
@@ -152,14 +146,31 @@ const Connections = () => {
               profileImage={connection.profileImage}
               name={connection.name}
               username={connection.username}
-              isFollowing={true}
-              onFollowingClick={() => handleFollowingClick(connection.name)}
-              onChatClick={() => handleChatClick(connection.name)}
-              onUnfollowClick={() => handleUnfollowClick(connection.name)}
-              onBlockClick={() => handleBlockClick(connection.name)}
+              isFollowing={connection.isFollowing}
+              onClick={() => handleChatClick(connection.name)}
             />
           ))}
         </div>
+
+        {/* Invite to Zoiax Section */}
+        {inviteContacts.length > 0 && (
+          <div className='mt-8'>
+            <h3 className="text-black text-lg font-semibold mb-4">Invite to Zoiax</h3>
+            <div className='space-y-4'>
+              {inviteContacts.map((contact) => (
+                <ConnectionCard
+                  key={contact.id}
+                  profileImage={ProfileAvatar}
+                  name={contact.name}
+                  username={contact.phone}
+                  isFollowing={false}
+                  buttonText="Invite"
+                  onClick={() => handleInvite(contact)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
