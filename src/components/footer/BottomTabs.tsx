@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Layers, MessageCircle, Plus, UserPlus } from "lucide-react";
+import { Home, Layers, MessageCircle, Plus, UserPlus, Award } from "lucide-react";
 import { ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
@@ -38,31 +38,25 @@ const BottomTabs = () => {
 
         <div className="h-[70px] bg-[#18171f] rounded-t-3xl flex items-center justify-between px-8 max-[380px]:px-4 shadow-xl">
 
-          <div className="relative">
-            <TabItem
-              icon={<Layers size={22} />}
-              label="Home"
-              active={pathname.startsWith("/dashboard")}
-              onClick={() => router.push("/dashboard")}
-            />
-
-            <span className="absolute -top-1 -right-2 bg-pink-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-              2
-            </span>
-          </div>
+          <TabItem
+            icon={<Home size={22} />}
+            label="Home"
+            active={pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/pro")}
+            onClick={() => router.push("/dashboard")}
+          />
 
           <TabItem
-            icon={<UserPlus />}
-            label="Connections"
-            active={pathname === "/dashboard/connections"}
-            onClick={() => router.push("/dashboard/connections")}
+            icon={<Award size={22} />}
+            label="Pro"
+            active={pathname.startsWith("/dashboard/pro")}
+            onClick={() => router.push("/dashboard/pro")}
           />
 
           <div className="w-12" />
 
           <TabItem
             icon={<MessageCircle size={22} />}
-            label="Chat"
+            label="Chats"
             active={pathname.startsWith("/dashboard/chat")}
             onClick={() => router.push("/dashboard/chat")}
           />

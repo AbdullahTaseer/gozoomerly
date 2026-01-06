@@ -8,7 +8,7 @@ import AnimatedButton from '../buttons/AnimatedButton';
 import BellIconIndicator from '../cards/BellIconIndicator';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 
-const desktopOptions = ["Home", "Boards", "Chat", "Circles", "Connections", "Profile"];
+const desktopOptions = ["Home", "Boards", "Pro", "Chat", "Circles", "Connections", "Profile"];
 
 type props = {
   hide?: boolean;
@@ -24,6 +24,9 @@ const DashNavbar = ({ hide = true }: props) => {
     }
     if (option === "Boards") {
       return pathname === "/dashboard/allBoards";
+    }
+    if (option === "Pro") {
+      return pathname.startsWith("/dashboard/pro");
     }
     if (option === "Chat") {
       return pathname === "/dashboard/chat";
@@ -54,6 +57,9 @@ const DashNavbar = ({ hide = true }: props) => {
         break;
       case "Boards":
         router.push("/dashboard/allBoards");
+        break;
+      case "Pro":
+        router.push("/dashboard/pro");
         break;
       case "Chat":
         router.push("/dashboard/chat");
