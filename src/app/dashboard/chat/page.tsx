@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { Search, X, Plus } from 'lucide-react';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
@@ -14,11 +15,13 @@ import ConnectionsTab from '@/components/chat/ConnectionsTab';
 import BoardsTab from '@/components/chat/BoardsTab';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteChatModal from '@/components/chat/InviteChatModal';
-import { getConversation } from '@/lib/supabase/chat';
+import { getConversation, getUserConversations } from '@/lib/supabase/chat';
 import { chatOpenState } from '@/lib/chatOpenState';
 
 const ChatPage = () => {
+  const searchParams = useSearchParams();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [conversationIdLoaded, setConversationIdLoaded] = useState(false);
 
   const {
     currentUserId,
@@ -48,6 +51,21 @@ const ChatPage = () => {
     shouldShowHeader,
   } = useChat();
 
+  // Handle conversationId or userId from URL query parameter
+  useEffect(() => {
+    const conversationId = searchParams.get('conversationId');
+    const userId = searchParams.get('userId');
+    
+    if (conversationId && currentUserId && !conversationIdLoaded) {
+      handleConversationStart(conversationId);
+      setConversationIdLoaded(true);
+    } else if (userId && currentUserId && !conversationIdLoaded) {
+      // Start conversation with the userId
+      handleStartConversation(userId);
+      setConversationIdLoaded(true);
+    }
+  }, [searchParams, currentUserId, conversationIdLoaded, handleStartConversation]);
+
   // Update chat open state when conversation is selected/deselected
   useEffect(() => {
     chatOpenState.setOpen(!!selectedConversation);
@@ -61,13 +79,27 @@ const ChatPage = () => {
     if (!currentUserId) return;
 
     try {
+      // First try to get the conversation with full details
       const { conversation, error } = await getConversation(conversationId, currentUserId);
+      
       if (error) {
-        console.error('Error loading conversation:', error);
-        alert('Failed to load conversation. Please try again.');
+        console.error('Error loading conversation with getConversation:', error);
+        // Fallback: try to find it in the conversations list from getUserConversations
+        const { conversations: convs } = await getUserConversations(currentUserId);
+        if (convs && convs.length > 0) {
+          const foundConversation = convs.find(c => c.id === conversationId);
+          if (foundConversation) {
+            setSelectedConversation(foundConversation);
+            return;
+          }
+        }
+        console.error('Conversation not found:', conversationId);
+        alert('Failed to load conversation. The conversation may not exist or you may not have access to it.');
       } else if (conversation) {
+        // Successfully loaded conversation
         setSelectedConversation(conversation);
-        // The conversation list will update on next page refresh or navigation
+      } else {
+        alert('Failed to load conversation. Please try again.');
       }
     } catch (err) {
       console.error('Error starting conversation:', err);

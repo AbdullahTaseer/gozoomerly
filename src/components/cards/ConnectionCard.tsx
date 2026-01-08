@@ -9,6 +9,7 @@ interface ConnectionCardProps {
   username: string;
   isFollowing?: boolean;
   onClick?: () => void;
+  onCardClick?: () => void;
   buttonText?: string;
 }
 
@@ -18,11 +19,15 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
   username,
   isFollowing = true,
   onClick,
+  onCardClick,
   buttonText,
 }) => {
 
   return (
-    <div className='bg-[#F7F7F7] rounded-[8px] p-4 flex items-center gap-4 relative'>
+    <div 
+      className={`bg-[#F7F7F7] rounded-[8px] p-4 flex items-center gap-4 relative ${onCardClick ? 'cursor-pointer hover:bg-[#F0F0F0] transition-colors' : ''}`}
+      onClick={onCardClick}
+    >
       <div className='flex items-center max-[500px]:items-start gap-4 flex-1 min-w-0 w-full'>
         <div className='shrink-0 h-11 w-11 relative'>
           <Image
@@ -40,7 +45,10 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
 
         </div>
         <button
-          onClick={onClick}
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent card click when button is clicked
+            onClick?.();
+          }}
           className={`px-4 py-2 cursor-pointer text-sm font-medium rounded-full hover:opacity-90 transition-opacity whitespace-nowrap ${buttonText === "Invite"
             ? "bg-transparent text-orange-500"
             : isFollowing

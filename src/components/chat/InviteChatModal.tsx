@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import ConnectionCard from '@/components/cards/ConnectionCard';
 import { createClient } from '@/lib/supabase/client';
 import { AuthService } from '@/lib/supabase/auth';
-import { getOrCreateDirectConversation } from '@/lib/supabase/chat';
 import { inviteContacts } from '@/lib/MockData';
 
 interface User {
@@ -29,6 +29,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
   onClose,
   onStartConversation,
 }) => {
+  const router = useRouter();
   const [contactsOnZoiax, setContactsOnZoiax] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -78,26 +79,10 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
     }
   };
 
-  const handleStartConversation = async (userId: string) => {
-    if (!currentUserId) return;
-
-    try {
-      const { conversation, error } = await getOrCreateDirectConversation(
-        currentUserId,
-        userId
-      );
-
-      if (error) {
-        console.error('Error creating conversation:', error);
-        alert('Failed to start conversation. Please try again.');
-      } else if (conversation) {
-        onStartConversation?.(conversation.id);
-        onClose();
-      }
-    } catch (err) {
-      console.error('Error starting conversation:', err);
-      alert('Failed to start conversation. Please try again.');
-    }
+  const handleStartConversation = (userId: string) => {
+    // Navigate to chat page with userId - the chat page will handle creating/opening the conversation
+    router.push(`/dashboard/chat?userId=${userId}`);
+    onClose();
   };
 
   const handleInvite = (contact: typeof inviteContacts[0]) => {

@@ -453,6 +453,7 @@ export async function getConversation(
 ): Promise<{ conversation: Conversation | null; error: any }> {
   const supabase = createClient();
 
+  // First check if user is a participant
   const { data: participant } = await supabase
     .from('conversation_participants')
     .select('*')
@@ -464,40 +465,107 @@ export async function getConversation(
     return { conversation: null, error: new Error('Not a participant') };
   }
 
-  const { data, error } = await supabase
+  // Get conversation data
+  const { data: convData, error: convError } = await supabase
     .from('conversations')
-    .select(`
-      *,
-      participants:conversation_participants (
-        id,
-        conversation_id,
-        user_id,
-        joined_at,
-        last_read_at,
-        user:user_id (
-          id,
-          name,
-          profile_pic_url
-        )
-      )
-    `)
+    .select('*')
     .eq('id', conversationId)
     .single();
 
-  if (error || !data) {
-    return { conversation: null, error };
+  if (convError || !convData) {
+    return { conversation: null, error: convError || new Error('Conversation not found') };
+  }
+
+  // Get participants manually (similar to getUserConversations)
+  let participantsData: RawParticipantData[] | null;
+  let participantsError: any;
+
+  const participantsQuery = await supabase
+    .from('conversation_participants')
+    .select('id, conversation_id, user_id, joined_at, last_read_at')
+    .eq('conversation_id', conversationId);
+
+  participantsData = participantsQuery.data;
+  participantsError = participantsQuery.error;
+
+  // Handle case where last_read_at might not exist
+  if (participantsError && (participantsError.message?.includes('last_read_at') || participantsError.code === '42703')) {
+    const retry = await supabase
+      .from('conversation_participants')
+      .select('id, conversation_id, user_id, joined_at')
+      .eq('conversation_id', conversationId);
+    
+    participantsData = retry.data as RawParticipantData[] | null;
+    participantsError = retry.error;
+  }
+
+  if (participantsError) {
+    console.error('Error fetching participants:', participantsError);
+    return { conversation: null, error: participantsError };
+  }
+
+  // Fetch profile data for each participant
+  const participants = await Promise.all(
+    (participantsData || []).map(async (p: any) => {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, name, profile_pic_url')
+        .eq('id', p.user_id)
+        .single();
+
+      return {
+        id: p.id,
+        conversation_id: p.conversation_id,
+        user_id: p.user_id,
+        joined_at: p.joined_at || new Date().toISOString(),
+        last_read_at: p.last_read_at || undefined,
+        user: profileData ? {
+          id: profileData.id,
+          name: profileData.name || 'Unknown User',
+          profile_pic_url: profileData.profile_pic_url,
+        } : {
+          id: p.user_id,
+          name: 'Unknown User',
+          profile_pic_url: undefined,
+        },
+      };
+    })
+  );
+
+  // Get last message if not in conversation data
+  let lastMessage = convData.last_message;
+  let lastMessageAt = convData.last_message_at;
+  
+  if (!lastMessage) {
+    try {
+      const { data: lastMsgData } = await supabase
+        .from('messages')
+        .select('content, file_name, created_at')
+        .eq('conversation_id', conversationId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (lastMsgData) {
+        lastMessage = lastMsgData.content || lastMsgData.file_name || 'Media';
+        lastMessageAt = lastMessageAt || lastMsgData.created_at;
+      }
+    } catch (err) {
+      console.warn('Could not fetch last message for conversation:', conversationId, err);
+    }
   }
 
   const conversation: Conversation = {
-    id: data.id,
-    type: data.type,
-    name: data.name,
-    created_by: data.created_by,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    last_message_at: data.last_message_at,
-    last_message: data.last_message,
-    participants: data.participants || [],
+    id: convData.id,
+    type: convData.type,
+    name: convData.name,
+    created_by: convData.created_by,
+    created_at: convData.created_at,
+    updated_at: convData.updated_at,
+    last_message_at: lastMessageAt,
+    last_message: lastMessage,
+    participants: participants,
   };
 
   return { conversation, error: null };
