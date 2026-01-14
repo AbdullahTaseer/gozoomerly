@@ -9,6 +9,7 @@ import {
   uploadMessageFile,
   markConversationAsRead,
   getOrCreateDirectConversation,
+  getConversation,
   searchUsers,
   type Conversation,
 } from '@/lib/supabase/chat';
@@ -34,6 +35,7 @@ export const useChat = () => {
   const [selectedTab, setSelectedTab] = useState<'Connections' | 'Boards'>('Connections');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isSettingProgrammaticallyRef = useRef(false);
 
   useEffect(() => {
     async function getCurrentUser() {
@@ -43,7 +45,42 @@ export const useChat = () => {
         return;
       }
       setCurrentUserId(user.id);
-      loadConversations(user.id);
+      
+      await loadConversations(user.id);
+      
+      // Only restore from localStorage if there's no URL param (let URL params take priority)
+      // Check if we're on the chat page and if there are URL params
+      const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/dashboard/chat');
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const hasUrlParams = urlParams && (urlParams.get('conversationId') || urlParams.get('userId'));
+      
+      // Only restore from localStorage if no URL params are present
+      if (!hasUrlParams) {
+        const savedConversationId = localStorage.getItem('selectedConversationId');
+        
+        if (savedConversationId) {
+          try {
+            const { conversation, error } = await getConversation(savedConversationId, user.id);
+            if (!error && conversation) {
+              setSelectedConversation(conversation);
+              // Update conversations list with the restored conversation
+              setConversations(prev => {
+                const existing = prev.find(c => c.id === conversation.id);
+                if (existing) {
+                  return prev.map(c => c.id === conversation.id ? conversation : c);
+                }
+                return [conversation, ...prev];
+              });
+            } else {
+              // Clear invalid saved conversation
+              localStorage.removeItem('selectedConversationId');
+            }
+          } catch (err) {
+            console.error('Error restoring conversation:', err);
+            localStorage.removeItem('selectedConversationId');
+          }
+        }
+      }
     }
     getCurrentUser();
   }, [router]);
@@ -99,23 +136,6 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
-  useEffect(() => {
-    if (selectedConversation && currentUserId) {
-      loadMessages(selectedConversation.id);
-      markConversationAsRead(selectedConversation.id, currentUserId);
-    }
-  }, [selectedConversation, currentUserId]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      if (selectedTab === 'Connections' && selectedConversation.type !== 'direct') {
-        setSelectedConversation(null);
-      } else if (selectedTab === 'Boards' && selectedConversation.type !== 'group') {
-        setSelectedConversation(null);
-      }
-    }
-  }, [selectedTab, selectedConversation]);
-
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!currentUserId) return;
 
@@ -150,38 +170,39 @@ export const useChat = () => {
           };
         });
 
+        // Optimize: Only fetch unique sender profiles to avoid duplicate requests
         const messagesNeedingProfiles = chatMessages.filter(
           m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
         );
+        
+        const uniqueSenderIds = [...new Set(messagesNeedingProfiles.map(m => m.senderId))];
 
-        if (messagesNeedingProfiles.length > 0 && currentUserId) {
+        if (uniqueSenderIds.length > 0 && currentUserId) {
           const { createClient } = await import('@/lib/supabase/client');
           const supabase = createClient();
 
-          await Promise.all(
-            messagesNeedingProfiles.map(async (msg) => {
-              try {
-                const { data: profileData } = await supabase
-                  .from('profiles')
-                  .select('id, name, profile_pic_url')
-                  .eq('id', msg.senderId)
-                  .single();
+          // Batch fetch all unique profiles at once
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, name, profile_pic_url')
+            .in('id', uniqueSenderIds);
 
-                if (profileData) {
-                  const index = chatMessages.findIndex(m => m.id === msg.id);
-                  if (index !== -1) {
-                    chatMessages[index].user = {
-                      id: profileData.id,
-                      name: profileData.name || 'Unknown User',
-                      avatar: profileData.profile_pic_url || undefined,
-                    };
-                  }
+          if (profilesData) {
+            const profileMap = new Map(profilesData.map(p => [p.id, p]));
+            messagesNeedingProfiles.forEach(msg => {
+              const profile = profileMap.get(msg.senderId);
+              if (profile) {
+                const index = chatMessages.findIndex(m => m.id === msg.id);
+                if (index !== -1) {
+                  chatMessages[index].user = {
+                    id: profile.id,
+                    name: profile.name || 'Unknown User',
+                    avatar: profile.profile_pic_url || undefined,
+                  };
                 }
-              } catch (err) {
-                console.warn('Could not fetch profile for message:', msg.id, err);
               }
-            })
-          );
+            });
+          }
         }
         setMessages(chatMessages);
         setTimeout(() => {
@@ -193,6 +214,56 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
+  useEffect(() => {
+    if (selectedConversation && currentUserId) {
+      // Save selected conversation to localStorage for restoration after reload
+      localStorage.setItem('selectedConversationId', selectedConversation.id);
+      
+      // Optimize: Load messages and fetch full conversation in parallel if needed
+      const needsFullConversation = selectedConversation.type === 'direct' && 
+        (!selectedConversation.participants || 
+         selectedConversation.participants.length === 0 || 
+         !selectedConversation.participants.some((p: any) => p.user?.name));
+      
+      // Load messages immediately
+      loadMessages(selectedConversation.id);
+      
+      // Mark as read immediately
+      markConversationAsRead(selectedConversation.id, currentUserId).catch(err => {
+        console.error('Error marking conversation as read:', err);
+      });
+      
+      // Fetch full conversation in parallel if needed (non-blocking)
+      if (needsFullConversation) {
+        getConversation(selectedConversation.id, currentUserId).then(({ conversation: fullConv, error }) => {
+          if (!error && fullConv) {
+            setSelectedConversation(fullConv);
+            // Update in conversations list too
+            setConversations(prev => prev.map(conv => 
+              conv.id === fullConv.id ? fullConv : conv
+            ));
+          }
+        }).catch(err => {
+          console.error('Error fetching full conversation:', err);
+        });
+      }
+    } else {
+      // Clear saved conversation when none is selected
+      localStorage.removeItem('selectedConversationId');
+    }
+  }, [selectedConversation, currentUserId, loadMessages]);
+
+  useEffect(() => {
+    if (selectedConversation) {
+      if (selectedTab === 'Connections' && selectedConversation.type !== 'direct') {
+        setSelectedConversation(null);
+      } else if (selectedTab === 'Boards' && selectedConversation.type !== 'group') {
+        setSelectedConversation(null);
+      }
+    }
+  }, [selectedTab, selectedConversation]);
+
+
   const handleMessageReceived = useCallback((message: ChatMessage) => {
 
     if (selectedConversation && message.conversationId !== selectedConversation.id) {
@@ -202,7 +273,8 @@ export const useChat = () => {
             ? {
                 ...conv,
                 last_message: message.content || message.fileName || 'Media',
-                last_message_at: message.createdAt
+                last_message_at: message.createdAt,
+                last_message_id: message.id
               }
             : conv
         );
@@ -249,7 +321,8 @@ export const useChat = () => {
           ? {
               ...conv,
               last_message: message.content || message.fileName || 'Media',
-              last_message_at: message.createdAt
+              last_message_at: message.createdAt,
+              last_message_id: message.id
             }
           : conv
       );
@@ -272,6 +345,7 @@ export const useChat = () => {
           ...prev,
           last_message: message.content || message.fileName || 'Media',
           last_message_at: message.createdAt,
+          last_message_id: message.id,
         };
       }
       return prev;
@@ -296,95 +370,6 @@ export const useChat = () => {
     onMessageDeleted: handleMessageDeleted,
     enabled: !!selectedConversation && !!currentUserId,
   });
-
-  
-
-  useEffect(() => {
-    if (!selectedConversation || !currentUserId) return;
-
-    let pollInterval: NodeJS.Timeout | null = null;
-    const conversationId = selectedConversation.id;
-    let isPolling = false;
-
-    pollInterval = setInterval(async () => {
-      if (isPolling) return;
-      isPolling = true;
-
-      try {
-        const { messages: msgs } = await getConversationMessages(
-          conversationId,
-          currentUserId,
-          100
-        );
-
-        if (msgs && msgs.length > 0) {
-          setMessages(prev => {
-            const prevIds = new Set(prev.map(m => m.id));
-            const newMessages = msgs.filter(m => !prevIds.has(m.id));
-
-            if (newMessages.length > 0) {
-              const latestNewMessage = newMessages[newMessages.length - 1];
-
-              setConversations(prevConvs => {
-                const updated = prevConvs.map(conv =>
-                  conv.id === conversationId
-                    ? {
-                        ...conv,
-                        last_message: latestNewMessage.content || latestNewMessage.file_name || 'Media',
-                        last_message_at: latestNewMessage.created_at
-                      }
-                    : conv
-                );
-                const updatedConv = updated.find(c => c.id === conversationId);
-                if (updatedConv) {
-                  const others = updated.filter(c => c.id !== conversationId);
-                  const sortedOthers = others.sort((a, b) => {
-                    const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-                    const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-                    return timeB - timeA;
-                  });
-                  return [updatedConv, ...sortedOthers];
-                }
-                return updated;
-              });
-
-              const transformedNewMessages: ChatMessage[] = newMessages.map((msg: any) => ({
-                id: msg.id,
-                content: msg.content || '',
-                createdAt: msg.created_at,
-                user: {
-                  id: msg.sender_id,
-                  name: msg.sender?.name || 'Unknown',
-                  avatar: msg.sender?.profile_pic_url || undefined,
-                },
-                conversationId: msg.conversation_id,
-                senderId: msg.sender_id,
-                messageType: msg.message_type || 'text',
-                fileUrl: msg.file_url,
-                fileName: msg.file_name,
-              }));
-
-              const allMessages = [...prev, ...transformedNewMessages];
-              return allMessages.sort((a, b) =>
-                new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-              );
-            }
-            return prev;
-          });
-        }
-      } catch (err) {
-        console.error('Error polling for messages:', err);
-      } finally {
-        isPolling = false;
-      }
-    }, 1000);
-
-    return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
-      }
-    };
-  }, [selectedConversation?.id, currentUserId]);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -420,7 +405,25 @@ export const useChat = () => {
     if (!currentUserId) return;
 
     try {
-      const { conversation, error } = await getOrCreateDirectConversation(
+      // Check if conversation already exists in the list
+      const existingConversation = conversations.find(conv => 
+        conv.type === 'direct' && 
+        conv.participants?.some((p: any) => p.user_id === userId)
+      );
+
+      // If conversation exists, open it immediately without reloading
+      if (existingConversation) {
+        isSettingProgrammaticallyRef.current = true;
+        setSearchQuery('');
+        setShowSearchResults(false);
+        setSelectedConversation(existingConversation);
+        setTimeout(() => {
+          isSettingProgrammaticallyRef.current = false;
+        }, 100);
+        return;
+      }
+
+      const { conversation: newConversation, error } = await getOrCreateDirectConversation(
         currentUserId,
         userId
       );
@@ -429,36 +432,57 @@ export const useChat = () => {
         console.error('Error creating conversation:', error);
         const errorMessage = error?.message || JSON.stringify(error) || 'Unknown error';
         console.log(`Failed to start conversation: ${errorMessage}\n\nPlease make sure the database tables are set up correctly.`);
-      } else if (conversation) {
-        setSearchQuery('');
-        setShowSearchResults(false);
-
-        setConversations(prev => {
-          const unique = prev.filter((conv, index, self) =>
-            index === self.findIndex(c => c.id === conv.id)
-          );
-
-          const existingIndex = unique.findIndex(c => c.id === conversation.id);
-
-          if (existingIndex !== -1) {
-            const updated = [...unique];
-            updated[existingIndex] = conversation;
-            return updated;
-          } else {
-            return [conversation, ...unique];
-          }
-        });
-
-        setSelectedConversation(conversation);
-      } else {
-        alert('Failed to start conversation. No conversation was created.');
+        return;
       }
+
+      if (!newConversation) {
+        alert('Failed to start conversation. No conversation was created.');
+        return;
+      }
+
+      // Set the conversation immediately with basic data (optimistic update)
+      isSettingProgrammaticallyRef.current = true;
+      setSearchQuery('');
+      setShowSearchResults(false);
+
+      // Add to conversations list immediately
+      setConversations(prev => {
+        const unique = prev.filter((conv, index, self) =>
+          index === self.findIndex(c => c.id === conv.id)
+        );
+        const existingIndex = unique.findIndex(c => c.id === newConversation.id);
+        if (existingIndex !== -1) {
+          return unique;
+        }
+        return [newConversation, ...unique];
+      });
+
+      // Set conversation immediately so UI updates right away
+      setSelectedConversation(newConversation);
+
+      // Fetch full conversation with participants in background (non-blocking)
+      getConversation(newConversation.id, currentUserId).then(({ conversation: fullConversation, error: fetchError }) => {
+        if (!fetchError && fullConversation) {
+          // Update with full conversation data
+          setSelectedConversation(fullConversation);
+          setConversations(prev => prev.map(conv => 
+            conv.id === fullConversation.id ? fullConversation : conv
+          ));
+        }
+      }).catch(err => {
+        console.error('Error fetching full conversation:', err);
+      });
+
+      // Reset flag after a short delay
+      setTimeout(() => {
+        isSettingProgrammaticallyRef.current = false;
+      }, 100);
     } catch (err: any) {
       console.error('Error starting conversation:', err);
       const errorMessage = err?.message || JSON.stringify(err) || 'Unknown error';
       alert(`Failed to start conversation: ${errorMessage}`);
     }
-  }, [currentUserId]);
+  }, [currentUserId, conversations]);
 
   const handleSend = useCallback(async () => {
     if (!newMessage.trim() || !selectedConversation || !currentUserId) return;
@@ -508,10 +532,14 @@ export const useChat = () => {
       return updated;
     });
 
+    // Get the last message ID from the messages array
+    const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+    
     sendMessage(currentUserId, {
       conversation_id: selectedConversation.id,
       content: messageContent,
       message_type: 'text',
+      last_message_id: lastMessageId,
     }).then(({ error, message: sentMessage }) => {
       if (error) {
         console.error('Error sending message:', error);
@@ -544,6 +572,28 @@ export const useChat = () => {
           }
           return filtered;
         });
+        
+        // Update conversations with the real message ID
+        setConversations(prev => prev.map(conv =>
+          conv.id === selectedConversation.id
+            ? { 
+                ...conv, 
+                last_message: sentMessage.content || 'Media',
+                last_message_at: sentMessage.created_at,
+                last_message_id: sentMessage.id
+              }
+            : conv
+        ));
+        
+        // Update selected conversation with real message ID
+        setSelectedConversation(prev => 
+          prev ? {
+            ...prev,
+            last_message: sentMessage.content || 'Media',
+            last_message_at: sentMessage.created_at,
+            last_message_id: sentMessage.id
+          } : prev
+        );
       }
     }).catch((err) => {
       console.error('Error sending message:', err);
@@ -644,20 +694,23 @@ export const useChat = () => {
         setMessages(prev => prev.filter(m => m.id !== tempMessageId));
       }
 
-      const { error: sendError } = await sendMessage(currentUserId, {
+      // Get the last message ID from the messages array
+      const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
+
+      const { error: sendError, message: sentMessage } = await sendMessage(currentUserId, {
         conversation_id: selectedConversation.id,
         message_type: messageType,
         file_url: fileUrl,
         file_name: file.name,
         file_size: file.size,
         file_type: file.type,
+        last_message_id: lastMessageId,
       });
 
       if (sendError) {
         console.error('Error sending file message:', sendError);
         alert('Failed to send file. Please try again.');
-      } else {
-        const now = new Date().toISOString();
+      } else if (sentMessage) {
         const lastMessageText = messageType === 'image' ? '📷 Image' :
           messageType === 'video' ? '🎥 Video' :
             messageType === 'audio' ? '🎵 Audio' :
@@ -665,7 +718,8 @@ export const useChat = () => {
         const updatedConv = {
           ...selectedConversation,
           last_message: lastMessageText,
-          last_message_at: now,
+          last_message_at: sentMessage.created_at,
+          last_message_id: sentMessage.id,
         };
 
         setSelectedConversation(updatedConv);
@@ -673,7 +727,12 @@ export const useChat = () => {
         setConversations(prev => {
           const updated = prev.map(conv =>
             conv.id === selectedConversation.id
-              ? { ...conv, last_message: lastMessageText, last_message_at: now }
+              ? { 
+                  ...conv, 
+                  last_message: lastMessageText, 
+                  last_message_at: sentMessage.created_at,
+                  last_message_id: sentMessage.id
+                }
               : conv
           );
           const updatedConvItem = updated.find(c => c.id === selectedConversation.id);
@@ -760,6 +819,10 @@ export const useChat = () => {
     if (selectedTab === 'Boards' && conv.type !== 'group') {
       return false;
     }
+    
+    // Message filter disabled - showing all conversations
+    // The backend last_message/last_message_at fields need to be fixed first
+    // before this filter can work reliably
     
     // Apply search query filter if present
     if (!searchQuery) return true;

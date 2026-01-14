@@ -22,12 +22,14 @@ interface InviteChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStartConversation?: (conversationId: string) => void;
+  onStartConversationWithUserId?: (userId: string) => void;
 }
 
 const InviteChatModal: React.FC<InviteChatModalProps> = ({
   isOpen,
   onClose,
   onStartConversation,
+  onStartConversationWithUserId,
 }) => {
   const router = useRouter();
   const [contactsOnZoiax, setContactsOnZoiax] = useState<User[]>([]);
@@ -80,7 +82,14 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
   };
 
   const handleStartConversation = (userId: string) => {
-    // Navigate to chat page with userId - the chat page will handle creating/opening the conversation
+    // If onStartConversationWithUserId is provided (when already on chat page), use it directly
+    if (onStartConversationWithUserId) {
+      onStartConversationWithUserId(userId);
+      onClose();
+      return;
+    }
+    
+    // Otherwise, navigate to chat page with userId - the chat page will handle creating/opening the conversation
     router.push(`/dashboard/chat?userId=${userId}`);
     onClose();
   };

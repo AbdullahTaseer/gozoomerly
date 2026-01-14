@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Search, X, Plus } from 'lucide-react';
@@ -18,10 +18,10 @@ import InviteChatModal from '@/components/chat/InviteChatModal';
 import { getConversation, getUserConversations } from '@/lib/supabase/chat';
 import { chatOpenState } from '@/lib/chatOpenState';
 
-const ChatPage = () => {
+const ChatPageContent = () => {
   const searchParams = useSearchParams();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [conversationIdLoaded, setConversationIdLoaded] = useState(false);
+  const [loadedFromUrl, setLoadedFromUrl] = useState<string | null>(null);
 
   const {
     currentUserId,
@@ -52,19 +52,44 @@ const ChatPage = () => {
   } = useChat();
 
   // Handle conversationId or userId from URL query parameter
+  // This only runs when URL actually changes (user navigation, not programmatic setting)
   useEffect(() => {
     const conversationId = searchParams.get('conversationId');
     const userId = searchParams.get('userId');
     
-    if (conversationId && currentUserId && !conversationIdLoaded) {
-      handleConversationStart(conversationId);
-      setConversationIdLoaded(true);
-    } else if (userId && currentUserId && !conversationIdLoaded) {
-      // Start conversation with the userId
-      handleStartConversation(userId);
-      setConversationIdLoaded(true);
+    // Only process if we have params and userId is available
+    if (!currentUserId) return;
+    
+    // Skip if the selected conversation already matches what's in the URL
+    // This prevents reloading when conversation is set programmatically
+    if (conversationId && selectedConversation?.id === conversationId) {
+      // Update loadedFromUrl to prevent re-triggering
+      const urlKey = `conv:${conversationId}`;
+      if (urlKey !== loadedFromUrl) {
+        setLoadedFromUrl(urlKey);
+      }
+      return;
     }
-  }, [searchParams, currentUserId, conversationIdLoaded, handleStartConversation]);
+    
+    // Determine what we're trying to load from URL
+    const urlKey = conversationId ? `conv:${conversationId}` : userId ? `user:${userId}` : null;
+    
+    // Only load if URL params changed (different from what we've already loaded)
+    // AND we're not in the middle of setting it programmatically
+    if (urlKey && urlKey !== loadedFromUrl) {
+      if (conversationId) {
+        handleConversationStart(conversationId);
+        setLoadedFromUrl(urlKey);
+      } else if (userId) {
+        // Start conversation with the userId
+        handleStartConversation(userId);
+        setLoadedFromUrl(urlKey);
+      }
+    } else if (!urlKey && loadedFromUrl) {
+      // Clear the flag when URL params are removed
+      setLoadedFromUrl(null);
+    }
+  }, [searchParams, currentUserId, loadedFromUrl, handleStartConversation, selectedConversation]);
 
   // Update chat open state when conversation is selected/deselected
   useEffect(() => {
@@ -252,9 +277,21 @@ const ChatPage = () => {
       <InviteChatModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
-        onStartConversation={handleConversationStart}
+        onStartConversationWithUserId={handleStartConversation}
       />
     </>
+  );
+};
+
+const ChatPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
+      </div>
+    }>
+      <ChatPageContent />
+    </Suspense>
   );
 };
 

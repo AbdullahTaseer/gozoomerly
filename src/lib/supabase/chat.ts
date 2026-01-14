@@ -10,6 +10,7 @@ export interface Conversation {
   updated_at: string;
   last_message_at?: string;
   last_message?: string;
+  last_message_id?: string;
   participants?: ConversationParticipant[];
   unread_count?: number;
 }
@@ -20,6 +21,7 @@ export interface ConversationParticipant {
   user_id: string;
   joined_at: string;
   last_read_at?: string;
+  last_read_message_id?: string;
   user?: {
     id: string;
     name: string;
@@ -33,11 +35,13 @@ type RawParticipantData = {
   user_id: any;
   joined_at: any;
   last_read_at?: any;
+  last_read_message_id?: any;
 };
 
 type MinimalParticipantData = {
   conversation_id: any;
   last_read_at?: any;
+  last_read_message_id?: any;
 };
 
 export interface Message {
@@ -77,6 +81,7 @@ export interface SendMessageInput {
   file_size?: number;
   file_type?: string;
   reply_to_id?: string;
+  last_message_id?: string | null;
 }
 
 export async function getOrCreateDirectConversation(
@@ -257,7 +262,7 @@ export async function getUserConversations(
     
     const initialQuery = await supabase
       .from('conversation_participants')
-      .select('conversation_id, last_read_at')
+      .select('conversation_id, last_read_at, last_read_message_id')
       .eq('user_id', userId);
     
     participantData = initialQuery.data;
@@ -312,7 +317,7 @@ export async function getUserConversations(
         
         const initialQuery = await supabase
           .from('conversation_participants')
-          .select('id, conversation_id, user_id, joined_at, last_read_at')
+          .select('id, conversation_id, user_id, joined_at, last_read_at, last_read_message_id')
           .eq('conversation_id', conv.id);
         
         participantsData = initialQuery.data;
@@ -346,6 +351,7 @@ export async function getUserConversations(
               user_id: p.user_id,
               joined_at: p.joined_at || new Date().toISOString(),
               last_read_at: p.last_read_at || undefined,
+              last_read_message_id: p.last_read_message_id || undefined,
               user: profileData ? {
                 id: profileData.id,
                 name: profileData.name || 'Unknown User',
@@ -362,9 +368,37 @@ export async function getUserConversations(
         let lastMessage = conv.last_message;
         let lastMessageAt = conv.last_message_at;
         
-        if (!lastMessage) {
+        // Fetch last message using last_message_id if available
+        if (conv.last_message_id) {
           try {
-            const { data: lastMsgData } = await supabase
+            let result = await supabase
+              .from('messages')
+              .select('content, file_name, message_type, created_at')
+              .eq('id', conv.last_message_id)
+              .is('deleted_at', null)
+              .single();
+            
+            // If deleted_at column doesn't exist, retry without it
+            if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+              result = await supabase
+                .from('messages')
+                .select('content, file_name, message_type, created_at')
+                .eq('id', conv.last_message_id)
+                .single();
+            }
+            
+            if (result.data) {
+              lastMessage = result.data.content || result.data.file_name || 'Media';
+              lastMessageAt = result.data.created_at;
+            }
+          } catch (err) {
+            console.warn('Could not fetch last message by ID for conversation:', conv.id, err);
+          }
+        } 
+        // Fallback: if no last_message_id or fetch failed, get latest message
+        else if (!lastMessage) {
+          try {
+            let result = await supabase
               .from('messages')
               .select('content, file_name, created_at')
               .eq('conversation_id', conv.id)
@@ -373,9 +407,20 @@ export async function getUserConversations(
               .limit(1)
               .single();
             
-            if (lastMsgData) {
-              lastMessage = lastMsgData.content || lastMsgData.file_name || 'Media';
-              lastMessageAt = lastMessageAt || lastMsgData.created_at;
+            // If deleted_at column doesn't exist, retry without it
+            if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+              result = await supabase
+                .from('messages')
+                .select('content, file_name, created_at')
+                .eq('conversation_id', conv.id)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+            }
+            
+            if (result.data) {
+              lastMessage = result.data.content || result.data.file_name || 'Media';
+              lastMessageAt = lastMessageAt || result.data.created_at;
             }
           } catch (err) {
             console.warn('Could not fetch last message for conversation:', conv.id, err);
@@ -391,6 +436,7 @@ export async function getUserConversations(
           updated_at: conv.updated_at,
           last_message_at: lastMessageAt,
           last_message: lastMessage,
+          last_message_id: conv.last_message_id,
           participants,
           unread_count: 0,
         };
@@ -482,7 +528,7 @@ export async function getConversation(
 
   const participantsQuery = await supabase
     .from('conversation_participants')
-    .select('id, conversation_id, user_id, joined_at, last_read_at')
+    .select('id, conversation_id, user_id, joined_at, last_read_at, last_read_message_id')
     .eq('conversation_id', conversationId);
 
   participantsData = participantsQuery.data;
@@ -519,6 +565,7 @@ export async function getConversation(
         user_id: p.user_id,
         joined_at: p.joined_at || new Date().toISOString(),
         last_read_at: p.last_read_at || undefined,
+        last_read_message_id: p.last_read_message_id || undefined,
         user: profileData ? {
           id: profileData.id,
           name: profileData.name || 'Unknown User',
@@ -536,9 +583,37 @@ export async function getConversation(
   let lastMessage = convData.last_message;
   let lastMessageAt = convData.last_message_at;
   
-  if (!lastMessage) {
+  // Fetch last message using last_message_id if available
+  if (convData.last_message_id) {
     try {
-      const { data: lastMsgData } = await supabase
+      let result = await supabase
+        .from('messages')
+        .select('content, file_name, message_type, created_at')
+        .eq('id', convData.last_message_id)
+        .is('deleted_at', null)
+        .single();
+      
+      // If deleted_at column doesn't exist, retry without it
+      if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+        result = await supabase
+          .from('messages')
+          .select('content, file_name, message_type, created_at')
+          .eq('id', convData.last_message_id)
+          .single();
+      }
+      
+      if (result.data) {
+        lastMessage = result.data.content || result.data.file_name || 'Media';
+        lastMessageAt = result.data.created_at;
+      }
+    } catch (err) {
+      console.warn('Could not fetch last message by ID for conversation:', conversationId, err);
+    }
+  }
+  // Fallback: if no last_message_id or fetch failed, get latest message
+  else if (!lastMessage) {
+    try {
+      let result = await supabase
         .from('messages')
         .select('content, file_name, created_at')
         .eq('conversation_id', conversationId)
@@ -547,9 +622,20 @@ export async function getConversation(
         .limit(1)
         .single();
       
-      if (lastMsgData) {
-        lastMessage = lastMsgData.content || lastMsgData.file_name || 'Media';
-        lastMessageAt = lastMessageAt || lastMsgData.created_at;
+      // If deleted_at column doesn't exist, retry without it
+      if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+        result = await supabase
+          .from('messages')
+          .select('content, file_name, created_at')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+      }
+      
+      if (result.data) {
+        lastMessage = result.data.content || result.data.file_name || 'Media';
+        lastMessageAt = lastMessageAt || result.data.created_at;
       }
     } catch (err) {
       console.warn('Could not fetch last message for conversation:', conversationId, err);
@@ -713,13 +799,23 @@ export async function getOrCreateBoardConversation(
 
 export async function markConversationAsRead(
   conversationId: string,
-  userId: string
+  userId: string,
+  lastReadMessageId?: string
 ): Promise<{ error: any }> {
   const supabase = createClient();
 
+  const updateData: any = {
+    last_read_at: new Date().toISOString()
+  };
+
+  // Store the last read message ID if provided
+  if (lastReadMessageId) {
+    updateData.last_read_message_id = lastReadMessageId;
+  }
+
   const { error } = await supabase
     .from('conversation_participants')
-    .update({ last_read_at: new Date().toISOString() })
+    .update(updateData)
     .eq('conversation_id', conversationId)
     .eq('user_id', userId);
 
@@ -817,19 +913,10 @@ export async function sendMessage(
   try {
     const now = new Date().toISOString();
     
-    const updateData: any = {};
-    
-    updateData.updated_at = now;
-    
-    updateData.last_message_at = now;
-    
-    if (input.content) {
-      updateData.last_message = input.content;
-    } else if (input.file_name) {
-      updateData.last_message = input.file_name;
-    } else if (input.file_url) {
-      updateData.last_message = 'Media';
-    }
+    const updateData: any = {
+      updated_at: now,
+      last_message_id: message.id  // Only store the message ID
+    };
     
     const { error: updateError, data: updateResult } = await supabase
       .from('conversations')
@@ -846,9 +933,10 @@ export async function sendMessage(
       if (updateError.code === '42703' || 
           updateError.message?.includes('column') || 
           updateError.message?.includes('does not exist') ||
-          errorStr.includes('last_message') ||
-          errorStr.includes('last_message_at')) {
-                
+          errorStr.includes('last_message_id')) {
+        
+        console.warn('⚠️ Missing last_message_id column in conversations table. Running database-setup.sql will fix this.');
+        
         const minimalUpdate: any = {
           updated_at: now,
         };
@@ -858,11 +946,16 @@ export async function sendMessage(
           .update(minimalUpdate)
           .eq('id', input.conversation_id);
         
+        if (!minimalError) {
+          console.log('✅ Conversation timestamp updated (last_message_id column missing)');
+        }
+        
       } else if (updateError.code === '42501' || updateError.message?.includes('permission') || updateError.message?.includes('policy')) {
         console.warn('RLS policy might be blocking update. Check your RLS policies for conversations table.');
       }
     } else {
-      console.log('Conversation updated successfully');
+      console.log('✅ Conversation updated successfully!');
+      console.log(`📝 Last message ID stored: ${message.id}`);
     }
   } catch (updateErr: any) {
     console.warn('Exception updating conversation (non-critical):', updateErr);
@@ -897,7 +990,7 @@ export async function getConversationMessages(
     return { messages: [], error: new Error('Not a participant in this conversation') };
   }
 
-  const { data, error } = await supabase
+  let result = await supabase
     .from('messages')
     .select(`
       *,
@@ -912,11 +1005,29 @@ export async function getConversationMessages(
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
-  if (error) {
-    return { messages: [], error };
+  // If deleted_at column doesn't exist, retry without it
+  if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+    console.warn('deleted_at column not found in messages table, fetching without it');
+    result = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:sender_id (
+          id,
+          name,
+          profile_pic_url
+        )
+      `)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
   }
 
-  return { messages: (data || []) as Message[], error: null };
+  if (result.error) {
+    return { messages: [], error: result.error };
+  }
+
+  return { messages: (result.data || []) as Message[], error: null };
 }
 
 
