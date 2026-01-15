@@ -27,6 +27,7 @@ interface ConnectionsTabProps {
   getConversationName: (conv: Conversation) => string;
   getConversationAvatar: (conv: Conversation) => string | any;
   formatTime: (dateString?: string) => string;
+  getLastMessageWithSender: (conv: Conversation) => string;
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
 }
 
@@ -46,6 +47,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   getConversationName,
   getConversationAvatar,
   formatTime,
+  getLastMessageWithSender,
   shouldShowHeader,
 }) => {
   return (
@@ -63,14 +65,12 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
           </div>
         ) : (
           filteredConversations.map(conv => {
-            // Get the last message - prefer from messages if this conversation is selected, otherwise from conversation
-            let lastMessageText = conv.last_message;
+            // Get the last message time - prefer from messages if this conversation is selected
             let lastMessageTime = conv.last_message_at;
 
-            // If this conversation is selected and has messages, use the latest message from the messages array
+            // If this conversation is selected and has messages, use the latest message time from the messages array
             if (selectedConversation?.id === conv.id && messages.length > 0) {
               const lastMsg = messages[messages.length - 1];
-              lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
               lastMessageTime = lastMsg.createdAt;
             }
 
@@ -79,7 +79,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                 key={conv.id}
                 imgPath={getConversationAvatar(conv)}
                 name={getConversationName(conv)}
-                message={lastMessageText || "No message yet"}
+                message={getLastMessageWithSender(conv)}
                 time={formatTime(lastMessageTime)}
                 isActive={selectedConversation?.id === conv.id}
                 onClick={() => setSelectedConversation(conv)}

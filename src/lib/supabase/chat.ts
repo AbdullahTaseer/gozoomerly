@@ -11,6 +11,7 @@ export interface Conversation {
   last_message_at?: string;
   last_message?: string;
   last_message_id?: string;
+  last_message_sender_id?: string;
   participants?: ConversationParticipant[];
   unread_count?: number;
 }
@@ -365,67 +366,11 @@ export async function getUserConversations(
           })
         );
 
-        let lastMessage = conv.last_message;
-        let lastMessageAt = conv.last_message_at;
-        
-        // Fetch last message using last_message_id if available
-        if (conv.last_message_id) {
-          try {
-            let result = await supabase
-              .from('messages')
-              .select('content, file_name, message_type, created_at')
-              .eq('id', conv.last_message_id)
-              .is('deleted_at', null)
-              .single();
-            
-            // If deleted_at column doesn't exist, retry without it
-            if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
-              result = await supabase
-                .from('messages')
-                .select('content, file_name, message_type, created_at')
-                .eq('id', conv.last_message_id)
-                .single();
-            }
-            
-            if (result.data) {
-              lastMessage = result.data.content || result.data.file_name || 'Media';
-              lastMessageAt = result.data.created_at;
-            }
-          } catch (err) {
-            console.warn('Could not fetch last message by ID for conversation:', conv.id, err);
-          }
-        } 
-        // Fallback: if no last_message_id or fetch failed, get latest message
-        else if (!lastMessage) {
-          try {
-            let result = await supabase
-              .from('messages')
-              .select('content, file_name, created_at')
-              .eq('conversation_id', conv.id)
-              .is('deleted_at', null)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .single();
-            
-            // If deleted_at column doesn't exist, retry without it
-            if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
-              result = await supabase
-                .from('messages')
-                .select('content, file_name, created_at')
-                .eq('conversation_id', conv.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-            }
-            
-            if (result.data) {
-              lastMessage = result.data.content || result.data.file_name || 'Media';
-              lastMessageAt = lastMessageAt || result.data.created_at;
-            }
-          } catch (err) {
-            console.warn('Could not fetch last message for conversation:', conv.id, err);
-          }
-        }
+        // Use the last message data directly from the conversation record
+        // No need to fetch from messages table - avoid unnecessary API calls
+        const lastMessage = conv.last_message;
+        const lastMessageAt = conv.last_message_at;
+        const lastMessageSenderId = conv.last_message_sender_id;
 
         return {
           id: conv.id,
@@ -437,6 +382,7 @@ export async function getUserConversations(
           last_message_at: lastMessageAt,
           last_message: lastMessage,
           last_message_id: conv.last_message_id,
+          last_message_sender_id: lastMessageSenderId,
           participants,
           unread_count: 0,
         };
@@ -579,68 +525,11 @@ export async function getConversation(
     })
   );
 
-  // Get last message if not in conversation data
-  let lastMessage = convData.last_message;
-  let lastMessageAt = convData.last_message_at;
-  
-  // Fetch last message using last_message_id if available
-  if (convData.last_message_id) {
-    try {
-      let result = await supabase
-        .from('messages')
-        .select('content, file_name, message_type, created_at')
-        .eq('id', convData.last_message_id)
-        .is('deleted_at', null)
-        .single();
-      
-      // If deleted_at column doesn't exist, retry without it
-      if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
-        result = await supabase
-          .from('messages')
-          .select('content, file_name, message_type, created_at')
-          .eq('id', convData.last_message_id)
-          .single();
-      }
-      
-      if (result.data) {
-        lastMessage = result.data.content || result.data.file_name || 'Media';
-        lastMessageAt = result.data.created_at;
-      }
-    } catch (err) {
-      console.warn('Could not fetch last message by ID for conversation:', conversationId, err);
-    }
-  }
-  // Fallback: if no last_message_id or fetch failed, get latest message
-  else if (!lastMessage) {
-    try {
-      let result = await supabase
-        .from('messages')
-        .select('content, file_name, created_at')
-        .eq('conversation_id', conversationId)
-        .is('deleted_at', null)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      // If deleted_at column doesn't exist, retry without it
-      if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
-        result = await supabase
-          .from('messages')
-          .select('content, file_name, created_at')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-      }
-      
-      if (result.data) {
-        lastMessage = result.data.content || result.data.file_name || 'Media';
-        lastMessageAt = lastMessageAt || result.data.created_at;
-      }
-    } catch (err) {
-      console.warn('Could not fetch last message for conversation:', conversationId, err);
-    }
-  }
+  // Use the last message data directly from the conversation record
+  // No need to fetch from messages table - avoid unnecessary API calls
+  const lastMessage = convData.last_message;
+  const lastMessageAt = convData.last_message_at;
+  const lastMessageSenderId = convData.last_message_sender_id;
 
   const conversation: Conversation = {
     id: convData.id,
@@ -651,6 +540,8 @@ export async function getConversation(
     updated_at: convData.updated_at,
     last_message_at: lastMessageAt,
     last_message: lastMessage,
+    last_message_id: convData.last_message_id,
+    last_message_sender_id: lastMessageSenderId,
     participants: participants,
   };
 
@@ -913,58 +804,77 @@ export async function sendMessage(
   try {
     const now = new Date().toISOString();
     
-    const updateData: any = {
+    // Try to update with both last_message_id and last_message_sender_id
+    let updateData: any = {
       updated_at: now,
-      last_message_id: message.id  // Only store the message ID
+      last_message_id: message.id,
+      last_message_sender_id: message.sender_id
     };
     
-    const { error: updateError, data: updateResult } = await supabase
+    let { error: updateError } = await supabase
       .from('conversations')
       .update(updateData)
       .eq('id', input.conversation_id);
     
-    if (updateError) {
-      const errorStr = JSON.stringify(updateError);
-      console.warn('Error updating conversation (non-critical):', updateError);
-      console.warn('Error code:', updateError.code);
-      console.warn('Error message:', updateError.message);
-      console.warn('Full error:', errorStr);
+    // If the column doesn't exist, retry without it
+    if (updateError && 
+        (updateError.code === '42703' || 
+         updateError.message?.toLowerCase().includes('column') || 
+         updateError.message?.toLowerCase().includes('does not exist') ||
+         updateError.message?.toLowerCase().includes('last_message_sender_id'))) {
       
-      if (updateError.code === '42703' || 
-          updateError.message?.includes('column') || 
-          updateError.message?.includes('does not exist') ||
-          errorStr.includes('last_message_id')) {
+      console.warn('⚠️ last_message_sender_id column does not exist, retrying without it...');
+      
+      // Try without last_message_sender_id
+      updateData = {
+        updated_at: now,
+        last_message_id: message.id
+      };
+      
+      const result = await supabase
+        .from('conversations')
+        .update(updateData)
+        .eq('id', input.conversation_id);
+      
+      updateError = result.error;
+      
+      // If last_message_id also doesn't exist, try with just timestamp
+      if (updateError && 
+          (updateError.code === '42703' || 
+           updateError.message?.toLowerCase().includes('last_message_id'))) {
         
-        console.warn('⚠️ Missing last_message_id column in conversations table. Running database-setup.sql will fix this.');
+        console.warn('⚠️ last_message_id column also does not exist, updating only timestamp...');
         
-        const minimalUpdate: any = {
-          updated_at: now,
+        updateData = {
+          updated_at: now
         };
         
-        const { error: minimalError } = await supabase
+        const finalResult = await supabase
           .from('conversations')
-          .update(minimalUpdate)
+          .update(updateData)
           .eq('id', input.conversation_id);
         
-        if (!minimalError) {
-          console.log('✅ Conversation timestamp updated (last_message_id column missing)');
+        if (!finalResult.error) {
+          console.log('✅ Conversation timestamp updated (both columns missing)');
+        } else {
+          console.warn('❌ Failed to update conversation:', finalResult.error);
         }
-        
-      } else if (updateError.code === '42501' || updateError.message?.includes('permission') || updateError.message?.includes('policy')) {
-        console.warn('RLS policy might be blocking update. Check your RLS policies for conversations table.');
+      } else if (!updateError) {
+        console.log('✅ Conversation updated with last_message_id only');
+      }
+    } else if (updateError) {
+      if (updateError.code === '42501' || 
+          updateError.message?.toLowerCase().includes('permission') || 
+          updateError.message?.toLowerCase().includes('policy')) {
+        console.warn('⚠️ RLS policy might be blocking update. Check your RLS policies for conversations table.');
+      } else {
+        console.warn('⚠️ Error updating conversation:', updateError);
       }
     } else {
-      console.log('✅ Conversation updated successfully!');
-      console.log(`📝 Last message ID stored: ${message.id}`);
+      console.log('✅ Conversation updated successfully with all fields!');
     }
   } catch (updateErr: any) {
-    console.warn('Exception updating conversation (non-critical):', updateErr);
-    if (updateErr?.message) {
-      console.warn('Exception message:', updateErr.message);
-    }
-    if (updateErr?.code) {
-      console.warn('Exception code:', updateErr.code);
-    }
+    console.warn('⚠️ Exception updating conversation (non-critical):', updateErr.message || updateErr);
   }
 
   return { message: messageWithSender, error: null };

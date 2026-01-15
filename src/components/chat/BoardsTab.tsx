@@ -27,6 +27,7 @@ interface BoardsTabProps {
   getConversationName: (conv: Conversation) => string;
   getConversationAvatar: (conv: Conversation) => string | any;
   formatTime: (dateString?: string) => string;
+  getLastMessageWithSender: (conv: Conversation) => string;
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
 }
 
@@ -46,6 +47,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
   getConversationName,
   getConversationAvatar,
   formatTime,
+  getLastMessageWithSender,
   shouldShowHeader,
 }) => {
   return (
@@ -63,12 +65,10 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
           </div>
         ) : (
           filteredConversations.map(conv => {
-            let lastMessageText = conv.last_message;
             let lastMessageTime = conv.last_message_at;
 
             if (selectedConversation?.id === conv.id && messages.length > 0) {
               const lastMsg = messages[messages.length - 1];
-              lastMessageText = lastMsg.content || lastMsg.fileName || 'Media';
               lastMessageTime = lastMsg.createdAt;
             }
 
@@ -77,7 +77,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                 key={conv.id}
                 imgPath={getConversationAvatar(conv)}
                 name={getConversationName(conv)}
-                message={lastMessageText || "No message yet"}
+                message={getLastMessageWithSender(conv)}
                 time={formatTime(lastMessageTime)}
                 isActive={selectedConversation?.id === conv.id}
                 onClick={() => setSelectedConversation(conv)}

@@ -274,7 +274,8 @@ export const useChat = () => {
                 ...conv,
                 last_message: message.content || message.fileName || 'Media',
                 last_message_at: message.createdAt,
-                last_message_id: message.id
+                last_message_id: message.id,
+                last_message_sender_id: message.senderId
               }
             : conv
         );
@@ -322,7 +323,8 @@ export const useChat = () => {
               ...conv,
               last_message: message.content || message.fileName || 'Media',
               last_message_at: message.createdAt,
-              last_message_id: message.id
+              last_message_id: message.id,
+              last_message_sender_id: message.senderId
             }
           : conv
       );
@@ -346,6 +348,7 @@ export const useChat = () => {
           last_message: message.content || message.fileName || 'Media',
           last_message_at: message.createdAt,
           last_message_id: message.id,
+          last_message_sender_id: message.senderId,
         };
       }
       return prev;
@@ -516,13 +519,14 @@ export const useChat = () => {
       ...selectedConversation,
       last_message: messageContent,
       last_message_at: now,
+      last_message_sender_id: currentUserId,
     };
     setSelectedConversation(updatedConversation);
 
     setConversations(prev => {
       const updated = prev.map(conv =>
         conv.id === selectedConversation.id
-          ? { ...conv, last_message: messageContent, last_message_at: now }
+          ? { ...conv, last_message: messageContent, last_message_at: now, last_message_sender_id: currentUserId }
           : conv
       );
       const updatedConv = updated.find(c => c.id === selectedConversation.id);
@@ -580,7 +584,8 @@ export const useChat = () => {
                 ...conv, 
                 last_message: sentMessage.content || 'Media',
                 last_message_at: sentMessage.created_at,
-                last_message_id: sentMessage.id
+                last_message_id: sentMessage.id,
+                last_message_sender_id: sentMessage.sender_id
               }
             : conv
         ));
@@ -591,7 +596,8 @@ export const useChat = () => {
             ...prev,
             last_message: sentMessage.content || 'Media',
             last_message_at: sentMessage.created_at,
-            last_message_id: sentMessage.id
+            last_message_id: sentMessage.id,
+            last_message_sender_id: sentMessage.sender_id
           } : prev
         );
       }
@@ -720,6 +726,7 @@ export const useChat = () => {
           last_message: lastMessageText,
           last_message_at: sentMessage.created_at,
           last_message_id: sentMessage.id,
+          last_message_sender_id: sentMessage.sender_id,
         };
 
         setSelectedConversation(updatedConv);
@@ -731,7 +738,8 @@ export const useChat = () => {
                   ...conv, 
                   last_message: lastMessageText, 
                   last_message_at: sentMessage.created_at,
-                  last_message_id: sentMessage.id
+                  last_message_id: sentMessage.id,
+                  last_message_sender_id: sentMessage.sender_id
                 }
               : conv
           );
@@ -811,8 +819,29 @@ export const useChat = () => {
     return date.toLocaleDateString();
   }, []);
 
+  const getLastMessageWithSender = useCallback((conv: Conversation): string => {
+    if (!conv.last_message) return "No message yet";
+    
+    // If there's no sender ID, just return the message
+    if (!conv.last_message_sender_id) return conv.last_message;
+    
+    // Check if the current user sent the message
+    if (conv.last_message_sender_id === currentUserId) {
+      return `You: ${conv.last_message}`;
+    }
+    
+    // Find the sender in participants
+    const sender = conv.participants?.find((p: any) => p.user_id === conv.last_message_sender_id);
+    if (sender?.user?.name) {
+      return `${sender.user.name}: ${conv.last_message}`;
+    }
+    
+    // Fallback: just return the message
+    return conv.last_message;
+  }, [currentUserId]);
+
   const filteredConversations = conversations.filter(conv => {
-    // Filter by tab type
+    // Filter by tab type first
     if (selectedTab === 'Connections' && conv.type !== 'direct') {
       return false;
     }
@@ -820,9 +849,11 @@ export const useChat = () => {
       return false;
     }
     
-    // Message filter disabled - showing all conversations
-    // The backend last_message/last_message_at fields need to be fixed first
-    // before this filter can work reliably
+    // For Connections tab: only show conversations with messages
+    // For Boards tab: show all boards (even without messages)
+    if (selectedTab === 'Connections' && !conv.last_message_id) {
+      return false;
+    }
     
     // Apply search query filter if present
     if (!searchQuery) return true;
@@ -866,6 +897,7 @@ export const useChat = () => {
     getConversationName,
     getConversationAvatar,
     formatTime,
+    getLastMessageWithSender,
     filteredConversations,
     shouldShowHeader,
   };

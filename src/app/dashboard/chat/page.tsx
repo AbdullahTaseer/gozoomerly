@@ -47,6 +47,7 @@ const ChatPageContent = () => {
     getConversationName,
     getConversationAvatar,
     formatTime,
+    getLastMessageWithSender,
     filteredConversations,
     shouldShowHeader,
   } = useChat();
@@ -250,6 +251,7 @@ const ChatPageContent = () => {
             getConversationName={getConversationName}
             getConversationAvatar={getConversationAvatar}
             formatTime={formatTime}
+            getLastMessageWithSender={getLastMessageWithSender}
             shouldShowHeader={shouldShowHeader}
           />
         ) : (
@@ -269,6 +271,7 @@ const ChatPageContent = () => {
             getConversationName={getConversationName}
             getConversationAvatar={getConversationAvatar}
             formatTime={formatTime}
+            getLastMessageWithSender={getLastMessageWithSender}
             shouldShowHeader={shouldShowHeader}
           />
         )}
