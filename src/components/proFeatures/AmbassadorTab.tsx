@@ -71,6 +71,9 @@ const AmbassadorTab = () => {
   return (
     <div className="px-[5%] py-6">
       <div className="space-y-6">
+          <p className="text-lg md:text-xl text-center text-gray-800 leading-relaxed">
+            Apply to become a Ambassador to build your future with zoiax a limild once in a lifetime opportunity.
+          </p>
         {/* Video Player */}
         <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-black">
           <video
@@ -111,13 +114,13 @@ const AmbassadorTab = () => {
           <p className="text-sm text-gray-600 leading-relaxed">
             What one Ambassador. What is business circle, what are Ambassador packages.
           </p>
-          
+
           {/* Apply Button */}
           <GlobalButton
             title="Apply to become an Ambassador"
             width="100%"
             height="48px"
-            onClick={() => {}}
+            onClick={() => { }}
           />
         </div>
 

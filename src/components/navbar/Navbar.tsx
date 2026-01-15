@@ -8,8 +8,8 @@ import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import MenuIcon from "@/assets/svgs/menu-icon.svg";
 import AnimatedButton from '../buttons/AnimatedButton';
 
-const mobileOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up"];
-const desktopOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up"];
+const mobileOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up", "Sign In"];
+const desktopOptions = ["Home", "Why Zoomerly Exists", "Have a question?", "Sign up", "Sign In"];
 
 const Navbar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -27,7 +27,10 @@ const Navbar = () => {
       return pathname === "/haveQuestion";
     }
     if (option === "Sign up") {
-      return pathname === "/signup";
+      return pathname === "/register";
+    }
+    if (option === "Sign In") {
+      return pathname === "/signin";
     }
 
     return false;
@@ -51,7 +54,10 @@ const Navbar = () => {
         router.push("/haveQuestion");
         break;
       case "Sign up":
-        router.push("/signup");
+        router.push("/register");
+        break;
+      case "Sign In":
+        router.push("/signin");
         break;
       default:
         break;
