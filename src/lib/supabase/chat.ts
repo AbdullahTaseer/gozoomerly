@@ -1,5 +1,47 @@
 import { createClient } from './client';
 
+/**
+ * Helper function to safely extract last message as a string
+ * In case the database returns an object instead of a string
+ */
+function safeLastMessage(lastMessage: any): string | undefined {
+  if (!lastMessage) return undefined;
+  
+  // If it's already a string, return it
+  if (typeof lastMessage === 'string') return lastMessage;
+  
+  // If it's an object, try to extract the content
+  if (typeof lastMessage === 'object') {
+    return lastMessage.content || lastMessage.text || undefined;
+  }
+  
+  return undefined;
+}
+
+/**
+ * Helper function to extract the other user from a direct conversation
+ * @param participants - Array of conversation participants
+ * @param currentUserId - The current user's ID
+ * @returns The other user's information or undefined
+ */
+function extractOtherUser(
+  participants: any[] | undefined,
+  currentUserId: string
+): { id: string; name: string; profile_pic_url?: string } | undefined {
+  if (!participants || participants.length === 0) return undefined;
+  
+  const otherParticipant = participants.find(
+    (p: any) => p.user_id !== currentUserId
+  );
+  
+  if (!otherParticipant) return undefined;
+  
+  return {
+    id: otherParticipant.user_id,
+    name: otherParticipant.user?.name || 'Unknown User',
+    profile_pic_url: otherParticipant.user?.profile_pic_url,
+  };
+}
 
 export interface Conversation {
   id: string;
@@ -14,6 +56,13 @@ export interface Conversation {
   last_message_sender_id?: string;
   participants?: ConversationParticipant[];
   unread_count?: number;
+  other_user?: {
+    user_id?: string;  // From RPC response
+    id?: string;       // Fallback for manually constructed
+    name: string;
+    profile_pic_url?: string;
+    is_deleted?: boolean;
+  };
 }
 
 export interface ConversationParticipant {
@@ -98,7 +147,6 @@ export async function getOrCreateDirectConversation(
       .eq('user_id', userId1);
 
     if (user1Error) {
-      console.error('Error fetching user1 participations:', user1Error);
       return { conversation: null, error: user1Error };
     }
 
@@ -115,7 +163,6 @@ export async function getOrCreateDirectConversation(
       .eq('type', 'direct');
 
     if (conversationsError) {
-      console.error('Error fetching conversations:', conversationsError);
       return { conversation: null, error: conversationsError };
     }
 
@@ -130,7 +177,6 @@ export async function getOrCreateDirectConversation(
         .eq('conversation_id', conv.id);
 
       if (participantsError) {
-        console.error('Error checking participants:', participantsError);
         continue;
       }
 
@@ -147,7 +193,6 @@ export async function getOrCreateDirectConversation(
           .single();
 
         if (fetchError || !fullConversation) {
-          console.error('Error fetching full conversation:', fetchError);
           continue;
         }
 
@@ -157,7 +202,6 @@ export async function getOrCreateDirectConversation(
 
     return await createNewDirectConversation(userId1, userId2);
   } catch (err) {
-    console.error('Error in getOrCreateDirectConversation:', err);
     return { conversation: null, error: err };
   }
 }
@@ -186,7 +230,6 @@ async function createNewDirectConversation(
       .single();
 
     if (createError && (createError.message?.includes('created_by') || createError.message?.includes('column'))) {
-      console.warn('created_by column not found, trying without it');
       ({ data: newConversation, error: createError } = await supabase
         .from('conversations')
         .insert(conversationData)
@@ -195,7 +238,6 @@ async function createNewDirectConversation(
     }
 
     if (createError) {
-      console.error('Error creating conversation:', createError);
       return { 
         conversation: null, 
         error: new Error(
@@ -217,7 +259,6 @@ async function createNewDirectConversation(
       ]);
 
     if (participantsError) {
-      console.error('Error adding participants:', participantsError);
       await supabase.from('conversations').delete().eq('id', newConversation.id);
       return { 
         conversation: null, 
@@ -236,13 +277,12 @@ async function createNewDirectConversation(
       created_at: newConversation.created_at || new Date().toISOString(),
       updated_at: newConversation.updated_at || new Date().toISOString(),
       last_message_at: newConversation.last_message_at,
-      last_message: newConversation.last_message,
+      last_message: safeLastMessage(newConversation.last_message),
       participants: [],
     };
 
     return { conversation, error: null };
   } catch (err: any) {
-    console.error('Error in createNewDirectConversation:', err);
     return { 
       conversation: null, 
       error: new Error(err?.message || 'Unknown error creating conversation')
@@ -251,13 +291,100 @@ async function createNewDirectConversation(
 }
 
 
+
+export async function getConversationParticipants(
+  conversationId: string
+): Promise<{ participants: ConversationParticipant[]; error: any }> {
+  const supabase = createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from('conversation_participants')
+      .select('id, conversation_id, user_id, joined_at, last_read_at, last_read_message_id')
+      .eq('conversation_id', conversationId);
+
+    if (error) {
+      return { participants: [], error };
+    }
+
+    if (!data || data.length === 0) {
+      return { participants: [], error: null };
+    }
+
+    const participantsWithUsers = await Promise.all(
+      data.map(async (p: any) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('id, name, profile_pic_url')
+          .eq('id', p.user_id)
+          .single();
+
+        return {
+          id: p.id,
+          conversation_id: p.conversation_id,
+          user_id: p.user_id,
+          joined_at: p.joined_at,
+          last_read_at: p.last_read_at || undefined,
+          last_read_message_id: p.last_read_message_id || undefined,
+          other_user: profileData ? {
+            id: profileData.id,
+            name: profileData.name || 'Unknown User',
+            profile_pic_url: profileData.profile_pic_url,
+          } : {
+            id: p.user_id,
+            name: 'Unknown User',
+            profile_pic_url: undefined,
+          },
+        };
+      })
+    );
+
+    return { participants: participantsWithUsers, error: null };
+  } catch (err) {
+    return { participants: [], error: err };
+  }
+}
+
 export async function getUserConversations(
-  userId: string
+  userId: string,
+  limit: number = 100,  // Increased default limit to show more conversations
+  offset: number = 0
 ): Promise<{ conversations: Conversation[]; error: any }> {
   const supabase = createClient();
 
   try {
-    
+    // First try to use RPC function
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_conversations', {
+      p_user_id: userId,
+      p_limit: limit,
+      p_offset: offset
+    });
+
+    // If RPC works, use its data
+    if (!rpcError && rpcData?.data) {
+      // Map the RPC response to Conversation objects
+      const conversations: Conversation[] = rpcData.data.map((conv: any) => {
+        return {
+          id: conv.id,
+          type: conv.type,
+          name: conv.name,
+          created_by: conv.created_by,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          last_message_at: conv.last_message_at,
+          last_message: safeLastMessage(conv.last_message),
+          last_message_id: conv.last_message_id,
+          last_message_sender_id: conv.last_message_sender_id,
+          participants: conv.participants || [],
+          unread_count: conv.unread_count || 0,
+          // Use other_user directly from RPC response
+          other_user: conv.other_user || undefined,
+        };
+      });
+
+      return { conversations, error: null };
+    }
+
     let participantData: MinimalParticipantData[] | null;
     let participantError: any;
     
@@ -270,7 +397,6 @@ export async function getUserConversations(
     participantError = initialQuery.error;
 
     if (participantError && (participantError.message?.includes('last_read_at') || participantError.code === '42703')) {
-      console.warn('last_read_at column not found, fetching without it');
       const retry = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -303,7 +429,6 @@ export async function getUserConversations(
       .in('id', conversationIds);
 
     if (conversationsError) {
-      console.error('Error fetching conversations:', conversationsError);
       return { conversations: [], error: conversationsError };
     }
 
@@ -334,9 +459,6 @@ export async function getUserConversations(
           participantsError = retry.error;
         }
 
-        if (participantsError) {
-          console.error('Error fetching participants:', participantsError);
-        }
 
         const participants = await Promise.all(
           (participantsData || []).map(async (p: any) => {
@@ -368,7 +490,7 @@ export async function getUserConversations(
 
         // Use the last message data directly from the conversation record
         // No need to fetch from messages table - avoid unnecessary API calls
-        const lastMessage = conv.last_message;
+        const lastMessage = safeLastMessage(conv.last_message);
         const lastMessageAt = conv.last_message_at;
         const lastMessageSenderId = conv.last_message_sender_id;
 
@@ -385,6 +507,7 @@ export async function getUserConversations(
           last_message_sender_id: lastMessageSenderId,
           participants,
           unread_count: 0,
+          other_user: conv.type === 'direct' ? extractOtherUser(participants, userId) : undefined,
         };
       })
     );
@@ -433,7 +556,6 @@ export async function getUserConversations(
 
     return { conversations: sortedConversations, error: null };
   } catch (err) {
-    console.error('Error in getUserConversations:', err);
     return { conversations: [], error: err };
   }
 }
@@ -492,7 +614,6 @@ export async function getConversation(
   }
 
   if (participantsError) {
-    console.error('Error fetching participants:', participantsError);
     return { conversation: null, error: participantsError };
   }
 
@@ -527,7 +648,7 @@ export async function getConversation(
 
   // Use the last message data directly from the conversation record
   // No need to fetch from messages table - avoid unnecessary API calls
-  const lastMessage = convData.last_message;
+  const lastMessage = safeLastMessage(convData.last_message);
   const lastMessageAt = convData.last_message_at;
   const lastMessageSenderId = convData.last_message_sender_id;
 
@@ -543,6 +664,7 @@ export async function getConversation(
     last_message_id: convData.last_message_id,
     last_message_sender_id: lastMessageSenderId,
     participants: participants,
+    other_user: convData.type === 'direct' ? extractOtherUser(participants, userId) : undefined,
   };
 
   return { conversation, error: null };
@@ -591,9 +713,6 @@ export async function getOrCreateBoardConversation(
       .eq('name', boardName)
       .limit(1);
 
-    if (searchError && !searchError.message?.includes('does not exist')) {
-      console.error('Error searching for board conversation:', searchError);
-    }
 
     if (existingConversations && existingConversations.length > 0) {
       const existingConv = existingConversations[0];
@@ -640,7 +759,6 @@ export async function getOrCreateBoardConversation(
     }
 
     if (createError || !newConversation) {
-      console.error('Error creating board conversation:', createError);
       return { 
         conversation: null, 
         error: new Error(
@@ -657,7 +775,6 @@ export async function getOrCreateBoardConversation(
       });
 
     if (participantsError) {
-      console.error('Error adding participant:', participantsError);
       await supabase.from('conversations').delete().eq('id', newConversation.id);
       return { 
         conversation: null, 
@@ -673,13 +790,12 @@ export async function getOrCreateBoardConversation(
       created_at: newConversation.created_at || new Date().toISOString(),
       updated_at: newConversation.updated_at || new Date().toISOString(),
       last_message_at: newConversation.last_message_at,
-      last_message: newConversation.last_message,
+      last_message: safeLastMessage(newConversation.last_message),
       participants: [],
     };
 
     return { conversation, error: null };
   } catch (err: any) {
-    console.error('Error in getOrCreateBoardConversation:', err);
     return { 
       conversation: null, 
       error: new Error(err?.message || 'Unknown error creating board conversation')
@@ -757,8 +873,6 @@ export async function sendMessage(
     .single();
 
   if (error && (error.message?.includes('message_type') || error.code === 'PGRST204' || error.code === '42703')) {
-    console.warn('message_type column not found, creating message without it');
-    
     ({ data: message, error } = await supabase
       .from('messages')
       .insert(messageData)
@@ -767,7 +881,6 @@ export async function sendMessage(
   }
 
   if (error || !message) {
-    console.error('Error creating message:', error);
     return { 
       message: null, 
       error: error || new Error('Failed to create message')
@@ -784,7 +897,6 @@ export async function sendMessage(
     
     senderProfile = profileData;
   } catch (profileErr) {
-    console.warn('Could not fetch sender profile:', profileErr);
   }
 
   const messageWithSender: Message = {
@@ -804,9 +916,18 @@ export async function sendMessage(
   try {
     const now = new Date().toISOString();
     
+    // Prepare the last message preview text
+    const lastMessagePreview = input.content || 
+      (input.message_type === 'image' ? '📷 Image' :
+       input.message_type === 'video' ? '🎥 Video' :
+       input.message_type === 'audio' ? '🎵 Audio' :
+       input.file_name || '📎 File');
+    
     // Try to update with both last_message_id and last_message_sender_id
     let updateData: any = {
       updated_at: now,
+      last_message: lastMessagePreview,
+      last_message_at: now,
       last_message_id: message.id,
       last_message_sender_id: message.sender_id
     };
@@ -823,11 +944,11 @@ export async function sendMessage(
          updateError.message?.toLowerCase().includes('does not exist') ||
          updateError.message?.toLowerCase().includes('last_message_sender_id'))) {
       
-      console.warn('⚠️ last_message_sender_id column does not exist, retrying without it...');
-      
       // Try without last_message_sender_id
       updateData = {
         updated_at: now,
+        last_message: lastMessagePreview,
+        last_message_at: now,
         last_message_id: message.id
       };
       
@@ -843,38 +964,20 @@ export async function sendMessage(
           (updateError.code === '42703' || 
            updateError.message?.toLowerCase().includes('last_message_id'))) {
         
-        console.warn('⚠️ last_message_id column also does not exist, updating only timestamp...');
-        
         updateData = {
-          updated_at: now
+          updated_at: now,
+          last_message: lastMessagePreview,
+          last_message_at: now
         };
         
         const finalResult = await supabase
           .from('conversations')
           .update(updateData)
           .eq('id', input.conversation_id);
-        
-        if (!finalResult.error) {
-          console.log('✅ Conversation timestamp updated (both columns missing)');
-        } else {
-          console.warn('❌ Failed to update conversation:', finalResult.error);
-        }
-      } else if (!updateError) {
-        console.log('✅ Conversation updated with last_message_id only');
+
       }
-    } else if (updateError) {
-      if (updateError.code === '42501' || 
-          updateError.message?.toLowerCase().includes('permission') || 
-          updateError.message?.toLowerCase().includes('policy')) {
-        console.warn('⚠️ RLS policy might be blocking update. Check your RLS policies for conversations table.');
-      } else {
-        console.warn('⚠️ Error updating conversation:', updateError);
-      }
-    } else {
-      console.log('✅ Conversation updated successfully with all fields!');
     }
   } catch (updateErr: any) {
-    console.warn('⚠️ Exception updating conversation (non-critical):', updateErr.message || updateErr);
   }
 
   return { message: messageWithSender, error: null };
@@ -917,7 +1020,6 @@ export async function getConversationMessages(
 
   // If deleted_at column doesn't exist, retry without it
   if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
-    console.warn('deleted_at column not found in messages table, fetching without it');
     result = await supabase
       .from('messages')
       .select(`
@@ -981,8 +1083,6 @@ export async function uploadMessageFile(
       });
 
     if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      
       const errorMessage = uploadError.message || '';
       const statusCode = (uploadError as any).statusCode || (uploadError as any).status;
       
@@ -1027,7 +1127,6 @@ export async function uploadMessageFile(
       error: null,
     };
   } catch (err: any) {
-    console.error('Unexpected error during file upload:', err);
     return { 
       fileUrl: null, 
       error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`) 
