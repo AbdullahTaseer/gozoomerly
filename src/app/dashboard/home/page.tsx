@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import TitleCard from '@/components/cards/TitleCard';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import { spotlightCampaigns, boardInvitations, feedCardData } from '@/lib/MockData';
@@ -18,6 +17,7 @@ import GlobalInput from '@/components/inputs/GlobalInput';
 import { BoardsList } from '@/components/boards/BoardsList';
 import { createClient } from '@/lib/supabase/client';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const Home = () => {
   const router = useRouter();
@@ -140,7 +140,8 @@ const Home = () => {
 
   return (
     <div>
-      <DashNavbar hide={false} />
+      <DashNavbar />
+      <MobileHeader title={'Boards'} complexRightHref="/dashboard/connections" complexRightTitle="Connections" />
       <div className='px-[7%] py-5 max-[769px]:px-3'>
         <div>
           <div className='flex items-center gap-3 mb-6 flex-shrink-0 max-w-[400px] mx-auto'>

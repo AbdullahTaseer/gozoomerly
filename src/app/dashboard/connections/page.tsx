@@ -331,7 +331,7 @@ const Connections = () => {
   return (
     <>
       <DashNavbar />
-      <MobileHeader title="Connections" />
+      <MobileHeader title="Connections" complexRightHref="/dashboard/home" complexRightTitle="Boards" />
       <div className='px-[7%] max-[769px]:px-4 pb-8'>
         {/* Status Cards */}
         <div className='mt-6'>
