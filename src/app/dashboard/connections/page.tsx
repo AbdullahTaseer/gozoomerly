@@ -13,6 +13,7 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import GlobalModal from '@/components/modals/GlobalModal';
 import YourCirclesModal from '@/components/modals/YourCirclesModal';
 import AddCircleModal from '@/components/modals/AddCircleModal';
+import AddStatusModal from '@/components/modals/AddStatusModal';
 import { inviteContacts } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import { getFollowers, getFollowing, followUser } from '@/lib/supabase/followUtils';
@@ -40,6 +41,7 @@ const Connections = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [circlesModalVisible, setCirclesModalVisible] = useState(false);
   const [createCircleModalVisible, setCreateCircleModalVisible] = useState(false);
+  const [addStatusModalVisible, setAddStatusModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Connection | null>(null);
 
   useEffect(() => {
@@ -303,7 +305,13 @@ const Connections = () => {
   };
 
   const handleAddStatus = () => {
-    console.log('Add status clicked');
+    setAddStatusModalVisible(true);
+  };
+
+  const handleStatusImageSelect = (imageUrl: string | any) => {
+    console.log('Status image selected:', imageUrl);
+    // Handle status image selection - upload, save, etc.
+    // You can implement the status creation logic here
   };
 
   const handleStatusClick = (name?: string) => {
@@ -469,6 +477,13 @@ const Connections = () => {
           onCircleCreated={handleCircleCreated}
         />
       </GlobalModal>
+
+      {/* Add Status Modal */}
+      <AddStatusModal
+        isOpen={addStatusModalVisible}
+        onClose={() => setAddStatusModalVisible(false)}
+        onImageSelect={handleStatusImageSelect}
+      />
     </>
   );
 };
