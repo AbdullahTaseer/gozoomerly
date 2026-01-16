@@ -543,6 +543,18 @@ export const chatListData = [
   { id: 14, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
 ];
 
+// Gradient overlays for invitation cards
+export const invitationGradients = [
+  'bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/60',
+  'bg-gradient-to-br from-[#C03737]/60 to-[#F44274]/60',
+  'bg-gradient-to-br from-[#71cf6c]/80 to-[#77d977]/60',
+  'bg-gradient-to-br from-[#cfcf6c]/80 to-[#d9d977]/60',
+  'bg-gradient-to-br from-[#cf6c9f]/80 to-[#d977a3]/60',
+  'bg-gradient-to-br from-[#6ccf9f]/80 to-[#77d9a3]/60',
+  'bg-gradient-to-br from-[#cf9f6c]/80 to-[#d9a377]/60',
+  'bg-gradient-to-br from-[#9f6ccf]/80 to-[#a377d9]/60',
+];
+
 export const boardInvitations = [
   {
     id: 1,
@@ -550,6 +562,7 @@ export const boardInvitations = [
     backgroundImage: FamilyBG,
     profileImage: Community_2_avatar,
     inviterName: "Omar Hassan",
+    gradientClass: invitationGradients[2],
   },
   {
     id: 2,
@@ -557,6 +570,7 @@ export const boardInvitations = [
     backgroundImage: FamilyBG,
     profileImage: Community_2_avatar,
     inviterName: "David Smith",
+    gradientClass: invitationGradients[0],
   },
   {
     id: 3,
@@ -564,13 +578,15 @@ export const boardInvitations = [
     backgroundImage: FriendsBG,
     profileImage: Community_1_avatar,
     inviterName: "Emily Johnson",
+    gradientClass: invitationGradients[1],
   },
-   {
+  {
     id: 4,
     title: "Sofia & Omar's Wedding",
     backgroundImage: FamilyBG,
     profileImage: Community_2_avatar,
     inviterName: "Omar Hassan",
+    gradientClass: invitationGradients[3],
   },
   {
     id: 5,
@@ -578,6 +594,7 @@ export const boardInvitations = [
     backgroundImage: FamilyBG,
     profileImage: Community_2_avatar,
     inviterName: "David Smith",
+    gradientClass: invitationGradients[4],
   },
   {
     id: 6,
@@ -585,6 +602,7 @@ export const boardInvitations = [
     backgroundImage: FriendsBG,
     profileImage: Community_1_avatar,
     inviterName: "Emily Johnson",
+    gradientClass: invitationGradients[5],
   },
 ];
 

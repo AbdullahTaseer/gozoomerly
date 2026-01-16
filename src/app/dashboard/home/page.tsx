@@ -198,8 +198,9 @@ const Home = () => {
                         backgroundImage={invitation.backgroundImage}
                         profileImage={invitation.profileImage}
                         inviterName={invitation.inviterName}
-                        onAccept={() => console.log('Accept invitation', invitation.id)}
-                        onDecline={() => console.log('Decline invitation', invitation.id)}
+                        gradientClass={invitation.gradientClass}
+                        onAccept={() => alert("Accepted")}
+                        onDecline={() => alert("Declined")}
                       />
                     ))
                   ) : (

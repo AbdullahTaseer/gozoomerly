@@ -9,6 +9,7 @@ type InvitationBoardCardProps = {
   inviterName: string;
   onAccept?: () => void;
   onDecline?: () => void;
+  gradientClass?: string;
 }
 
 const InvitationBoardCard = ({
@@ -17,8 +18,10 @@ const InvitationBoardCard = ({
   profileImage,
   inviterName,
   onAccept,
-  onDecline
+  onDecline,
+  gradientClass = 'bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/80'
 }: InvitationBoardCardProps) => {
+
   return (
     <div className='relative rounded-[13px] overflow-hidden min-w-[350px] flex flex-col justify-between'>
       <div className='absolute inset-0'>
@@ -28,7 +31,7 @@ const InvitationBoardCard = ({
           fill
           className='object-cover'
         />
-        <div className='absolute inset-0 bg-[#cf6c71]/80' />
+        <div className={`absolute inset-0 ${gradientClass}`} />
       </div>
 
       <div className='relative z-10 p-6 flex flex-col justify-between h-full'>
