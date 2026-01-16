@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import OtpInput from '@/components/inputs/OtpInput';
 import AuthLayout from '@/components/authLayout/AuthLayout';
@@ -11,11 +11,48 @@ import FloatingInput from '@/components/inputs/FloatingInput';
 import SignupInfoCard, { type UserInfo } from '@/components/cards/SignupInfoCard';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
+import { PartnerRegistrationForm } from '@/components/PartnerRegistrationForm';
 
 import CelebrtionImg from "@/assets/svgs/bomb.svg";
 import { ArrowLeft } from 'lucide-react';
 
-const Signup = () => {
+const SignupContent = () => {
+  const searchParams = useSearchParams();
+  
+  // Check for referral code in URL
+  const referralCode = searchParams.get('referral_code') || 
+                       searchParams.get('referralCode') || 
+                       searchParams.get('invite_code') || 
+                       searchParams.get('inviteCode') || '';
+  
+  // Get other URL parameters
+  const urlParams = {
+    email: searchParams.get('email') || '',
+    name: searchParams.get('name') || '',
+    phone: searchParams.get('phone') || searchParams.get('phoneNumber') || '',
+    referralCode: referralCode
+  };
+
+  // If referral code exists, show the partner registration form
+  if (referralCode) {
+    return (
+      <AuthLayout>
+        <div className="w-full max-w-2xl">
+          <PartnerRegistrationForm
+            partnerId={4} // Partner ID 4 as requested
+            initialValues={urlParams}
+            onBack={() => window.history.back()}
+          />
+        </div>
+      </AuthLayout>
+    );
+  }
+
+  // Otherwise, show the normal signup flow
+  return <SignupFlow />;
+};
+
+const SignupFlow = () => {
 
   const [step, setStep] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -261,6 +298,20 @@ const Signup = () => {
       }
 
     </AuthLayout>
+  );
+};
+
+const Signup = () => {
+  return (
+    <Suspense fallback={
+      <AuthLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E3418B]"></div>
+        </div>
+      </AuthLayout>
+    }>
+      <SignupContent />
+    </Suspense>
   );
 };
 
