@@ -1,0 +1,27 @@
+/* Stripe Elements Custom Styles */
+.StripeElement {
+  width: 100%;
+  padding: 0;
+  background-color: transparent;
+}
+
+.StripeElement--focus {
+  outline: none;
+}
+
+.StripeElement--invalid {
+  color: #fa755a;
+}
+
+.StripeElement--webkit-autofill {
+  background-color: #fefde5 !important;
+}
+
+/* Ensure the iframe is clickable */
+.StripeElement iframe {
+  pointer-events: auto !important;
+  display: block !important;
+  width: 100% !important;
+  height: 22px !important;
+}
+

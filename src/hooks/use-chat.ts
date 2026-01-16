@@ -16,6 +16,7 @@ import {
 import { AuthService } from '@/lib/supabase/auth';
 import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
+import toast from 'react-hot-toast';
 
 const authService = new AuthService();
 
@@ -76,7 +77,6 @@ export const useChat = () => {
               localStorage.removeItem('selectedConversationId');
             }
           } catch (err) {
-            console.error('Error restoring conversation:', err);
             localStorage.removeItem('selectedConversationId');
           }
         }
@@ -90,16 +90,9 @@ export const useChat = () => {
       setLoading(true);
       const { conversations: convs, error } = await getUserConversations(userId);
       if (error) {
-        console.error('Error loading conversations:', error);
-
         const diagnostics = await checkChatTablesSetup();
         if (!diagnostics.tablesExist) {
-          console.error('Chat tables diagnostic:', diagnostics);
-          alert(
-            `Chat tables are not set up correctly.\n\n` +
-            `Errors:\n${diagnostics.errors.join('\n')}\n\n` +
-            `Please run the SQL setup script in your Supabase dashboard.`
-          );
+          toast.error('Chat tables are not set up correctly. Please run the SQL setup script in your Supabase dashboard.');
         }
       } else {
         let uniqueConversations = (convs || []).filter((conv, index, self) =>
@@ -130,7 +123,6 @@ export const useChat = () => {
         setConversations(uniqueConversations);
       }
     } catch (err) {
-      console.error('Error loading conversations:', err);
     } finally {
       setLoading(false);
     }
@@ -145,9 +137,7 @@ export const useChat = () => {
         currentUserId,
         100
       );
-      if (error) {
-        console.error('Error loading messages:', error);
-      } else {
+      if (!error) {
         const chatMessages: ChatMessage[] = (msgs || []).map((msg: any) => {
           const senderName = msg.sender?.name ||
             (msg.sender_id ? 'Loading...' : 'Unknown');
@@ -210,7 +200,6 @@ export const useChat = () => {
         }, 100);
       }
     } catch (err) {
-      console.error('Error loading messages:', err);
     }
   }, [currentUserId]);
 
@@ -229,9 +218,7 @@ export const useChat = () => {
       loadMessages(selectedConversation.id);
       
       // Mark as read immediately
-      markConversationAsRead(selectedConversation.id, currentUserId).catch(err => {
-        console.error('Error marking conversation as read:', err);
-      });
+      markConversationAsRead(selectedConversation.id, currentUserId).catch(() => {});
       
       // Fetch full conversation in parallel if needed (non-blocking)
       if (needsFullConversation) {
@@ -243,9 +230,7 @@ export const useChat = () => {
               conv.id === fullConv.id ? fullConv : conv
             ));
           }
-        }).catch(err => {
-          console.error('Error fetching full conversation:', err);
-        });
+        }).catch(() => {});
       }
     } else {
       // Clear saved conversation when none is selected
@@ -388,9 +373,7 @@ export const useChat = () => {
     setSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
       const { users, error } = await searchUsers(searchQuery, currentUserId);
-      if (error) {
-        console.error('Error searching users:', error);
-      } else {
+      if (!error) {
         setSearchResults(users || []);
         setShowSearchResults(true);
       }
@@ -432,14 +415,11 @@ export const useChat = () => {
       );
 
       if (error) {
-        console.error('Error creating conversation:', error);
-        const errorMessage = error?.message || JSON.stringify(error) || 'Unknown error';
-        console.log(`Failed to start conversation: ${errorMessage}\n\nPlease make sure the database tables are set up correctly.`);
         return;
       }
 
       if (!newConversation) {
-        alert('Failed to start conversation. No conversation was created.');
+        toast.error('Failed to start conversation. No conversation was created.');
         return;
       }
 
@@ -472,18 +452,14 @@ export const useChat = () => {
             conv.id === fullConversation.id ? fullConversation : conv
           ));
         }
-      }).catch(err => {
-        console.error('Error fetching full conversation:', err);
-      });
+      }).catch(() => {});
 
       // Reset flag after a short delay
       setTimeout(() => {
         isSettingProgrammaticallyRef.current = false;
       }, 100);
     } catch (err: any) {
-      console.error('Error starting conversation:', err);
-      const errorMessage = err?.message || JSON.stringify(err) || 'Unknown error';
-      alert(`Failed to start conversation: ${errorMessage}`);
+      toast.error('Failed to start conversation');
     }
   }, [currentUserId, conversations]);
 
@@ -546,13 +522,12 @@ export const useChat = () => {
       last_message_id: lastMessageId,
     }).then(({ error, message: sentMessage }) => {
       if (error) {
-        console.error('Error sending message:', error);
         setMessages(prev => prev.filter(m => m.id !== tempMessageId));
         setConversations(prev => prev.map(conv =>
           conv.id === selectedConversation.id ? selectedConversation : conv
         ));
         setSelectedConversation(selectedConversation);
-        alert('Failed to send message. Please try again.');
+        toast.error('Failed to send message. Please try again.');
       } else if (sentMessage) {
         setMessages(prev => {
           const filtered = prev.filter(m => m.id !== tempMessageId);
@@ -601,14 +576,13 @@ export const useChat = () => {
           } : prev
         );
       }
-    }).catch((err) => {
-      console.error('Error sending message:', err);
+    }).catch(() => {
       setMessages(prev => prev.filter(m => m.id !== tempMessageId));
       setConversations(prev => prev.map(conv =>
         conv.id === selectedConversation.id ? selectedConversation : conv
       ));
       setSelectedConversation(selectedConversation);
-      alert('Failed to send message. Please try again.');
+      toast.error('Failed to send message. Please try again.');
     });
   }, [newMessage, selectedConversation, currentUserId]);
 
@@ -617,7 +591,7 @@ export const useChat = () => {
 
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      alert('File size must be less than 10MB');
+      toast.error('File size must be less than 10MB');
       return;
     }
 
@@ -662,36 +636,17 @@ export const useChat = () => {
       );
 
       if (uploadError || !fileUrl) {
-        console.error('Error uploading file:', uploadError);
         if (messageType === 'image') {
           setMessages(prev => prev.filter(m => m.id !== tempMessageId));
         }
 
         const errorMessage = uploadError?.message || 'Failed to upload file';
         if (errorMessage.includes('Bucket not found') || errorMessage.includes('chat-files')) {
-          alert(
-            'Storage bucket not configured!\n\n' +
-            'Please create the "chat-files" bucket in Supabase:\n' +
-            '1. Go to Supabase Dashboard → Storage\n' +
-            '2. Click "Create Bucket"\n' +
-            '3. Name: chat-files\n' +
-            '4. Make it Public\n' +
-            '5. Click Create\n\n' +
-            'Then set up storage policies (see STORAGE_SETUP.md)'
-          );
+          toast.error('Storage bucket not configured! Please create the "chat-files" bucket in Supabase.');
         } else if (errorMessage.includes('Permission') || errorMessage.includes('403') || errorMessage.includes('400')) {
-          alert(
-            'Storage permissions issue!\n\n' +
-            'The "chat-files" bucket exists but permissions are not set up.\n\n' +
-            'Please run this SQL in Supabase SQL Editor:\n\n' +
-            'CREATE POLICY "Allow authenticated uploads to chat-files"\n' +
-            'ON storage.objects FOR INSERT\n' +
-            'TO authenticated\n' +
-            'WITH CHECK (bucket_id = \'chat-files\');\n\n' +
-            'See STORAGE_SETUP.md for complete setup instructions.'
-          );
+          toast.error('Storage permissions issue! The "chat-files" bucket exists but permissions are not set up.');
         } else {
-          alert(`Failed to upload file: ${errorMessage}\n\nCheck browser console for details.`);
+          toast.error(`Failed to upload file: ${errorMessage}`);
         }
         return;
       }
@@ -714,8 +669,7 @@ export const useChat = () => {
       });
 
       if (sendError) {
-        console.error('Error sending file message:', sendError);
-        alert('Failed to send file. Please try again.');
+        toast.error('Failed to send file. Please try again.');
       } else if (sentMessage) {
         const lastMessageText = messageType === 'image' ? '📷 Image' :
           messageType === 'video' ? '🎥 Video' :
@@ -761,33 +715,62 @@ export const useChat = () => {
         }, 100);
       }
     } catch (err) {
-      console.error('Error uploading file:', err);
-      alert('Failed to upload file. Please try again.');
+      toast.error('Failed to upload file. Please try again.');
     } finally {
       setUploading(false);
     }
   }, [selectedConversation, currentUserId, uploading]);
 
   const getConversationName = useCallback((conv: Conversation): string => {
-    if (conv.name) return conv.name;
-    if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
-      const otherParticipant = conv.participants.find(
-        (p: any) => p.user_id !== currentUserId
-      );
-
-      if (otherParticipant) {
-        if (otherParticipant.user?.name) {
-          return otherParticipant.user.name;
+    // For direct conversations, prioritize showing the other user's name
+    if (conv.type === 'direct') {
+      // Use other_user if available (from RPC response)
+      if (conv.other_user) {
+        if (conv.other_user.name) {
+          return conv.other_user.name;
         }
-        if (otherParticipant.user_id) {
-          return `User ${otherParticipant.user_id.substring(0, 8)}`;
+        // Fallback to user_id if name is not available
+        const userId = conv.other_user.user_id || conv.other_user.id;
+        if (userId) {
+          return `User ${userId.substring(0, 8)}`;
         }
       }
+      
+      // Fallback to searching through participants
+      if (conv.participants && conv.participants.length > 0) {
+        const otherParticipant = conv.participants.find(
+          (p: any) => p.user_id !== currentUserId
+        );
+
+        if (otherParticipant) {
+          if (otherParticipant.user?.name) {
+            return otherParticipant.user.name;
+          }
+          if (otherParticipant.user_id) {
+            return `User ${otherParticipant.user_id.substring(0, 8)}`;
+          }
+        }
+      }
+      
+      return 'Unknown User';
     }
+    
+    // For group conversations, use the conversation name
+    if (conv.name) return conv.name;
+    
     return 'Conversation';
   }, [currentUserId]);
 
   const getConversationAvatar = useCallback((conv: Conversation): string | StaticImport => {
+    // For direct conversations, use other_user if available
+    if (conv.type === 'direct' && conv.other_user?.profile_pic_url) {
+      const picUrl = conv.other_user.profile_pic_url.trim();
+      if (picUrl && picUrl !== 'null' && picUrl !== 'undefined' && picUrl !== '') {
+        return picUrl;
+      }
+    }
+    
+    // Fallback to searching through participants
     if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
@@ -820,27 +803,56 @@ export const useChat = () => {
   }, []);
 
   const getLastMessageWithSender = useCallback((conv: Conversation): string => {
-    if (!conv.last_message) return "No message yet";
+    // Determine the message content and sender
+    let messageContent: string;
+    let senderId: string | undefined;
+    let senderName: string | undefined;
     
-    // If there's no sender ID, just return the message
-    if (!conv.last_message_sender_id) return conv.last_message;
-    
-    // Check if the current user sent the message
-    if (conv.last_message_sender_id === currentUserId) {
-      return `You: ${conv.last_message}`;
+    // Check if this is the selected conversation with loaded messages (most up-to-date)
+    if (selectedConversation?.id === conv.id && messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      messageContent = lastMsg.content || lastMsg.fileName || 'Media';
+      senderId = lastMsg.senderId;
+      senderName = lastMsg.user?.name;
+    } else {
+      // Use conversation's last_message data
+      if (!conv.last_message) return "No message yet";
+      
+      messageContent = conv.last_message;
+      senderId = conv.last_message_sender_id;
     }
     
-    // Find the sender in participants
-    const sender = conv.participants?.find((p: any) => p.user_id === conv.last_message_sender_id);
+    // Add sender prefix
+    if (senderId === currentUserId) {
+      return `You: ${messageContent}`;
+    }
+    
+    // Try to get sender name from messages array (if selected conversation)
+    if (senderName) {
+      return `${senderName}: ${messageContent}`;
+    }
+    
+    // Try to get sender name from other_user
+    if (conv.other_user && senderId === (conv.other_user.user_id || conv.other_user.id)) {
+      return `${conv.other_user.name}: ${messageContent}`;
+    }
+    
+    // Try to get sender name from participants
+    const sender = conv.participants?.find((p: any) => p.user_id === senderId);
     if (sender?.user?.name) {
-      return `${sender.user.name}: ${conv.last_message}`;
+      return `${sender.user.name}: ${messageContent}`;
     }
     
-    // Fallback: just return the message
-    return conv.last_message;
-  }, [currentUserId]);
+    // Fallback: just return the message without sender prefix
+    return messageContent;
+  }, [currentUserId, selectedConversation, messages]);
 
   const filteredConversations = conversations.filter(conv => {
+    // Always show the selected conversation
+    if (selectedConversation && conv.id === selectedConversation.id) {
+      return true;
+    }
+    
     // Filter by tab type first
     if (selectedTab === 'Connections' && conv.type !== 'direct') {
       return false;
@@ -849,9 +861,8 @@ export const useChat = () => {
       return false;
     }
     
-    // For Connections tab: only show conversations with messages
-    // For Boards tab: show all boards (even without messages)
-    if (selectedTab === 'Connections' && !conv.last_message_id) {
+    // Only show conversations with messages
+    if (!conv.last_message) {
       return false;
     }
     

@@ -121,7 +121,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
     <div className='flex flex-col h-full min-h-0'>
 
       {/* Image Preview */}
-      <div className='flex-1 relative overflow-hidden mb-4 rounded-lg border-2 border-blue-500 min-h-[400px] max-h-[500px]'>
+      <div className='flex-1 relative overflow-hidden mb-4 rounded-lg border-2 border-pink-500 min-h-[400px] max-h-[500px]'>
         <Image
           src={selectedImage}
           alt="Selected status"
