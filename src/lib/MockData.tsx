@@ -901,3 +901,42 @@ export const inviteContacts: InviteContact[] = [
     phone: '555-0123',
   },
 ];
+
+// Status images for Add Status Modal
+import { StaticImageData } from 'next/image';
+import PostCarousel1 from "@/assets/pngs/post-carousel-1.jpg";
+import PostCarousel2 from "@/assets/pngs/posts-carsousel-2.jpg";
+import Flowers from "@/assets/pngs/flowers.png";
+import Circle1 from "@/assets/pngs/circle-1.png";
+import Circle2 from "@/assets/pngs/circle-2.png";
+import Circle3 from "@/assets/pngs/circle-3.png";
+import Circle4 from "@/assets/pngs/circle-4.png";
+import LiveBoardBg from "@/assets/pngs/live-board-bg.png";
+import LiveBoardBoys from "@/assets/pngs/live-board-boys.png";
+import SmallAnna from "@/assets/pngs/small-anna.png";
+import Thumbnail from "@/assets/pngs/thumbnail.png";
+import VideoThumbnail from "@/assets/pngs/video-thumbnail.png";
+import SocialConnection from "@/assets/pngs/social-connection.png";
+import DifferentBoard1 from "@/assets/pngs/different-board-1.png";
+import DifferentBoard2 from "@/assets/pngs/different-board-2.png";
+
+export const statusImages: (string | StaticImageData)[] = [
+  PostCarousel1,
+  PostCarousel2,
+  Flowers,
+  Circle1,
+  Circle2,
+  Circle3,
+  Circle4,
+  LiveBoardBg,
+  LiveBoardBoys,
+  SmallAnna,
+  Thumbnail,
+  VideoThumbnail,
+  SocialConnection,
+  DifferentBoard1,
+  DifferentBoard2,
+  PostCarousel1,
+  PostCarousel2,
+  Circle1,
+];
