@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, User, Settings, LogOut, Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,11 @@ import {
 import Image from 'next/image';
 import BellIcon from "@/assets/svgs/bell.svg";
 
-const AdminNavbar = () => {
+type AdminNavbarProps = {
+  onMenuClick?: () => void;
+};
+
+const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -33,18 +37,25 @@ const AdminNavbar = () => {
   };
 
   const handleLogout = () => {
-    // TODO: Implement logout logic
     router.push('/admin');
   };
 
   return (
-    <div className=" px-6 py-4 flex justify-between items-center">
-      <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+    <div className="flex justify-between items-center mt-6">
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 hover:bg-gray-100 rounded-md transition-colors"
+        >
+          <Menu size={24} className="text-gray-900" />
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+      </div>
       <div className="flex items-center gap-6">
         <Image src={BellIcon} alt='' height={24} width={24} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-3 rounded-md">
+            <div className="hidden md:flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-3 rounded-md">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center overflow-hidden shadow-sm">
                 <div className="w-full h-full bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center text-white font-semibold text-lg">
                   J

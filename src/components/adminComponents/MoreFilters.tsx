@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Filter, ChevronDown } from 'lucide-react';
+import { ChevronDown, ListFilter } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,9 +71,9 @@ const MoreFilters = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-2 px-4 py-2 border border-gray-900 rounded-[5px] text-sm text-gray-900 bg-white hover:bg-gray-50 transition-colors">
-          <Filter size={16} className="text-gray-900" />
-          <span>More Filters</span>
+        <button className="flex items-center outline-0 gap-2 px-4 py-2 border border-gray-900 rounded-[5px] text-sm text-gray-900 bg-white hover:bg-gray-50 transition-colors">
+          <ListFilter size={16} className="text-gray-900" />
+          <span className='whitespace-nowrap'>More Filters</span>
           <ChevronDown size={16} className="text-gray-900" />
         </button>
       </DropdownMenuTrigger>

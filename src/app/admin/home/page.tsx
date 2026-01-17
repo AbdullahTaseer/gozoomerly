@@ -56,18 +56,18 @@ const AdminHome = () => {
       value: '$7890k',
       subText: 'Open Cases',
       icon: AlertCircle,
-    }
+    },
   ];
 
   return (
     <main className="flex-1 rounded-tl-lg overflow-y-auto">
-      <div className="p-6">
-        <div className="flex justify-end gap-4 mb-6">
+      <div>
+        <div className="max-[500px]:grid grid-cols-2 flex justify-end gap-4 my-6">
           <MoreFilters
             selectedFilters={selectedFilters}
             onFiltersChange={setSelectedFilters}
           />
-          <div className="w-[180px] relative bg-white">
+          <div className="max-[500px]:w-full w-[180px] relative bg-white">
             <GlobalInput
               id="search"
               type="text"
@@ -85,21 +85,21 @@ const AdminHome = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 xl:gap-6">
           {dashboardCards.map((card, index) => {
             const Icon = card.icon;
             return (
               <div
                 key={index}
-                className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+                className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-md font-medium text-black">{card.title}</h3>
                     <p className="text-2xl font-bold text-gray-900 mb-1">{card.value}</p>
                   </div>
-                  <div className="bg-[#EFF3F8] p-3 rounded-lg">
-                    <Icon size={20} color='black' />
+                  <div className="bg-[#EFF3F8] p-2 sm:p-3 rounded-lg">
+                    <Icon color='black' className='h-4 w-4 sm:w-6 sm:h-6' />
                   </div>
                 </div>
                 {card.subText && (
