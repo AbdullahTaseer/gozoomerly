@@ -291,58 +291,171 @@ async function createNewDirectConversation(
 }
 
 
-
-export async function getConversationParticipants(
-  conversationId: string
-): Promise<{ participants: ConversationParticipant[]; error: any }> {
+/**
+ * Get user conversations using RPC function with pagination
+ * Returns conversations with last message details
+ */
+export async function getUserConversationsWithPagination(
+  userId: string,
+  limit: number = 10,
+  offset: number = 0
+): Promise<{ 
+  conversations: Conversation[]; 
+  pagination: { total: number; limit: number; offset: number; has_more: boolean };
+  error: any 
+}> {
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase
-      .from('conversation_participants')
-      .select('id, conversation_id, user_id, joined_at, last_read_at, last_read_message_id')
-      .eq('conversation_id', conversationId);
+    const { data, error } = await supabase.rpc('get_user_conversations', {
+      p_user_id: userId,
+      p_limit: limit,
+      p_offset: offset
+    });
 
     if (error) {
-      return { participants: [], error };
+      console.error('Error calling get_user_conversations RPC:', error);
+      return { 
+        conversations: [], 
+        pagination: { total: 0, limit, offset, has_more: false },
+        error 
+      };
     }
 
-    if (!data || data.length === 0) {
-      return { participants: [], error: null };
+    if (!data || !data.data) {
+      return { 
+        conversations: [], 
+        pagination: data?.pagination || { total: 0, limit, offset, has_more: false },
+        error: null 
+      };
     }
 
-    const participantsWithUsers = await Promise.all(
-      data.map(async (p: any) => {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('id, name, profile_pic_url')
-          .eq('id', p.user_id)
-          .single();
+    // Map the RPC response to Conversation objects
+    const conversations: Conversation[] = data.data.map((conv: any) => ({
+      id: conv.id,
+      type: conv.type,
+      name: conv.name,
+      created_by: conv.created_by,
+      created_at: conv.created_at,
+      updated_at: conv.updated_at,
+      last_message_at: conv.last_message_at,
+      last_message: conv.last_message,
+      last_message_id: conv.last_message_id,
+      last_message_sender_id: conv.last_message_sender_id,
+      participants: conv.participants || [],
+      unread_count: conv.unread_count || 0,
+    }));
 
-        return {
-          id: p.id,
-          conversation_id: p.conversation_id,
-          user_id: p.user_id,
-          joined_at: p.joined_at,
-          last_read_at: p.last_read_at || undefined,
-          last_read_message_id: p.last_read_message_id || undefined,
-          other_user: profileData ? {
-            id: profileData.id,
-            name: profileData.name || 'Unknown User',
-            profile_pic_url: profileData.profile_pic_url,
-          } : {
-            id: p.user_id,
-            name: 'Unknown User',
-            profile_pic_url: undefined,
-          },
-        };
-      })
-    );
-
-    return { participants: participantsWithUsers, error: null };
+    return { 
+      conversations, 
+      pagination: data.pagination,
+      error: null 
+    };
   } catch (err) {
-    return { participants: [], error: err };
+    console.error('Error in getUserConversationsWithPagination:', err);
+    return { 
+      conversations: [], 
+      pagination: { total: 0, limit, offset, has_more: false },
+      error: err 
+    };
   }
+}
+
+/**
+ * Get the last message details for a conversation
+ * @param conversation - The conversation object
+ * @returns Object with last message details or null if no last message
+ */
+export function getLastMessage(conversation: Conversation): {
+  content: string;
+  senderId: string;
+  timestamp: string;
+  messageId: string;
+} | null {
+  if (!conversation.last_message || !conversation.last_message_at) {
+    return null;
+  }
+
+  return {
+    content: conversation.last_message,
+    senderId: conversation.last_message_sender_id || '',
+    timestamp: conversation.last_message_at,
+    messageId: conversation.last_message_id || '',
+  };
+}
+
+/**
+ * Get formatted last message with sender info
+ * @param conversation - The conversation object
+ * @param currentUserId - The current user's ID
+ * @returns Formatted string like "You: Hello" or "John: Hi there"
+ */
+export function getFormattedLastMessage(
+  conversation: Conversation,
+  currentUserId: string
+): string {
+  const lastMsg = getLastMessage(conversation);
+  
+  if (!lastMsg) {
+    return 'No messages yet';
+  }
+
+  const isCurrentUser = lastMsg.senderId === currentUserId;
+  
+  if (isCurrentUser) {
+    return `You: ${lastMsg.content}`;
+  }
+
+  // Find sender name from participants
+  const sender = conversation.participants?.find(
+    p => p.user_id === lastMsg.senderId
+  );
+
+  const senderName = sender?.user?.name || 'Someone';
+  return `${senderName}: ${lastMsg.content}`;
+}
+
+/**
+ * Get time ago for last message
+ * @param conversation - The conversation object
+ * @returns String like "2m ago", "1h ago", "Yesterday", etc.
+ */
+export function getLastMessageTimeAgo(conversation: Conversation): string {
+  const lastMsg = getLastMessage(conversation);
+  
+  if (!lastMsg) {
+    return '';
+  }
+
+  const now = new Date();
+  const messageTime = new Date(lastMsg.timestamp);
+  const diffInSeconds = Math.floor((now.getTime() - messageTime.getTime()) / 1000);
+
+  if (diffInSeconds < 60) {
+    return 'Just now';
+  }
+
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) {
+    return `${diffInMinutes}m ago`;
+  }
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
+    return `${diffInHours}h ago`;
+  }
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) {
+    return 'Yesterday';
+  }
+
+  if (diffInDays < 7) {
+    return `${diffInDays}d ago`;
+  }
+
+  // Format as date for older messages
+  return messageTime.toLocaleDateString();
 }
 
 export async function getUserConversations(
