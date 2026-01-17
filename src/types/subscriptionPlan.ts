@@ -25,3 +25,26 @@ export interface SubscriptionPlanListVariables {
   isambassador?: boolean;
 }
 
+export interface Subscription {
+  subscription_id: number;
+  user_id: number;
+  plan_id: number;
+  stripe_subscription_id: string;
+  stripeplanid: string;
+  stripepriceid: string;
+  status: string;
+  joining_fee_charged: boolean;
+  current_period_start: string;
+  current_period_end: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSubscriptionResponse {
+  createSubscription: Subscription;
+}
+
+export interface CreateSubscriptionVariables {
+  userId: number;
+  planId: number;
+}

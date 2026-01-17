@@ -19,13 +19,11 @@ import { ArrowLeft } from 'lucide-react';
 const SignupContent = () => {
   const searchParams = useSearchParams();
   
-  // Check for referral code in URL
   const referralCode = searchParams.get('referral_code') || 
                        searchParams.get('referralCode') || 
                        searchParams.get('invite_code') || 
                        searchParams.get('inviteCode') || '';
   
-  // Get other URL parameters
   const urlParams = {
     email: searchParams.get('email') || '',
     name: searchParams.get('name') || '',
@@ -33,13 +31,12 @@ const SignupContent = () => {
     referralCode: referralCode
   };
 
-  // If referral code exists, show the partner registration form
   if (referralCode) {
     return (
       <AuthLayout>
         <div className="w-full max-w-2xl">
           <PartnerRegistrationForm
-            partnerId={4} // Partner ID 4 as requested
+            partnerId={4} 
             initialValues={urlParams}
             onBack={() => window.history.back()}
           />
@@ -48,7 +45,6 @@ const SignupContent = () => {
     );
   }
 
-  // Otherwise, show the normal signup flow
   return <SignupFlow />;
 };
 
@@ -108,7 +104,6 @@ const SignupFlow = () => {
     setError('');
     
     try {
-      // Just verify OTP and password, we'll update user info later
       const result = await authService.verifyPhoneOTP({
         phone: phoneNumber,
         token: otp,
@@ -133,7 +128,6 @@ const SignupFlow = () => {
     setUserInfo(info);
     
     try {
-      // Update user metadata
       const { error } = await authService.updateUserProfile({
         full_name: info.fullName,
         birth_date: info.birthDate,
@@ -182,7 +176,7 @@ const SignupFlow = () => {
         }
       }
       
-      setStep(5);
+      router.push('/thankYou');
     } catch (err) {
       console.error('Error in signup:', err);
       setError('An unexpected error occurred');

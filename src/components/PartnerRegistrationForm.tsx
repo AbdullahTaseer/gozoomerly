@@ -199,8 +199,8 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
           // Redirect to payment page if needed
           router.push('/payment');
         } else {
-          // Redirect to success page
-          router.push('/register?step=success');
+          // Redirect to thank you page
+          router.push('/thankYou');
         }
       }
     } catch (err) {

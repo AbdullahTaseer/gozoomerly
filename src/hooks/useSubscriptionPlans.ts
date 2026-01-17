@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { apolloClient } from '../lib/apolloClient';
 import { GET_SUBSCRIPTION_PLANS } from '../graphql/queries/subscriptionPlan';
-import { SubscriptionPlan } from '../types/subscriptionPlan';
+import { 
+  SubscriptionPlan, 
+  SubscriptionPlanListResponse, 
+  SubscriptionPlanListVariables 
+} from '../types/subscriptionPlan';
 
 interface UseSubscriptionPlansParams {
   global?: boolean;
@@ -18,7 +22,7 @@ export const useSubscriptionPlans = (params: UseSubscriptionPlansParams = {}) =>
     setError(null);
     
     try {
-      const response = await apolloClient.query({
+      const response = await apolloClient.query<SubscriptionPlanListResponse, SubscriptionPlanListVariables>({
         query: GET_SUBSCRIPTION_PLANS,
         variables: {
           global: params.global ?? true,

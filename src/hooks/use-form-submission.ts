@@ -119,23 +119,18 @@ export const useFormSubmission = () => {
     }
   };
 
-  /**
-   * Submit and process form in one operation
-   * This is the main method to use for form submissions
-   */
+ 
   const submitAndProcessForm = async (params: SubmitFormParams) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Step 1: Submit the form
       const submitResult = await submitForm(params);
 
       if (submitResult?.id) {
         const submissionId = submitResult.id;
         const submissionBrandId = submitResult.brand_id;
 
-        // Store any necessary data in localStorage
         if (submitResult.stripe_client_secret) {
           localStorage.setItem('clientSecret', submitResult.stripe_client_secret);
         }
@@ -143,14 +138,12 @@ export const useFormSubmission = () => {
           localStorage.setItem('userId', submitResult.user_id.toString());
         }
 
-        // Step 2: Process the submission
         try {
           const processResult = await processSubmission({
             submissionId: submissionId,
             brandId: submissionBrandId
           });
 
-          // Store additional data if needed
           if (processResult?.stripe_client_secret) {
             localStorage.setItem('clientSecret', processResult.stripe_client_secret);
           }
@@ -160,8 +153,6 @@ export const useFormSubmission = () => {
 
           return { submitResult, processResult };
         } catch (processError) {
-          console.log("🚀 ~ submitAndProcessForm ~ processError:", processError);
-          // Return submit result even if processing fails
           return { submitResult, processResult: null };
         }
       } else {
