@@ -49,7 +49,7 @@ const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
         >
           <Menu size={24} className="text-gray-900" />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
       </div>
       <div className="flex items-center gap-6">
         <Image src={BellIcon} alt='' height={24} width={24} />

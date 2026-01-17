@@ -98,7 +98,7 @@ const AdminHome = () => {
                     <h3 className="text-md font-medium text-black">{card.title}</h3>
                     <p className="text-2xl font-bold text-gray-900 mb-1">{card.value}</p>
                   </div>
-                  <div className="bg-[#EFF3F8] p-2 sm:p-3 rounded-lg">
+                  <div className="bg-[#EFF3F8] p-2 sm:p-3 rounded-md">
                     <Icon color='black' className='h-4 w-4 sm:w-6 sm:h-6' />
                   </div>
                 </div>

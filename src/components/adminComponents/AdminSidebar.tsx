@@ -3,14 +3,15 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { X } from 'lucide-react';
 import {
+  X,
   Users,
-  Layers,
+  Table2,
   Heart,
   Gift,
   Flag,
-  MessageCircle
+  MessageSquare,
+  LayoutDashboard,
 } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 
@@ -30,13 +31,13 @@ const AdminSidebar = ({ isOpen = false, onClose }: AdminSidebarProps) => {
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
-    { label: 'Dashboard', icon: Layers, path: '/admin/home' },
+    { label: 'Dashboard', icon: LayoutDashboard, path: '/admin/home' },
     { label: 'Users Management', icon: Users, path: '/admin/users' },
-    { label: 'Boards Management', icon: Layers, path: '/admin/boards' },
+    { label: 'Boards Management', icon: Table2, path: '/admin/boards' },
     { label: 'Wishes Management', icon: Heart, path: '/admin/wishes' },
     { label: 'Gifts Management', icon: Gift, path: '/admin/gifts' },
     { label: 'Reported Content', icon: Flag, path: '/admin/reported' },
-    { label: 'Support Tickets', icon: MessageCircle, path: '/admin/support' }
+    { label: 'Support Tickets', icon: MessageSquare, path: '/admin/support' }
   ];
 
   const isActive = (path: string) => {
