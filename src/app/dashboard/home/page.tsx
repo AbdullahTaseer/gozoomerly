@@ -6,7 +6,9 @@ import SpotLightCard from '@/components/cards/SpotLightCard';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
 import { spotlightCampaigns, boardInvitations, feedCardData } from '@/lib/MockData';
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
-import { fetchActiveBoards, fetchUserBoards, type Board } from '@/lib/supabase/boards';
+import { fetchUserBoards, type Board } from '@/lib/supabase/boards';
+import { useGetUserBoards } from '@/hooks/useGetUserBoards';
+import { createClient } from '@/lib/supabase/client';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { authService } from '@/lib/supabase/auth';
 import HomeFeedFilters from '@/components/filters/HomeFeedFilters';
@@ -15,7 +17,6 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import { Search, Layers, Grid2x2, ChevronRight } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { BoardsList } from '@/components/boards/BoardsList';
-import { createClient } from '@/lib/supabase/client';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import MobileHeader from '@/components/navbar/MobileHeader';
 
@@ -23,12 +24,14 @@ const Home = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [viewMode, setViewMode] = useState<'grid' | 'layers'>('grid');
-  const [activeBoards, setActiveBoards] = useState<Board[]>([]);
-  const [activeProBoards, setActiveProBoards] = useState<Board[]>([]);
   const [followingBoards, setFollowingBoards] = useState<Board[]>([]);
-  const [yourBoards, setYourBoards] = useState<Board[]>([]);
-  const [pastBoards, setPastBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const {
+    boards: userBoards,
+    isLoading: userBoardsLoading,
+    fetchUserBoards: fetchUserBoardsRPC
+  } = useGetUserBoards();
 
   useEffect(() => {
     loadBoards();
@@ -47,90 +50,72 @@ const Home = () => {
 
       const supabase = createClient();
 
-      // Fetch active boards
-      const { boards: activeBoardsData } = await fetchActiveBoards({
-        userId: user.id,
-        includeStatus: ['published'],
+      // Call get_user_boards RPC function
+      await fetchUserBoardsRPC({
+        p_user_id: user.id,
+        p_status: 'live',
+        p_limit: 10,
+        p_offset: 0
       });
 
-      // Fetch user boards (boards created by the user)
+      // Fetch user boards (boards created by the user) for Following section
       const { boards: userBoardsData } = await fetchUserBoards(user.id);
 
-      // Fetch all boards for past boards
-      const { boards: allBoards } = await fetchActiveBoards({
-        userId: user.id,
-        showAll: true,
-      });
-
-      // Filter past boards
-      const pastBoardsData = (allBoards || []).filter((board: Board) => {
-        if (board.status === 'completed' || board.status === 'cancelled') return true;
-        if (board.deadline_date) {
-          return new Date(board.deadline_date) < new Date();
-        }
-        return false;
-      }).slice(0, 5);
-
-      // Fetch contributors for each board
+      // Batch fetch all contributors efficiently
       const fetchContributors = async (boards: Board[]) => {
-        return Promise.all(
-          boards.map(async (board) => {
-            try {
-              const { data: participants } = await supabase
-                .from('board_participants')
-                .select('user_id')
-                .eq('board_id', board.id)
-                .limit(10);
+        if (!boards || boards.length === 0) return [];
 
-              const contributorAvatars: (string | typeof ProfileAvatar)[] = [];
+        const boardIds = boards.map(b => b.id);
 
-              if (participants && participants.length > 0) {
-                const userIds = participants.map(p => p.user_id);
-                const { data: profiles } = await supabase
-                  .from('profiles')
-                  .select('profile_pic_url')
-                  .in('id', userIds);
+        // Fetch all participants for all boards in ONE query
+        const { data: allParticipants } = await supabase
+          .from('board_participants')
+          .select('board_id, user_id')
+          .in('board_id', boardIds);
 
-                if (profiles) {
-                  profiles.forEach((profile) => {
-                    if (profile.profile_pic_url) {
-                      contributorAvatars.push(profile.profile_pic_url);
-                    } else {
-                      contributorAvatars.push(ProfileAvatar);
-                    }
-                  });
-                } else {
-                  participants.forEach(() => {
-                    contributorAvatars.push(ProfileAvatar);
-                  });
-                }
-              }
+        if (!allParticipants || allParticipants.length === 0) {
+          return boards.map(board => ({ ...board, topContributors: [] }));
+        }
 
-              return {
-                ...board,
-                topContributors: contributorAvatars,
-              };
-            } catch (err) {
-              return {
-                ...board,
-                topContributors: [],
-              };
-            }
-          })
-        );
+        // Get all unique user IDs
+        const allUserIds = [...new Set(allParticipants.map(p => p.user_id))];
+
+        // Fetch all profiles in ONE query
+        const { data: allProfiles } = await supabase
+          .from('profiles')
+          .select('id, profile_pic_url')
+          .in('id', allUserIds);
+
+        // Create a map of user_id to profile_pic_url
+        const profileMap = (allProfiles || []).reduce((acc, profile) => {
+          acc[profile.id] = profile.profile_pic_url || ProfileAvatar;
+          return acc;
+        }, {} as Record<string, string | typeof ProfileAvatar>);
+
+        // Group participants by board_id
+        const participantsByBoard = allParticipants.reduce((acc, p) => {
+          if (!acc[p.board_id]) acc[p.board_id] = [];
+          acc[p.board_id].push(p.user_id);
+          return acc;
+        }, {} as Record<string, string[]>);
+
+        // Map contributors to each board
+        return boards.map(board => {
+          const boardParticipants = participantsByBoard[board.id] || [];
+          const contributorAvatars = boardParticipants
+            .slice(0, 10)
+            .map(userId => profileMap[userId] || ProfileAvatar);
+
+          return {
+            ...board,
+            topContributors: contributorAvatars,
+          };
+        });
       };
 
-      const [activeWithContributors, yourWithContributors, pastWithContributors] = await Promise.all([
-        fetchContributors(activeBoardsData || []),
-        fetchContributors(userBoardsData || []),
-        fetchContributors(pastBoardsData),
-      ]);
+      const followingWithContributors = await fetchContributors(userBoardsData || []);
+      setFollowingBoards(followingWithContributors.slice(0, 5));
 
-      setActiveBoards(activeWithContributors.slice(0, 5));
-      setActiveProBoards(activeWithContributors.slice(0, 5));
-      setFollowingBoards(activeWithContributors.slice(0, 5));
-      setYourBoards(yourWithContributors.slice(0, 5));
-      setPastBoards(pastWithContributors);
     } catch (err) {
       console.error('Error loading boards:', err);
     } finally {
@@ -222,7 +207,7 @@ const Home = () => {
                     View all <ChevronRight size={16} />
                   </button>
                 </div>
-                <BoardsList boards={activeBoards} loading={loading} />
+                <BoardsList boards={userBoards.slice(0, 5) as any} loading={loading || userBoardsLoading} />
               </div>
 
               {/* Active Pro Section */}
@@ -236,7 +221,7 @@ const Home = () => {
                     View all <ChevronRight size={16} />
                   </button>
                 </div>
-                <BoardsList boards={activeProBoards} loading={loading} />
+                <BoardsList boards={[]} loading={loading} />
               </div>
 
               <div>
@@ -283,7 +268,7 @@ const Home = () => {
                     View all <ChevronRight size={16} />
                   </button>
                 </div>
-                <BoardsList boards={yourBoards} loading={loading} />
+                <BoardsList boards={followingBoards} loading={loading} />
               </div>
 
               {/* Your Boards Section */}

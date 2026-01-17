@@ -17,6 +17,7 @@ import { AuthService } from '@/lib/supabase/auth';
 import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import toast from 'react-hot-toast';
+import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 
 const authService = new AuthService();
 
@@ -37,6 +38,15 @@ export const useChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSettingProgrammaticallyRef = useRef(false);
+  
+  // Hook for fetching user boards
+  const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
+  const fetchUserBoardsRef = useRef(fetchUserBoards);
+  
+  // Update ref when function changes
+  useEffect(() => {
+    fetchUserBoardsRef.current = fetchUserBoards;
+  }, [fetchUserBoards]);
 
   useEffect(() => {
     async function getCurrentUser() {
@@ -247,6 +257,45 @@ export const useChat = () => {
       }
     }
   }, [selectedTab, selectedConversation]);
+
+  // Fetch active boards when Boards tab is selected
+  useEffect(() => {
+    if (selectedTab === 'Boards' && currentUserId && fetchUserBoardsRef.current) {
+      console.log('[use-chat] Fetching user boards - selectedTab:', selectedTab, 'currentUserId:', currentUserId);
+      
+      const loadActiveBoards = async () => {
+        try {
+          console.log('[use-chat] Calling fetchUserBoards...');
+          const fn = fetchUserBoardsRef.current;
+          if (fn) {
+            await fn({
+              p_user_id: currentUserId,
+              p_status: 'live', // Fetch only live/active boards
+              p_limit: 50,
+              p_offset: 0
+            });
+            console.log('[use-chat] fetchUserBoards completed');
+          } else {
+            console.error('[use-chat] fetchUserBoards is not a function!');
+          }
+        } catch (err) {
+          console.error('[use-chat] Error in fetchUserBoards:', err);
+        }
+      };
+      loadActiveBoards();
+    } else {
+      console.log('[use-chat] Not fetching boards - selectedTab:', selectedTab, 'currentUserId:', currentUserId, 'hasFunction:', !!fetchUserBoardsRef.current);
+    }
+  }, [selectedTab, currentUserId]);
+
+  // Filter active boards from the fetched boards
+  const activeBoards = boards.filter((board: any) => {
+    // Active boards are those with status 'published' and deadline not passed
+    return (
+      board.status === 'published' &&
+      (!board.deadline_date || new Date(board.deadline_date) > new Date())
+    );
+  });
 
 
   const handleMessageReceived = useCallback((message: ChatMessage) => {
@@ -911,6 +960,8 @@ export const useChat = () => {
     getLastMessageWithSender,
     filteredConversations,
     shouldShowHeader,
+    activeBoards,
+    loadingBoards,
   };
 };
 

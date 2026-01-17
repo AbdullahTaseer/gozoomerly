@@ -6,7 +6,7 @@ import { Search } from 'lucide-react';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
-import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
+import { fetchActiveBoards, fetchLiveBoards, type Board } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
@@ -31,16 +31,17 @@ const ActiveBoards = () => {
         return;
       }
 
-      const { boards: activeBoards, error: activeError } = await fetchActiveBoards({
-        userId: user.id,
-        includeStatus: ['published'],
+      // Fetch live/active boards (all public published boards)
+      const { boards: liveBoards, error: liveError } = await fetchLiveBoards({
+        limit: 50,
+        includePrivacy: ['public']
       });
 
-      if (activeError) {
-        console.error('Error fetching active boards:', activeError);
+      if (liveError) {
+        console.error('Error fetching live boards:', liveError);
       }
 
-      let fetchedBoards = activeBoards || [];
+      let fetchedBoards = liveBoards || [];
 
       // Fetch top contributors for each board
       const supabase = createClient();

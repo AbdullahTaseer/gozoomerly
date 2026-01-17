@@ -29,6 +29,8 @@ interface BoardsTabProps {
   formatTime: (dateString?: string) => string;
   getLastMessageWithSender: (conv: Conversation) => string;
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
+  activeBoards?: any[];
+  loadingBoards?: boolean;
 }
 
 const BoardsTab: React.FC<BoardsTabProps> = ({
@@ -49,12 +51,50 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
   formatTime,
   getLastMessageWithSender,
   shouldShowHeader,
+  activeBoards = [],
+  loadingBoards = false,
 }) => {
   return (
     <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
       <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
+        {/* Active Boards Section */}
+        {activeBoards && activeBoards.length > 0 && (
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">Active Boards</h3>
+            {loadingBoards ? (
+              <div className="p-4 text-center text-gray-400">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
+                <p className="mt-2 text-xs">Loading active boards...</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {activeBoards.map((board: any) => (
+                  <div
+                    key={board.id}
+                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
+                  >
+                    <p className="font-medium text-sm text-black">{board.title || 'Untitled Board'}</p>
+                    {board.description && (
+                      <p className="text-xs text-gray-600 mt-1 line-clamp-1">{board.description}</p>
+                    )}
+                    {board.deadline_date && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Deadline: {new Date(board.deadline_date).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Board Conversations Section */}
+        <div className="p-4">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Conversations</h3>
+        </div>
         {loading ? (
-          <div className="p-4 text-center text-black flex flex-col items-center justify-center h-full">
+          <div className="p-4 text-center text-black flex flex-col items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
             <p className="mt-4 text-sm">Loading board conversations...</p>
           </div>

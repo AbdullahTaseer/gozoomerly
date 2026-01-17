@@ -50,6 +50,8 @@ const ChatPageContent = () => {
     getLastMessageWithSender,
     filteredConversations,
     shouldShowHeader,
+    activeBoards,
+    loadingBoards,
   } = useChat();
 
   // Handle conversationId or userId from URL query parameter
@@ -273,6 +275,8 @@ const ChatPageContent = () => {
             formatTime={formatTime}
             getLastMessageWithSender={getLastMessageWithSender}
             shouldShowHeader={shouldShowHeader}
+            activeBoards={activeBoards}
+            loadingBoards={loadingBoards}
           />
         )}
       </div>

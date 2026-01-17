@@ -259,7 +259,7 @@ const CreateBirthdayBoard = () => {
             profile_photo_url: customFieldValues.profile_photo_url,
             theme_color: customFieldValues.theme_color || '#9B59B6',
           },
-          goal_type: customFieldValues.goal_amount ? 'monetary' : 'non_monetary',
+          goal_type: customFieldValues.goal_amount ? 'monetary' : 'nonmonetary',
           goal_amount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : undefined,
           currency: 'USD',
           deadline_date: customFieldValues.deadline_date,
@@ -318,7 +318,7 @@ const CreateBirthdayBoard = () => {
           updates.goal_type = 'monetary';
           updates.goal_amount = parseFloat(customFieldValues.goal_amount);
         } else {
-          updates.goal_type = 'non_monetary';
+          updates.goal_type = 'nonmonetary';
         }
 
         const { data, error } = await updateBoard(boardId, updates);
@@ -812,7 +812,70 @@ const CreateBirthdayBoard = () => {
                         Tell everyone what we're aiming for and why it matters.
                       </p>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-4 mt-6">
+                      {/* Title Field - Always show */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Board Title <span className="text-red-500 ml-1">*</span>
+                        </label>
+                        <GlobalInput
+                          type="text"
+                          placeholder="e.g., John's 30th Birthday Celebration"
+                          value={customFieldValues.title || ''}
+                          onChange={(e) => handleFieldChange('title', e.target.value)}
+                          width="100%"
+                          height="48px"
+                        />
+                      </div>
+
+                      {/* Description Field - Always show */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Description
+                        </label>
+                        <textarea
+                          placeholder="Tell everyone what makes this celebration special..."
+                          value={customFieldValues.description || ''}
+                          onChange={(e) => handleFieldChange('description', e.target.value)}
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F43C83] resize-none"
+                          rows={4}
+                        />
+                      </div>
+
+                      {/* Goal Amount Field - Always show */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Fundraising Goal (Optional)
+                        </label>
+                        <GlobalInput
+                          type="number"
+                          placeholder="e.g., 500"
+                          value={customFieldValues.goal_amount || ''}
+                          onChange={(e) => handleFieldChange('goal_amount', e.target.value)}
+                          width="100%"
+                          height="48px"
+                        />
+                        <p className="text-sm text-gray-500 mt-1">
+                          Leave empty if this is just for wishes and memories
+                        </p>
+                      </div>
+
+                      {/* Deadline Date Field - Always show */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Deadline Date (Optional)
+                        </label>
+                        <GlobalInput
+                          type="date"
+                          placeholder="Select deadline"
+                          value={customFieldValues.deadline_date || ''}
+                          onChange={(e) => handleFieldChange('deadline_date', e.target.value)}
+                          width="100%"
+                          height="48px"
+                        />
+                      </div>
+
+                      {/* Render any additional fields from board type */}
                       {fieldGroups.step2?.map((field) => (
                         <div key={field.id}>
                           <label className="block text-sm font-medium mb-2">
@@ -825,6 +888,7 @@ const CreateBirthdayBoard = () => {
                           )}
                         </div>
                       ))}
+
                       <div className="flex justify-between mt-6">
                         <GlobalButton
                           title="Back"

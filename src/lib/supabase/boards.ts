@@ -28,7 +28,7 @@ export interface Board {
   description?: string;
   honoree_details?: any;
   cover_media_id?: string;
-  goal_type: 'monetary' | 'non_monetary';
+  goal_type: 'monetary' | 'nonmonetary';
   goal_amount?: number;
   currency: string;
   deadline_date?: string;
@@ -69,7 +69,7 @@ export interface CreateBoardInput {
     profile_photo_url?: string;
     theme_color?: string;
   };
-  goal_type?: 'monetary' | 'non_monetary';
+  goal_type?: 'monetary' | 'nonmonetary';
   goal_amount?: number;
   currency?: string;
   deadline_date?: string;
@@ -228,25 +228,38 @@ export async function getUserBoards(userId: string) {
   }
 
   if (data) {
-    const boardsWithCounts = await Promise.all(
-      data.map(async (board) => {
-        const { count: invitedCount } = await supabase
-          .from('board_invitations')
-          .select('*', { count: 'exact', head: true })
-          .eq('board_id', board.id);
-
-        const { count: mediaCount } = await supabase
-          .from('media')
-          .select('*', { count: 'exact', head: true })
-          .eq('board_id', board.id);
-
-        return {
-          ...board,
-          invited_count: invitedCount || 0,
-          media_count: mediaCount || 0
-        };
-      })
-    );
+    // Batch fetch all invitation and media counts in just 2 queries
+    const boardIds = data.map(board => board.id);
+    
+    // Fetch all invitations for all boards at once
+    const { data: allInvitations } = await supabase
+      .from('board_invitations')
+      .select('board_id')
+      .in('board_id', boardIds);
+    
+    // Fetch all media for all boards at once
+    const { data: allMedia } = await supabase
+      .from('media')
+      .select('board_id')
+      .in('board_id', boardIds);
+    
+    // Count invitations and media per board
+    const invitationCounts = (allInvitations || []).reduce((acc, inv) => {
+      acc[inv.board_id] = (acc[inv.board_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    const mediaCounts = (allMedia || []).reduce((acc, media) => {
+      acc[media.board_id] = (acc[media.board_id] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Map the counts to boards
+    const boardsWithCounts = data.map(board => ({
+      ...board,
+      invited_count: invitationCounts[board.id] || 0,
+      media_count: mediaCounts[board.id] || 0
+    }));
 
     return { data: boardsWithCounts, error: null };
   }
@@ -758,6 +771,117 @@ export async function createOrUpdateBoard(
   }
 }
 
+export async function fetchLiveBoards(options?: {
+  limit?: number;
+  offset?: number;
+  includePrivacy?: string[];
+}) {
+  const supabase = createClient();
+  
+  // Fetch live/published boards without user participation requirement
+  let query = supabase
+    .from('boards')
+    .select(`
+      *,
+      board_types (
+        name,
+        slug,
+        icon,
+        color_scheme
+      ),
+      profiles:creator_id (
+        id,
+        name,
+        profile_pic_url
+      )
+    `)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false });
+
+  // Filter by privacy if specified, otherwise default to public
+  if (options?.includePrivacy) {
+    query = query.in('privacy', options.includePrivacy);
+  } else {
+    query = query.eq('privacy', 'public');
+  }
+
+  // Add pagination
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+  if (options?.offset) {
+    query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
+  }
+
+  try {
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching live boards:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      return { boards: [], error };
+    }
+
+    if (data) {
+      // Batch fetch all counts in just 3 queries instead of N*3 queries
+      const boardIds = data.map(board => board.id);
+      
+      // Fetch all participants for all boards at once
+      const { data: allParticipants } = await supabase
+        .from('board_participants')
+        .select('board_id')
+        .in('board_id', boardIds);
+      
+      // Fetch all wishes for all boards at once
+      const { data: allWishes } = await supabase
+        .from('wishes')
+        .select('board_id')
+        .in('board_id', boardIds);
+      
+      // Fetch all media for all boards at once
+      const { data: allMedia } = await supabase
+        .from('media')
+        .select('board_id')
+        .in('board_id', boardIds);
+      
+      // Count per board
+      const participantCounts = (allParticipants || []).reduce((acc, p) => {
+        acc[p.board_id] = (acc[p.board_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const wishesCounts = (allWishes || []).reduce((acc, w) => {
+        acc[w.board_id] = (acc[w.board_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const mediaCounts = (allMedia || []).reduce((acc, m) => {
+        acc[m.board_id] = (acc[m.board_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Map the counts to boards
+      const boardsWithCounts = data.map(board => ({
+        ...board,
+        participants_count: participantCounts[board.id] || 0,
+        wishes_count: wishesCounts[board.id] || 0,
+        media_count: mediaCounts[board.id] || 0
+      }));
+
+      return { boards: boardsWithCounts, error: null };
+    }
+
+    return { boards: [], error: null };
+  } catch (err) {
+    console.error('Error in fetchLiveBoards:', err);
+    return { boards: [], error: err };
+  }
+}
+
 export async function fetchActiveBoards(options?: {
   userId?: string;
   includeStatus?: string[];
@@ -818,34 +942,38 @@ export async function fetchActiveBoards(options?: {
     }
 
     if (data) {
-      const boardsWithCounts = await Promise.all(
-        data.map(async (board) => {
-          try {
-            const { count: invitedCount } = await supabase
-              .from('board_invitations')
-              .select('*', { count: 'exact', head: true })
-              .eq('board_id', board.id);
-
-            const { count: mediaCount } = await supabase
-              .from('media')
-              .select('*', { count: 'exact', head: true })
-              .eq('board_id', board.id);
-
-            return {
-              ...board,
-              invited_count: invitedCount || 0,
-              media_count: mediaCount || 0
-            };
-          } catch (err) {
-            console.error('Error fetching counts for board:', board.id, err);
-            return {
-              ...board,
-              invited_count: 0,
-              media_count: 0
-            };
-          }
-        })
-      );
+      // Batch fetch all invitation and media counts in just 2 queries
+      const boardIds = data.map(board => board.id);
+      
+      // Fetch all invitations for all boards at once
+      const { data: allInvitations } = await supabase
+        .from('board_invitations')
+        .select('board_id')
+        .in('board_id', boardIds);
+      
+      // Fetch all media for all boards at once
+      const { data: allMedia } = await supabase
+        .from('media')
+        .select('board_id')
+        .in('board_id', boardIds);
+      
+      // Count invitations and media per board
+      const invitationCounts = (allInvitations || []).reduce((acc, inv) => {
+        acc[inv.board_id] = (acc[inv.board_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      const mediaCounts = (allMedia || []).reduce((acc, media) => {
+        acc[media.board_id] = (acc[media.board_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      
+      // Map the counts to boards
+      const boardsWithCounts = data.map(board => ({
+        ...board,
+        invited_count: invitationCounts[board.id] || 0,
+        media_count: mediaCounts[board.id] || 0
+      }));
 
       return { boards: boardsWithCounts || [], error: null };
     }

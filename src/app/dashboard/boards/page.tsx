@@ -118,7 +118,7 @@ const Boards = () => {
                     ? new Date(board.honoree_details.date_of_birth).toLocaleDateString()
                     : new Date(board.created_at).toLocaleDateString()}
                   description={board.description || ''}
-                  fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Non-monetary goal'}
+                  fundTitle={board.goal_type === 'monetary' ? `$${board.goal_amount || 0} Goal` : 'Nonmonetary goal'}
                   raised={board.total_raised || 0}
                   target={board.goal_amount || 0}
                   invited={board.shares_count || 0}
