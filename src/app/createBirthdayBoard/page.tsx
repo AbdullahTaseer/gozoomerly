@@ -30,6 +30,7 @@ import {
 } from '@/lib/supabase/boards';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
+import * as Switch from '@radix-ui/react-switch';
 
 const CreateBirthdayBoard = () => {
 
@@ -90,11 +91,11 @@ const CreateBirthdayBoard = () => {
         setSelectedBoardType(boardType);
         fetchBoardTypeFields(boardType.id);
         // Don't remove it yet - will remove after board is created
-        
+
         // Check if we're starting a new board or continuing an existing one
         const currentBoardId = localStorage.getItem('currentBoardId');
         const savedBoardData = localStorage.getItem('boardTypeFields');
-        
+
         // Only load saved data if we're continuing an existing board
         // If there's no currentBoardId, we're starting fresh - clear old data
         if (!currentBoardId && savedBoardData) {
@@ -269,18 +270,18 @@ const CreateBirthdayBoard = () => {
         };
 
         const { data, error } = await createBoard(userId, boardData);
-        
+
         if (error || !data) {
           const errorMessage = error?.message || 'Failed to create board';
           alert(`Failed to create board: ${errorMessage}`);
           return;
         }
-        
+
         setBoardId(data.id);
         localStorage.setItem('currentBoardId', data.id);
         localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
         setStep(step + 1);
-        
+
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         alert(`An unexpected error occurred: ${errorMessage}`);
@@ -294,15 +295,15 @@ const CreateBirthdayBoard = () => {
       setCreating(true);
       try {
         const updates: Partial<Board> = {};
-        
+
         if (customFieldValues.title) {
           updates.title = customFieldValues.title;
         }
-        
+
         if (customFieldValues.description) {
           updates.description = customFieldValues.description;
         }
-        
+
         updates.honoree_details = {
           first_name: customFieldValues.first_name,
           last_name: customFieldValues.last_name,
@@ -313,7 +314,7 @@ const CreateBirthdayBoard = () => {
           profile_photo_url: customFieldValues.profile_photo_url,
           theme_color: customFieldValues.theme_color || '#9B59B6',
         };
-        
+
         if (customFieldValues.goal_amount) {
           updates.goal_type = 'monetary';
           updates.goal_amount = parseFloat(customFieldValues.goal_amount);
@@ -322,16 +323,16 @@ const CreateBirthdayBoard = () => {
         }
 
         const { data, error } = await updateBoard(boardId, updates);
-        
+
         if (error || !data) {
           const errorMessage = error?.message || 'Failed to update board';
           alert(`Failed to update board: ${errorMessage}`);
           return;
         }
-        
+
         localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
         setStep(step + 1);
-        
+
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         alert(`An unexpected error occurred: ${errorMessage}`);
@@ -349,13 +350,13 @@ const CreateBirthdayBoard = () => {
       setCreating(true);
       try {
         const updates: Partial<Board> = {};
-        
+
         updates.privacy = (customFieldValues.privacy as 'public' | 'private' | 'circle_only') || 'public';
         updates.allow_invites = customFieldValues.allow_invites !== undefined ? customFieldValues.allow_invites : true;
         updates.invites_can_invite = customFieldValues.invites_can_invite !== undefined ? customFieldValues.invites_can_invite : false;
 
         const { data } = await updateBoard(boardId, updates);
-        
+
         if (data) {
           localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
         }
@@ -364,7 +365,7 @@ const CreateBirthdayBoard = () => {
         setCreating(false);
       }
     }
-    
+
     setStep(6);
   };
 
@@ -375,7 +376,7 @@ const CreateBirthdayBoard = () => {
     }
 
     setCreating(true);
-    
+
     try {
       if (savedGiftData) {
         const giftOptionData = [{
@@ -384,7 +385,7 @@ const CreateBirthdayBoard = () => {
           description: savedGiftData.message || undefined,
           is_custom: savedGiftData.isCustom,
         }];
-        
+
         const giftResult = await addBoardGiftOptions(boardId, giftOptionData);
         if (giftResult.error) {
           alert(`Warning: Failed to save gift option: ${giftResult.error.message || 'Unknown error'}`);
@@ -393,7 +394,7 @@ const CreateBirthdayBoard = () => {
 
       localStorage.removeItem('selectedBoardType');
       setStep(7);
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       alert(`An unexpected error occurred: ${errorMessage}`);
@@ -415,10 +416,10 @@ const CreateBirthdayBoard = () => {
     }
 
     setCreating(true);
-    
+
     try {
       const { data, error } = await publishBoard(boardId);
-      
+
       if (error || !data) {
         const errorMessage = error?.message || 'Failed to publish board';
         alert(`Failed to publish board: ${errorMessage}`);
@@ -431,12 +432,12 @@ const CreateBirthdayBoard = () => {
         setCustomFieldValues({});
         setProfilePhotoPreview(null);
       }, 2000);
-      
+
       alert('🎉 Board published successfully! Redirecting...');
       setTimeout(() => {
         router.push(`/dashboard/boards/${data.slug}`);
       }, 1000);
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       alert(`An unexpected error occurred: ${errorMessage}`);
@@ -477,7 +478,7 @@ const CreateBirthdayBoard = () => {
         };
 
         const { data } = await updateBoard(boardId, updates);
-        
+
         if (data) {
           localStorage.setItem('boardTypeFields', JSON.stringify({
             ...customFieldValues,
@@ -489,8 +490,8 @@ const CreateBirthdayBoard = () => {
         setCreating(false);
       }
     }
-    
-    setStep(4); 
+
+    setStep(4);
   };
 
   const [savedGiftData, setSavedGiftData] = useState<any>(null);
@@ -717,6 +718,19 @@ const CreateBirthdayBoard = () => {
                     </div>
 
                     <div className="space-y-4">
+
+                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color' && f.field_key !== 'profile_photo_url').map((field) => (
+                        <div key={field.id}>
+                          <label className="block text-sm font-medium mb-2">
+                            {field.label}
+                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
+                          </label>
+                          {renderField(field)}
+                          {field.help_text && (
+                            <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
+                          )}
+                        </div>
+                      ))}
                       {/* Profile Photo Upload - Always show in first step */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
@@ -728,13 +742,12 @@ const CreateBirthdayBoard = () => {
                         <div className="relative">
                           <label
                             onClick={() => !uploadingProfilePhoto && profilePhotoInputRef.current?.click()}
-                            className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${
-                              uploadingProfilePhoto
-                                ? 'border-gray-300 bg-gray-50 cursor-wait'
-                                : profilePhotoPreview || customFieldValues.profile_photo_url
+                            className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingProfilePhoto
+                              ? 'border-gray-300 bg-gray-50 cursor-wait'
+                              : profilePhotoPreview || customFieldValues.profile_photo_url
                                 ? 'border-[#F43C83] bg-pink-50'
                                 : 'border-[#B2B2B2] hover:border-[#F43C83] hover:bg-gray-50'
-                            }`}
+                              }`}
                           >
                             {uploadingProfilePhoto ? (
                               <div className="flex flex-col items-center">
@@ -778,18 +791,17 @@ const CreateBirthdayBoard = () => {
                         </div>
                       </div>
 
-                      {fieldGroups.step1?.filter(f => f.field_key !== 'theme_color' && f.field_key !== 'profile_photo_url').map((field) => (
-                        <div key={field.id}>
-                          <label className="block text-sm font-medium mb-2">
-                            {field.label}
-                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                          {renderField(field)}
-                          {field.help_text && (
-                            <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
-                          )}
+                      <div className="bg-[#F4F4F4] text-black flex justify-between items-center p-4 rounded-lg">
+                        <div>
+                          <p className="text-md font-medium">Surprise Mode</p>
+                          <p className="text-sm">Hide messages from the honoree until the day.</p>
                         </div>
-                      ))}
+                        <Switch.Root defaultChecked className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500">
+                          <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
+                        </Switch.Root>
+                      </div>
+
+
                       <GlobalButton
                         title="Next"
                         icon={ArrowRight}
@@ -924,7 +936,7 @@ const CreateBirthdayBoard = () => {
                     </div>
 
                     <div className="my-6">
-                      <div 
+                      <div
                         onClick={() => setModalOpen(true)}
                         className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#F43C83] transition-all duration-300"
                       >
@@ -966,7 +978,7 @@ const CreateBirthdayBoard = () => {
 
                 {step === 4 && (
                   <div className="space-y-4">
-                    <AddGift 
+                    <AddGift
                       goToPayment={handleGiftPayment}
                       boardId={undefined}
                       onGiftSaved={handleGiftSaved}
@@ -1033,7 +1045,7 @@ const CreateBirthdayBoard = () => {
                 }
 
                 {step === 7 &&
-                  <YourBoardIsLive 
+                  <YourBoardIsLive
                     onPublish={handlePublishBoard}
                     isPublishing={creating}
                   />
@@ -1049,7 +1061,7 @@ const CreateBirthdayBoard = () => {
         onClose={() => setModalOpen(false)}
         modalHeader={false}
         className="w-[600px] max-[768px]:w-[90vw] max-h-[90vh]">
-        <AddFilesModal 
+        <AddFilesModal
           doneOnclick={() => {
             setStep(3)
             setModalOpen(false)
