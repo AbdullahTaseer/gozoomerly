@@ -1005,18 +1005,77 @@ const CreateBirthdayBoard = () => {
                   <div className="bg-white rounded-xl p-6 shadow-lg">
                     <h3 className="text-center text-[20px] max-[600px]:text-[16px] font-bold">Privacy Settings</h3>
                     <div className="space-y-4">
-                      {fieldGroups.step4?.map((field) => (
-                        <div key={field.id}>
-                          <label className="block text-sm font-medium mb-1">
-                            {field.label}
-                            {field.is_required && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                          {renderField(field)}
-                          {field.help_text && (
-                            <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
-                          )}
-                        </div>
-                      ))}
+                      {fieldGroups.step4 && fieldGroups.step4.length > 0 ? (
+                        fieldGroups.step4.map((field) => (
+                          <div key={field.id}>
+                            <label className="block text-sm font-medium mb-1">
+                              {field.label}
+                              {field.is_required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            {renderField(field)}
+                            {field.help_text && (
+                              <p className="text-sm text-gray-500 mt-1">{field.help_text}</p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          {/* Privacy Field */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Privacy
+                              <span className="text-red-500 ml-1">*</span>
+                            </label>
+                            <Select
+                              value={customFieldValues.privacy || "public"}
+                              onValueChange={(value) => handleFieldChange('privacy', value)}
+                            >
+                              <SelectTrigger className="w-full border bg-white border-[#2E2C39] !h-[46px]">
+                                <SelectValue placeholder="Select Privacy" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="public">Public</SelectItem>
+                                <SelectItem value="private">Private</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Choose who can view this board
+                            </p>
+                          </div>
+
+                          {/* Allow Invites Field */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Allow Invites
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={customFieldValues.allow_invites ?? true}
+                                onChange={(e) => handleFieldChange('allow_invites', e.target.checked)}
+                                className="w-4 h-4 accent-pink-500"
+                              />
+                              <span>Allow people to invite others to this board</span>
+                            </label>
+                          </div>
+
+                          {/* Invites Can Invite Field */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Invites Can Invite
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={customFieldValues.invites_can_invite ?? false}
+                                onChange={(e) => handleFieldChange('invites_can_invite', e.target.checked)}
+                                className="w-4 h-4 accent-pink-500"
+                              />
+                              <span>Allow invited people to invite others</span>
+                            </label>
+                          </div>
+                        </>
+                      )}
                       <div className="flex justify-between mt-6">
                         <GlobalButton
                           title="Back"
