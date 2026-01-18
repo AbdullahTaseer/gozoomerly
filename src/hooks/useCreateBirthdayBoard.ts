@@ -18,9 +18,21 @@ export const useCreateBirthdayBoard = () => {
     try {
       const supabase = createClient();
 
+      // Ensure board_type_id is properly formatted
+      const boardTypeId = typeof params.p_board_type_id === 'string'
+        ? (isNaN(parseInt(params.p_board_type_id)) ? params.p_board_type_id : parseInt(params.p_board_type_id))
+        : params.p_board_type_id;
+
+      console.log('Creating birthday board with RPC params:', {
+        p_board_type_id: boardTypeId,
+        p_title: params.p_title,
+        p_honoree_first_name: params.p_honoree_first_name,
+        p_honoree_last_name: params.p_honoree_last_name
+      });
+
       // Call Supabase RPC function
       const { data, error: rpcError } = await supabase.rpc('create_birthday_board', {
-        p_board_type_id: params.p_board_type_id,
+        p_board_type_id: boardTypeId,
         p_title: params.p_title,
         p_honoree_first_name: params.p_honoree_first_name,
         p_honoree_last_name: params.p_honoree_last_name,

@@ -1,6 +1,6 @@
 export interface CreateBirthdayBoardInput {
   // Required parameters
-  p_board_type_id: number;
+  p_board_type_id: number | string;
   p_title: string;
   p_honoree_first_name: string;
   p_honoree_last_name: string;

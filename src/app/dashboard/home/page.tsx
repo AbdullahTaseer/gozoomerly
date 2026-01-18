@@ -50,7 +50,6 @@ const Home = () => {
 
       const supabase = createClient();
 
-      // Call get_user_boards RPC function
       await fetchUserBoardsRPC({
         p_user_id: user.id,
         p_status: 'live',
@@ -58,16 +57,13 @@ const Home = () => {
         p_offset: 0
       });
 
-      // Fetch user boards (boards created by the user) for Following section
       const { boards: userBoardsData } = await fetchUserBoards(user.id);
 
-      // Batch fetch all contributors efficiently
       const fetchContributors = async (boards: Board[]) => {
         if (!boards || boards.length === 0) return [];
 
         const boardIds = boards.map(b => b.id);
 
-        // Fetch all participants for all boards in ONE query
         const { data: allParticipants } = await supabase
           .from('board_participants')
           .select('board_id, user_id')
@@ -77,29 +73,24 @@ const Home = () => {
           return boards.map(board => ({ ...board, topContributors: [] }));
         }
 
-        // Get all unique user IDs
         const allUserIds = [...new Set(allParticipants.map(p => p.user_id))];
 
-        // Fetch all profiles in ONE query
         const { data: allProfiles } = await supabase
           .from('profiles')
           .select('id, profile_pic_url')
           .in('id', allUserIds);
 
-        // Create a map of user_id to profile_pic_url
         const profileMap = (allProfiles || []).reduce((acc, profile) => {
           acc[profile.id] = profile.profile_pic_url || ProfileAvatar;
           return acc;
         }, {} as Record<string, string | typeof ProfileAvatar>);
 
-        // Group participants by board_id
         const participantsByBoard = allParticipants.reduce((acc, p) => {
           if (!acc[p.board_id]) acc[p.board_id] = [];
           acc[p.board_id].push(p.user_id);
           return acc;
         }, {} as Record<string, string[]>);
 
-        // Map contributors to each board
         return boards.map(board => {
           const boardParticipants = participantsByBoard[board.id] || [];
           const contributorAvatars = boardParticipants
@@ -163,7 +154,6 @@ const Home = () => {
 
           {viewMode === 'grid' ? (
             <div className='space-y-8'>
-              {/* New Boards Section */}
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>New Invites</h3>
@@ -196,7 +186,6 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Active Boards Section */}
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Active Social</h3>
@@ -210,7 +199,6 @@ const Home = () => {
                 <BoardsList boards={userBoards.slice(0, 5) as any} loading={loading || userBoardsLoading} />
               </div>
 
-              {/* Active Pro Section */}
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Active Pro</h3>

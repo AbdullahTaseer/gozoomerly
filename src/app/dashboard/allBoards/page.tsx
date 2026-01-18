@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { fetchActiveBoards, fetchUserBoards, type Board } from '@/lib/supabase/boards';
-import { boardInvitations, spotlightCampaigns } from '@/lib/MockData';
+import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
+import { spotlightCampaigns } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
 
@@ -32,25 +32,25 @@ const AllBoards = () => {
         return;
       }
 
-      const [
-        { boards: activeBoards },
-        { boards: userBoards },
-        { boards: allBoards },
-      ] = await Promise.all([
-        fetchActiveBoards({
-          userId: user.id,
-          includeStatus: ['published'],
-        }),
-        fetchUserBoards(user.id),
-        fetchActiveBoards({
-          userId: user.id,
-          showAll: true,
-        }),
-      ]);
+      const { boards: allBoards } = await fetchActiveBoards({
+        userId: user.id,
+        showAll: true,
+      });
 
-      const activeCount = activeBoards?.length || 0;
-      const yourCount = userBoards?.length || 0;
-      const newCount = boardInvitations.length;
+      // Count boards with status 'live' for active boards
+      const activeCount = (allBoards || []).filter((board: Board) => board.status === 'live').length;
+
+      // Count boards created by the logged in user
+      const yourCount = (allBoards || []).filter((board: Board) => board.creator_id === user.id).length;
+
+      // Count boards created in the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const newCount = (allBoards || []).filter((board: Board) => {
+        if (board.created_at) {
+          return new Date(board.created_at) > twentyFourHoursAgo;
+        }
+        return false;
+      }).length;
 
       const pastCount = (allBoards || []).filter((board: Board) => {
         if (board.status === 'completed' || board.status === 'cancelled') return true;

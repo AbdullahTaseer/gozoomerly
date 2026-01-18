@@ -19,15 +19,15 @@ import GlobalInput from "@/components/inputs/GlobalInput";
 import GlobalButton from "@/components/buttons/GlobalButton";
 import { authService } from '@/lib/supabase/auth';
 import {
-  createBoard,
   updateBoard,
   getBoardTypeFields,
   BoardTypeField,
-  CreateBoardInput,
   addBoardGiftOptions,
   publishBoard,
   Board
 } from '@/lib/supabase/boards';
+import { useCreateBirthdayBoard } from '@/hooks/useCreateBirthdayBoard';
+import { CreateBirthdayBoardInput } from '@/types/board';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
 import * as Switch from '@radix-ui/react-switch';
@@ -38,7 +38,7 @@ const CreateBirthdayBoard = () => {
   const [step, setStep] = useState(1);
   const [boardId, setBoardId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
-  const [selectedBoardType, setSelectedBoardType] = useState<{ id: string, name: string, slug: string } | null>(null);
+  const [selectedBoardType, setSelectedBoardType] = useState<{ id: string | number, name: string, slug: string } | null>(null);
   const [boardTypeFields, setBoardTypeFields] = useState<BoardTypeField[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
@@ -48,8 +48,11 @@ const CreateBirthdayBoard = () => {
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null);
   const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
   const [profilePhotoError, setProfilePhotoError] = useState<string | null>(null);
+  const [surpriseModeEnabled, setSurpriseModeEnabled] = useState(false);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  const { createBirthdayBoard, isLoading: isCreatingBoard, error: createBoardError } = useCreateBirthdayBoard();
 
   // Group fields by step based on mockup screenshots
   const groupFieldsByStep = () => {
@@ -246,39 +249,65 @@ const CreateBirthdayBoard = () => {
     if (step === 2 && !boardId && userId && selectedBoardType) {
       setCreating(true);
       try {
-        const boardData: CreateBoardInput = {
-          title: customFieldValues.title || `${selectedBoardType.name} Board`,
-          description: customFieldValues.description || '',
-          board_type_id: selectedBoardType.id,
-          honoree_details: {
-            first_name: customFieldValues.first_name,
-            last_name: customFieldValues.last_name,
-            date_of_birth: customFieldValues.date_of_birth,
-            hometown: customFieldValues.hometown,
-            phone: customFieldValues.phone,
-            email: customFieldValues.email,
-            profile_photo_url: customFieldValues.profile_photo_url,
-            theme_color: customFieldValues.theme_color || '#9B59B6',
-          },
-          goal_type: customFieldValues.goal_amount ? 'monetary' : 'nonmonetary',
-          goal_amount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : undefined,
-          currency: 'USD',
-          deadline_date: customFieldValues.deadline_date,
-          privacy: customFieldValues.privacy || 'public',
-          allow_invites: customFieldValues.allow_invites ?? true,
-          invites_can_invite: customFieldValues.invites_can_invite ?? false,
+        // Map theme color to theme name
+        const getThemeName = (color: string) => {
+          const themeMap: Record<string, string> = {
+            '#CE7ADD': 'fun-colorful',
+            '#FBE66C': 'elegant-gold',
+            '#F6CDD7': 'love',
+            '#B0F3EF': 'cool',
+            '#D1F6B5': 'kids',
+            '#C1F4D2': 'success',
+            '#FBEC93': 'travel'
+          };
+          return themeMap[color] || 'fun-colorful';
         };
 
-        const { data, error } = await createBoard(userId, boardData);
-
-        if (error || !data) {
-          const errorMessage = error?.message || 'Failed to create board';
-          alert(`Failed to create board: ${errorMessage}`);
+        // Get board type ID - can be either numeric or UUID string
+        const boardTypeId = selectedBoardType.id;
+        if (!boardTypeId) {
+          alert('Invalid board type. Please go back and select a board type again.');
+          setCreating(false);
           return;
         }
 
-        setBoardId(data.id);
-        localStorage.setItem('currentBoardId', data.id);
+        console.log('Creating board with params:', {
+          boardTypeId,
+          selectedBoardType,
+          customFieldValues
+        });
+
+        const boardData: CreateBirthdayBoardInput = {
+          p_board_type_id: boardTypeId,
+          p_title: customFieldValues.title || `${selectedBoardType.name} Board`,
+          p_honoree_first_name: customFieldValues.first_name || '',
+          p_honoree_last_name: customFieldValues.last_name || '',
+          p_honoree_date_of_birth: customFieldValues.date_of_birth || '',
+          p_honoree_hometown: customFieldValues.hometown || '',
+          p_description: customFieldValues.description || undefined,
+          p_honoree_phone: customFieldValues.phone || undefined,
+          p_honoree_email: customFieldValues.email || undefined,
+          p_honoree_profile_photo_url: customFieldValues.profile_photo_url || undefined,
+          p_honoree_theme_color: customFieldValues.theme_color || '#CE7ADD',
+          p_surprise_mode_enabled: surpriseModeEnabled,
+          p_theme: getThemeName(customFieldValues.theme_color || '#CE7ADD'),
+          p_target_amount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : undefined,
+          p_expiry_date: customFieldValues.deadline_date || undefined,
+          p_currency: 'USD',
+          p_privacy: (customFieldValues.privacy as 'public' | 'private') || 'public',
+          p_allow_invites: customFieldValues.allow_invites ?? true,
+          p_invites_can_invite: customFieldValues.invites_can_invite ?? false,
+        };
+
+        const createdBoard = await createBirthdayBoard(boardData);
+
+        if (!createdBoard) {
+          alert(`Failed to create board: ${createBoardError || 'Unknown error'}`);
+          return;
+        }
+
+        setBoardId(createdBoard.id);
+        localStorage.setItem('currentBoardId', createdBoard.id);
         localStorage.setItem('boardTypeFields', JSON.stringify(customFieldValues));
         setStep(step + 1);
 
@@ -796,7 +825,11 @@ const CreateBirthdayBoard = () => {
                           <p className="text-md font-medium">Surprise Mode</p>
                           <p className="text-sm">Hide messages from the honoree until the day.</p>
                         </div>
-                        <Switch.Root defaultChecked className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500">
+                        <Switch.Root
+                          checked={surpriseModeEnabled}
+                          onCheckedChange={setSurpriseModeEnabled}
+                          className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500"
+                        >
                           <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
                         </Switch.Root>
                       </div>
@@ -825,14 +858,14 @@ const CreateBirthdayBoard = () => {
                       </p>
                     </div>
                     <div className="space-y-4 mt-6">
-                      {/* Title Field - Always show */}
+                      {/* Goal Field */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Board Title <span className="text-red-500 ml-1">*</span>
+                          Goal <span className="text-pink-500">*</span>
                         </label>
                         <GlobalInput
                           type="text"
-                          placeholder="e.g., John's 30th Birthday Celebration"
+                          placeholder="Let's send Sean to the Caribbean!"
                           value={customFieldValues.title || ''}
                           onChange={(e) => handleFieldChange('title', e.target.value)}
                           width="100%"
@@ -840,51 +873,55 @@ const CreateBirthdayBoard = () => {
                         />
                       </div>
 
-                      {/* Description Field - Always show */}
+                      {/* Target Amount Field */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Target Amount
+                        </label>
+                        <GlobalInput
+                          type="text"
+                          placeholder="$3000"
+                          value={customFieldValues.goal_amount ? `$${customFieldValues.goal_amount}` : ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^0-9.]/g, '');
+                            handleFieldChange('goal_amount', value);
+                          }}
+                          width="100%"
+                          height="48px"
+                        />
+                      </div>
+
+                      {/* Description Field */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Description
                         </label>
                         <textarea
-                          placeholder="Tell everyone what makes this celebration special..."
+                          placeholder="Sean has dreamed of visiting the Caribbean for years. He's been working so hard and never takes time for himself. This year, with all of us coming together on BirthdayText.com, we can finally make it happen. Let's give him the gift of sunshine, ocean waves, and the biggest smile we've ever seen!"
                           value={customFieldValues.description || ''}
                           onChange={(e) => handleFieldChange('description', e.target.value)}
                           className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-[#F43C83] resize-none"
-                          rows={4}
+                          rows={5}
                         />
                       </div>
 
-                      {/* Goal Amount Field - Always show */}
+                      {/* Goal Progress */}
                       <div>
                         <label className="block text-sm font-medium mb-2">
-                          Fundraising Goal (Optional)
+                          Goal Progress
                         </label>
-                        <GlobalInput
-                          type="number"
-                          placeholder="e.g., 500"
-                          value={customFieldValues.goal_amount || ''}
-                          onChange={(e) => handleFieldChange('goal_amount', e.target.value)}
-                          width="100%"
-                          height="48px"
-                        />
-                        <p className="text-sm text-gray-500 mt-1">
-                          Leave empty if this is just for wishes and memories
-                        </p>
-                      </div>
-
-                      {/* Deadline Date Field - Always show */}
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Deadline Date (Optional)
-                        </label>
-                        <GlobalInput
-                          type="date"
-                          placeholder="Select deadline"
-                          value={customFieldValues.deadline_date || ''}
-                          onChange={(e) => handleFieldChange('deadline_date', e.target.value)}
-                          width="100%"
-                          height="48px"
-                        />
+                        <div className="w-full">
+                          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-pink-500 to-purple-500 rounded-full"
+                              style={{ width: '0%' }}
+                            />
+                          </div>
+                          <div className="flex justify-between mt-2 text-sm text-gray-600">
+                            <span>$0 raised</span>
+                            <span>${customFieldValues.goal_amount || '0'} goal</span>
+                          </div>
+                        </div>
                       </div>
 
                       {/* Render any additional fields from board type */}
@@ -901,25 +938,13 @@ const CreateBirthdayBoard = () => {
                         </div>
                       ))}
 
-                      <div className="flex justify-between mt-6">
-                        <GlobalButton
-                          title="Back"
-                          onClick={() => setStep(step - 1)}
-                          className="bg-gray-300 text-gray-700"
-                          height="48px"
-                          width="100px"
-                          icon={ArrowLeft}
-                        />
-                        <GlobalButton
-                          title={creating ? "Creating..." : "Next"}
-                          onClick={handleNextStep}
-                          icon={ArrowRight}
-                          height="48px"
-                          width="120px"
-                          className="flex-row-reverse"
-                          disabled={creating}
-                        />
-                      </div>
+                      <GlobalButton
+                        title={creating ? "Creating..." : "Continue"}
+                        onClick={handleNextStep}
+                        height="48px"
+                        width="100%"
+                        disabled={creating}
+                      />
                     </div>
                   </div>
                 )}
