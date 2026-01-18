@@ -58,10 +58,11 @@ const AdminUsers = () => {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {users.map((user) => (
+                {users.map((user, index) => (
                   <tr
                     key={user.id}
-                    className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors`}
+                    className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      }`}
                   >
                     <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{user.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-900">{user.email}</td>
