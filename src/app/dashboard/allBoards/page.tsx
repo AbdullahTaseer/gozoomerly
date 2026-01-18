@@ -37,8 +37,8 @@ const AllBoards = () => {
         showAll: true,
       });
 
-      // Count boards with status 'live' for active boards
-      const activeCount = (allBoards || []).filter((board: Board) => board.status === 'live').length;
+      // Count boards with status 'published' for active boards
+      const activeCount = (allBoards || []).filter((board: Board) => board.status === 'published').length;
 
       // Count boards created by the logged in user
       const yourCount = (allBoards || []).filter((board: Board) => board.creator_id === user.id).length;
