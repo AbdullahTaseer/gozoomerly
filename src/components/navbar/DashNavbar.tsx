@@ -23,7 +23,7 @@ const DashNavbar = ({ hide = true }: props) => {
       return pathname === "/dashboard/home";
     }
     if (option === "Boards") {
-      return pathname === "/dashboard/allBoards";
+      return pathname === "/dashboard/boards" || pathname === "/dashboard/allBoards" || pathname.startsWith("/dashboard/boards/");
     }
     if (option === "Pro") {
       return pathname === ("/dashboard/proScreen");
@@ -56,7 +56,7 @@ const DashNavbar = ({ hide = true }: props) => {
         router.push("/dashboard/home");
         break;
       case "Boards":
-        router.push("/dashboard/allBoards");
+        router.push("/dashboard/boards");
         break;
       case "Pro":
         router.push("/dashboard/proScreen");

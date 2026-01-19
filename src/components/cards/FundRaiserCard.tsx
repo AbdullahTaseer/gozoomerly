@@ -25,6 +25,7 @@ type FundRaiserCardProps = {
   giftOptions?: GiftOption[];
   topContributors?: TopContributor[];
   boardId?: string;
+  description?: string;
   onGiftAdded?: () => void;
 };
 
@@ -34,6 +35,7 @@ const FundRaiserCard = ({
   giftOptions = [],
   topContributors = [],
   boardId,
+  description,
   onGiftAdded
 }: FundRaiserCardProps) => {
   const [selectedGift, setSelectedGift] = useState<string | null>(null);
@@ -123,7 +125,7 @@ const FundRaiserCard = ({
   return (
     <div>
       <div className="my-6">
-        <p className="text-lg text-white font-semibold mb-2">Lets make Seans 40th unforgettable! Help him buy his dream guitar on his birthday 🎸</p>
+        {description && <p className="text-lg text-white font-semibold mb-2">{description}</p>}
         <div className="w-full h-[12px] bg-[#9B57AF]/50 rounded-full">
           <div
             className="h-[12px] rounded-full bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"

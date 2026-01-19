@@ -76,8 +76,15 @@ export const useGetUserBoards = (): UseGetUserBoardsReturn => {
       if (data) {
         // Parse the response from the RPC function
         const responseData = data.data || data;
-        
-        setBoards(responseData.boards || []);
+
+        // Deduplicate boards by ID
+        const boardsArray = responseData.boards || [];
+        const uniqueBoards = boardsArray.filter(
+          (board: UserBoard, index: number, self: UserBoard[]) =>
+            index === self.findIndex((b) => b.id === board.id)
+        );
+
+        setBoards(uniqueBoards);
         setCounts(responseData.counts || { total: 0, live: 0, past: 0, new: 0 });
         setPagination(responseData.pagination || {
           current_page: 1,

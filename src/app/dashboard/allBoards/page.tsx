@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { fetchActiveBoards, type Board } from '@/lib/supabase/boards';
+import { fetchActiveBoards } from '@/lib/supabase/boards';
 import { spotlightCampaigns } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
+import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 
 const AllBoards = () => {
   const [counts, setCounts] = useState({
@@ -17,9 +18,27 @@ const AllBoards = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  const {
+    counts: boardCounts,
+    fetchUserBoards
+  } = useGetUserBoards();
+
   useEffect(() => {
     loadCounts();
   }, []);
+
+  // Update counts when boardCounts changes
+  useEffect(() => {
+    if (boardCounts) {
+      setCounts(prev => ({
+        ...prev,
+        new: boardCounts.new || 0,
+        active: boardCounts.live || 0,
+        past: boardCounts.past || 0,
+        your: boardCounts.total || 0,
+      }));
+    }
+  }, [boardCounts]);
 
   const loadCounts = async () => {
     try {
@@ -32,35 +51,21 @@ const AllBoards = () => {
         return;
       }
 
+      // Fetch board counts using the RPC function
+      await fetchUserBoards({
+        p_user_id: user.id,
+        p_status: null,
+        p_limit: 100,
+        p_offset: 0
+      });
+
+      // Fetch boards to calculate post count (boards with media)
       const { boards: allBoards } = await fetchActiveBoards({
         userId: user.id,
         showAll: true,
       });
 
-      // Count boards with status 'published' for active boards
-      const activeCount = (allBoards || []).filter((board: Board) => board.status === 'published').length;
-
-      // Count boards created by the logged in user
-      const yourCount = (allBoards || []).filter((board: Board) => board.creator_id === user.id).length;
-
-      // Count boards created in the last 24 hours
-      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const newCount = (allBoards || []).filter((board: Board) => {
-        if (board.created_at) {
-          return new Date(board.created_at) > twentyFourHoursAgo;
-        }
-        return false;
-      }).length;
-
-      const pastCount = (allBoards || []).filter((board: Board) => {
-        if (board.status === 'completed' || board.status === 'cancelled') return true;
-        if (board.deadline_date) {
-          return new Date(board.deadline_date) < new Date();
-        }
-        return false;
-      }).length;
-
-      // Count boards with media (post boards) - fetchActiveBoards already includes media_count
+      // Count boards with media (post boards)
       const postCount = (allBoards || []).filter((board: any) =>
         (board.media_count || 0) > 0
       ).length;
@@ -68,14 +73,11 @@ const AllBoards = () => {
       // Count spotlight campaigns
       const spotlightCount = spotlightCampaigns.length;
 
-      setCounts({
-        new: newCount,
-        active: activeCount,
-        your: yourCount,
-        past: pastCount,
+      setCounts(prev => ({
+        ...prev,
         post: postCount,
         spotlight: spotlightCount,
-      });
+      }));
     } catch (err) {
       console.error('Error loading board counts:', err);
     } finally {

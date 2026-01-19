@@ -40,6 +40,9 @@ export interface Board {
   total_raised: number;
   contributors_count: number;
   wishes_count: number;
+  participants_count?: number;
+  gifters_count?: number;
+  media_count?: number;
   views_count: number;
   shares_count: number;
   last_activity_at?: string;
@@ -203,6 +206,10 @@ export async function getUserBoards(userId: string) {
     .from('boards')
     .select(`
       *,
+      wishes_count,
+      participants_count,
+      contributors_count,
+      media_count,
       board_types (
         name,
         slug,
@@ -228,38 +235,24 @@ export async function getUserBoards(userId: string) {
   }
 
   if (data) {
-    // Batch fetch all invitation and media counts in just 2 queries
-    const boardIds = data.map(board => board.id);
-    
-    // Fetch all invitations for all boards at once
-    const { data: allInvitations } = await supabase
-      .from('board_invitations')
-      .select('board_id')
-      .in('board_id', boardIds);
-    
-    // Fetch all media for all boards at once
-    const { data: allMedia } = await supabase
-      .from('media')
-      .select('board_id')
-      .in('board_id', boardIds);
-    
-    // Count invitations and media per board
-    const invitationCounts = (allInvitations || []).reduce((acc, inv) => {
-      acc[inv.board_id] = (acc[inv.board_id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    const mediaCounts = (allMedia || []).reduce((acc, media) => {
-      acc[media.board_id] = (acc[media.board_id] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    // Map the counts to boards
-    const boardsWithCounts = data.map(board => ({
-      ...board,
-      invited_count: invitationCounts[board.id] || 0,
-      media_count: mediaCounts[board.id] || 0
-    }));
+    // Use counts directly from board table columns
+    const boardsWithCounts = data.map(board => {
+      // Get counts directly from board table - handle null/undefined values
+      const wishesCount = (board as any).wishes_count ?? 0;
+      const participantsCount = (board as any).participants_count ?? 0;
+      const contributorsCount = (board as any).contributors_count ?? 0;
+      const giftersCount = (board as any).gifters_count ?? contributorsCount;
+      const mediaCount = (board as any).media_count ?? 0;
+
+      return {
+        ...board,
+        wishes_count: wishesCount,
+        participants_count: participantsCount,
+        gifters_count: giftersCount,
+        contributors_count: contributorsCount,
+        media_count: mediaCount
+      };
+    });
 
     return { data: boardsWithCounts, error: null };
   }
@@ -267,34 +260,98 @@ export async function getUserBoards(userId: string) {
   return { data, error: null };
 }
 
-export async function getBoardBySlug(slug: string) {
+export async function getBoardByIdRPC(boardId: string) {
   const supabase = createClient();
   
-  const { data, error } = await supabase
-    .from('boards')
-    .select(`
-      *,
-      board_types (
-        name,
-        slug,
-        icon,
-        color_scheme
-      ),
-      profiles:creator_id (
-        id,
-        name,
-        profile_pic_url
-      )
-    `)
-    .eq('slug', slug)
-    .single();
+  const rpcParams = {
+    p_board_id: boardId,
+  };
+
+  const { data, error } = await supabase.rpc('get_board_by_id', rpcParams);
 
   if (error) {
-    console.error('Error fetching board:', error);
+    console.error('Error fetching board via RPC:', error);
     return { data: null, error };
   }
 
-  return { data, error: null };
+  if (data && data.success && data.data) {
+    const rpcBoard = data.data;
+    
+    // Normalize RPC response to match expected structure
+    const normalizedBoard = {
+      ...rpcBoard,
+      // Map creator to profiles for compatibility
+      profiles: rpcBoard.creator ? {
+        id: rpcBoard.creator.id,
+        name: rpcBoard.creator.name,
+        profile_pic_url: rpcBoard.creator.profile_pic_url,
+      } : null,
+      // Map board_type to board_types for compatibility
+      board_types: rpcBoard.board_type ? {
+        name: rpcBoard.board_type.name,
+        slug: rpcBoard.board_type.slug,
+        icon: rpcBoard.board_type.icon,
+        color_scheme: rpcBoard.board_type.color_scheme,
+      } : null,
+      // Ensure all count fields are present
+      contributors_count: rpcBoard.contributors_count ?? 0,
+      wishes_count: rpcBoard.wishes_count ?? 0,
+      participants_count: rpcBoard.participants_count ?? 0,
+      gifters_count: rpcBoard.gifters_count ?? 0,
+      media_count: rpcBoard.media_count ?? 0,
+      views_count: rpcBoard.views_count ?? 0,
+      shares_count: rpcBoard.shares_count ?? 0,
+      total_raised: rpcBoard.total_raised ?? 0,
+    };
+
+    return { data: normalizedBoard, error: null };
+  }
+
+  return { data: null, error: new Error('Invalid RPC response') };
+}
+
+export async function getBoardBySlug(slug: string) {
+  const supabase = createClient();
+  
+  // First, get the board ID from slug
+  const { data: boardData, error: slugError } = await supabase
+    .from('boards')
+    .select('id')
+    .eq('slug', slug)
+    .single();
+
+  if (slugError || !boardData) {
+    console.error('Error fetching board ID from slug:', slugError);
+    // Fallback to old method
+    const { data, error } = await supabase
+      .from('boards')
+      .select(`
+        *,
+        board_types (
+          name,
+          slug,
+          icon,
+          color_scheme
+        ),
+        profiles:creator_id (
+          id,
+          name,
+          profile_pic_url
+        )
+      `)
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      console.error('Error fetching board:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
+  // Use RPC to get full board data
+  return await getBoardByIdRPC(boardData.id);
 }
 
 export async function getBoardById(boardId: string) {
@@ -607,6 +664,542 @@ export async function addWishToBoard(boardId: string, senderId: string, wish: Cr
     .eq('id', boardId);
 
   return { data, error: null };
+}
+
+export async function likeWish(wishId: string) {
+  const supabase = createClient();
+  
+  try {
+    const { data, error } = await supabase.rpc('like_wish', {
+      p_wish_id: wishId,
+    });
+
+    if (error) {
+      console.error('Error liking wish:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error in likeWish:', err);
+    return { data: null, error: err };
+  }
+}
+
+export async function unlikeWish(wishId: string) {
+  const supabase = createClient();
+  
+  try {
+    const { data, error } = await supabase.rpc('unlike_wish', {
+      p_wish_id: wishId,
+    });
+
+    if (error) {
+      console.error('Error unliking wish:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (err) {
+    console.error('Error in unlikeWish:', err);
+    return { data: null, error: err };
+  }
+}
+
+export interface BoardParticipant {
+  id: string;
+  board_id: string;
+  user_id: string;
+  role: 'creator' | 'admin' | 'moderator' | 'contributor' | 'viewer';
+  joined_via: string;
+  contribution_count: number;
+  joined_at: string;
+  last_activity_at: string;
+  invited_by: string | null;
+  user: {
+    id: string;
+    name: string;
+    profile_pic_url: string | null;
+    is_verified?: boolean;
+    city?: string;
+    country?: string;
+  };
+  inviter: any | null;
+}
+
+export interface GetBoardParticipantsResponse {
+  success: boolean;
+  data: {
+    participants: BoardParticipant[];
+    total_participants: number;
+    counts_by_role: {
+      creator: number;
+      admin: number;
+      moderator: number;
+      contributor: number;
+      viewer: number;
+    };
+    pagination: {
+      total: number;
+      limit: number;
+      offset: number;
+      has_more: boolean;
+    };
+    filter_applied: string | null;
+  };
+}
+
+export async function getBoardParticipants(
+  boardId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+    role?: string;
+    filter?: string;
+  }
+): Promise<{ data: GetBoardParticipantsResponse | null; error: any }> {
+  const supabase = createClient();
+  
+  try {
+    const rpcParams: any = {
+      p_board_id: boardId,
+    };
+
+    if (options?.limit !== undefined) {
+      rpcParams.p_limit = options.limit;
+    }
+    if (options?.offset !== undefined) {
+      rpcParams.p_offset = options.offset;
+    }
+    if (options?.role) {
+      rpcParams.p_role = options.role;
+    }
+    if (options?.filter) {
+      rpcParams.p_filter = options.filter;
+    }
+
+    const { data, error } = await supabase.rpc('get_board_participants', rpcParams);
+
+    if (error) {
+      console.error('Error fetching board participants:', error);
+      return { data: null, error };
+    }
+
+    return { data: data as GetBoardParticipantsResponse, error: null };
+  } catch (err) {
+    console.error('Error in getBoardParticipants:', err);
+    return { data: null, error: err };
+  }
+}
+
+export interface WishComment {
+  comment_id: string;
+  wish_id: string;
+  user_id: string;
+  content: string;
+  parent_comment_id: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    name: string;
+    profile_pic_url?: string | null;
+  };
+  replies?: WishComment[];
+}
+
+export async function addWishComment(
+  wishId: string,
+  content: string,
+  parentCommentId?: string | null
+): Promise<{ data: { comment_id: string } | null; error: any }> {
+  const supabase = createClient();
+  
+  try {
+    const rpcParams: any = {
+      p_wish_id: wishId,
+      p_content: content,
+      p_parent_comment_id: parentCommentId || null,
+    };
+
+    const { data, error } = await supabase.rpc('add_wish_comment', rpcParams);
+
+    if (error) {
+      console.error('Error adding wish comment:', error);
+      return { data: null, error };
+    }
+
+    return { data: data as { comment_id: string }, error: null };
+  } catch (err) {
+    console.error('Error in addWishComment:', err);
+    return { data: null, error: err };
+  }
+}
+
+export interface GetWishCommentsResponse {
+  total: number;
+  items: Array<{
+    id: string;
+    wish_id: string;
+    user_id: string;
+    content: string;
+    parent_comment_id: string | null;
+    created_at: string;
+    updated_at: string;
+    user: {
+      id: string;
+      name: string;
+      profile_pic_url?: string | null;
+    };
+  }>;
+}
+
+export async function getWishComments(
+  wishId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+    includeDeleted?: boolean;
+  }
+): Promise<{ data: WishComment[]; total?: number; error: any }> {
+  const supabase = createClient();
+  
+  try {
+    // Fetch root comments (parent_comment_id = null)
+    const rootParams: any = {
+      p_wish_id: wishId,
+      p_parent_comment_id: null,
+      p_limit: options?.limit || 50,
+      p_offset: options?.offset || 0,
+      p_include_deleted: options?.includeDeleted || false,
+    };
+
+    const { data: rootData, error: rootError } = await supabase.rpc(
+      'get_wish_comments',
+      rootParams
+    );
+
+    if (rootError) {
+      console.error('Error fetching root comments:', rootError);
+      return { data: [], error: rootError };
+    }
+
+    if (!rootData || !rootData.items || rootData.items.length === 0) {
+      return { data: [], total: rootData?.total || 0, error: null };
+    }
+
+    // Convert RPC response to WishComment format
+    const rootComments: WishComment[] = await Promise.all(
+      rootData.items.map(async (comment: any) => {
+        const commentObj: WishComment = {
+          comment_id: comment.id || comment.comment_id,
+          wish_id: comment.wish_id || wishId,
+          user_id: comment.user_id || comment.user?.id,
+          content: comment.content,
+          parent_comment_id: null,
+          created_at: comment.created_at,
+          updated_at: comment.updated_at || comment.created_at,
+          user: comment.user || {
+            id: comment.user_id || comment.user?.id,
+            name: comment.user?.name || 'Unknown User',
+            profile_pic_url: comment.user?.profile_pic_url || null,
+          },
+          replies: [],
+        };
+
+        // Fetch replies for this comment
+        const replyParams: any = {
+          p_wish_id: wishId,
+          p_parent_comment_id: commentObj.comment_id,
+          p_limit: 100, // Fetch all replies (reasonable limit)
+          p_offset: 0,
+          p_include_deleted: options?.includeDeleted || false,
+        };
+
+        const { data: replyData, error: replyError } = await supabase.rpc(
+          'get_wish_comments',
+          replyParams
+        );
+
+        if (!replyError && replyData && replyData.items) {
+          commentObj.replies = replyData.items.map((reply: any) => ({
+            comment_id: reply.id || reply.comment_id,
+            wish_id: reply.wish_id || wishId,
+            user_id: reply.user_id || reply.user?.id,
+            content: reply.content,
+            parent_comment_id: commentObj.comment_id,
+            created_at: reply.created_at,
+            updated_at: reply.updated_at || reply.created_at,
+            user: reply.user || {
+              id: reply.user_id || reply.user?.id,
+              name: reply.user?.name || 'Unknown User',
+              profile_pic_url: reply.user?.profile_pic_url || null,
+            },
+            replies: [], // Replies don't have nested replies in this implementation
+          }));
+        }
+
+        return commentObj;
+      })
+    );
+
+    return { data: rootComments, total: rootData.total, error: null };
+  } catch (err) {
+    console.error('Error in getWishComments:', err);
+    return { data: [], error: err };
+  }
+}
+
+// Helper function to get total comment count for a wish (more efficient)
+export async function getWishCommentCount(wishId: string): Promise<{ count: number; error: any }> {
+  const supabase = createClient();
+  
+  try {
+    // Fetch root comments to get total count
+    const { data: rootData, error: rootError } = await supabase.rpc('get_wish_comments', {
+      p_wish_id: wishId,
+      p_parent_comment_id: null,
+      p_limit: 100, // Fetch all root comments to count replies
+      p_offset: 0,
+      p_include_deleted: false,
+    });
+
+    if (rootError) {
+      console.error('Error fetching comment count:', rootError);
+      return { count: 0, error: rootError };
+    }
+
+    if (!rootData || !rootData.items || rootData.items.length === 0) {
+      return { count: 0, error: null };
+    }
+
+    // Count root comments
+    let totalCount = rootData.items.length;
+    
+    // Count replies for each root comment
+    const replyCounts = await Promise.all(
+      rootData.items.map(async (comment: any) => {
+        const { data: replyData } = await supabase.rpc('get_wish_comments', {
+          p_wish_id: wishId,
+          p_parent_comment_id: comment.id,
+          p_limit: 1,
+          p_offset: 0,
+          p_include_deleted: false,
+        });
+        return replyData?.total || 0;
+      })
+    );
+    
+    const totalReplies = replyCounts.reduce((sum, count) => sum + count, 0);
+    return { count: totalCount + totalReplies, error: null };
+  } catch (err) {
+    console.error('Error in getWishCommentCount:', err);
+    return { count: 0, error: err };
+  }
+}
+
+export interface BoardMemory {
+  wish_id: string;
+  board_id: string;
+  content: string;
+  tag: string | null;
+  is_pinned: boolean;
+  is_featured: boolean;
+  created_at: string;
+  likes_count: number;
+  media_count: number;
+  comments_count: number;
+  media: Array<{
+    id: string;
+    url: string;
+    filename: string;
+    mime_type: string;
+    created_at: string;
+    dimensions: any;
+    media_type: 'image' | 'video' | 'audio' | 'document';
+    size_bytes: number;
+    thumbnails: any;
+    duration_seconds: number | null;
+    processing_status: string;
+  }>;
+  wisher: {
+    id: string;
+    name: string;
+    is_verified: boolean;
+    profile_pic_url: string | null;
+  };
+}
+
+export interface GetBoardMemoriesResponse {
+  success: boolean;
+  data: {
+    memories: BoardMemory[];
+    pagination: {
+      limit: number;
+      total: number;
+      offset: number;
+      has_more: boolean;
+    };
+    total_media: number;
+    total_wishes: number;
+    media_counts_by_type: {
+      audio: number;
+      image: number;
+      video: number;
+      document: number;
+    };
+  };
+}
+
+export async function getBoardMemories(
+  boardId: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+  }
+): Promise<{ data: GetBoardMemoriesResponse | null; error: any }> {
+  const supabase = createClient();
+  
+  try {
+    const rpcParams: any = {
+      p_board_id: boardId,
+    };
+
+    if (options?.limit !== undefined) {
+      rpcParams.p_limit = options.limit;
+    }
+    if (options?.offset !== undefined) {
+      rpcParams.p_offset = options.offset;
+    }
+
+    const { data, error } = await supabase.rpc('get_board_memories', rpcParams);
+
+    if (error) {
+      console.error('Error fetching board memories:', error);
+      return { data: null, error };
+    }
+
+    return { data: data as GetBoardMemoriesResponse, error: null };
+  } catch (err) {
+    console.error('Error in getBoardMemories:', err);
+    return { data: null, error: err };
+  }
+}
+
+export async function getBoardWishes(
+  boardId: string, 
+  currentUserId?: string,
+  options?: {
+    limit?: number;
+    offset?: number;
+  }
+) {
+  const supabase = createClient();
+  
+  try {
+    const rpcParams: any = {
+      p_board_id: boardId,
+    };
+
+    if (options?.limit !== undefined) {
+      rpcParams.p_limit = options.limit;
+    }
+    if (options?.offset !== undefined) {
+      rpcParams.p_offset = options.offset;
+    }
+
+    const { data: wishesData, error: wishesError } = await supabase.rpc(
+      'get_board_wishes',
+      rpcParams
+    );
+
+    if (wishesError) {
+      console.error('Error fetching wishes:', wishesError);
+      return { data: [], error: wishesError };
+    }
+
+    if (!wishesData || wishesData.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Fetch user's likes to determine which wishes are liked
+    const wishIds = wishesData.map((w: any) => w.wish_id);
+    let userLikesSet: Set<string> = new Set();
+
+    if (currentUserId && wishIds.length > 0) {
+      const { data: likesData } = await supabase
+        .from('wish_likes')
+        .select('wish_id')
+        .in('wish_id', wishIds)
+        .eq('user_id', currentUserId);
+
+      if (likesData) {
+        likesData.forEach((like: any) => {
+          userLikesSet.add(like.wish_id);
+        });
+      }
+    }
+
+    // Map RPC response to our expected format
+    const wishesWithDetails = wishesData.map((wish: any) => {
+      // Combine photos and videos into media array
+      const media: Array<{
+        id: string;
+        media_type: string;
+        cdn_url: string;
+        thumbnail_url?: string;
+      }> = [];
+
+      // Add photos
+      if (wish.photos && Array.isArray(wish.photos)) {
+        wish.photos.forEach((photo: any) => {
+          media.push({
+            id: photo.id || photo.media_id,
+            media_type: 'image',
+            cdn_url: photo.cdn_url || photo.url,
+            thumbnail_url: photo.thumbnail_url,
+          });
+        });
+      }
+
+      // Add videos
+      if (wish.videos && Array.isArray(wish.videos)) {
+        wish.videos.forEach((video: any) => {
+          media.push({
+            id: video.id || video.media_id,
+            media_type: 'video',
+            cdn_url: video.cdn_url || video.url,
+            thumbnail_url: video.thumbnail_url,
+          });
+        });
+      }
+
+      return {
+        id: wish.wish_id,
+        content: wish.content,
+        created_at: wish.created_at,
+        sender: {
+          id: wish.sender_id,
+          name: wish.sender_name || 'Unknown User',
+          profile_pic_url: wish.sender_profile_pic_url || null,
+        },
+        media,
+        giftAmount: wish.gift_amount || 0,
+        likesCount: wish.likes_count || 0,
+        isLiked: userLikesSet.has(wish.wish_id),
+        commentsCount: wish.comments_count || 0,
+        tag: wish.tag,
+        is_pinned: wish.is_pinned || false,
+        is_featured: wish.is_featured || false,
+        music: wish.music || [],
+      };
+    });
+
+    return { data: wishesWithDetails, error: null };
+  } catch (err) {
+    console.error('Error in getBoardWishes:', err);
+    return { data: [], error: err };
+  }
 }
 
 export async function uploadBoardMedia(
@@ -1062,7 +1655,7 @@ export async function getBoardStats(boardId: string) {
 
 export async function incrementBoardView(boardId: string) {
   const supabase = createClient();
-  
+
   const { error } = await supabase.rpc('increment_board_views', {
     board_id: boardId
   });
@@ -1070,4 +1663,40 @@ export async function incrementBoardView(boardId: string) {
   if (error) {
     console.error('Error incrementing board views:', error);
   }
+}
+
+export interface InviteUserToBoardParams {
+  boardId: string;
+  inviteeUserId?: string | null;
+  inviteeEmail?: string | null;
+  inviteePhone?: string | null;
+  role?: 'contributor' | 'viewer' | 'admin';
+  expiresAt?: string | null;
+}
+
+export async function inviteUserToBoard({
+  boardId,
+  inviteeUserId = null,
+  inviteeEmail = null,
+  inviteePhone = null,
+  role = 'contributor',
+  expiresAt = null,
+}: InviteUserToBoardParams) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('invite_user_to_board', {
+    p_board_id: boardId,
+    p_invitee_user_id: inviteeUserId,
+    p_invitee_email: inviteeEmail,
+    p_invitee_phone: inviteePhone,
+    p_role: role,
+    p_expires_at: expiresAt,
+  });
+
+  if (error) {
+    console.error('Error inviting user to board:', error);
+    return { success: false, error: error.message, data: null };
+  }
+
+  return { success: true, data, error: null };
 }

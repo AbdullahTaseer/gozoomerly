@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SpotLightCard from '@/components/cards/SpotLightCard';
-import PostsVideoCard from '@/components/cards/PostsVideoCard';
-import { spotlightCampaigns, boardInvitations, feedCardData } from '@/lib/MockData';
-import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
-import { fetchUserBoards, type Board } from '@/lib/supabase/boards';
+import { spotlightCampaigns } from '@/lib/MockData';
+import { fetchUserBoards, getUserBoards, type Board } from '@/lib/supabase/boards';
 import { useGetUserBoards } from '@/hooks/useGetUserBoards';
+import { useGetUserInvitations } from '@/hooks/useGetUserInvitations';
+import { useGetUserBoardsWishes } from '@/hooks/useGetUserBoardsWishes';
 import { createClient } from '@/lib/supabase/client';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { authService } from '@/lib/supabase/auth';
@@ -26,16 +26,54 @@ const Home = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'layers'>('grid');
   const [followingBoards, setFollowingBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const {
     boards: userBoards,
+    counts: boardCounts,
     isLoading: userBoardsLoading,
     fetchUserBoards: fetchUserBoardsRPC
   } = useGetUserBoards();
 
+  const {
+    invitations,
+    isLoading: invitationsLoading,
+    fetchUserInvitations,
+    acceptInvitation,
+    declineInvitation
+  } = useGetUserInvitations();
+
+  const {
+    wishes,
+    isLoading: wishesLoading,
+    fetchWishes
+  } = useGetUserBoardsWishes();
+
   useEffect(() => {
     loadBoards();
   }, []);
+
+  // Handle filter change - fetch boards with appropriate status
+  const handleFilterChange = async (filter: string) => {
+    setSelectedFilter(filter);
+
+    if (!currentUserId) return;
+
+    // Map filter to API status parameter
+    const statusMap: Record<string, string | null> = {
+      'All': null,
+      'New': 'new',
+      'Active': 'live',
+      'Past': 'past'
+    };
+
+    await fetchUserBoardsRPC({
+      p_user_id: currentUserId,
+      p_status: statusMap[filter] as any,
+      p_limit: 10,
+      p_offset: 0
+    });
+  };
 
   const loadBoards = async () => {
     try {
@@ -48,13 +86,28 @@ const Home = () => {
         return;
       }
 
+      setCurrentUserId(user.id);
       const supabase = createClient();
 
+      // Fetch all boards first to get counts, then filter for live
       await fetchUserBoardsRPC({
         p_user_id: user.id,
-        p_status: 'live',
+        p_status: null,
         p_limit: 10,
         p_offset: 0
+      });
+
+      // Fetch user invitations
+      await fetchUserInvitations({
+        p_user_id: user.id,
+        p_limit: 10,
+        p_offset: 0
+      });
+
+      // Fetch wishes for user's boards
+      await fetchWishes({
+        p_board_ids: null, // Fetch wishes from all user's boards
+        p_limit: 10
       });
 
       const { boards: userBoardsData } = await fetchUserBoards(user.id);
@@ -100,12 +153,25 @@ const Home = () => {
           return {
             ...board,
             topContributors: contributorAvatars,
+            // Preserve count fields from board table
+            participants_count: (board as any).participants_count ?? 0,
+            wishes_count: (board as any).wishes_count ?? 0,
+            gifters_count: (board as any).gifters_count ?? (board as any).contributors_count ?? 0,
+            contributors_count: (board as any).contributors_count ?? 0,
+            media_count: (board as any).media_count ?? 0,
           };
         });
       };
 
-      const followingWithContributors = await fetchContributors(userBoardsData || []);
-      setFollowingBoards(followingWithContributors.slice(0, 5));
+      // Fetch user's boards using the same API as boards page
+      const { data: userOwnBoards, error: userOwnBoardsError } = await getUserBoards(user.id);
+      if (!userOwnBoardsError && userOwnBoards) {
+        const followingWithContributors = await fetchContributors(userOwnBoards);
+        setFollowingBoards(followingWithContributors);
+      } else {
+        const followingWithContributors = await fetchContributors(userBoardsData || []);
+        setFollowingBoards(followingWithContributors.slice(0, 5));
+      }
 
     } catch (err) {
       console.error('Error loading boards:', err);
@@ -165,17 +231,25 @@ const Home = () => {
                   </button>
                 </div>
                 <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full'>
-                  {boardInvitations.length > 0 ? (
-                    boardInvitations.slice(0, 5).map((invitation) => (
+                  {invitationsLoading ? (
+                    [1, 2, 3].map((i) => (
+                      <div key={i} className='min-w-[350px] h-[220px] bg-gray-100 rounded-[13px] animate-pulse' />
+                    ))
+                  ) : invitations.length > 0 ? (
+                    invitations.slice(0, 5).map((invitation: any) => (
                       <InvitationBoardCard
                         key={invitation.id}
-                        title={invitation.title}
-                        backgroundImage={invitation.backgroundImage}
-                        profileImage={invitation.profileImage}
-                        inviterName={invitation.inviterName}
-                        gradientClass={invitation.gradientClass}
-                        onAccept={() => alert("Accepted")}
-                        onDecline={() => alert("Declined")}
+                        title={invitation.board?.title || 'Board Invitation'}
+                        backgroundImage={invitation.board?.cover_image || ProfileAvatar}
+                        profileImage={invitation.invited_by?.Profile_Picture || ProfileAvatar}
+                        inviterName={invitation.invited_by?.name || 'Unknown'}
+                        gradientClass='bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/80'
+                        onAccept={async () => {
+                          await acceptInvitation(invitation.id);
+                        }}
+                        onDecline={async () => {
+                          await declineInvitation(invitation.id);
+                        }}
                       />
                     ))
                   ) : (
@@ -196,7 +270,7 @@ const Home = () => {
                     View all <ChevronRight size={16} />
                   </button>
                 </div>
-                <BoardsList boards={userBoards.slice(0, 5) as any} loading={loading || userBoardsLoading} />
+                <BoardsList boards={[]} loading={false} />
               </div>
 
               <div>
@@ -259,19 +333,6 @@ const Home = () => {
                 <BoardsList boards={followingBoards} loading={loading} />
               </div>
 
-              {/* Your Boards Section */}
-              {/* <div>
-                <div className='flex items-center justify-between mb-4'>
-                  <h3 className='text-xl md:text-3xl font-bold text-black'>Your Boards</h3>
-                  <button
-                    onClick={() => router.push('/dashboard/allBoards/your')}
-                    className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
-                  >
-                    View all <ChevronRight size={16} />
-                  </button>
-                </div>
-                <BoardsList boards={yourBoards} loading={loading} />
-              </div> */}
 
               {/* Past Boards Section */}
               {/* <div>
@@ -292,35 +353,97 @@ const Home = () => {
               <div className='flex max-w-[745px] mx-auto items-center justify-between gap-4 mt-4'>
                 <HomeFeedFilters
                   selectedFilter={selectedFilter}
-                  onFilterChange={setSelectedFilter}
+                  onFilterChange={handleFilterChange}
+                  counts={boardCounts}
                 />
               </div>
 
               <div className='max-w-[745px] mx-auto py-4 space-y-6'>
-                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                <PostsVideoCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                <PostsImagesCarouselCard goToProfile={() => router.push("/dashboard/visitProfile")} />
-                {feedCardData.map((feed) => (
-                  <FeedCard
-                    key={feed.id}
-                    userName={feed.userName}
-                    userAvatar={feed.userAvatar}
-                    timestamp={feed.timestamp}
-                    layout={feed.layout}
-                    title={feed.title}
-                    description={feed.description}
-                    actionTag={feed.actionTag}
-                    videoThumbnail={feed.videoThumbnail}
-                    videoUrl={feed.videoUrl}
-                    thumbnailImage={feed.thumbnailImage}
-                    mediaItems={feed.mediaItems}
-                    likes={feed.likes}
-                    comments={feed.comments}
-                    shares={feed.shares}
-                    memories={feed.memories}
-                    onUserClick={() => router.push("/dashboard/visitProfile")}
-                  />
-                ))}
+                {wishesLoading ? (
+                  <>
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className='h-64 bg-gray-100 rounded-[24px] animate-pulse' />
+                    ))}
+                  </>
+                ) : wishes.length > 0 ? (
+                  wishes.map((wish: any) => {
+                    // Get sender (wisher) details - try multiple possible field names
+                    const senderName = wish.wisher?.name || wish.sender?.name || wish.sender_name || wish.user?.name || 'Unknown';
+                    const senderAvatar = wish.wisher?.profile_pic_url || wish.sender?.profile_pic_url || wish.sender_profile_pic_url || wish.user?.profile_pic_url || undefined;
+
+                    // Map media to FeedCard format - try multiple possible field names
+                    const mediaArray = wish.media || wish.photos || wish.videos || [];
+                    const hasMedia = mediaArray.length > 0;
+
+                    const mediaItems = hasMedia ? mediaArray.map((m: any) => ({
+                      type: (m.media_type === 'video' ? 'video' : 'image') as 'image' | 'video',
+                      url: m.url || m.cdn_url,
+                      thumbnail: m.thumbnail_url || m.thumbnails?.small
+                    })) : [];
+
+                    // Get first video and image
+                    const firstVideo = mediaArray.find((m: any) => m.media_type === 'video');
+                    const firstImage = mediaArray.find((m: any) => m.media_type === 'image');
+
+                    const videoThumbnail = firstVideo?.thumbnail_url || firstVideo?.cdn_url || firstVideo?.url || '';
+                    const videoUrl = firstVideo?.cdn_url || firstVideo?.url || '';
+
+                    const timestamp = wish.created_at
+                      ? new Date(wish.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      : '';
+
+                    // Extract title from content (first line or first 50 chars)
+                    const contentLines = (wish.content || '').split('\n').filter((line: string) => line.trim());
+                    const firstLine = contentLines[0] || '';
+                    const title = firstLine.length > 50
+                      ? firstLine.substring(0, 50) + '...'
+                      : (firstLine || wish.board_title || 'Wish');
+
+                    // Only show description if there's additional content beyond the title
+                    let description = '';
+                    if (contentLines.length > 1) {
+                      // Multiple lines - show lines after the first
+                      description = contentLines.slice(1).join(' ').trim();
+                    } else if (firstLine.length > 50) {
+                      // Single long line - show remainder after title
+                      description = firstLine.substring(50).trim();
+                    }
+                    // If single short line, don't show description (it's already the title)
+
+                    // Use carousel layout if there are multiple media items, horizontal if there's video
+                    const layout = hasMedia && firstVideo ? 'horizontal' : 'carousel';
+
+                    return (
+                      <FeedCard
+                        key={wish.wish_id || wish.id}
+                        userName={senderName}
+                        userAvatar={senderAvatar}
+                        timestamp={timestamp}
+                        layout={layout}
+                        title={title}
+                        description={description}
+                        actionTag={wish.gift_amount ? `Gifted : $${wish.gift_amount}` : undefined}
+                        videoThumbnail={hasMedia ? videoThumbnail : undefined}
+                        videoUrl={hasMedia ? videoUrl : undefined}
+                        mediaItems={mediaItems}
+                        thumbnailImage={firstImage?.cdn_url || firstImage?.url}
+                        likes={wish.likes_count || 0}
+                        comments={wish.comments_count || 0}
+                        shares={0}
+                        memories={mediaArray.length || 0}
+                        onUserClick={() => router.push(`/dashboard/boards/${wish.board_id}`)}
+                        onVideoClick={() => router.push(`/dashboard/boards/${wish.board_id}`)}
+                        boardSlug={wish.board_slug}
+                        boardId={wish.board_id}
+                        showOnlyLikeAndComment={true}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className='text-center py-12'>
+                    <p className='text-gray-500'>No wishes found</p>
+                  </div>
+                )}
               </div>
             </div>
           )}

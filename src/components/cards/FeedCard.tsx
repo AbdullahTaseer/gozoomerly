@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
-import { MoreVertical, Heart, MessageCircle, Share, Clock, Play } from 'lucide-react';
+import { MoreVertical, Heart, MessageCircle, Share, Clock, Play, UserPlus } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
+import ShareBoardModal from '@/components/modals/ShareBoardModal';
+import InviteToBoardModal from '@/components/modals/InviteToBoardModal';
 
 export type FeedCardLayout = 'horizontal' | 'carousel';
 
@@ -33,6 +35,7 @@ export interface FeedCardProps {
 
   // Footer props
   likes?: number;
+  isLiked?: boolean;
   comments?: number;
   shares?: number;
   memories?: number;
@@ -40,6 +43,12 @@ export interface FeedCardProps {
   onCommentClick?: () => void;
   onShareClick?: () => void;
   onMemoryClick?: () => void;
+  showOnlyLikeAndComment?: boolean; // If true, only show like and comment buttons
+
+  // Share props
+  shareUrl?: string;
+  boardSlug?: string;
+  boardId?: string;
 }
 
 const FeedCard: React.FC<FeedCardProps> = ({
@@ -58,6 +67,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
   mediaItems = [],
   thumbnailImage,
   likes = 1,
+  isLiked = false,
   comments = 1,
   shares = 1,
   memories = 1,
@@ -65,10 +75,33 @@ const FeedCard: React.FC<FeedCardProps> = ({
   onCommentClick,
   onShareClick,
   onMemoryClick,
+  shareUrl,
+  boardSlug,
+  boardId,
+  showOnlyLikeAndComment = false,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [playingVideos, setPlayingVideos] = useState<{ [key: number]: boolean }>({});
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const optionsRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setIsOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Generate share URL if not provided
+  const generatedShareUrl = shareUrl || (boardSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/boards/${boardSlug}` : '');
 
   const handleVideoClick = () => {
     if (onVideoClick) {
@@ -92,7 +125,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
       <div className="flex items-start justify-between mb-4">
         <div
           onClick={onUserClick}
-          className={`flex items-center gap-3 ${onUserClick ? 'cursor-pointer' : ''}`}
+          className={`flex items-center gap-3 ${onUserClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
         >
           <div className="relative w-[50px] h-[50px] shrink-0">
             {userAvatar ? (
@@ -116,58 +149,86 @@ const FeedCard: React.FC<FeedCardProps> = ({
             )}
           </div>
           <div>
-            <p className="font-bold text-base text-[#1B1D26]">{userName}</p>
+            <p className={`font-bold text-base text-[#1B1D26] ${onUserClick ? 'hover:text-pink-500 transition-colors' : ''}`}>{userName}</p>
             <p className="text-sm text-gray-500 mt-0.5">{timestamp}</p>
           </div>
         </div>
-        <button
-          onClick={onOptionsClick}
-          className="text-gray-600 hover:text-gray-900 cursor-pointer p-1"
-          aria-label="More options"
-        >
-          <MoreVertical size={20} />
-        </button>
+        <div className="relative" ref={optionsRef}>
+          <button
+            onClick={() => {
+              if (onOptionsClick) {
+                onOptionsClick();
+              } else {
+                setIsOptionsOpen(!isOptionsOpen);
+              }
+            }}
+            className="text-gray-600 hover:text-gray-900 cursor-pointer p-1"
+            aria-label="More options"
+          >
+            <MoreVertical size={20} />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isOptionsOpen && (
+            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-2 min-w-[140px] z-10">
+              <button
+                onClick={() => {
+                  setIsOptionsOpen(false);
+                  setIsInviteModalOpen(true);
+                }}
+                className="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                <UserPlus size={16} />
+                Invite
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {layout === 'horizontal' ? (
         <div className="flex gap-4 max-[350px]:flex-col mb-4">
-          <div className="relative w-[150px] max-[350px]:w-full h-[170px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
-            {isPlaying && videoUrl ? (
-              <video
-                src={videoUrl}
-                controls
-                autoPlay
-                className="w-full h-full object-cover rounded-lg"
-                playsInline
-              >
-                Your browser does not support the video tag.
-              </video>
-            ) : (
-              <div
-                className="relative w-full h-full cursor-pointer"
-                onClick={handleVideoClick}
-              >
-                <Image
-                  src={videoThumbnail}
-                  alt={title}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
-                  <div className="bg-white/90 rounded-full p-3 shadow-lg">
-                    <Play size={24} className="text-black ml-1" fill="black" />
+          {videoThumbnail && (
+            <div className="relative w-[150px] max-[350px]:w-full h-[170px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
+              {isPlaying && videoUrl ? (
+                <video
+                  src={videoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-cover rounded-lg"
+                  playsInline
+                >
+                  Your browser does not support the video tag.
+                </video>
+              ) : (
+                <div
+                  className="relative w-full h-full cursor-pointer"
+                  onClick={handleVideoClick}
+                >
+                  <Image
+                    src={videoThumbnail}
+                    alt={title}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
+                    <div className="bg-white/90 rounded-full p-3 shadow-lg">
+                      <Play size={24} className="text-black ml-1" fill="black" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div className="flex-1 flex flex-col justify-between">
-            <div>
-              <h3 className="font-bold text-lg text-[#1B1D26] mb-2">{title}</h3>
-              <p className="text-sm text-[#1B1D26] line-clamp-3 leading-relaxed mb-3">{description}</p>
-            </div>
+            {(title || description) && (
+              <div>
+                {title && <h3 className="font-bold text-lg text-[#1B1D26] mb-2">{title}</h3>}
+                {description && <p className="text-sm text-[#1B1D26] line-clamp-3 leading-relaxed mb-3">{description}</p>}
+              </div>
+            )}
             {actionTag && (
               <div className="inline-block">
                 <span className="bg-black text-white rounded-full px-4 py-2 text-xs">
@@ -179,24 +240,29 @@ const FeedCard: React.FC<FeedCardProps> = ({
         </div>
       ) : (
         <>
-          <div className="flex gap-4 mb-4">
-            {thumbnailImage && (
-              <div className="relative w-[80px] h-[80px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
-                <Image
-                  src={thumbnailImage}
-                  alt={title}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
-            )}
+          {(title || description) && (
+            <div className="flex gap-4 mb-4">
+              {/* Only show small thumbnail if there are NO mediaItems (to avoid duplicate images) */}
+              {thumbnailImage && (!mediaItems || mediaItems.length === 0) && (
+                <div className="relative w-[80px] h-[80px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
+                  <Image
+                    src={thumbnailImage}
+                    alt={title || 'Media'}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
 
-            <div className="flex-1">
-              <h3 className="font-bold text-lg text-[#1B1D26] mb-2">{title}</h3>
-              <p className="text-sm text-[#1B1D26] line-clamp-3 leading-relaxed">{description}</p>
+              {(title || description) && (
+                <div className="flex-1">
+                  {title && <h3 className="font-bold text-lg text-[#1B1D26] mb-2">{title}</h3>}
+                  {description && <p className="text-sm text-[#1B1D26] line-clamp-3 leading-relaxed">{description}</p>}
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
           {mediaItems && mediaItems.length > 0 && (
             <div className="relative w-full mb-4 rounded-lg overflow-hidden bg-gray-200">
@@ -257,9 +323,16 @@ const FeedCard: React.FC<FeedCardProps> = ({
       <div className="flex items-center flex-wrap gap-6 pt-4">
         <button
           onClick={onLikeClick}
-          className="flex items-center gap-2 text-black hover:text-pink-500 transition-colors"
+          className={`flex items-center gap-2 transition-colors ${
+            isLiked 
+              ? 'text-pink-500 hover:text-pink-600' 
+              : 'text-black hover:text-pink-500'
+          }`}
         >
-          <Heart size={18} className="stroke-2" />
+          <Heart 
+            size={18} 
+            className={isLiked ? 'fill-pink-500 stroke-pink-500' : 'stroke-2'} 
+          />
           <span className="text-sm">{likes} Like{likes !== 1 ? 's' : ''}</span>
         </button>
 
@@ -271,22 +344,52 @@ const FeedCard: React.FC<FeedCardProps> = ({
           <span className="text-sm">{comments} Comments</span>
         </button>
 
-        <button
-          onClick={onShareClick}
-          className="flex items-center gap-2 text-black hover:text-green-500 transition-colors"
-        >
-          <Share size={18} className="stroke-2" />
-          <span className="text-sm">{shares} Share{shares !== 1 ? 's' : ''}</span>
-        </button>
+        {!showOnlyLikeAndComment && (
+          <>
+            <button
+              onClick={() => {
+                if (onShareClick) {
+                  onShareClick();
+                } else {
+                  setIsShareModalOpen(true);
+                }
+              }}
+              className="flex items-center gap-2 text-black hover:text-green-500 transition-colors"
+            >
+              <Share size={18} className="stroke-2" />
+              <span className="text-sm">{shares} Share{shares !== 1 ? 's' : ''}</span>
+            </button>
 
-        <button
-          onClick={onMemoryClick}
-          className="flex items-center gap-2 text-black hover:text-purple-500 transition-colors"
-        >
-          <Clock size={18} className="stroke-2" />
-          <span className="text-sm">{memories} Memories</span>
-        </button>
+            {onMemoryClick && (
+              <button
+                onClick={onMemoryClick}
+                className="flex items-center gap-2 text-black hover:text-purple-500 transition-colors"
+              >
+                <Clock size={18} className="stroke-2" />
+                <span className="text-sm">{memories} Memories</span>
+              </button>
+            )}
+          </>
+        )}
       </div>
+
+      {/* Share Modal */}
+      <ShareBoardModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        shareUrl={generatedShareUrl}
+        title={title}
+      />
+
+      {/* Invite Modal */}
+      {boardId && (
+        <InviteToBoardModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          boardId={boardId}
+          boardTitle={title}
+        />
+      )}
     </div>
   );
 };

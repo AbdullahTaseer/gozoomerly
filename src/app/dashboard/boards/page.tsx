@@ -62,7 +62,7 @@ const Boards = () => {
   };
 
   const handleViewBoard = (board: Board) => {
-    router.push(`/dashboard/boards/${board.slug}`);
+    router.push(`/dashboard/boards/${board.id}`);
   };
 
   return (
@@ -122,9 +122,11 @@ const Boards = () => {
                   raised={board.total_raised || 0}
                   target={board.goal_amount || 0}
                   invited={board.shares_count || 0}
-                  wishes={board.views_count || 0}
-                  gifters={board.contributors_count || 0}
-                  media={(board as any).media_count || 0}
+                  participants={board.participants_count || 0}
+                  wishes={board.wishes_count || 0}
+                  gifters={board.gifters_count || board.contributors_count || 0}
+                  media={board.media_count || 0}
+                  memories={board.media_count || 0}
                   topContributors={(board as any).topContributors || []}
                   gradient={board.board_types.color_scheme.gradient}
                   primaryColor={board.honoree_details.theme_color}
