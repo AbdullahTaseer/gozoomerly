@@ -155,8 +155,8 @@ const WishModal: React.FC<WishModalProps> = ({
           } else {
             errors.push(`Failed to upload ${item.file.name}: ${errorMsg}`);
           }
-          continue;
-        }
+        continue;
+      }
 
         if (data?.id) {
           mediaIds.push(data.id);
@@ -227,7 +227,7 @@ const WishModal: React.FC<WishModalProps> = ({
 
       // Try RPC first
       const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', rpcParams);
-      
+
       if (rpcErr) {
         console.warn('RPC create_wish failed, trying direct insert:', rpcErr);
         rpcError = rpcErr;
@@ -247,8 +247,8 @@ const WishModal: React.FC<WishModalProps> = ({
         if (directError) {
           console.error('Error creating wish (direct insert):', directError);
           setError(directError.message || 'Failed to create wish');
-          return;
-        }
+        return;
+      }
 
         wishData = directData;
 

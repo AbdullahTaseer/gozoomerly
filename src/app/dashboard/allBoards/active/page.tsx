@@ -6,7 +6,7 @@ import { Search } from 'lucide-react';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
-import { fetchActiveBoards, fetchLiveBoards, type Board } from '@/lib/supabase/boards';
+import { getUserBoards, type Board } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
@@ -31,22 +31,22 @@ const ActiveBoards = () => {
         return;
       }
 
-      // Fetch live/active boards (all public published boards)
-      const { boards: liveBoards, error: liveError } = await fetchLiveBoards({
-        limit: 50,
-        includePrivacy: ['public']
-      });
+      // Fetch user's boards and filter only live ones
+      const { data: userBoards, error: boardsError } = await getUserBoards(user.id);
 
-      if (liveError) {
-        console.error('Error fetching live boards:', liveError);
+      if (boardsError) {
+        console.error('Error fetching user boards:', boardsError);
+        setBoards([]);
+        return;
       }
 
-      let fetchedBoards = liveBoards || [];
+      // Filter only live boards
+      const liveBoards = (userBoards || []).filter(board => board.status === 'live');
 
       // Fetch top contributors for each board
       const supabase = createClient();
       const boardsWithContributors = await Promise.all(
-        fetchedBoards.map(async (board) => {
+        liveBoards.map(async (board) => {
           try {
             const { data: participants } = await supabase
               .from('board_participants')

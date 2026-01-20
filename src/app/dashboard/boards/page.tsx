@@ -124,7 +124,7 @@ const Boards = () => {
                   invited={board.shares_count || 0}
                   participants={board.participants_count || 0}
                   wishes={board.wishes_count || 0}
-                  gifters={board.gifters_count || board.contributors_count || 0}
+                  gifters={board.gifters_count ?? 0}
                   media={board.media_count || 0}
                   memories={board.media_count || 0}
                   topContributors={(board as any).topContributors || []}

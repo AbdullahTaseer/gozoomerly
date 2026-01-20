@@ -35,7 +35,7 @@ export interface Board {
   privacy: 'public' | 'private' | 'circle_only';
   allow_invites: boolean;
   invites_can_invite: boolean;
-  status: 'draft' | 'published' | 'completed' | 'cancelled';
+  status: 'draft' | 'live' | 'published' | 'completed' | 'cancelled';
   published_at?: string;
   total_raised: number;
   contributors_count: number;
@@ -209,6 +209,7 @@ export async function getUserBoards(userId: string) {
       wishes_count,
       participants_count,
       contributors_count,
+      gifters_count,
       media_count,
       board_types (
         name,
@@ -241,7 +242,7 @@ export async function getUserBoards(userId: string) {
       const wishesCount = (board as any).wishes_count ?? 0;
       const participantsCount = (board as any).participants_count ?? 0;
       const contributorsCount = (board as any).contributors_count ?? 0;
-      const giftersCount = (board as any).gifters_count ?? contributorsCount;
+      const giftersCount = (board as any).gifters_count ?? 0;
       const mediaCount = (board as any).media_count ?? 0;
 
       return {
@@ -434,14 +435,14 @@ export async function publishBoard(boardId: string) {
     };
   }
 
-  if (existingBoard.status === 'published') {
+  if (existingBoard.status === 'live' || existingBoard.status === 'published') {
     return { data: existingBoard, error: null };
   }
-  
+
   const { data, error } = await supabase
     .from('boards')
     .update({
-      status: 'published',
+      status: 'live',
       published_at: new Date().toISOString()
     })
     .eq('id', boardId)
@@ -469,7 +470,7 @@ export async function publishMultipleBoards(boardIds: string[]) {
   const { data, error } = await supabase
     .from('boards')
     .update({
-      status: 'published',
+      status: 'live',
       published_at: new Date().toISOString()
     })
     .in('id', boardIds)

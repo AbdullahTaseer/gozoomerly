@@ -438,7 +438,7 @@ export default async function BoardPage(props: any) {
   const raised = board?.total_raised || 0;
   const target = board?.goal_amount || 0;
   const wishes = board?.wishes_count || 0;
-  const gifters = board?.contributors_count || 0;
+  const gifters = board?.gifters_count ?? 0;
 
   const honoreeFirstName = board?.honoree_details?.first_name || '';
   const honoreeLastName = board?.honoree_details?.last_name || '';

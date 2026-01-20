@@ -10,12 +10,15 @@ interface AddStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImageSelect?: (imageUrl: string | StaticImageData) => void;
+  onStoryCreate?: (file: File, caption: string) => void;
 }
 
-const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImageSelect }) => {
+const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImageSelect, onStoryCreate }) => {
   const [selectedImage, setSelectedImage] = useState<string | StaticImageData | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [caption, setCaption] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -26,7 +29,9 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
       // Reset preview state when modal closes
       setShowPreview(false);
       setSelectedImage(null);
+      setSelectedFile(null);
       setCaption('');
+      setIsUploading(false);
     }
     return () => {
       document.body.style.overflow = '';
@@ -45,8 +50,9 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
     // Create a preview URL for the selected image
     const imageUrl = URL.createObjectURL(file);
 
-    // Set as selected image and show preview
+    // Set as selected image, store file, and show preview
     setSelectedImage(imageUrl);
+    setSelectedFile(file);
     setShowPreview(true);
 
     // Reset the input so the same file can be selected again
@@ -65,8 +71,15 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
     setSelectedImage(null);
   };
 
-  const handleSend = () => {
-    if (selectedImage && onImageSelect) {
+  const handleSend = async () => {
+    if (selectedFile && onStoryCreate) {
+      setIsUploading(true);
+      try {
+        await onStoryCreate(selectedFile, caption);
+      } finally {
+        setIsUploading(false);
+      }
+    } else if (selectedImage && onImageSelect) {
       onImageSelect(selectedImage);
     }
     onClose();
@@ -144,12 +157,17 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
       </div>
 
       <div className='flex-shrink-0 flex items-center gap-3'>
-        <GlobalInput borderRadius='40px' placeholder='Add a caption..' onChange={(e) => setCaption(e.target.value)} value={caption} />
+        <GlobalInput borderRadius='40px' placeholder='Add a caption..' onChange={(e) => setCaption(e.target.value)} value={caption} disabled={isUploading} />
         <button
           onClick={handleSend}
-          className='w-10 h-10 shrink-0 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors'
+          disabled={isUploading}
+          className='w-10 h-10 shrink-0 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors disabled:opacity-50'
         >
-          <Send size={18} className='text-white' />
+          {isUploading ? (
+            <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+          ) : (
+            <Send size={18} className='text-white' />
+          )}
         </button>
       </div>
     </div>

@@ -50,7 +50,7 @@ export interface BirthdayBoard {
   privacy: 'public' | 'private' | 'circle_only';
   allow_invites: boolean;
   invites_can_invite: boolean;
-  status: 'draft' | 'published' | 'completed' | 'cancelled';
+  status: 'draft' | 'live' | 'published' | 'completed' | 'cancelled';
   surprise_mode_enabled: boolean;
   theme?: string;
   published_at?: string;

@@ -31,6 +31,7 @@ export const useCreateBirthdayBoard = () => {
       });
 
       // Call Supabase RPC function
+      console.log('Calling create_birthday_board RPC...');
       const { data, error: rpcError } = await supabase.rpc('create_birthday_board', {
         p_board_type_id: boardTypeId,
         p_title: params.p_title,
@@ -55,23 +56,66 @@ export const useCreateBirthdayBoard = () => {
         p_seo_meta_tags: params.p_seo_meta_tags || null
       });
 
-      if (rpcError) {
-        const errorMessage = rpcError.message || 'Failed to create birthday board';
+      console.log('RPC response:', { data, rpcError });
+
+      // Check if rpcError has actual error content (not just empty object)
+      const hasRpcError = rpcError && (rpcError.message || rpcError.code || rpcError.details);
+
+      if (hasRpcError) {
+        const errorMessage = rpcError.message || rpcError.details || rpcError.hint || 'Failed to create birthday board';
         setError(errorMessage);
-        console.error('Error creating birthday board:', rpcError);
+        console.error('Error creating birthday board:', {
+          message: rpcError.message,
+          details: rpcError.details,
+          hint: rpcError.hint,
+          code: rpcError.code,
+          full: JSON.stringify(rpcError)
+        });
         throw new Error(errorMessage);
       }
 
-      // Parse response
-      const response = data?.data || data;
+      // If rpcError is empty object but data is null/undefined, something went wrong
+      if (!data && rpcError) {
+        console.error('RPC returned empty error object:', rpcError);
+        // Try to continue if we have data, otherwise throw generic error
+        if (!data) {
+          const errorMessage = 'Failed to create birthday board - no response received';
+          setError(errorMessage);
+          throw new Error(errorMessage);
+        }
+      }
 
-      if (!response?.success && response?.success !== undefined) {
-        const errorMessage = response?.message || 'Failed to create birthday board';
+      // Check if data contains an error response
+      if (data && typeof data === 'object' && 'success' in data && data.success === false) {
+        const errorMessage = (data as any).message || (data as any).error || 'Failed to create birthday board';
+        setError(errorMessage);
+        console.error('RPC returned error response:', data);
+        throw new Error(errorMessage);
+      }
+
+      // Parse response - handle various response formats
+      let response = data;
+      if (data && typeof data === 'object') {
+        if ('data' in data) {
+          response = (data as any).data;
+        }
+      }
+
+      console.log('Parsed response:', response);
+
+      // If response has success field and it's false, throw error
+      if (response && typeof response === 'object' && 'success' in response && !(response as any).success) {
+        const errorMessage = (response as any).message || 'Failed to create birthday board';
         setError(errorMessage);
         throw new Error(errorMessage);
       }
 
-      return response?.data || response;
+      // Return the board data
+      if (response && typeof response === 'object' && 'data' in response) {
+        return (response as any).data;
+      }
+
+      return response as BirthdayBoard;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create birthday board';
       setError(errorMessage);

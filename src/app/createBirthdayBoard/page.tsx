@@ -31,6 +31,7 @@ import { CreateBirthdayBoardInput } from '@/types/board';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
 import * as Switch from '@radix-ui/react-switch';
+import toast from 'react-hot-toast';
 
 const CreateBirthdayBoard = () => {
 
@@ -49,6 +50,9 @@ const CreateBirthdayBoard = () => {
   const [uploadingProfilePhoto, setUploadingProfilePhoto] = useState(false);
   const [profilePhotoError, setProfilePhotoError] = useState<string | null>(null);
   const [surpriseModeEnabled, setSurpriseModeEnabled] = useState(false);
+  const [creatorName, setCreatorName] = useState<string>('');
+  const [creatorProfilePic, setCreatorProfilePic] = useState<string>('');
+  const [uploadedMediaUrls, setUploadedMediaUrls] = useState<Array<{ id: string; url: string; type: 'image' | 'video' }>>([]);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -141,6 +145,17 @@ const CreateBirthdayBoard = () => {
       router.push('/signin');
     } else {
       setUserId(user.id);
+      // Fetch user profile for creator info
+      const supabase = createClient();
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, profile_pic_url')
+        .eq('id', user.id)
+        .single();
+      if (profile) {
+        setCreatorName(profile.name || '');
+        setCreatorProfilePic(profile.profile_pic_url || '');
+      }
     }
   };
 
@@ -266,7 +281,7 @@ const CreateBirthdayBoard = () => {
         // Get board type ID - can be either numeric or UUID string
         const boardTypeId = selectedBoardType.id;
         if (!boardTypeId) {
-          alert('Invalid board type. Please go back and select a board type again.');
+          toast.error('Invalid board type. Please go back and select a board type again.');
           setCreating(false);
           return;
         }
@@ -302,7 +317,7 @@ const CreateBirthdayBoard = () => {
         const createdBoard = await createBirthdayBoard(boardData);
 
         if (!createdBoard) {
-          alert(`Failed to create board: ${createBoardError || 'Unknown error'}`);
+          toast.error(`Failed to create board: ${createBoardError || 'Unknown error'}`);
           return;
         }
 
@@ -313,7 +328,7 @@ const CreateBirthdayBoard = () => {
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        alert(`An unexpected error occurred: ${errorMessage}`);
+        toast.error(`An unexpected error occurred: ${errorMessage}`);
       } finally {
         setCreating(false);
       }
@@ -355,7 +370,7 @@ const CreateBirthdayBoard = () => {
 
         if (error || !data) {
           const errorMessage = error?.message || 'Failed to update board';
-          alert(`Failed to update board: ${errorMessage}`);
+          toast.error(`Failed to update board: ${errorMessage}`);
           return;
         }
 
@@ -364,7 +379,7 @@ const CreateBirthdayBoard = () => {
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-        alert(`An unexpected error occurred: ${errorMessage}`);
+        toast.error(`An unexpected error occurred: ${errorMessage}`);
       } finally {
         setCreating(false);
       }
@@ -400,7 +415,7 @@ const CreateBirthdayBoard = () => {
 
   const handleStep6Next = async () => {
     if (!boardId) {
-      alert('No board found. Please go back and complete step 2.');
+      toast.error('No board found. Please go back and complete step 2.');
       return;
     }
 
@@ -417,7 +432,41 @@ const CreateBirthdayBoard = () => {
 
         const giftResult = await addBoardGiftOptions(boardId, giftOptionData);
         if (giftResult.error) {
-          alert(`Warning: Failed to save gift option: ${giftResult.error.message || 'Unknown error'}`);
+          toast.error(`Failed to save gift option: ${giftResult.error.message || 'Unknown error'}`);
+        }
+      }
+
+      // Create a wish/memory with the uploaded media using RPC
+      if (userId && uploadedMediaIds.length > 0) {
+        const firstName = customFieldValues.first_name || '';
+        const wishContent = `Happy Birthday, ${firstName}! Here's to an amazing year ahead! 🎉`;
+
+        const supabase = createClient();
+        const { data: wishData, error: wishError } = await supabase.rpc('create_wish', {
+          p_sender_id: userId,
+          p_board_id: boardId,
+          p_content: wishContent,
+          p_media_ids: uploadedMediaIds,
+          p_audio_url: null,
+          p_max_media_count: 10,
+          p_max_content_length: 1000,
+        });
+
+        if (wishError) {
+          console.error('Failed to create memory with media via RPC:', wishError);
+          // Fallback: try direct insert
+          const { error: directError } = await supabase
+            .from('wishes')
+            .insert({
+              sender_id: userId,
+              board_id: boardId,
+              content: wishContent,
+              media_ids: uploadedMediaIds,
+            });
+
+          if (directError) {
+            console.error('Failed to create memory with direct insert:', directError);
+          }
         }
       }
 
@@ -426,7 +475,7 @@ const CreateBirthdayBoard = () => {
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      alert(`An unexpected error occurred: ${errorMessage}`);
+      toast.error(`An unexpected error occurred: ${errorMessage}`);
     } finally {
       setCreating(false);
     }
@@ -434,12 +483,12 @@ const CreateBirthdayBoard = () => {
 
   const handlePublishBoard = async () => {
     if (!boardId) {
-      alert('No board found to publish.');
+      toast.error('No board found to publish.');
       return;
     }
 
     if (!userId) {
-      alert('User not authenticated. Please sign in again.');
+      toast.error('User not authenticated. Please sign in again.');
       router.push('/signin');
       return;
     }
@@ -451,37 +500,36 @@ const CreateBirthdayBoard = () => {
 
       if (error || !data) {
         const errorMessage = error?.message || 'Failed to publish board';
-        alert(`Failed to publish board: ${errorMessage}`);
+        toast.error(`Failed to publish board: ${errorMessage}`);
         return;
       }
 
-      setTimeout(() => {
-        localStorage.removeItem('boardTypeFields');
-        localStorage.removeItem('currentBoardId');
-        setCustomFieldValues({});
-        setProfilePhotoPreview(null);
-      }, 2000);
+      localStorage.removeItem('boardTypeFields');
+      localStorage.removeItem('currentBoardId');
+      setCustomFieldValues({});
+      setProfilePhotoPreview(null);
 
-      alert('🎉 Board published successfully! Redirecting...');
-      setTimeout(() => {
-        router.push(`/dashboard/boards/${data.slug}`);
-      }, 1000);
+      toast.success('Board published successfully!');
+      router.push('/dashboard/home');
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      alert(`An unexpected error occurred: ${errorMessage}`);
+      toast.error(`An unexpected error occurred: ${errorMessage}`);
     } finally {
       setCreating(false);
     }
   };
 
-  const handleMediaUploaded = (mediaIds: string[], musicId?: number) => {
+  const handleMediaUploaded = (mediaIds: string[], musicId?: number, mediaUrls?: Array<{ id: string; url: string; type: 'image' | 'video' }>) => {
     setUploadedMediaIds(mediaIds);
+    if (mediaUrls) {
+      setUploadedMediaUrls(mediaUrls);
+    }
     if (musicId) {
       setSelectedMusicId(musicId);
       handleFieldChange('music_track_id', musicId);
     }
-    console.log('Media uploaded:', mediaIds, 'Music:', musicId);
+    console.log('Media uploaded:', mediaIds, 'Music:', musicId, 'URLs:', mediaUrls);
   };
 
   const handleStep3Next = async () => {
@@ -1132,6 +1180,22 @@ const CreateBirthdayBoard = () => {
                   <YourBoardIsLive
                     onPublish={handlePublishBoard}
                     isPublishing={creating}
+                    boardData={{
+                      title: customFieldValues.title,
+                      firstName: customFieldValues.first_name,
+                      lastName: customFieldValues.last_name,
+                      hometown: customFieldValues.hometown,
+                      dateOfBirth: customFieldValues.date_of_birth,
+                      description: customFieldValues.description,
+                      goalAmount: customFieldValues.goal_amount ? parseFloat(customFieldValues.goal_amount) : 0,
+                      profilePhotoUrl: customFieldValues.profile_photo_url,
+                      themeColor: customFieldValues.theme_color,
+                    }}
+                    creatorData={{
+                      name: creatorName,
+                      profilePicUrl: creatorProfilePic,
+                    }}
+                    uploadedMedia={uploadedMediaUrls}
                   />
                 }
               </>

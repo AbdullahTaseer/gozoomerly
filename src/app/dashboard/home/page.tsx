@@ -156,7 +156,7 @@ const Home = () => {
             // Preserve count fields from board table
             participants_count: (board as any).participants_count ?? 0,
             wishes_count: (board as any).wishes_count ?? 0,
-            gifters_count: (board as any).gifters_count ?? (board as any).contributors_count ?? 0,
+            gifters_count: (board as any).gifters_count ?? 0,
             contributors_count: (board as any).contributors_count ?? 0,
             media_count: (board as any).media_count ?? 0,
           };

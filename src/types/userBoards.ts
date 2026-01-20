@@ -50,7 +50,7 @@ export interface UserBoard {
   privacy: 'public' | 'private' | 'circle_only';
   allow_invites: boolean;
   invites_can_invite: boolean;
-  status: 'draft' | 'published' | 'completed' | 'cancelled';
+  status: 'draft' | 'live' | 'published' | 'completed' | 'cancelled';
   published_at?: string;
   total_raised: number;
   contributors_count: number;

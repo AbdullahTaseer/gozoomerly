@@ -33,11 +33,17 @@ export interface FileEditSettings {
   zoom: number; 
 }
 
+type MediaUrlItem = {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+};
+
 type props = {
   doneOnclick: () => void;
   onClose: () => void;
-  boardId?: string; 
-  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number) => void; 
+  boardId?: string;
+  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number, mediaUrls?: MediaUrlItem[]) => void;
 }
 
 const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props) => {
@@ -138,10 +144,10 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
       const uploadPromises = files.map(async (fileItem) => {
         if (!fileItem.file) return null;
 
-        const mediaType = fileItem.file.type.startsWith('image/') 
-          ? 'image' as const 
-          : fileItem.file.type.startsWith('video/') 
-            ? 'video' as const 
+        const mediaType = fileItem.file.type.startsWith('image/')
+          ? 'image' as const
+          : fileItem.file.type.startsWith('video/')
+            ? 'video' as const
             : 'audio' as const;
 
         const { data, error } = await uploadBoardMedia(
@@ -156,16 +162,29 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
           return null;
         }
 
-        return data?.id;
+        return {
+          id: data?.id,
+          url: data?.cdn_url,
+          type: mediaType === 'audio' ? 'image' : mediaType,
+        };
       });
 
       const uploadResults = await Promise.all(uploadPromises);
-      const successfulUploads = uploadResults.filter((id): id is string => id !== null);
+      const successfulUploads = uploadResults.filter((item): item is { id: string; url: string; type: 'image' | 'video' } =>
+        item !== null && item.id !== undefined && item.url !== undefined
+      );
+
+      const mediaIds = successfulUploads.map(item => item.id);
+      const mediaUrls: MediaUrlItem[] = successfulUploads.map(item => ({
+        id: item.id,
+        url: item.url,
+        type: item.type,
+      }));
 
       console.log('Successfully uploaded', successfulUploads.length, 'media files');
-      
+
       if (onMediaUploaded) {
-        onMediaUploaded(successfulUploads, selectedMusic || undefined);
+        onMediaUploaded(mediaIds, selectedMusic || undefined, mediaUrls);
       }
 
       doneOnclick();

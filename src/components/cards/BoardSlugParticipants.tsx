@@ -146,7 +146,7 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
             onClick={() => handleUserClick(participant.user.id)}
           >
             <div className="relative h-12 w-12 shrink-0">
-              <Image
+            <Image
                 src={participant.user.profile_pic_url || ProfileAvatar}
                 className="h-12 w-12 rounded-full shrink-0 object-cover"
                 alt={participant.user.name}
@@ -155,13 +155,13 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
                   const target = e.currentTarget as HTMLImageElement;
                   target.src = ProfileAvatar.src || ProfileAvatar;
                 }}
-              />
+            />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-black max-[450px]:text-[16px] text-[18px] font-semibold truncate">
                   {participant.user.name}
-                </p>
+              </p>
                 {participant.user.is_verified && (
                   <span className="text-blue-500" title="Verified">✓</span>
                 )}
