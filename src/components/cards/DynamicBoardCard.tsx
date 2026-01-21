@@ -93,7 +93,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
         </div>
 
         <div className="relative z-10">
-          <h3 className="text-[28px] font-bold mb-4 line-clamp-1 overflow-hidden text-ellipsis">{title}</h3>
+          <h3 className="text-[20px] font-bold mb-4 line-clamp-1 overflow-hidden text-ellipsis">{title}</h3>
 
           <div className="flex items-start gap-3 mb-4">
             <div className="relative h-14 w-14 shrink-0 z-10">
