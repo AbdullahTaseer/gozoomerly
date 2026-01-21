@@ -58,7 +58,7 @@ const SignupFlow = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  
+
   const router = useRouter();
 
   const progressBar = step === 1 ? 0
@@ -78,10 +78,10 @@ const SignupFlow = () => {
   const handleSendOTP = async () => {
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await authService.sendPhoneOTP({ phone: phoneNumber });
-      
+
       if (result.success) {
         setStep(2);
       } else {
@@ -99,17 +99,17 @@ const SignupFlow = () => {
       setError('Passwords do not match');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const result = await authService.verifyPhoneOTP({
         phone: phoneNumber,
         token: otp,
         password: password
       });
-      
+
       if (result.success) {
         setStep(4);
       } else {
@@ -126,7 +126,7 @@ const SignupFlow = () => {
     setLoading(true);
     setError('');
     setUserInfo(info);
-    
+
     try {
       const { error } = await authService.updateUserProfile({
         full_name: info.fullName,
@@ -137,17 +137,17 @@ const SignupFlow = () => {
         avatar_url: info.avatar,
         phone: phoneNumber,
       });
-      
+
       if (error) {
         setError(error);
         return;
       }
 
       const currentUser = await authService.getUser();
-      
+
       if (currentUser) {
         const supabase = createClient();
-        
+
         const profileData = {
           id: currentUser.id,
           name: info.fullName,
@@ -175,7 +175,7 @@ const SignupFlow = () => {
           console.error('Profile creation error:', profileError);
         }
       }
-      
+
       router.push('/thankYou');
     } catch (err) {
       console.error('Error in signup:', err);
@@ -205,19 +205,19 @@ const SignupFlow = () => {
         <div className='max-w-lg w-full mt-6'>
           <p className='text-center poppin-font text-[36px] font-medium'>What&apos;s your phone number</p>
           <p className='text-center font-poppins'>We&apos;ll phone you a code to verify your identity.</p>
-          <FloatingInput 
-            id={"phone-number"} 
-            title='Phone Number' 
-            type='tel' 
-            width='100%' 
+          <FloatingInput
+            id={"phone-number"}
+            title='Phone Number'
+            type='tel'
+            width='100%'
             className="my-6"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value)}
           />
           {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
-          <GlobalButton 
-            title='Continue' 
-            height='50px' 
+          <GlobalButton
+            title='Continue'
+            height='50px'
             onClick={handleSendOTP}
             disabled={loading || !phoneNumber}
           />
@@ -230,9 +230,9 @@ const SignupFlow = () => {
           <p className='text-center font-poppins'>Enter the security code we sent to <br /> {phoneNumber}</p>
           <OtpInput value={otp} onChange={setOtp} />
           {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
-          <GlobalButton 
-            title='Continue' 
-            height='50px' 
+          <GlobalButton
+            title='Continue'
+            height='50px'
             onClick={() => setStep(3)}
             disabled={loading || otp.length < 6}
           />

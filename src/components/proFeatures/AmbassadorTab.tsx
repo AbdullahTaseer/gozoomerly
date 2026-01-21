@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Play, Pause } from 'lucide-react';
+import toast from 'react-hot-toast';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import {
   Accordion,
@@ -9,10 +11,16 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useGetSubmissions } from '@/hooks/useGetSubmissions';
+import { authService } from '@/lib/supabase/auth';
+
+const PARTNER_ID = 4; // Partner ID for ambassador submissions
 
 const AmbassadorTab = () => {
+  const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { isLoading, fetchSubmissions } = useGetSubmissions();
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -22,6 +30,54 @@ const AmbassadorTab = () => {
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleApplyClick = async () => {
+    try {
+      // Get current user from Supabase
+      const currentUser = await authService.getUser();
+
+      if (!currentUser?.email) {
+        console.error('No user logged in or email not found');
+        toast.error('Please log in to continue');
+        return;
+      }
+
+      console.log('Current user email:', currentUser.email);
+      console.log('Fetching submissions for partner:', PARTNER_ID);
+
+      // Fetch submissions from GraphQL API
+      const submissions = await fetchSubmissions(PARTNER_ID, true);
+      console.log('Submissions fetched:', submissions);
+
+      // Find matching submission by email
+      const matchingSubmission = submissions.find(
+        (submission) => submission.user?.email?.toLowerCase() === currentUser.email?.toLowerCase()
+      );
+
+      if (matchingSubmission) {
+        // Store user_id from the matching submission in localStorage
+        const userId = matchingSubmission.user?.user_id;
+        if (userId) {
+          localStorage.setItem('ambassador_user_id', userId);
+          console.log('User ID stored in localStorage:', userId);
+        }
+
+        // Check if user has subscription
+        if (matchingSubmission.subscription) {
+          toast.success('You are already a pro member');
+        } else {
+          // Navigate to subscription plan screen
+          router.push('/subscriptionplan');
+        }
+      } else {
+        console.log('No matching submission found for email:', currentUser.email);
+        toast.error('Please register on zoiax first');
+      }
+    } catch (err) {
+      console.error('Error in handleApplyClick:', err);
+      toast.error('Something went wrong. Please try again.');
     }
   };
 
@@ -117,10 +173,11 @@ const AmbassadorTab = () => {
 
           {/* Apply Button */}
           <GlobalButton
-            title="Apply to become an Ambassador"
+            title={isLoading ? "Loading..." : "Apply to become an Ambassador"}
             width="100%"
             height="48px"
-            onClick={() => { }}
+            onClick={handleApplyClick}
+            disabled={isLoading}
           />
         </div>
 
