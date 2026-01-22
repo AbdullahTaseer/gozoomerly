@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import bellIcon from "@/assets/svgs/bell.svg";
 import { useRouter } from 'next/navigation';

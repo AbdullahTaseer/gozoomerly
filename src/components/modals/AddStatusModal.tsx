@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import {  useEffect, useState, useRef  } from 'react';
 import Image, { StaticImageData } from 'next/image';
 import { X, Camera, Send, ALargeSmall, Music, CirclePlus } from 'lucide-react';
 import { statusImages } from '@/lib/MockData';

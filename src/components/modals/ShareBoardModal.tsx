@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { X, Share2, Facebook, Copy, Check, Users } from 'lucide-react';
 import Image from 'next/image';
 import WhatsappIcon from "@/assets/svgs/whatsapp.png";

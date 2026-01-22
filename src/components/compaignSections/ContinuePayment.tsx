@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import ArrowRightIcon from "@/assets/svgs/ArrowRight.svg";
 import GlobalButton from '../buttons/GlobalButton';
 import GlobalInput from '../inputs/GlobalInput';

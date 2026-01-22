@@ -1,4 +1,3 @@
-import React from 'react';
 import Likes_1 from "@/assets/pngs/likes-1.svg";
 import Likes_2 from "@/assets/pngs/Likes-2.svg";
 import Likes_3 from "@/assets/pngs/Likes-3.svg";

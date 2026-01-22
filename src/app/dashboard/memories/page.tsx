@@ -1,4 +1,3 @@
-import React from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
 import { homeBoardsSwiper } from '@/lib/MockData';

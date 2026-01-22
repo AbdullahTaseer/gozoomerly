@@ -18,10 +18,10 @@ interface PartnerRegistrationFormProps {
   };
 }
 
-export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = ({
+export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = ({ 
   partnerId,
-  onBack,
-  initialValues
+  onBack, 
+  initialValues 
 }) => {
   const router = useRouter();
   const { formHandlers, isLoading, error } = useFormHandlers(partnerId);
@@ -113,7 +113,7 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
 
   const capitalizeFieldName = (name: string): string => {
     return name
-      .replace(/\s+/g, '_')
+      .replace(/\s+/g, '_')  // Replace spaces with underscores
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('_');
@@ -122,9 +122,10 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
   const getFieldNameForSubmission = (field: FormField): string => {
     const fieldName = field.name || field.label || '';
     const nameLower = fieldName.toLowerCase();
-
+    
     let standardName: string;
 
+    // Map common field types to standard names
     if (nameLower.includes('password')) {
       standardName = 'Password';
     } else if (nameLower.includes('email')) {
@@ -132,16 +133,20 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     } else if (nameLower.includes('phone') || nameLower.includes('mobile') || nameLower.includes('tel')) {
       standardName = 'Phone';
     } else if (nameLower.includes('name') && !nameLower.includes('username')) {
+      // For name fields, use the actual field name
       standardName = capitalizeFieldName(fieldName);
     } else {
+      // For all other fields (including invite/referral codes), use the actual field name
       standardName = capitalizeFieldName(fieldName);
     }
 
+    // Clean up field ID - remove "invite_code_" prefix if it exists
     let cleanFieldId = field.id.toString();
     if (cleanFieldId.startsWith('invite_code_')) {
       cleanFieldId = cleanFieldId.replace('invite_code_', '');
     }
 
+    // Return format: {field_id}_{Field_Name}
     return `${cleanFieldId}_${standardName}`;
   };
 
@@ -154,30 +159,35 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
 
     try {
       const formHandler = formHandlers[0];
+      
+      // Transform formData to use field names instead of IDs
       const transformedData: FormDataRecord = {};
       let inviteCodeField: FormField | null = null;
-
+      
       parsedFields.forEach((field) => {
         const fieldName = field.name || field.label || '';
         const nameLower = fieldName.toLowerCase();
-
+        
+        // Find invite code field but don't add it yet - we'll send empty string
         if (nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code')) {
           inviteCodeField = field;
-          return;
+          return; // Skip adding this field to transformedData
         }
-
+        
         const fieldKey = getFieldNameForSubmission(field);
         const fieldValue = formData[field.id];
         if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
           transformedData[fieldKey] = fieldValue;
         }
       });
-
+      
+      // Send empty string for invite code using the invite code field's format
       if (inviteCodeField) {
         const inviteCodeKey = getFieldNameForSubmission(inviteCodeField);
         transformedData[inviteCodeKey] = '';
       }
 
+      // Prepare submission payload
       const submissionPayload = {
         formId: formHandler.id,
         brandId: formHandler.brand_id,
@@ -188,9 +198,12 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
       const result = await submitAndProcessForm(submissionPayload);
 
       if (result?.submitResult) {
+        // Check if user needs to complete payment
         if (result.submitResult.stripe_client_secret) {
+          // Redirect to payment page if needed
           router.push('/payment');
         } else {
+          // Redirect to thank you page
           router.push('/thankYou');
         }
       }
@@ -394,6 +407,7 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
         <form onSubmit={handleSubmit} className="space-y-4">
           {parsedFields
             .filter(field => {
+              // Hide invite code fields
               const fieldName = field.name || field.label || '';
               const nameLower = fieldName.toLowerCase();
               return !(nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code'));

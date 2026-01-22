@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import FeedCard from '@/components/cards/FeedCard';
 import WishCommentsModal from '@/components/cards/WishCommentsModal';

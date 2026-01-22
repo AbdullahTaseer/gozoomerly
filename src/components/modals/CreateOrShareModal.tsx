@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import {  useEffect  } from 'react';
 import { Camera, Calendar, Image as ImageIcon, UserPlus, Star, Award, Gem, X, Layers } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

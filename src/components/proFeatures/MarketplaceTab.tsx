@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { Search, Filter, ChevronRight } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ShoppeView from './ShoppeView';

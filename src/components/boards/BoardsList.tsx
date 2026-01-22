@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import { type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import { fetchUserBoards, getUserBoards, type Board } from '@/lib/supabase/boards';

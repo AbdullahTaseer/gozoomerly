@@ -1,5 +1,4 @@
 
-import React from 'react';
 import Image from 'next/image';
 import { Metadata } from 'next';
 import Link from 'next/link';

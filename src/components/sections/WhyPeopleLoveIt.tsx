@@ -1,4 +1,3 @@
-import React from 'react';
 import Image from 'next/image';
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 

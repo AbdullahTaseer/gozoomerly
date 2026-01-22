@@ -1,4 +1,3 @@
-import React from 'react';
 import StripeImg from "@/assets/svgs/stripe.svg";
 import TitleCard from '@/components/cards/TitleCard';
 import PaypalCardImg from "@/assets/svgs/PayPal.svg";

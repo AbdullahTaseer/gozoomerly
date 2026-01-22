@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import {  useState, useRef, useEffect  } from 'react';
 import Image from 'next/image';
 import { MoreVertical, Heart, MessageCircle, Share, Clock, Play, UserPlus } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';

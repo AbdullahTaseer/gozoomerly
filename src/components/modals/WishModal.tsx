@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import {  useState, useRef, useEffect  } from 'react';
 import Image from 'next/image';
 import { X, ArrowLeft, Upload, Image as ImageIcon, Play, Music, Type, Mic, Plus, Trash2, Search, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';

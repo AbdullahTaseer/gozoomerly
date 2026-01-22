@@ -1,4 +1,3 @@
-import React from 'react';
 import { avatarListData } from '@/lib/MockData';
 import MainAvatar from "@/assets/svgs/avatar-list-main.svg";
 import AvatarCard from '@/components/cards/AvatarCard';

@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import { PlusCircle, Send, ArrowLeft } from 'lucide-react';
 import ChatCard from '@/components/cards/ChatCard';

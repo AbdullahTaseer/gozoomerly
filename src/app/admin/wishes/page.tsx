@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { Search, MoreVertical, Paperclip } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';

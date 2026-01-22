@@ -1,4 +1,3 @@
-import React from 'react';
 import Image from 'next/image';
 import LayerImg from "@/assets/svgs/hero-layer.svg";
 import GlobalButton from '../buttons/GlobalButton';

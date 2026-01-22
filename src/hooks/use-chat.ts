@@ -38,10 +38,12 @@ export const useChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSettingProgrammaticallyRef = useRef(false);
-
+  
+  // Hook for fetching user boards
   const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
   const fetchUserBoardsRef = useRef(fetchUserBoards);
-
+  
+  // Update ref when function changes
   useEffect(() => {
     fetchUserBoardsRef.current = fetchUserBoards;
   }, [fetchUserBoards]);
@@ -54,22 +56,25 @@ export const useChat = () => {
         return;
       }
       setCurrentUserId(user.id);
-
+      
       await loadConversations(user.id);
-
+      
+      // Only restore from localStorage if there's no URL param (let URL params take priority)
+      // Check if we're on the chat page and if there are URL params
       const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/dashboard/chat');
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasUrlParams = urlParams && (urlParams.get('conversationId') || urlParams.get('userId'));
-
+      
+      // Only restore from localStorage if no URL params are present
       if (!hasUrlParams) {
         const savedConversationId = localStorage.getItem('selectedConversationId');
-
+        
         if (savedConversationId) {
           try {
             const { conversation, error } = await getConversation(savedConversationId, user.id);
             if (!error && conversation) {
               setSelectedConversation(conversation);
-
+              // Update conversations list with the restored conversation
               setConversations(prev => {
                 const existing = prev.find(c => c.id === conversation.id);
                 if (existing) {
@@ -78,7 +83,7 @@ export const useChat = () => {
                 return [conversation, ...prev];
               });
             } else {
-
+              // Clear invalid saved conversation
               localStorage.removeItem('selectedConversationId');
             }
           } catch (err) {
@@ -108,7 +113,7 @@ export const useChat = () => {
           const seenPairs = new Set<string>();
           uniqueConversations = uniqueConversations.filter(conv => {
             if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
-              return true;
+              return true; 
             }
 
             const participantIds = conv.participants
@@ -165,16 +170,18 @@ export const useChat = () => {
           };
         });
 
+        // Optimize: Only fetch unique sender profiles to avoid duplicate requests
         const messagesNeedingProfiles = chatMessages.filter(
           m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
         );
-
+        
         const uniqueSenderIds = [...new Set(messagesNeedingProfiles.map(m => m.senderId))];
 
         if (uniqueSenderIds.length > 0 && currentUserId) {
           const { createClient } = await import('@/lib/supabase/client');
           const supabase = createClient();
 
+          // Batch fetch all unique profiles at once
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('id, name, profile_pic_url')
@@ -208,31 +215,35 @@ export const useChat = () => {
 
   useEffect(() => {
     if (selectedConversation && currentUserId) {
-
+      // Save selected conversation to localStorage for restoration after reload
       localStorage.setItem('selectedConversationId', selectedConversation.id);
-
-      const needsFullConversation = selectedConversation.type === 'direct' &&
-        (!selectedConversation.participants ||
-         selectedConversation.participants.length === 0 ||
+      
+      // Optimize: Load messages and fetch full conversation in parallel if needed
+      const needsFullConversation = selectedConversation.type === 'direct' && 
+        (!selectedConversation.participants || 
+         selectedConversation.participants.length === 0 || 
          !selectedConversation.participants.some((p: any) => p.user?.name));
-
+      
+      // Load messages immediately
       loadMessages(selectedConversation.id);
-
+      
+      // Mark as read immediately
       markConversationAsRead(selectedConversation.id, currentUserId).catch(() => {});
-
+      
+      // Fetch full conversation in parallel if needed (non-blocking)
       if (needsFullConversation) {
         getConversation(selectedConversation.id, currentUserId).then(({ conversation: fullConv, error }) => {
           if (!error && fullConv) {
             setSelectedConversation(fullConv);
-
-            setConversations(prev => prev.map(conv =>
+            // Update in conversations list too
+            setConversations(prev => prev.map(conv => 
               conv.id === fullConv.id ? fullConv : conv
             ));
           }
         }).catch(() => {});
       }
     } else {
-
+      // Clear saved conversation when none is selected
       localStorage.removeItem('selectedConversationId');
     }
   }, [selectedConversation, currentUserId, loadMessages]);
@@ -264,13 +275,15 @@ export const useChat = () => {
     }
   }, [selectedTab, currentUserId]);
 
+  // Filter active boards from the fetched boards
   const activeBoards = boards.filter((board: any) => {
-
+    // Active boards are those with status 'published' and deadline not passed
     return (
       board.status === 'published' &&
       (!board.deadline_date || new Date(board.deadline_date) > new Date())
     );
   });
+
 
   const handleMessageReceived = useCallback((message: ChatMessage) => {
 
@@ -414,12 +427,13 @@ export const useChat = () => {
     if (!currentUserId) return;
 
     try {
-
-      const existingConversation = conversations.find(conv =>
-        conv.type === 'direct' &&
+      // Check if conversation already exists in the list
+      const existingConversation = conversations.find(conv => 
+        conv.type === 'direct' && 
         conv.participants?.some((p: any) => p.user_id === userId)
       );
 
+      // If conversation exists, open it immediately without reloading
       if (existingConversation) {
         isSettingProgrammaticallyRef.current = true;
         setSearchQuery('');
@@ -445,10 +459,12 @@ export const useChat = () => {
         return;
       }
 
+      // Set the conversation immediately with basic data (optimistic update)
       isSettingProgrammaticallyRef.current = true;
       setSearchQuery('');
       setShowSearchResults(false);
 
+      // Add to conversations list immediately
       setConversations(prev => {
         const unique = prev.filter((conv, index, self) =>
           index === self.findIndex(c => c.id === conv.id)
@@ -460,18 +476,21 @@ export const useChat = () => {
         return [newConversation, ...unique];
       });
 
+      // Set conversation immediately so UI updates right away
       setSelectedConversation(newConversation);
 
+      // Fetch full conversation with participants in background (non-blocking)
       getConversation(newConversation.id, currentUserId).then(({ conversation: fullConversation, error: fetchError }) => {
         if (!fetchError && fullConversation) {
-
+          // Update with full conversation data
           setSelectedConversation(fullConversation);
-          setConversations(prev => prev.map(conv =>
+          setConversations(prev => prev.map(conv => 
             conv.id === fullConversation.id ? fullConversation : conv
           ));
         }
       }).catch(() => {});
 
+      // Reset flag after a short delay
       setTimeout(() => {
         isSettingProgrammaticallyRef.current = false;
       }, 100);
@@ -529,8 +548,9 @@ export const useChat = () => {
       return updated;
     });
 
+    // Get the last message ID from the messages array
     const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
-
+    
     sendMessage(currentUserId, {
       conversation_id: selectedConversation.id,
       content: messageContent,
@@ -567,11 +587,12 @@ export const useChat = () => {
           }
           return filtered;
         });
-
+        
+        // Update conversations with the real message ID
         setConversations(prev => prev.map(conv =>
           conv.id === selectedConversation.id
-            ? {
-                ...conv,
+            ? { 
+                ...conv, 
                 last_message: sentMessage.content || 'Media',
                 last_message_at: sentMessage.created_at,
                 last_message_id: sentMessage.id,
@@ -579,8 +600,9 @@ export const useChat = () => {
               }
             : conv
         ));
-
-        setSelectedConversation(prev =>
+        
+        // Update selected conversation with real message ID
+        setSelectedConversation(prev => 
           prev ? {
             ...prev,
             last_message: sentMessage.content || 'Media',
@@ -603,7 +625,7 @@ export const useChat = () => {
   const handleFileUpload = useCallback(async (file: File) => {
     if (!selectedConversation || !currentUserId || uploading) return;
 
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
       toast.error('File size must be less than 10MB');
       return;
@@ -669,6 +691,7 @@ export const useChat = () => {
         setMessages(prev => prev.filter(m => m.id !== tempMessageId));
       }
 
+      // Get the last message ID from the messages array
       const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
       const { error: sendError, message: sentMessage } = await sendMessage(currentUserId, {
@@ -701,9 +724,9 @@ export const useChat = () => {
         setConversations(prev => {
           const updated = prev.map(conv =>
             conv.id === selectedConversation.id
-              ? {
-                  ...conv,
-                  last_message: lastMessageText,
+              ? { 
+                  ...conv, 
+                  last_message: lastMessageText, 
                   last_message_at: sentMessage.created_at,
                   last_message_id: sentMessage.id,
                   last_message_sender_id: sentMessage.sender_id
@@ -735,20 +758,21 @@ export const useChat = () => {
   }, [selectedConversation, currentUserId, uploading]);
 
   const getConversationName = useCallback((conv: Conversation): string => {
-
+    // For direct conversations, prioritize showing the other user's name
     if (conv.type === 'direct') {
-
+      // Use other_user if available (from RPC response)
       if (conv.other_user) {
         if (conv.other_user.name) {
           return conv.other_user.name;
         }
-
+        // Fallback to user_id if name is not available
         const userId = conv.other_user.user_id || conv.other_user.id;
         if (userId) {
           return `User ${userId.substring(0, 8)}`;
         }
       }
-
+      
+      // Fallback to searching through participants
       if (conv.participants && conv.participants.length > 0) {
         const otherParticipant = conv.participants.find(
           (p: any) => p.user_id !== currentUserId
@@ -763,24 +787,26 @@ export const useChat = () => {
           }
         }
       }
-
+      
       return 'Unknown User';
     }
-
+    
+    // For group conversations, use the conversation name
     if (conv.name) return conv.name;
-
+    
     return 'Conversation';
   }, [currentUserId]);
 
   const getConversationAvatar = useCallback((conv: Conversation): string | StaticImport => {
-
+    // For direct conversations, use other_user if available
     if (conv.type === 'direct' && conv.other_user?.profile_pic_url) {
       const picUrl = conv.other_user.profile_pic_url.trim();
       if (picUrl && picUrl !== 'null' && picUrl !== 'undefined' && picUrl !== '') {
         return picUrl;
       }
     }
-
+    
+    // Fallback to searching through participants
     if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
@@ -813,61 +839,70 @@ export const useChat = () => {
   }, []);
 
   const getLastMessageWithSender = useCallback((conv: Conversation): string => {
-
+    // Determine the message content and sender
     let messageContent: string;
     let senderId: string | undefined;
     let senderName: string | undefined;
-
+    
+    // Check if this is the selected conversation with loaded messages (most up-to-date)
     if (selectedConversation?.id === conv.id && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
       messageContent = lastMsg.content || lastMsg.fileName || 'Media';
       senderId = lastMsg.senderId;
       senderName = lastMsg.user?.name;
     } else {
-
+      // Use conversation's last_message data
       if (!conv.last_message) return "No message yet";
-
+      
       messageContent = conv.last_message;
       senderId = conv.last_message_sender_id;
     }
-
+    
+    // Add sender prefix
     if (senderId === currentUserId) {
       return `You: ${messageContent}`;
     }
-
+    
+    // Try to get sender name from messages array (if selected conversation)
     if (senderName) {
       return `${senderName}: ${messageContent}`;
     }
-
+    
+    // Try to get sender name from other_user
     if (conv.other_user && senderId === (conv.other_user.user_id || conv.other_user.id)) {
       return `${conv.other_user.name}: ${messageContent}`;
     }
-
+    
+    // Try to get sender name from participants
     const sender = conv.participants?.find((p: any) => p.user_id === senderId);
     if (sender?.user?.name) {
       return `${sender.user.name}: ${messageContent}`;
     }
-
+    
+    // Fallback: just return the message without sender prefix
     return messageContent;
   }, [currentUserId, selectedConversation, messages]);
 
   const filteredConversations = conversations.filter(conv => {
-
+    // Always show the selected conversation
     if (selectedConversation && conv.id === selectedConversation.id) {
       return true;
     }
-
+    
+    // Filter by tab type first
     if (selectedTab === 'Connections' && conv.type !== 'direct') {
       return false;
     }
     if (selectedTab === 'Boards' && conv.type !== 'group') {
       return false;
     }
-
+    
+    // Only show conversations with messages
     if (!conv.last_message) {
       return false;
     }
-
+    
+    // Apply search query filter if present
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     const name = getConversationName(conv).toLowerCase();
@@ -879,7 +914,7 @@ export const useChat = () => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
     return prevMessage.senderId !== message.senderId ||
-      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000;
+      new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; 
   }, [messages]);
 
   return {

@@ -8,7 +8,7 @@ import OtpInput from '@/components/inputs/OtpInput';
 import AuthLayout from '@/components/authLayout/AuthLayout';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import FloatingInput from '@/components/inputs/FloatingInput';
-import { type UserInfo } from '@/components/cards/SignupInfoCard';
+import SignupInfoCard, { type UserInfo } from '@/components/cards/SignupInfoCard';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { PartnerRegistrationForm } from '@/components/PartnerRegistrationForm';
@@ -18,12 +18,12 @@ import { ArrowLeft } from 'lucide-react';
 
 const SignupContent = () => {
   const searchParams = useSearchParams();
-
-  const referralCode = searchParams.get('referral_code') ||
-                       searchParams.get('referralCode') ||
-                       searchParams.get('invite_code') ||
+  
+  const referralCode = searchParams.get('referral_code') || 
+                       searchParams.get('referralCode') || 
+                       searchParams.get('invite_code') || 
                        searchParams.get('inviteCode') || '';
-
+  
   const urlParams = {
     email: searchParams.get('email') || '',
     name: searchParams.get('name') || '',
@@ -36,7 +36,7 @@ const SignupContent = () => {
       <AuthLayout>
         <div className="w-full max-w-2xl">
           <PartnerRegistrationForm
-            partnerId={4}
+            partnerId={4} 
             initialValues={urlParams}
             onBack={() => window.history.back()}
           />
@@ -60,8 +60,9 @@ const SignupFlow = () => {
   const router = useRouter();
 
   const handleVerifyOTPCode = useCallback(async () => {
-    if (otp.length !== 6) return;
-    if (isVerifying || loading) return;
+    if (otp.length !== 6 || isVerifying || loading) {
+      return;
+    }
 
     setIsVerifying(true);
     setLoading(true);
@@ -78,7 +79,7 @@ const SignupFlow = () => {
       } else {
         setError(result.error || 'Invalid OTP code. Please try again.');
       }
-    } catch {
+    } catch (err) {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -186,10 +187,11 @@ const SignupFlow = () => {
     }
   };
 
+
   return (
     <AuthLayout>
 
-      {step !== 4 &&
+      {step !== 5 &&
         <div className='w-full mt-6 max-w-lg'>
           <div className='w-full flex gap-3 items-center'>
             <ArrowLeft className={`shrink-0 ${step === 1 ? "cursor-not-allowed" : "cursor-pointer"}`} color='black' onClick={handleBack} />
@@ -239,7 +241,7 @@ const SignupFlow = () => {
         </div>
       }
 
-      {step === 3 &&
+      {step === 3 && 
         <div className='max-w-2xl w-full mt-6'>
           <PartnerRegistrationForm
             partnerId={4}

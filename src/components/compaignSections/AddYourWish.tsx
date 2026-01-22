@@ -1,4 +1,3 @@
-import React from 'react';
 import Image from 'next/image';
 import GlobalButton from '../buttons/GlobalButton';
 import AddWishImg from "@/assets/svgs/add-wish.svg";

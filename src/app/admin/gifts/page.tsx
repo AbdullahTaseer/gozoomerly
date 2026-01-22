@@ -1,15 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, MoreVertical } from 'lucide-react';
+import {  useState  } from 'react';
+import { Search } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { mockGifts } from '@/lib/TablesMockData';
 
 const AdminGifts = () => {

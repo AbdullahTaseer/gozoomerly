@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect } from 'react';
+import {  useState, useRef, useEffect  } from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import { Edit, MoreVertical, Trash2 } from 'lucide-react';

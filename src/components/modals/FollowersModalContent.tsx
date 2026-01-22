@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { Search } from 'lucide-react';
 import GlobalInput from '../inputs/GlobalInput';
 import FollowCard from '../cards/FollowCard';

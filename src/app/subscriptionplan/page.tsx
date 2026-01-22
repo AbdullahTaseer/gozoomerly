@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 
 import StripePaymentModal from '@/components/supplyPartnerCards/StripePaymentModal';
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';

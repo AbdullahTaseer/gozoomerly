@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, ChevronDown, User, Settings, LogOut, Menu } from 'lucide-react';
 import {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";

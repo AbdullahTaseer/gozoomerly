@@ -1,6 +1,7 @@
 import { createClient } from './client';
 import { AuthError } from '@supabase/supabase-js';
 
+// Types
 export interface AuthResponse {
   success: boolean;
   error?: string;
@@ -62,9 +63,11 @@ export interface VerifyEmailOTPCodeCredentials {
   token: string;
 }
 
+// Auth Service
 export class AuthService {
   private supabase = createClient();
 
+  // Sign In Methods
   async signInWithEmail(credentials: SignInCredentials): Promise<AuthResponse> {
     try {
       const { data, error } = await this.supabase.auth.signInWithPassword({
@@ -109,6 +112,7 @@ export class AuthService {
     }
   }
 
+  // Sign Up Methods
   async signUp(credentials: SignUpCredentials): Promise<AuthResponse> {
     try {
       const { data, error } = await this.supabase.auth.signUp({
@@ -132,6 +136,7 @@ export class AuthService {
     }
   }
 
+  // Sign Out
   async signOut(): Promise<AuthResponse> {
     try {
       const { error } = await this.supabase.auth.signOut();
@@ -148,6 +153,7 @@ export class AuthService {
     }
   }
 
+  // OTP Methods
   async sendPhoneOTP(credentials: PhoneOTPCredentials): Promise<AuthResponse> {
     try {
       const { error } = await this.supabase.auth.signInWithOtp({
@@ -270,6 +276,7 @@ export class AuthService {
     }
   }
 
+  // Profile Update Methods
   async updateUserProfile(profile: any): Promise<{ error?: string }> {
     try {
       const { error } = await this.supabase.auth.updateUser({ data: profile });
@@ -321,6 +328,7 @@ export class AuthService {
     }
   }
 
+  // Password Reset
   async resetPassword(email: string): Promise<AuthResponse> {
     try {
       const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
@@ -340,6 +348,7 @@ export class AuthService {
     }
   }
 
+  // Session & User Methods
   async getSession() {
     try {
       const { data, error } = await this.supabase.auth.getSession();
@@ -367,6 +376,7 @@ export class AuthService {
     }
   }
 
+  // Private Helper Methods
   private storeAccessToken(token?: string): void {
     if (typeof window !== 'undefined' && token) {
       localStorage.setItem('access_token', token);

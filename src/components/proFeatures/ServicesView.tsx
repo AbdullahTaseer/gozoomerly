@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import { ChevronRight } from 'lucide-react';
 import Gift1 from '@/assets/svgs/gifts/gift-1.svg';

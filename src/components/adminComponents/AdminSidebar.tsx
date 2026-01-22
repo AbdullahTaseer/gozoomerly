@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -17,7 +16,7 @@ import AppLogo from "@/assets/svgs/Zoomerly.svg";
 
 type NavItem = {
   label: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: ComponentType<{ size?: number }>;
   path: string;
 };
 

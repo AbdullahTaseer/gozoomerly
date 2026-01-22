@@ -1,7 +1,6 @@
 import TitleCard from '@/components/cards/TitleCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { Star } from 'lucide-react';
-import React from 'react';
 
 const data = [
   {

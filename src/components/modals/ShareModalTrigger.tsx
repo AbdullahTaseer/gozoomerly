@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import GlobalModal from './GlobalModal';
 import ShareButtons from '@/components/buttons/ShareButtons';
 import { Share2 } from 'lucide-react';

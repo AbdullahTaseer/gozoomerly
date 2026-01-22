@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import {  useState, useRef  } from 'react';
 import { useRouter } from 'next/navigation';
 import { Play, Pause } from 'lucide-react';
 import toast from 'react-hot-toast';

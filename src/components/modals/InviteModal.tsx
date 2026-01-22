@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import GlobalModal from './GlobalModal';
 import GlobalButton from '../buttons/GlobalButton';
 import { Copy, Check } from 'lucide-react';

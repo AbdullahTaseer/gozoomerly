@@ -2,7 +2,6 @@ import SpotLightCard from '@/components/cards/SpotLightCard';
 import TitleCard from '@/components/cards/TitleCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { spotlightCampaigns } from '@/lib/MockData';
-import React from 'react';
 
 const SpotlightCampaigns = () => {
   return (

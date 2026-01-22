@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import Image from 'next/image';
 import { Gift, PlayCircle } from 'lucide-react';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';

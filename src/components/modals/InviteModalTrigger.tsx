@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { UserPlus } from 'lucide-react';
 import InviteToBoardModal from './InviteToBoardModal';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import { X } from 'lucide-react';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import GlobalButton from '@/components/buttons/GlobalButton';

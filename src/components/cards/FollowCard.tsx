@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import {  useState  } from 'react';
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import DefaultAvatar from "@/assets/svgs/boy-avatar.svg";

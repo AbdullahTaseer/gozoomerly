@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import {  useState, useRef  } from 'react';
 import Image from 'next/image';
 import { Camera } from 'lucide-react';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";

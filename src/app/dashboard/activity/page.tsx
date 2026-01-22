@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import TitleCard from '@/components/cards/TitleCard';
 import { ChevronRight, Gift, Heart, MessageCircle } from 'lucide-react';

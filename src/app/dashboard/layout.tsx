@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import {  useState, useEffect  } from 'react';
 import { usePathname } from 'next/navigation';
 import DashFooter from '@/components/footer/DashFooter';
 import BottomTabs from '@/components/footer/BottomTabs';

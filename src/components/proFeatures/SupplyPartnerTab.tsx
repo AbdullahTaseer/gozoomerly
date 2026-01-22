@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import {  useState, useRef  } from 'react';
 import { Play, Pause } from 'lucide-react';
 import GlobalButton from '@/components/buttons/GlobalButton';
 
