@@ -31,7 +31,7 @@ const MarketplaceTab = () => {
         </div>
       </div>
 
-      {/* Sub-tabs */}
+      {}
       <div className="flex justify-center gap-4 mb-6">
         <button
           onClick={() => setActiveSubTab('shoppe')}
@@ -55,7 +55,7 @@ const MarketplaceTab = () => {
         </button>
       </div>
 
-      {/* Content */}
+      {}
       {activeSubTab === 'shoppe' ? <ShoppeView /> : <ServicesView />}
     </div>
   );

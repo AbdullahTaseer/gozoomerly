@@ -9,7 +9,6 @@ import { getBoardTypes, BoardType } from '@/lib/supabase/boards';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
 
-// Import default images for board types
 import Compaign_1 from "@/assets/svgs/compaign/compaign-1.svg";
 import Compaign_2 from "@/assets/svgs/compaign/compaign-2.svg";
 import Compaign_3 from "@/assets/svgs/compaign/compaign-3.svg";
@@ -50,20 +49,15 @@ const Compaign = () => {
         setBoardTypes(data);
       }
     } catch (err) {
-      console.error('Error fetching board types:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleCampaignSelect = (boardType: BoardType) => {
-    console.log('Board type selected:', boardType);
-
-    // Clear any previous board creation data when starting a new board
     localStorage.removeItem('boardTypeFields');
     localStorage.removeItem('currentBoardId');
 
-    // Store the selected board type info
     const boardTypeData = {
       id: boardType.id,
       name: boardType.name,
@@ -71,10 +65,7 @@ const Compaign = () => {
     };
 
     localStorage.setItem('selectedBoardType', JSON.stringify(boardTypeData));
-    console.log('Stored in localStorage:', boardTypeData);
 
-    // Navigate to the creation page
-    console.log('Navigating to /createBirthdayBoard');
     router.push('/createBirthdayBoard');
   };
 
@@ -106,14 +97,14 @@ const Compaign = () => {
               className="bg-black rounded-xl overflow-hidden shadow-lg hover:scale-[1.02] transition-transform cursor-pointer relative z-20"
             >
               <div className="relative w-full h-[180px]">
-                {/* Use default images based on index, or a placeholder */}
+                {}
                 <Image
                   src={defaultImages[i % defaultImages.length]}
                   alt={boardType.name}
                   fill
                   className="object-cover"
                 />
-                {/* Show the board type icon if available */}
+                {}
                 {boardType.icon && (
                   <div className="absolute top-2 right-2 text-white text-2xl">
                     {boardType.icon}

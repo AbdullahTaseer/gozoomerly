@@ -76,19 +76,17 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
       });
 
       if (error) {
-        console.error('Error fetching comments:', error);
       } else {
         if (loadMore) {
           setComments(prev => [...prev, ...(data || [])]);
         } else {
           setComments(data || []);
         }
-        // Check if there are more comments (if we got full limit, there might be more)
+
         setHasMore((data || []).length === limit);
         setOffset(currentOffset + (data || []).length);
       }
     } catch (err) {
-      console.error('Error in fetchComments:', err);
     } finally {
       setLoading(false);
     }
@@ -124,16 +122,14 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
     setSubmitting(true);
     try {
       const { data, error } = await addWishComment(wishId, newComment.trim(), null);
-      
+
       if (error) {
-        console.error('Error adding comment:', error);
         alert('Failed to post comment. Please try again.');
       } else {
         setNewComment('');
-        await fetchComments(false); // Refresh comments from beginning
+        await fetchComments(false);
       }
     } catch (err) {
-      console.error('Error in handleSubmitComment:', err);
       alert('Failed to post comment. Please try again.');
     } finally {
       setSubmitting(false);
@@ -151,17 +147,15 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
     setSubmitting(true);
     try {
       const { data, error } = await addWishComment(wishId, replyContent.trim(), parentCommentId);
-      
+
       if (error) {
-        console.error('Error adding reply:', error);
         alert('Failed to post reply. Please try again.');
       } else {
         setReplyContent('');
         setReplyingTo(null);
-        await fetchComments(false); // Refresh comments from beginning
+        await fetchComments(false);
       }
     } catch (err) {
-      console.error('Error in handleSubmitReply:', err);
       alert('Failed to post reply. Please try again.');
     } finally {
       setSubmitting(false);
@@ -177,9 +171,9 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      
+
       <div className="relative bg-white rounded-[24px] w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header */}
+        {}
         <div className="p-4 border-b flex items-center justify-between">
           <h2 className="text-xl font-bold">Comments</h2>
           <button
@@ -190,7 +184,7 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
           </button>
         </div>
 
-        {/* Wish Preview */}
+        {}
         {wishContent && (
           <div className="p-4 border-b bg-gray-50">
             <div className="flex items-center gap-2 mb-2">
@@ -209,7 +203,7 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
           </div>
         )}
 
-        {/* Comments List */}
+        {}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -241,7 +235,7 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
             ))
           )}
           <div ref={commentsEndRef} />
-          
+
           {hasMore && (
             <div className="text-center pt-4">
               <button
@@ -255,7 +249,7 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
           )}
         </div>
 
-        {/* Comment Input */}
+        {}
         <div className="p-4 border-t bg-white">
           <div className="flex gap-2">
             <textarea
@@ -348,7 +342,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             Reply
           </button>
 
-          {/* Reply Input */}
+          {}
           {replyingTo === comment.comment_id && (
             <div className="mt-2 flex gap-2">
               <textarea
@@ -376,7 +370,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         </div>
       </div>
 
-      {/* Replies */}
+      {}
       {comment.replies && comment.replies.length > 0 && (
         <div className="ml-11 space-y-2 border-l-2 border-gray-200 pl-4">
           {comment.replies.map((reply) => (

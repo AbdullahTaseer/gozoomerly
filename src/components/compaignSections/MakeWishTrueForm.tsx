@@ -21,7 +21,6 @@ const MakeWishTrueForm = ({ nextClick, skipClick }: props) => {
         </p>
       </div>
 
-
       <div className="space-y-4">
         <GlobalInput
           placeholder="Lets send Sean to the Caribbean!"
@@ -36,7 +35,6 @@ const MakeWishTrueForm = ({ nextClick, skipClick }: props) => {
           width="100%"
           height="40px"
         />
-
 
         <div>
           <p className="text-sm font-semibold mb-1">Description</p>

@@ -90,8 +90,7 @@ export const useGetSubmissions = () => {
         return response.data.getAllSubmissionsByPartnerId;
       }
       return [];
-    } catch (err) {
-      console.error('Error fetching submissions:', err);
+    } catch {
       setError('Could not load submissions. Please try again.');
       return [];
     } finally {

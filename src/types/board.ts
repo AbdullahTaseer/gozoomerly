@@ -1,13 +1,12 @@
 export interface CreateBirthdayBoardInput {
-  // Required parameters
+
   p_board_type_id: number | string;
   p_title: string;
   p_honoree_first_name: string;
   p_honoree_last_name: string;
-  p_honoree_date_of_birth: string; // Format: YYYY-MM-DD
+  p_honoree_date_of_birth: string;
   p_honoree_hometown: string;
-  
-  // Optional parameters
+
   p_description?: string;
   p_honoree_phone?: string;
   p_honoree_email?: string;
@@ -16,7 +15,7 @@ export interface CreateBirthdayBoardInput {
   p_surprise_mode_enabled?: boolean;
   p_theme?: string;
   p_target_amount?: number;
-  p_expiry_date?: string; // Format: YYYY-MM-DD
+  p_expiry_date?: string;
   p_currency?: string;
   p_privacy?: 'public' | 'private';
   p_allow_invites?: boolean;

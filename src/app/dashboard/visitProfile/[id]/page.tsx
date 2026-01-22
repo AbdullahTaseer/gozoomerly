@@ -31,7 +31,7 @@ const VisitProfilePage = () => {
   const params = useParams();
   const router = useRouter();
   const profileId = params.id as string;
-  
+
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -40,7 +40,6 @@ const VisitProfilePage = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"photos" | "videos">("photos");
 
-  // Placeholder data for photos and videos - in a real app, these would come from the database
   const [photos] = useState([
     "https://images.unsplash.com/photo-1605460375648-278bcbd579a6?w=400&q=80",
     "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
@@ -70,7 +69,7 @@ const VisitProfilePage = () => {
   const fetchProfileData = async () => {
     try {
       setLoading(true);
-      
+
       const currentUser = await authService.getUser();
       if (!currentUser) {
         router.push('/signin');
@@ -84,7 +83,7 @@ const VisitProfilePage = () => {
       }
 
       const supabase = createClient();
-      
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -92,7 +91,6 @@ const VisitProfilePage = () => {
         .single();
 
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
         setError('Profile not found');
         return;
       }
@@ -109,7 +107,6 @@ const VisitProfilePage = () => {
       setIsFollowing(!!followData);
 
     } catch (err) {
-      console.error('Error fetching profile:', err);
       setError('Failed to load profile');
     } finally {
       setLoading(false);
@@ -141,7 +138,6 @@ const VisitProfilePage = () => {
         }
       }
     } catch (err) {
-      console.error('Error following/unfollowing:', err);
     } finally {
       setFollowLoading(false);
     }

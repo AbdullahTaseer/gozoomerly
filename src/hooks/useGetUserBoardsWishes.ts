@@ -72,7 +72,6 @@ export const useGetUserBoardsWishes = (): UseGetUserBoardsWishesReturn => {
   const [lastCursor, setLastCursor] = useState<{ created_at: string; id: string } | null>(null);
 
   const fetchWishes = useCallback(async (params: GetUserBoardsWishesInput) => {
-    console.log('fetchWishes called with params:', params);
     setIsLoading(true);
     setError(null);
     setLastParams(params);
@@ -96,40 +95,24 @@ export const useGetUserBoardsWishes = (): UseGetUserBoardsWishesReturn => {
         p_limit: params.p_limit || 10,
       };
 
-      console.log('Calling get_user_boards_wishes RPC with:', JSON.stringify(rpcParams, null, 2));
-
       const { data, error: rpcError } = await supabase.rpc('get_user_boards_wishes', rpcParams);
-
-      console.log('get_user_boards_wishes RPC response:', { data, error: rpcError });
 
       if (rpcError) {
         const errorMessage = rpcError.message || 'Failed to fetch wishes';
         setError(errorMessage);
-        console.error('Error fetching wishes:', rpcError);
         throw new Error(errorMessage);
       }
 
       if (data) {
-        console.log('📦 Raw wishes data:', JSON.stringify(data, null, 2));
-
-        // Parse the response - handle both wrapped and direct formats
         const wishesData = data.data?.wishes || data.wishes || data.data || data || [];
         const wishesArray = Array.isArray(wishesData) ? wishesData : [];
 
-        console.log('📦 Parsed wishes array:', wishesArray.length, 'items');
-        if (wishesArray.length > 0) {
-          console.log('📦 First wish structure:', JSON.stringify(wishesArray[0], null, 2));
-        }
-
-        // If this is a fresh fetch (no cursor), replace wishes
-        // If this is pagination, append wishes
         if (!params.p_cursor_created_at && !params.p_cursor_id) {
           setWishes(wishesArray);
         } else {
           setWishes(prev => [...prev, ...wishesArray]);
         }
 
-        // Set cursor for next page
         if (wishesArray.length > 0) {
           const lastWish = wishesArray[wishesArray.length - 1];
           setLastCursor({
@@ -145,7 +128,6 @@ export const useGetUserBoardsWishes = (): UseGetUserBoardsWishesReturn => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch wishes';
       setError(errorMessage);
-      console.error('Error fetching wishes:', err);
     } finally {
       setIsLoading(false);
     }

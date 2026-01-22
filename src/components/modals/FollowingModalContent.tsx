@@ -34,7 +34,6 @@ const FollowingModalContent = ({ userId }: Props) => {
       const data = await getFollowing(userId);
       setFollowing(data);
     } catch (err: any) {
-      console.error('Error fetching following:', err);
       setError(err.message || 'Failed to load following');
     } finally {
       setLoading(false);
@@ -47,10 +46,9 @@ const FollowingModalContent = ({ userId }: Props) => {
       if (!currentUser || !userId) return;
 
       await unfollowUser(userId, followingUserId);
-      
+
       setFollowing(prev => prev.filter(user => user.user_id !== followingUserId));
     } catch (err: any) {
-      console.error('Error unfollowing:', err);
     }
   };
 

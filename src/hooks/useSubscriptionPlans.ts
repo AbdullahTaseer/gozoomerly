@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { apolloClient } from '../lib/apolloClient';
 import { GET_SUBSCRIPTION_PLANS } from '../graphql/queries/subscriptionPlan';
-import { 
-  SubscriptionPlan, 
-  SubscriptionPlanListResponse, 
-  SubscriptionPlanListVariables 
+import {
+  SubscriptionPlan,
+  SubscriptionPlanListResponse,
+  SubscriptionPlanListVariables
 } from '../types/subscriptionPlan';
 
 interface UseSubscriptionPlansParams {
@@ -20,7 +20,7 @@ export const useSubscriptionPlans = (params: UseSubscriptionPlansParams = {}) =>
   const fetchPlans = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await apolloClient.query<SubscriptionPlanListResponse, SubscriptionPlanListVariables>({
         query: GET_SUBSCRIPTION_PLANS,
@@ -33,8 +33,7 @@ export const useSubscriptionPlans = (params: UseSubscriptionPlansParams = {}) =>
       if (response.data?.subscriptionPlanList) {
         setPlans(response.data.subscriptionPlanList);
       }
-    } catch (err) {
-      console.error('Error fetching subscription plans:', err);
+    } catch {
       setError('Could not load subscription plans. Please try again.');
     } finally {
       setIsLoading(false);

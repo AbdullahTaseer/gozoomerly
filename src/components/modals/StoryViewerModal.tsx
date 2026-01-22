@@ -30,19 +30,16 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const currentGroup = storyGroups[currentGroupIndex];
   const currentStory = currentGroup?.stories[currentStoryIndex];
 
-  // Reset progress when story changes
   useEffect(() => {
     if (isOpen && currentStory) {
       setProgress(0);
-      
-      // Mark story as viewed
+
       if (currentUserId && currentStory.id) {
-        viewStory(currentStory.id, currentUserId).catch(console.error);
+        viewStory(currentStory.id, currentUserId).catch(() => {});
       }
 
-      // Auto-advance progress (5 seconds per story)
       const duration = 5000;
-      const interval = 100; // Update every 100ms
+      const interval = 100;
       let elapsed = 0;
 
       progressIntervalRef.current = setInterval(() => {
@@ -63,7 +60,6 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     }
   }, [isOpen, currentGroupIndex, currentStoryIndex, currentStory?.id, currentUserId]);
 
-  // Reset to initial group when modal opens
   useEffect(() => {
     if (isOpen) {
       setCurrentGroupIndex(initialGroupIndex);
@@ -72,26 +68,24 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     }
   }, [isOpen, initialGroupIndex]);
 
-  // Handle video play/pause
   useEffect(() => {
     if (videoRef.current && currentStory?.content_type === 'video') {
-      videoRef.current.play().catch(console.error);
+      videoRef.current.play().catch(() => {});
     }
   }, [currentStory]);
 
   const handleNextStory = () => {
     if (!currentGroup) return;
 
-    // Move to next story in current group
     if (currentStoryIndex < currentGroup.stories.length - 1) {
       setCurrentStoryIndex(currentStoryIndex + 1);
     } else {
-      // Move to next group
+
       if (currentGroupIndex < storyGroups.length - 1) {
         setCurrentGroupIndex(currentGroupIndex + 1);
         setCurrentStoryIndex(0);
       } else {
-        // Reached the end, close modal
+
         onClose();
       }
     }
@@ -100,11 +94,10 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const handlePreviousStory = () => {
     if (!currentGroup) return;
 
-    // Move to previous story in current group
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex(currentStoryIndex - 1);
     } else {
-      // Move to previous group
+
       if (currentGroupIndex > 0) {
         setCurrentGroupIndex(currentGroupIndex - 1);
         const prevGroup = storyGroups[currentGroupIndex - 1];
@@ -128,7 +121,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
       className="fixed inset-0 z-[9999] bg-black"
       onClick={onClose}
     >
-      {/* Progress bars */}
+      {}
       <div className="absolute top-0 left-0 right-0 z-10 p-2 flex gap-1">
         {currentGroup.stories.map((_, index) => (
           <div
@@ -155,7 +148,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         ))}
       </div>
 
-      {/* Header with user info */}
+      {}
       <div className="absolute top-12 left-0 right-0 z-10 px-4 flex items-center gap-3">
         <div className="flex items-center gap-3 flex-1">
           {currentGroup.user?.profile_pic_url ? (
@@ -190,7 +183,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         </button>
       </div>
 
-      {/* Story content */}
+      {}
       <div className="absolute inset-0 flex items-center justify-center">
         {currentStory.content_type === 'image' && currentStory.media?.cdn_url && (
           <Image
@@ -227,7 +220,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           </div>
         )}
 
-        {/* Caption */}
+        {}
         {currentStory.caption && (
           <div className="absolute bottom-20 left-0 right-0 px-4">
             <p className="text-white text-center bg-black/50 rounded-lg px-4 py-2">
@@ -237,7 +230,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         )}
       </div>
 
-      {/* Navigation buttons */}
+      {}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -259,7 +252,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
         <ChevronRight size={32} />
       </button>
 
-      {/* Click areas for navigation */}
+      {}
       <div
         className="absolute left-0 top-0 bottom-0 w-1/2 cursor-pointer"
         onClick={(e) => {

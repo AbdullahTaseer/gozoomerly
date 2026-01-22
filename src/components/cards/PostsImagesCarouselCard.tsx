@@ -110,7 +110,6 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
           </div>
         )}
 
-
         {media.length > 1 && currentIndex > 0 && (
           <button
             onClick={() => {
@@ -133,7 +132,6 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
           </button>
         )}
 
-
         {media.length > 1 && (
           <div className="flex justify-center gap-2 mt-3 absolute bottom-5 w-full">
             {media.map((_, idx) => (
@@ -148,12 +146,10 @@ const PostsImagesCarouselCard = ({ goToProfile, images = [] }: props) => {
         )}
       </div>
 
-
       <p className="mt-4 px-5 text-sm">
         <span className="font-bold">Sean,</span> you&apos;re the most deserving person I know.
         Here&apos;s to your dream trip 🌊
       </p>
-
 
       <div className="border-t bg-[#F4F4F4] mt-4 py-3 px-5 flex justify-between text-sm text-gray-600">
         <div className="flex items-center gap-1">

@@ -54,7 +54,7 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
 
       setUploadError(null);
       setAvatarFile(file);
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -114,7 +114,6 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
 
       return publicUrl;
     } catch (err) {
-      console.error('Error uploading avatar:', err);
       setUploadError(err instanceof Error ? err.message : 'Failed to upload image');
       return null;
     } finally {
@@ -125,9 +124,9 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
   const handleContinue = async () => {
     const selectedCountry = countries.find(c => c.isoCode === countryCode);
     const selectedState = states.find(s => s.isoCode === stateCode);
-    
+
     const avatarUrl = await uploadAvatar();
-    
+
     continueClick({
       fullName,
       birthDate,
@@ -165,18 +164,18 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
 
       <div className="space-y-6">
 
-        <FloatingInput 
-          id={"Full Name"} 
-          title="Full Name" 
-          width="100%" 
+        <FloatingInput
+          id={"Full Name"}
+          title="Full Name"
+          width="100%"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
         />
-        <FloatingInput 
-          id={"Birthday Date"} 
-          title="Birthday Date" 
-          type="date" 
-          width="100%" 
+        <FloatingInput
+          id={"Birthday Date"}
+          title="Birthday Date"
+          type="date"
+          width="100%"
           value={birthDate}
           onChange={(e) => setBirthDate(e.target.value)}
         />
@@ -227,10 +226,10 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
             {uploadError}
           </div>
         )}
-        
-        <GlobalButton 
-          title={uploadingImage ? 'Uploading...' : 'Continue'} 
-          height='50px' 
+
+        <GlobalButton
+          title={uploadingImage ? 'Uploading...' : 'Continue'}
+          height='50px'
           onClick={handleContinue}
           disabled={!fullName || !birthDate || !countryCode || !stateCode || !city || uploadingImage}
         />

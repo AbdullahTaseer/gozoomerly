@@ -38,7 +38,7 @@ const GlobalButton = ({
   font = "600",
   color = "white",
   borderRadius = '50px',
-  bgColor, 
+  bgColor,
   onClick,
   aos = "zoom-in",
   disabled = false,

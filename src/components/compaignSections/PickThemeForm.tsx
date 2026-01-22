@@ -47,7 +47,7 @@ const PickThemeForm = ({ nextClick }: props) => {
             className={`flex flex-col items-center cursor-pointer`}
           >
             <div
-              className={`w-14 max-[600px]:w-10 h-14 max-[600px]:h-10 rounded-full border-2 flex items-center justify-center 
+              className={`w-14 max-[600px]:w-10 h-14 max-[600px]:h-10 rounded-full border-2 flex items-center justify-center
               ${selectedTheme === i ? "border-black" : "border-[#F2F2F2]"}`}
             >
               <div className={`w-11 max-[600px]:w-7 h-11 max-[600px]:h-7 rounded-full ${theme.color}`} />

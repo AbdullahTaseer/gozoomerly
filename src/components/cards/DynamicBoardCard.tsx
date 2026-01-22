@@ -163,40 +163,11 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
             <p className="text-lg font-semibold">{memories ?? media ?? 0}</p>
             <p className="text-xs text-gray-300 mt-1">Memories</p>
           </div>
-          {/* <div className="flex flex-col items-center">
-            <p className="text-lg font-semibold">{chats ?? 0}</p>
-            <p className="text-xs text-gray-300 mt-1">Chats</p>
-          </div> */}
+          {}
         </div>
 
-        {/* Top Contributors */}
-        {/* <div className="space-y-3 mb-6">
-          <p className="text-lg font-bold">Top Contributors</p>
-          {topContributors.length > 0 ? (
-            <div className="flex items-center ml-5">
-              {topContributors.slice(0, 10).map((contributor, index) => (
-                <div
-                  key={index}
-                  className="relative border-2 border-[#2A2A2A] rounded-full -ml-4 h-10 w-10 shrink-0 hover:scale-110 hover:z-20 transition-transform duration-300"
-                >
-                  <Image
-                    src={contributor}
-                    alt={`Contributor ${index + 1}`}
-                    fill
-                    className="rounded-full object-cover"
-                  />
-                </div>
-              ))}
-              {topContributors.length > 10 && (
-                <div className="w-10 -ml-4 h-10 shrink-0 rounded-full bg-pink-500 flex items-center justify-center relative z-10 border-2 border-[#2A2A2A]">
-                  <span className="text-white text-xs font-semibold">+{topContributors.length - 10}</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="text-center">No Contributor</p>
-          )}
-        </div> */}
+        {}
+        {}
       </div>
     </div>
   );

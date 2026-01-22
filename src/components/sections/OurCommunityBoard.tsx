@@ -25,7 +25,7 @@ const OurCommunityBoard = () => {
         <button
           ref={prevRef}
           disabled={isBeginning}
-          className={`absolute -left-4 max-[800px]:-left-2 top-1/2 -translate-y-1/2 z-10 p-3 max-[600px]:p-2 rounded-full border transition 
+          className={`absolute -left-4 max-[800px]:-left-2 top-1/2 -translate-y-1/2 z-10 p-3 max-[600px]:p-2 rounded-full border transition
             ${isBeginning ? "cursor-not-allowed bg-gray-300" : "cursor-pointer bg-white hover:bg-pink-500 hover:text-white"}`}
         >
           <ChevronLeft className="w-5 h-5" />
@@ -34,7 +34,7 @@ const OurCommunityBoard = () => {
         <button
           ref={nextRef}
           disabled={isEnd}
-          className={`absolute -right-4 max-[800px]:-right-2 top-1/2 -translate-y-1/2 z-10 p-3 max-[600px]:p-2 rounded-full border transition 
+          className={`absolute -right-4 max-[800px]:-right-2 top-1/2 -translate-y-1/2 z-10 p-3 max-[600px]:p-2 rounded-full border transition
             ${isEnd ? "cursor-not-allowed bg-gray-300" : "cursor-pointer bg-white hover:bg-pink-500 hover:text-white"}`}
         >
           <ChevronRight className="w-5 h-5" />
@@ -90,7 +90,7 @@ const OurCommunityBoard = () => {
                 media={board.media}
                 topContributors={board.topContributors}
                 buttonText="View Full Board"
-                onButtonClick={() => console.log("View board", board.id)}
+                onButtonClick={() => {}}
               />
             </SwiperSlide>
           ))}

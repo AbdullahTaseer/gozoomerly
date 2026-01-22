@@ -98,7 +98,6 @@ const FundRaiserCard = ({
       });
 
       if (error) {
-        console.error('Error adding gift:', error);
         alert('Failed to add gift. Please try again.');
         setIsAddingGift(false);
         return;
@@ -113,7 +112,6 @@ const FundRaiserCard = ({
         router.refresh();
       }
     } catch (error) {
-      console.error('Error processing gift:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setIsAddingGift(false);
@@ -138,54 +136,11 @@ const FundRaiserCard = ({
         </div>
       </div>
 
+      {}
+      {}
 
-      {/* Gift Options */}
-      {/* <div className="bg-[#1B1B1B] flex justify-start gap-3 p-4 rounded-xl flex-wrap">
-        {displayGifts.map((gift, i) => (
-          <button
-            key={i}
-            onClick={() => handleGiftClick(gift)}
-            disabled={isAddingGift}
-            className={`px-4 py-2 rounded-full text-white cursor-pointer transition text-sm flex items-center gap-2 ${isAddingGift
-              ? "opacity-50 cursor-not-allowed"
-              : selectedGift === gift.label
-                ? "bg-gradient-to-r from-[#E6408A] to-[#8C5AB6]"
-                : "bg-[#303030] hover:bg-[#404040]"
-              }`}
-          >
-            {gift.icon && (
-              <Image src={gift.icon} alt={gift.label} height={20} width={20} />
-            )}
-            {gift.label} {gift.amount > 0 && `- $${gift.amount}`}
-            {isAddingGift && selectedGift === gift.label && (
-              <span className="ml-2 text-xs">Adding...</span>
-            )}
-          </button>
-        ))}
-      </div> */}
-
-      {/* Top Contributors */}
-      {/* {topContributors.length > 0 && (
-        <div className="mt-6">
-          <p className="text-white text-[18px] font-bold">Top Contributors</p>
-          <div className="flex gap-3 flex-wrap mt-4">
-            {topContributors.map((contributor, i) => {
-              const giftIcon = getGiftIcon(contributor.label);
-              return (
-                <div
-                  key={i}
-                  className="border border-[#303030] rounded-full text-white text-sm bg-[#1B1B1B] px-3 py-1 flex items-center gap-2"
-                >
-                  {giftIcon && (
-                    <Image src={giftIcon} alt={contributor.label} height={18} width={18} />
-                  )}
-                  {contributor.label} - <span className="text-[#F71873]">${contributor.amount}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )} */}
+      {}
+      {}
     </div>
   );
 };

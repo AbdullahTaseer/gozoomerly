@@ -34,12 +34,10 @@ const YourBoards = () => {
     refetch
   } = useGetUserBoards();
 
-  // Get user on mount
   useEffect(() => {
     checkAuth();
   }, []);
 
-  // Fetch boards when user, filter, or page changes
   useEffect(() => {
     if (userId) {
       loadBoards();
@@ -56,7 +54,6 @@ const YourBoards = () => {
       }
       setUserId(user.id);
     } catch (err) {
-      console.error('Auth error:', err);
       toast.error('Authentication failed');
       router.push('/signin');
     }
@@ -73,14 +70,13 @@ const YourBoards = () => {
         p_offset: (currentPage - 1) * ITEMS_PER_PAGE
       });
     } catch (err) {
-      console.error('Error loading boards:', err);
       toast.error('Failed to load boards');
     }
   };
 
   const handleFilterChange = (filter: BoardStatus) => {
     setSelectedFilter(filter);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -90,10 +86,9 @@ const YourBoards = () => {
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
-    // Implement search logic if needed
+
   };
 
-  // Filter boards by search query (client-side filtering)
   const filteredBoards = searchQuery
     ? boards.filter(board =>
         board.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -104,7 +99,7 @@ const YourBoards = () => {
   return (
     <div className='px-[7%] max-[769px]:px-3'>
       <div className='py-4'>
-        {/* Header */}
+        {}
         <div className='flex justify-between max-[870px]:flex-col gap-6 mb-6'>
           <TitleCard title='Your Boards' className='text-left' />
           <div className='flex gap-4 items-center max-[870px]:mx-auto'>
@@ -130,7 +125,7 @@ const YourBoards = () => {
           </div>
         </div>
 
-        {/* Filter Tabs */}
+        {}
         <div className='flex gap-2 mb-6 overflow-x-auto pb-2'>
           <FilterTab
             label="All"
@@ -158,7 +153,7 @@ const YourBoards = () => {
           />
         </div>
 
-        {/* Error State */}
+        {}
         {error && !isLoading && (
           <div className='bg-red-50 border border-red-200 rounded-lg p-4 mb-6'>
             <p className='text-red-600 text-sm'>
@@ -173,10 +168,10 @@ const YourBoards = () => {
           </div>
         )}
 
-        {/* Boards List */}
+        {}
         <BoardsList boards={filteredBoards as any as Board[]} loading={isLoading} />
 
-        {/* Empty State */}
+        {}
         {!isLoading && filteredBoards.length === 0 && (
           <div className='text-center py-12 bg-gray-50 rounded-xl'>
             <h3 className='text-xl font-semibold text-gray-800 mb-2'>
@@ -206,7 +201,7 @@ const YourBoards = () => {
           </div>
         )}
 
-        {/* Pagination */}
+        {}
         {!isLoading && filteredBoards.length > 0 && pagination.total_pages > 1 && (
           <div className='flex justify-center items-center gap-4 mt-8'>
             <button
@@ -238,7 +233,7 @@ const YourBoards = () => {
           </div>
         )}
 
-        {/* Page Info */}
+        {}
         {!isLoading && filteredBoards.length > 0 && (
           <div className='text-center text-xs text-gray-500 mt-4'>
             Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, pagination.total_records)} of {pagination.total_records} boards
@@ -250,7 +245,6 @@ const YourBoards = () => {
   );
 };
 
-// Filter Tab Component
 function FilterTab({
   label,
   count,

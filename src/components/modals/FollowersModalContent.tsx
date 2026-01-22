@@ -67,7 +67,7 @@ const FollowersModalContent = ({ userId }: Props) => {
       if (!currentUser) return;
 
       const isFollowing = followingStatus[followerUserId];
-      
+
       if (isFollowing) {
         await unfollowUser(currentUser.id, followerUserId);
         setFollowingStatus(prev => ({ ...prev, [followerUserId]: false }));

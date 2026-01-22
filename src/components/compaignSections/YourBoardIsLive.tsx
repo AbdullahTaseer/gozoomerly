@@ -59,7 +59,6 @@ const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uplo
   const creatorName = creatorData?.name || 'You';
   const creatorAvatar = creatorData?.profilePicUrl || FarahImg;
 
-  // Get the first uploaded image for display
   const firstMedia = uploadedMedia && uploadedMedia.length > 0 ? uploadedMedia[0] : null;
 
   return (

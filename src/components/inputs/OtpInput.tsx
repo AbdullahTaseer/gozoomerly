@@ -22,7 +22,7 @@ const OtpInput = ({ value = '', onChange }: OtpInputProps) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = e.target.value;
-    if (/[^0-9]/.test(value)) return; 
+    if (/[^0-9]/.test(value)) return;
 
     const newOtp = [...otp];
     newOtp[index] = value;

@@ -35,7 +35,6 @@ export const useGetSpotlightBoards = (): UseGetSpotlightBoardsReturn => {
       p_offset: params?.p_offset ?? 0,
     };
 
-    console.log('🚀 Fetching active spotlight boards...');
     setIsLoading(true);
     setError(null);
     setLastParams(params || {});
@@ -48,12 +47,9 @@ export const useGetSpotlightBoards = (): UseGetSpotlightBoardsReturn => {
         rpcParams
       );
 
-      console.log('get_spotlight_boards RPC response:', { data, error: rpcError });
-
       if (rpcError) {
         const errorMessage = rpcError.message || 'Failed to fetch spotlight boards';
         setError(errorMessage);
-        console.error('Error fetching spotlight boards:', rpcError);
         throw new Error(errorMessage);
       }
 
@@ -61,7 +57,6 @@ export const useGetSpotlightBoards = (): UseGetSpotlightBoardsReturn => {
         const responseData = data.data || data;
         const boardsArray = responseData.boards || responseData || [];
 
-        // Map the response to our SpotlightBoard interface
         const mappedBoards: SpotlightBoard[] = boardsArray.map((board: any) => ({
           id: board.id || board.board_id,
           name: board.name || board.honoree_name || board.title || '',
@@ -94,7 +89,6 @@ export const useGetSpotlightBoards = (): UseGetSpotlightBoardsReturn => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch spotlight boards';
       setError(errorMessage);
-      console.error('Error fetching spotlight boards:', err);
     } finally {
       setIsLoading(false);
     }

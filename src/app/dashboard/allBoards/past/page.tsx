@@ -40,7 +40,6 @@ const PastBoards = () => {
         console.error('Error fetching past boards:', postError);
       }
 
-      // Filter boards that are completed, cancelled, or past deadline
       let fetchedBoards = (allBoards || []).filter((board: Board) => {
         if (board.status === 'completed' || board.status === 'cancelled') return true;
         if (board.deadline_date) {
@@ -49,7 +48,6 @@ const PastBoards = () => {
         return false;
       });
 
-      // Fetch top contributors for each board
       const supabase = createClient();
       const boardsWithContributors = await Promise.all(
         fetchedBoards.map(async (board) => {
@@ -128,5 +126,4 @@ const PastBoards = () => {
 };
 
 export default PastBoards;
-
 

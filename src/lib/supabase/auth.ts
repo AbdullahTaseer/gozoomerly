@@ -30,18 +30,36 @@ export interface PhoneOTPCredentials {
   phone: string;
 }
 
+export interface EmailOTPCredentials {
+  email: string;
+}
+
+export interface UserInfo {
+  fullName: string;
+  birthDate: string;
+  country: string;
+  state: string;
+  city: string;
+  avatar?: string | null;
+}
+
 export interface VerifyOTPCredentials {
   phone: string;
   token: string;
   password: string;
-  userInfo?: {
-    fullName: string;
-    birthDate: string;
-    country: string;
-    state: string;
-    city: string;
-    avatar?: string | null;
-  };
+  userInfo?: UserInfo;
+}
+
+export interface VerifyEmailOTPCredentials {
+  email: string;
+  token: string;
+  password: string;
+  userInfo?: UserInfo;
+}
+
+export interface VerifyEmailOTPCodeCredentials {
+  email: string;
+  token: string;
 }
 
 export class AuthService {
@@ -49,37 +67,23 @@ export class AuthService {
 
   async signInWithEmail(credentials: SignInCredentials): Promise<AuthResponse> {
     try {
-      
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
-      
-      
+
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
-      // Store access token in localStorage as requested
-      if (typeof window !== 'undefined' && data.session?.access_token) {
-        localStorage.setItem('access_token', data.session.access_token);
-      }
+      this.storeAccessToken(data.session?.access_token);
 
       return {
         success: true,
-        data: {
-          user: data.user,
-          session: data.session,
-        },
+        data: { user: data.user, session: data.session },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
@@ -89,31 +93,19 @@ export class AuthService {
         phone: credentials.phone,
         password: credentials.password,
       });
-      
+
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
-      // Store access token in localStorage as requested
-      if (typeof window !== 'undefined' && data.session?.access_token) {
-        localStorage.setItem('access_token', data.session.access_token);
-      }
+      this.storeAccessToken(data.session?.access_token);
 
       return {
         success: true,
-        data: {
-          user: data.user,
-          session: data.session,
-        },
+        data: { user: data.user, session: data.session },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
@@ -123,31 +115,20 @@ export class AuthService {
         email: credentials.email,
         password: credentials.password,
         options: {
-          data: {
-            phone_number: credentials.phoneNumber,
-          },
+          data: { phone_number: credentials.phoneNumber },
         },
       });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
       return {
         success: true,
-        data: {
-          user: data.user,
-          session: data.session,
-        },
+        data: { user: data.user, session: data.session },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
@@ -156,24 +137,14 @@ export class AuthService {
       const { error } = await this.supabase.auth.signOut();
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('access_token');
-      }
+      this.removeAccessToken();
 
-      return {
-        success: true,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred while signing out.',
-      };
+      return { success: true };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred while signing out.' };
     }
   }
 
@@ -184,23 +155,35 @@ export class AuthService {
       });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
       return {
         success: true,
-        data: {
-          message: 'OTP sent successfully to your phone number.',
-        },
+        data: { message: 'OTP sent successfully to your phone number.' },
       };
-    } catch (error) {
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+    }
+  }
+
+  async sendEmailOTP(credentials: EmailOTPCredentials): Promise<AuthResponse> {
+    try {
+      const { error } = await this.supabase.auth.signInWithOtp({
+        email: credentials.email,
+        options: { shouldCreateUser: true },
+      });
+
+      if (error) {
+        return { success: false, error: this.handleAuthError(error) };
+      }
+
       return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
+        success: true,
+        data: { message: 'OTP sent successfully to your email.' },
       };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
@@ -213,83 +196,100 @@ export class AuthService {
       });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
-      const updateData: any = {
-        password: credentials.password,
-      };
-
-      if (credentials.userInfo) {
-        updateData.data = {
-          full_name: credentials.userInfo.fullName,
-          birth_date: credentials.userInfo.birthDate,
-          country: credentials.userInfo.country,
-          state: credentials.userInfo.state,
-          city: credentials.userInfo.city,
-          avatar_url: credentials.userInfo.avatar,
-          phone: credentials.phone,
-        };
-      }
-
+      const updateData = this.buildUserUpdateData(credentials.password, credentials.userInfo, credentials.phone);
       const { error: updateError } = await this.supabase.auth.updateUser(updateData);
 
       if (updateError) {
-        return {
-          success: false,
-          error: this.handleAuthError(updateError),
-        };
+        return { success: false, error: this.handleAuthError(updateError) };
       }
 
-      if (data.session?.access_token) {
-        localStorage.setItem('access_token', data.session.access_token);
-      }
+      this.storeAccessToken(data.session?.access_token);
 
       return {
         success: true,
-        data: {
-          user: data.user,
-          session: data.session,
-        },
+        data: { user: data.user, session: data.session },
       };
-    } catch (error) {
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+    }
+  }
+
+  async verifyEmailOTPCode(credentials: VerifyEmailOTPCodeCredentials): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.verifyOtp({
+        email: credentials.email,
+        token: credentials.token,
+        type: 'email',
+      });
+
+      if (error) {
+        return { success: false, error: this.handleAuthError(error) };
+      }
+
+      this.storeAccessToken(data.session?.access_token);
+
       return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
+        success: true,
+        data: { user: data.user, session: data.session },
       };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
+    }
+  }
+
+  async verifyEmailOTP(credentials: VerifyEmailOTPCredentials): Promise<AuthResponse> {
+    try {
+      const { data, error } = await this.supabase.auth.verifyOtp({
+        email: credentials.email,
+        token: credentials.token,
+        type: 'email',
+      });
+
+      if (error) {
+        return { success: false, error: this.handleAuthError(error) };
+      }
+
+      const updateData = this.buildUserUpdateData(credentials.password, credentials.userInfo);
+      const { error: updateError } = await this.supabase.auth.updateUser(updateData);
+
+      if (updateError) {
+        return { success: false, error: this.handleAuthError(updateError) };
+      }
+
+      this.storeAccessToken(data.session?.access_token);
+
+      return {
+        success: true,
+        data: { user: data.user, session: data.session },
+      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
   async updateUserProfile(profile: any): Promise<{ error?: string }> {
     try {
-      const { error } = await this.supabase.auth.updateUser({
-        data: profile
-      });
+      const { error } = await this.supabase.auth.updateUser({ data: profile });
 
       if (error) {
         return { error: this.handleAuthError(error) };
       }
 
       return {};
-    } catch (error) {
+    } catch {
       return { error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
   async updateEmail(newEmail: string): Promise<AuthResponse> {
     try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        email: newEmail
-      });
+      const { data, error } = await this.supabase.auth.updateUser({ email: newEmail });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
       return {
@@ -299,39 +299,25 @@ export class AuthService {
           message: 'Email update initiated. Please check your new email for confirmation.',
         },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
   async updatePassword(newPassword: string): Promise<AuthResponse> {
     try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        password: newPassword
-      });
+      const { data, error } = await this.supabase.auth.updateUser({ password: newPassword });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
       return {
         success: true,
-        data: {
-          user: data.user,
-          message: 'Password updated successfully.',
-        },
+        data: { user: data.user, message: 'Password updated successfully.' },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
@@ -342,36 +328,23 @@ export class AuthService {
       });
 
       if (error) {
-        return {
-          success: false,
-          error: this.handleAuthError(error),
-        };
+        return { success: false, error: this.handleAuthError(error) };
       }
 
       return {
         success: true,
-        data: {
-          message: 'Password reset email sent. Please check your inbox.',
-        },
+        data: { message: 'Password reset email sent. Please check your inbox.' },
       };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'An unexpected error occurred. Please try again.',
-      };
+    } catch {
+      return { success: false, error: 'An unexpected error occurred. Please try again.' };
     }
   }
 
   async getSession() {
     try {
       const { data, error } = await this.supabase.auth.getSession();
-
-      if (error) {
-        return null;
-      }
-
-      return data.session;
-    } catch (error) {
+      return error ? null : data.session;
+    } catch {
       return null;
     }
   }
@@ -379,13 +352,8 @@ export class AuthService {
   async getUser() {
     try {
       const { data, error } = await this.supabase.auth.getUser();
-
-      if (error) {
-        return null;
-      }
-
-      return data.user;
-    } catch (error) {
+      return error ? null : data.user;
+    } catch {
       return null;
     }
   }
@@ -394,9 +362,39 @@ export class AuthService {
     try {
       const { data: { session } } = await this.supabase.auth.getSession();
       return session?.access_token || null;
-    } catch (error) {
+    } catch {
       return null;
     }
+  }
+
+  private storeAccessToken(token?: string): void {
+    if (typeof window !== 'undefined' && token) {
+      localStorage.setItem('access_token', token);
+    }
+  }
+
+  private removeAccessToken(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('access_token');
+    }
+  }
+
+  private buildUserUpdateData(password: string, userInfo?: UserInfo, phone?: string): any {
+    const updateData: any = { password };
+
+    if (userInfo) {
+      updateData.data = {
+        full_name: userInfo.fullName,
+        birth_date: userInfo.birthDate,
+        country: userInfo.country,
+        state: userInfo.state,
+        city: userInfo.city,
+        avatar_url: userInfo.avatar,
+        ...(phone && { phone }),
+      };
+    }
+
+    return updateData;
   }
 
   private handleAuthError(error: AuthError): string {

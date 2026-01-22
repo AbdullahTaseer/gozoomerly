@@ -57,7 +57,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
   return (
     <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
       <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
-        {/* Active Boards Section */}
+        {}
         {activeBoards && activeBoards.length > 0 && (
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Active Boards</h3>
@@ -89,7 +89,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
           </div>
         )}
 
-        {/* Board Conversations Section */}
+        {}
         <div className="p-4">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Conversations</h3>
         </div>

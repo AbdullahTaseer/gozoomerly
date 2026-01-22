@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -8,7 +8,7 @@ import OtpInput from '@/components/inputs/OtpInput';
 import AuthLayout from '@/components/authLayout/AuthLayout';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import FloatingInput from '@/components/inputs/FloatingInput';
-import SignupInfoCard, { type UserInfo } from '@/components/cards/SignupInfoCard';
+import { type UserInfo } from '@/components/cards/SignupInfoCard';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { PartnerRegistrationForm } from '@/components/PartnerRegistrationForm';
@@ -18,12 +18,12 @@ import { ArrowLeft } from 'lucide-react';
 
 const SignupContent = () => {
   const searchParams = useSearchParams();
-  
-  const referralCode = searchParams.get('referral_code') || 
-                       searchParams.get('referralCode') || 
-                       searchParams.get('invite_code') || 
+
+  const referralCode = searchParams.get('referral_code') ||
+                       searchParams.get('referralCode') ||
+                       searchParams.get('invite_code') ||
                        searchParams.get('inviteCode') || '';
-  
+
   const urlParams = {
     email: searchParams.get('email') || '',
     name: searchParams.get('name') || '',
@@ -36,7 +36,7 @@ const SignupContent = () => {
       <AuthLayout>
         <div className="w-full max-w-2xl">
           <PartnerRegistrationForm
-            partnerId={4} 
+            partnerId={4}
             initialValues={urlParams}
             onBack={() => window.history.back()}
           />
@@ -49,24 +49,54 @@ const SignupContent = () => {
 };
 
 const SignupFlow = () => {
-
   const [step, setStep] = useState(1);
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   const router = useRouter();
 
+  const handleVerifyOTPCode = useCallback(async () => {
+    if (otp.length !== 6) return;
+    if (isVerifying || loading) return;
+
+    setIsVerifying(true);
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await authService.verifyEmailOTPCode({
+        email: email,
+        token: otp,
+      });
+
+      if (result.success) {
+        setStep(3);
+      } else {
+        setError(result.error || 'Invalid OTP code. Please try again.');
+      }
+    } catch {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+      setIsVerifying(false);
+    }
+  }, [otp, email, isVerifying, loading]);
+
+  useEffect(() => {
+    if (step === 2 && otp.length === 6 && !isVerifying && !loading) {
+      handleVerifyOTPCode();
+    }
+  }, [otp, step, isVerifying, loading, handleVerifyOTPCode]);
+
   const progressBar = step === 1 ? 0
-    : step === 2 ? 20
-      : step === 3 ? 40
-        : step === 4 ? 70
-          : step === 5 ? 100
-            : 0;
+    : step === 2 ? 33
+      : step === 3 ? 66
+        : step === 4 ? 100
+          : 0;
 
   const handleBack = () => {
     if (step !== 1) {
@@ -80,40 +110,12 @@ const SignupFlow = () => {
     setError('');
 
     try {
-      const result = await authService.sendPhoneOTP({ phone: phoneNumber });
+      const result = await authService.sendEmailOTP({ email: email });
 
       if (result.success) {
         setStep(2);
       } else {
         setError(result.error || 'Failed to send OTP');
-      }
-    } catch (err) {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async () => {
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await authService.verifyPhoneOTP({
-        phone: phoneNumber,
-        token: otp,
-        password: password
-      });
-
-      if (result.success) {
-        setStep(4);
-      } else {
-        setError(result.error || 'Failed to verify OTP');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -135,7 +137,6 @@ const SignupFlow = () => {
         state: info.state,
         city: info.city,
         avatar_url: info.avatar,
-        phone: phoneNumber,
       });
 
       if (error) {
@@ -151,8 +152,8 @@ const SignupFlow = () => {
         const profileData = {
           id: currentUser.id,
           name: info.fullName,
-          email: currentUser.email || '',
-          phone_number: phoneNumber,
+          email: currentUser.email || email,
+          phone_number: null,
           birth_date: info.birthDate || null,
           country: info.country || null,
           state: info.state || null,
@@ -172,24 +173,23 @@ const SignupFlow = () => {
           .insert([profileData]);
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
+          setError('Failed to create profile');
+          return;
         }
       }
 
       router.push('/thankYou');
-    } catch (err) {
-      console.error('Error in signup:', err);
+    } catch {
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
-
   return (
     <AuthLayout>
 
-      {step !== 5 &&
+      {step !== 4 &&
         <div className='w-full mt-6 max-w-lg'>
           <div className='w-full flex gap-3 items-center'>
             <ArrowLeft className={`shrink-0 ${step === 1 ? "cursor-not-allowed" : "cursor-pointer"}`} color='black' onClick={handleBack} />
@@ -203,83 +203,55 @@ const SignupFlow = () => {
 
       {step === 1 &&
         <div className='max-w-lg w-full mt-6'>
-          <p className='text-center poppin-font text-[36px] font-medium'>What&apos;s your phone number</p>
-          <p className='text-center font-poppins'>We&apos;ll phone you a code to verify your identity.</p>
+          <p className='text-center poppin-font text-[36px] font-medium'>What&apos;s your email address</p>
+          <p className='text-center font-poppins'>We&apos;ll send you a code to verify your identity.</p>
           <FloatingInput
-            id={"phone-number"}
-            title='Phone Number'
-            type='tel'
+            id={"email-address"}
+            title='Email Address'
+            type='email'
             width='100%'
             className="my-6"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
           {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
           <GlobalButton
             title='Continue'
             height='50px'
             onClick={handleSendOTP}
-            disabled={loading || !phoneNumber}
+            disabled={loading || !email}
           />
         </div>
       }
 
       {step === 2 &&
         <div className='max-w-lg w-full mt-6'>
-          <p className='text-center poppin-font text-[36px] font-medium'>We just sent an SMS</p>
-          <p className='text-center font-poppins'>Enter the security code we sent to <br /> {phoneNumber}</p>
+          <p className='text-center poppin-font text-[36px] font-medium'>We just sent an email</p>
+          <p className='text-center font-poppins'>Enter the security code we sent to <br /> {email}</p>
           <OtpInput value={otp} onChange={setOtp} />
           {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
           <GlobalButton
             title='Continue'
             height='50px'
-            onClick={() => setStep(3)}
+            onClick={handleVerifyOTPCode}
             disabled={loading || otp.length < 6}
           />
         </div>
       }
 
       {step === 3 &&
-        <div className='max-w-lg w-full mt-6'>
-          <p className='text-center poppin-font text-[36px] font-medium'>Set your password</p>
-          <p className='text-center font-poppins'>Please enter password</p>
-          <FloatingInput 
-            id={"Password"} 
-            title='Password' 
-            type='password' 
-            width='100%' 
-            className="my-6"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <FloatingInput 
-            id={"Re-enter Password"} 
-            title='Re-enter Password' 
-            type='password' 
-            width='100%' 
-            className="mb-6"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          {error && <p className='text-red-500 text-sm mb-4'>{error}</p>}
-          <GlobalButton 
-            title='Continue' 
-            height='50px' 
-            onClick={handleVerifyOTP}
-            disabled={loading || !password || !confirmPassword}
+        <div className='max-w-2xl w-full mt-6'>
+          <PartnerRegistrationForm
+            partnerId={4}
+            initialValues={{
+              email: email,
+            }}
+            onBack={handleBack}
           />
         </div>
       }
 
-      {step === 4 && <div className='max-w-lg w-full mt-6'>
-        <p className='text-center poppin-font text-[36px] font-medium'>Enter your info</p>
-        <p className='text-center font-poppins'>Please enter your information</p>
-        {error && <p className='text-red-500 text-sm text-center mb-4'>{error}</p>}
-        <SignupInfoCard continueClick={handleUserInfoSubmit} />
-      </div>
-      }
-
-      {step === 5 &&
+      {step === 4 &&
         <>
           <div />
           <div className='max-w-lg w-full'>

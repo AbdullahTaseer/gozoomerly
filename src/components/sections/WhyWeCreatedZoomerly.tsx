@@ -78,7 +78,6 @@ const WhyWeCreatedZoomerly = () => {
           </div>
         </div>
 
-
       </div>
     </section>
   );

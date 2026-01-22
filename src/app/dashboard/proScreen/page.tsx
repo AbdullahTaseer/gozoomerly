@@ -18,7 +18,7 @@ const ProPage = () => {
       <MobileHeader title="Pro" />
       <div>
         <div className="px-[5%] py-4">
-          
+
           <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
             <button
               onClick={() => setActiveTab('marketplace')}

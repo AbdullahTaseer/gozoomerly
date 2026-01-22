@@ -34,8 +34,8 @@ const NewBoards = () => {
                 backgroundImage={invitation.backgroundImage}
                 profileImage={invitation.profileImage}
                 inviterName={invitation.inviterName}
-                onAccept={() => console.log('Accept invitation', invitation.id)}
-                onDecline={() => console.log('Decline invitation', invitation.id)}
+                onAccept={() => {}}
+                onDecline={() => {}}
               />
             ))
           ) : (
@@ -50,5 +50,4 @@ const NewBoards = () => {
 };
 
 export default NewBoards;
-
 

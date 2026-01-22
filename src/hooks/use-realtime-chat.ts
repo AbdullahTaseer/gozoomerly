@@ -42,17 +42,17 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
-  
+
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onMessageUpdatedRef = useRef(onMessageUpdated);
   const onMessageDeletedRef = useRef(onMessageDeleted);
-  
+
   useEffect(() => {
     onMessageReceivedRef.current = onMessageReceived;
     onMessageUpdatedRef.current = onMessageUpdated;
     onMessageDeletedRef.current = onMessageDeleted;
   }, [onMessageReceived, onMessageUpdated, onMessageDeleted]);
-  
+
   const supabaseRef = useRef(createClient());
 
   useEffect(() => {
@@ -85,15 +85,14 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
         async (payload: RealtimePostgresChangesPayload<any>) => {
           try {
             const message = payload.new;
-            
+
             if (!message || !message.id) {
-              console.error('Invalid message payload:', payload);
               return;
             }
-            
+
             let senderName = 'Unknown User';
             let senderAvatar: string | undefined;
-            
+
             const { data: senderData, error: profileError } = await supabaseRef.current
               .from('profiles')
               .select('id, name, profile_pic_url')
@@ -104,7 +103,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               senderName = senderData.name || senderData.id || 'Unknown User';
               senderAvatar = senderData.profile_pic_url || undefined;
             } else {
-              console.warn('Profile not found for user:', message.sender_id, profileError);
               senderName = `User ${message.sender_id.substring(0, 8)}`;
             }
 
@@ -126,11 +124,8 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
 
             if (onMessageReceivedRef.current) {
               onMessageReceivedRef.current(chatMessage);
-            } else {
-              console.warn('⚠️ onMessageReceived callback is not set');
             }
           } catch (err) {
-            console.error('Error processing new message:', err);
             setError(err as Error);
           }
         }
@@ -146,7 +141,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
         async (payload: RealtimePostgresChangesPayload<any>) => {
           try {
             const message = payload.new;
-            
+
             if (message.deleted_at) {
               onMessageDeletedRef.current?.(message.id);
               return;
@@ -154,7 +149,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
 
             let senderName = 'Unknown User';
             let senderAvatar: string | undefined;
-            
+
             const { data: senderData, error: profileError } = await supabaseRef.current
               .from('profiles')
               .select('id, name, profile_pic_url')
@@ -165,7 +160,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               senderName = senderData.name || senderData.id || 'Unknown User';
               senderAvatar = senderData.profile_pic_url;
             } else {
-              console.warn('Profile not found for user:', message.sender_id, profileError);
               senderName = `User ${message.sender_id.substring(0, 8)}`;
             }
 
@@ -187,7 +181,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
 
             onMessageUpdatedRef.current?.(chatMessage);
           } catch (err) {
-            console.error('Error processing updated message:', err);
             setError(err as Error);
           }
         }
@@ -207,11 +200,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
         }
       )
       .subscribe(async (status, err) => {
-        console.log('📡 Real-time subscription status:', status, err ? `Error: ${err}` : '');
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           setError(null);
-                            
         } else if (status === 'CHANNEL_ERROR') {
           setIsConnected(false);
           const error = new Error(`Channel subscription error: ${err?.message || 'Unknown error'}`);
@@ -222,8 +213,6 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
           setError(error);
         } else if (status === 'CLOSED') {
           setIsConnected(false);
-        } else {
-          console.log('ℹ️ Subscription status:', status);
         }
       });
 

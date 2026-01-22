@@ -43,4 +43,3 @@ const BoardCategoryCard: React.FC<BoardCategoryCardProps> = ({
 
 export default BoardCategoryCard;
 
-

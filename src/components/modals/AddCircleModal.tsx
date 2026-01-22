@@ -51,7 +51,7 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
     try {
       const { createClient } = await import('@/lib/supabase/client');
       const supabase = createClient();
-      
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}.${fileExt}`;
 
@@ -60,7 +60,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
         .upload(fileName, file);
 
       if (uploadError) {
-        console.error('Upload error:', uploadError);
         return null;
       }
 
@@ -70,7 +69,6 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
 
       return urlData.publicUrl;
     } catch (err) {
-      console.error('Error uploading image:', err);
       return null;
     }
   };

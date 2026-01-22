@@ -22,7 +22,7 @@ interface CircleMember {
   name?: string;
   profile_pic_url?: string;
   email?: string;
-  // In case the RPC returns nested profiles
+
   profiles?: {
     id: string;
     name: string;
@@ -48,7 +48,6 @@ const CircleById = ({ params }: CircleByIdProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Unwrap params Promise using React.use()
   const { id: circleId } = use(params);
 
   useEffect(() => {
@@ -60,7 +59,6 @@ const CircleById = ({ params }: CircleByIdProps) => {
       setLoading(true);
       setError(null);
 
-      // Fetch circle details
       const { data: circleData, error: circleError } = await getCircleById(circleId);
       if (circleError) {
         setError(`Failed to load circle: ${circleError.message}`);
@@ -68,7 +66,6 @@ const CircleById = ({ params }: CircleByIdProps) => {
         return;
       }
 
-      // Fetch circle members
       const { data: membersData, error: membersError } = await getCircleMembers(circleId);
       if (membersError) {
         setError(`Failed to load members: ${membersError.message}`);
@@ -103,10 +100,8 @@ const CircleById = ({ params }: CircleByIdProps) => {
         return;
       }
 
-      // Successfully removed - refresh the members list
       await fetchCircleData();
 
-      // Close modal and reset state
       setDeleteModalOpen(false);
       setMemberToDelete(null);
     } catch (err) {
@@ -162,21 +157,21 @@ const CircleById = ({ params }: CircleByIdProps) => {
           />
         </div>
 
-        {/* Circle Description */}
+        {}
         {circle.description && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <p className="text-gray-700">{circle.description}</p>
           </div>
         )}
 
-        {/* Member Count */}
+        {}
         <div className="mt-4">
           <p className="text-sm text-gray-600 mb-2">
             {members.length} {members.length === 1 ? 'member' : 'members'}
           </p>
         </div>
 
-        {/* MEMBERS LIST */}
+        {}
         <div className="mt-2">
           {members.length === 0 ? (
             <div className="text-center py-8">

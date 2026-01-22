@@ -5,7 +5,6 @@ import Image from "next/image";
 import TitleCard from "../cards/TitleCard";
 import { steps } from "@/lib/MockData";
 
-
 const HowZoomerlyWorksDesktop = () => {
   const [activeStep, setActiveStep] = useState(0);
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -28,7 +27,7 @@ const HowZoomerlyWorksDesktop = () => {
       const progress = (y - start) / totalScrollable;
 
       const idx = Math.min(
-        Math.floor(progress * steps.length), 
+        Math.floor(progress * steps.length),
         steps.length - 1
       );
 
@@ -66,7 +65,6 @@ const HowZoomerlyWorksDesktop = () => {
                 className="rounded-[20px] w-full h-full max-[768px]:h-[60vh] object-cover transition-opacity duration-500 ease-in-out"
               />
             </div>
-
 
             <div className="col-span-3 max-lg:col-span-1 space-y-2 max-[768px]:space-y-0">
               {steps.map((step, index) => (

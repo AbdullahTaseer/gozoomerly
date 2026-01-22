@@ -84,13 +84,11 @@ const Connections = () => {
     try {
       const { data, error } = await getUserCircles(currentUser.id);
       if (error) {
-        console.error('Error fetching circles:', error);
         setCircles([]);
       } else {
         setCircles(data || []);
       }
     } catch (error) {
-      console.error('Error:', error);
       setCircles([]);
     }
   };
@@ -103,7 +101,6 @@ const Connections = () => {
     try {
       const { data, error } = await getCircleMembers(circleId, 1000, 0);
       if (error) {
-        console.error('Error fetching circle members:', error);
         return;
       }
 
@@ -113,7 +110,6 @@ const Connections = () => {
         [circleId]: memberIds,
       }));
     } catch (error) {
-      console.error('Error:', error);
     }
   };
 
@@ -124,7 +120,6 @@ const Connections = () => {
       const data = await getFollowers(currentUser.id);
       setFollowersList(data || []);
     } catch (error) {
-      console.error('Error fetching followers:', error);
       setFollowersList([]);
     } finally {
       setLoading(false);
@@ -138,7 +133,6 @@ const Connections = () => {
       const data = await getFollowing(currentUser.id);
       setFollowingList(data || []);
     } catch (error) {
-      console.error('Error fetching following:', error);
       setFollowingList([]);
     } finally {
       setLoading(false);
@@ -151,13 +145,11 @@ const Connections = () => {
     try {
       const { data, error } = await getStoriesGroupedByUser(currentUser.id);
       if (error) {
-        console.error('Error fetching stories:', error);
         setStories([]);
       } else {
         setStories(data || []);
       }
     } catch (error) {
-      console.error('Error fetching stories:', error);
       setStories([]);
     } finally {
       setStoriesLoading(false);
@@ -208,13 +200,11 @@ const Connections = () => {
 
     let list = Array.from(mergedMap.values());
 
-    // Filter by selected circle
     if (selectedFilter !== 'All' && circleMembers[selectedFilter]) {
       const memberIds = circleMembers[selectedFilter];
       list = list.filter((item) => memberIds.includes(item.profileId));
     }
 
-    // Filter by search query
     const q = searchValue.trim().toLowerCase();
     if (q) {
       list = list.filter((item) => {
@@ -228,14 +218,13 @@ const Connections = () => {
   }, [followersList, followingList, searchValue, selectedFilter, circleMembers]);
 
   const storiesData = useMemo(() => {
-    // Separate user's own stories from others
+
     const userStoriesIndex = stories.findIndex(
       (group) => group.user?.id === currentUser?.id
     );
     const userStories = userStoriesIndex >= 0 ? stories[userStoriesIndex] : null;
     const otherStories = stories.filter((_, index) => index !== userStoriesIndex);
 
-    // Type for story display items
     type StoryDisplayItem = {
       id: string;
       name?: string;
@@ -247,7 +236,6 @@ const Connections = () => {
       storyGroupIndex?: number;
     };
 
-    // Convert other users' stories to display format
     const otherStoryItems: StoryDisplayItem[] = otherStories.map((storyGroup) => ({
       id: `story-${storyGroup.user?.id}`,
       name: storyGroup.user?.name || 'Friend',
@@ -259,7 +247,6 @@ const Connections = () => {
       storyGroupIndex: stories.findIndex(s => s.user?.id === storyGroup.user?.id),
     }));
 
-    // Build the display array: Add status first, then user's own story (if exists), then others
     const displayItems: StoryDisplayItem[] = [
       {
         id: 'add',
@@ -272,7 +259,6 @@ const Connections = () => {
       },
     ];
 
-    // Add user's own story card if they have stories
     if (userStories && userStoriesIndex >= 0 && userStories.stories.length > 0) {
       displayItems.push({
         id: `story-${userStories.user?.id}`,
@@ -280,13 +266,12 @@ const Connections = () => {
         avatar: userStories.user?.profile_pic_url || currentUser?.user_metadata?.avatar_url || ProfileAvatar,
         backgroundImage: userStories.stories[0]?.media?.cdn_url || userStories.user?.profile_pic_url || ProfileAvatar,
         isAdd: false,
-        hasUnviewed: false, // User's own stories are always "viewed"
+        hasUnviewed: false,
         stories: userStories.stories,
         storyGroupIndex: userStoriesIndex,
       });
     }
 
-    // Add other users' stories
     displayItems.push(...otherStoryItems);
 
     return displayItems;
@@ -311,7 +296,6 @@ const Connections = () => {
       );
 
       if (circleError) {
-        console.error('Error adding to circle:', circleError);
         alert('Error adding user to circle: ' + circleError.message);
         setLoading(false);
         return;
@@ -323,7 +307,6 @@ const Connections = () => {
       );
 
       if (!success || followError) {
-        console.error('Error following user:', followError);
         const errorMsg = typeof followError === 'string' ? followError : (followError as any)?.message || 'Unknown error';
         alert('Error following user: ' + errorMsg);
       } else {
@@ -334,7 +317,6 @@ const Connections = () => {
         }
       }
     } catch (error) {
-      console.error('Error:', error);
       alert('Failed to follow user');
     } finally {
       setLoading(false);
@@ -355,20 +337,18 @@ const Connections = () => {
 
   const handleChatClick = async (connection: Connection) => {
     if (!currentUser?.id) return;
-    
-    // Navigate to chat page with userId - the chat page will handle creating/opening the conversation
+
     router.push(`/dashboard/chat?userId=${connection.profileId}`);
   };
 
   const handleCardClick = (connection: Connection) => {
-    // Only open conversation if user is following
+
     if (connection.status === 'following') {
       handleChatClick(connection);
     }
   };
 
   const handleInvite = (contact: { name: string; phone: string }) => {
-    console.log('Inviting contact:', contact);
     alert(`Invite sent to ${contact.name} at ${contact.phone}`);
   };
 
@@ -377,7 +357,6 @@ const Connections = () => {
   };
 
   const handleStatusImageSelect = (imageUrl: string | any) => {
-    console.log('Status image selected:', imageUrl);
   };
 
   const handleStoryCreate = async (file: File, caption: string) => {
@@ -387,19 +366,16 @@ const Connections = () => {
     }
 
     try {
-      // Upload the media file and create media record
+
       const { mediaId, error: uploadError } = await uploadStoryMedia(currentUser.id, file);
 
       if (uploadError || !mediaId) {
         toast.error('Failed to upload story media');
-        console.error('Upload error:', uploadError);
         return;
       }
 
-      // Determine content type
       const contentType = file.type.startsWith('video/') ? 'video' : 'image';
 
-      // Create the story
       const { data: story, error: createError } = await createStory(currentUser.id, {
         content_type: contentType,
         media_id: mediaId,
@@ -408,33 +384,30 @@ const Connections = () => {
 
       if (createError || !story) {
         toast.error('Failed to create story');
-        console.error('Create error:', createError);
         return;
       }
 
       toast.success('Story created successfully!');
-      // Refresh stories list
+
       fetchStories();
     } catch (error) {
-      console.error('Error creating story:', error);
       toast.error('Failed to create story');
     }
   };
 
   const handleStatusClick = (name?: string, storyGroupIndex?: number, isUserStory?: boolean) => {
-    // If it's the user's own story, open viewer
+
     if (isUserStory && storyGroupIndex !== undefined && storyGroupIndex >= 0 && storyGroupIndex < stories.length) {
       setSelectedStoryGroupIndex(storyGroupIndex);
       setStoryViewerOpen(true);
       return;
     }
 
-    // For other stories, use the provided index or find by name
     if (storyGroupIndex !== undefined && storyGroupIndex >= 0 && storyGroupIndex < stories.length) {
       setSelectedStoryGroupIndex(storyGroupIndex);
       setStoryViewerOpen(true);
     } else if (name) {
-      // Fallback: find by name if index not provided
+
       const groupIndex = stories.findIndex(
         (group) => group.user?.name === name
       );
@@ -446,17 +419,17 @@ const Connections = () => {
   };
 
   const handleAddStatusClick = () => {
-    // Check if user has stories
+
     const userStoryIndex = stories.findIndex(
       (group) => group.user?.id === currentUser?.id
     );
-    
+
     if (userStoryIndex >= 0 && stories[userStoryIndex].stories.length > 0) {
-      // User has stories, show them
+
       setSelectedStoryGroupIndex(userStoryIndex);
       setStoryViewerOpen(true);
     } else {
-      // No stories, open add modal
+
       handleAddStatus();
     }
   };
@@ -476,17 +449,17 @@ const Connections = () => {
       <DashNavbar />
       <MobileHeader title="Connections" complexRightHref="/dashboard/home" complexRightTitle="Boards" />
       <div className='px-[7%] max-[769px]:px-4 pb-8'>
-        {/* Status Cards */}
+        {}
         <div className='mt-6'>
           <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
             {storiesData.map((status, index) => {
-              // Determine if this is the user's own story
+
               const isUserStory = !status.isAdd && status.id === `story-${currentUser?.id}`;
-              // Get the story group index from the status object if available
-              const storyGroupIndex = status.isAdd 
-                ? undefined 
-                : (status as any).storyGroupIndex !== undefined 
-                  ? (status as any).storyGroupIndex 
+
+              const storyGroupIndex = status.isAdd
+                ? undefined
+                : (status as any).storyGroupIndex !== undefined
+                  ? (status as any).storyGroupIndex
                   : stories.findIndex(s => s.user?.id === currentUser?.id && isUserStory);
 
               return (
@@ -507,7 +480,7 @@ const Connections = () => {
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {}
         <div className='my-6 max-[500px]:my-4 flex justify-between max-[660px]:flex-col-reverse gap-4 max-[660px]:items-center'>
           <div className='flex items-center justify-start max-[660px]:justify-center gap-3 max-[350px]:gap-1 w-full max-[430px]:justify-between overflow-x-auto scrollbar-hide pb-2'>
             {filterOptions.map((filterId) => (
@@ -539,7 +512,7 @@ const Connections = () => {
           </div>
         </div>
 
-        {/* Loading State */}
+        {}
         {loading && combinedConnections.length === 0 ? (
           <div className='flex flex-col items-center justify-center py-12'>
             <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-4'></div>
@@ -574,7 +547,7 @@ const Connections = () => {
           </div>
         )}
 
-        {/* Invite to Zoiax Section */}
+        {}
         {inviteContacts.length > 0 && (
           <div className='mt-8'>
             <h3 className="text-black text-lg font-semibold mb-4">Invite to Zoiax</h3>
@@ -595,7 +568,7 @@ const Connections = () => {
         )}
       </div>
 
-      {/* Your Circles Modal */}
+      {}
       <GlobalModal
         title="Your Circles"
         isOpen={circlesModalVisible}
@@ -620,7 +593,7 @@ const Connections = () => {
         />
       </GlobalModal>
 
-      {/* Create Circle Modal */}
+      {}
       <GlobalModal
         title="Create Circles"
         isOpen={createCircleModalVisible}
@@ -632,7 +605,7 @@ const Connections = () => {
         />
       </GlobalModal>
 
-      {/* Add Status Modal */}
+      {}
       <AddStatusModal
         isOpen={addStatusModalVisible}
         onClose={() => setAddStatusModalVisible(false)}
@@ -640,7 +613,7 @@ const Connections = () => {
         onStoryCreate={handleStoryCreate}
       />
 
-      {/* Story Viewer Modal */}
+      {}
       <StoryViewerModal
         isOpen={storyViewerOpen}
         onClose={() => setStoryViewerOpen(false)}

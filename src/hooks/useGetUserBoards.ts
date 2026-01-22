@@ -41,7 +41,6 @@ export const useGetUserBoards = (): UseGetUserBoardsReturn => {
   const [lastParams, setLastParams] = useState<GetUserBoardsInput | null>(null);
 
   const fetchUserBoards = useCallback(async (params: GetUserBoardsInput) => {
-    console.log('fetchUserBoards called with params:', params);
     setIsLoading(true);
     setError(null);
     setLastParams(params);
@@ -49,35 +48,23 @@ export const useGetUserBoards = (): UseGetUserBoardsReturn => {
     try {
       const supabase = createClient();
 
-      // Call Supabase RPC function
-      console.log('Calling get_user_boards RPC with:', {
-        p_user_id: params.p_user_id,
-        p_status: params.p_status || null,
-        p_limit: params.p_limit || 10,
-        p_offset: params.p_offset || 0
-      });
-      
       const { data, error: rpcError } = await supabase.rpc('get_user_boards', {
         p_user_id: params.p_user_id,
         p_status: params.p_status || null,
         p_limit: params.p_limit || 10,
         p_offset: params.p_offset || 0
       });
-      
-      console.log('get_user_boards RPC response:', { data, error: rpcError });
 
       if (rpcError) {
         const errorMessage = rpcError.message || 'Failed to fetch user boards';
         setError(errorMessage);
-        console.error('Error fetching user boards:', rpcError);
         throw new Error(errorMessage);
       }
 
       if (data) {
-        // Parse the response from the RPC function
+
         const responseData = data.data || data;
 
-        // Deduplicate boards by ID
         const boardsArray = responseData.boards || [];
         const uniqueBoards = boardsArray.filter(
           (board: UserBoard, index: number, self: UserBoard[]) =>
@@ -100,7 +87,6 @@ export const useGetUserBoards = (): UseGetUserBoardsReturn => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user boards';
       setError(errorMessage);
-      console.error('Error fetching user boards:', err);
     } finally {
       setIsLoading(false);
     }

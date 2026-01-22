@@ -72,7 +72,6 @@ const DifferentBoardCarousel = () => {
     },
   ];
 
-
   useEffect(() => {
     if (!containerRef.current) return;
 

@@ -20,8 +20,8 @@ interface MemoryWithDetails extends BoardMemory {
   commentsCount: number;
 }
 
-const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({ 
-  boardId, 
+const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
+  boardId,
   boardTitle = '',
   boardSlug,
   refreshKey
@@ -71,14 +71,12 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
         limit,
         offset: currentOffset,
       });
-      
+
       if (fetchError) {
         setError('Failed to load memories');
-        console.error('Error fetching memories:', fetchError);
       } else if (data?.data) {
         const responseData = data.data;
-        
-        // Fetch user's likes to determine which memories are liked
+
         const wishIds = responseData.memories.map((m: BoardMemory) => m.wish_id);
         let userLikesSet: Set<string> = new Set();
 
@@ -98,7 +96,6 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
           }
         }
 
-        // Map memories to include like status
         const memoriesWithDetails: MemoryWithDetails[] = responseData.memories.map((memory: BoardMemory) => ({
           ...memory,
           likesCount: memory.likes_count || 0,
@@ -111,13 +108,12 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
         } else {
           setMemories(memoriesWithDetails);
         }
-        
+
         setHasMore(responseData.pagination.has_more);
         setOffset(currentOffset + memoriesWithDetails.length);
       }
     } catch (err) {
       setError('Failed to load memories');
-      console.error('Error in fetchMemories:', err);
     } finally {
       setLoading(false);
     }
@@ -169,11 +165,9 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
       }
 
       if (result.error) {
-        console.error('Error toggling like:', result.error);
         return;
       }
 
-      // Optimistically update the UI
       setMemories(prevMemories =>
         prevMemories.map(memory => {
           if (memory.wish_id === wishId) {
@@ -189,7 +183,6 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
         })
       );
     } catch (err) {
-      console.error('Error in handleLikeClick:', err);
     } finally {
       setLikingWishId(null);
     }
@@ -205,7 +198,7 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
     setCommentsModalOpen(false);
     setSelectedWishId(null);
     setSelectedMemory(null);
-    // Refresh memories to update comment counts
+
     if (boardId) {
       fetchMemories(false);
     }
@@ -243,7 +236,7 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
         const videoThumbnail = firstVideo?.thumbnails || firstVideo?.url || '';
         const videoUrl = firstVideo?.url || '';
         const hasMedia = memory.media.length > 0;
-        // Filter and map media items - only include images and videos for FeedCard
+
         const mediaItems = memory.media
           .filter(m => m.media_type === 'image' || m.media_type === 'video')
           .map(m => ({
@@ -291,7 +284,7 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
         </div>
       )}
 
-      {/* Comments Modal */}
+      {}
       {selectedWishId && selectedMemory && (
         <WishCommentsModal
           isOpen={commentsModalOpen}

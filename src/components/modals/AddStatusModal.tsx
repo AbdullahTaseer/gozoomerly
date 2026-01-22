@@ -26,7 +26,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
-      // Reset preview state when modal closes
+
       setShowPreview(false);
       setSelectedImage(null);
       setSelectedFile(null);
@@ -39,7 +39,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
   }, [isOpen]);
 
   const handleCameraClick = () => {
-    // Trigger the hidden file input which will open camera on mobile
+
     fileInputRef.current?.click();
   };
 
@@ -47,15 +47,12 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Create a preview URL for the selected image
     const imageUrl = URL.createObjectURL(file);
 
-    // Set as selected image, store file, and show preview
     setSelectedImage(imageUrl);
     setSelectedFile(file);
     setShowPreview(true);
 
-    // Reset the input so the same file can be selected again
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -99,7 +96,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
 
   const imageGrid = (
     <div className='grid grid-cols-3 gap-2'>
-      {/* Camera Button */}
+      {}
       <button
         onClick={handleCameraClick}
         className='aspect-square rounded-lg bg-[#1B1D26] flex flex-col items-center justify-center gap-2 hover:opacity-90 transition-opacity'
@@ -108,7 +105,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
         <span className='text-white text-xs font-medium'>Camera</span>
       </button>
 
-      {/* Image Thumbnails */}
+      {}
       {statusImages.map((imageSrc, index) => (
         <div
           key={index}
@@ -133,7 +130,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
   const previewView = selectedImage && (
     <div className='flex flex-col h-full min-h-0'>
 
-      {/* Image Preview */}
+      {}
       <div className='flex-1 relative overflow-hidden mb-4 rounded-lg border-2 border-pink-500 min-h-[400px] max-h-[500px]'>
         <Image
           src={selectedImage}
@@ -175,7 +172,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
 
   return (
     <>
-      {/* Hidden file input for camera/gallery */}
+      {}
       <input
         ref={fileInputRef}
         type="file"
@@ -185,14 +182,14 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
         onChange={handleFileChange}
       />
 
-      {/* Overlay */}
+      {}
       <div
         className={`fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         onClick={onClose}
       />
 
-      {/* Mobile Bottom Slide-up Modal */}
+      {}
       <div
         className={`hidden max-[769px]:flex flex-col fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] ${isOpen ? 'translate-y-0' : 'translate-y-full'
           }`}
@@ -208,7 +205,7 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
         </div>
       </div>
 
-      {/* Desktop Centered Modal */}
+      {}
       <div
         className={`min-[770px]:flex hidden fixed inset-0 z-[1001] items-center justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}

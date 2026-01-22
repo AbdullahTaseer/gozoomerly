@@ -1,56 +1,7 @@
-/**
- * Helper file demonstrating how to use the Create Birthday Board API
- * 
- * This file provides examples and utility functions for creating birthday boards
- * using the GraphQL API.
- */
+
 
 import { CreateBirthdayBoardInput } from '../types/board';
 
-/**
- * Example usage of useCreateBirthdayBoard hook
- * 
- * ```typescript
- * import { useCreateBirthdayBoard } from '@/hooks/useCreateBirthdayBoard';
- * 
- * const MyComponent = () => {
- *   const { createBirthdayBoard, isLoading, error } = useCreateBirthdayBoard();
- * 
- *   const handleCreateBoard = async () => {
- *     try {
- *       const board = await createBirthdayBoard({
- *         p_board_type_id: 1,
- *         p_title: "John's 30th Birthday",
- *         p_honoree_first_name: "John",
- *         p_honoree_last_name: "Doe",
- *         p_honoree_date_of_birth: "1994-01-15",
- *         p_honoree_hometown: "New York",
- *         p_description: "Let's make John's 30th birthday unforgettable!",
- *         p_target_amount: 500,
- *         p_currency: "USD",
- *         p_privacy: "public",
- *         p_allow_invites: true,
- *       });
- *       
- *       console.log('Board created:', board);
- *       // Redirect to board page: router.push(`/dashboard/boards/${board.slug}`);
- *     } catch (err) {
- *       console.error('Failed to create board:', err);
- *     }
- *   };
- * 
- *   return (
- *     <button onClick={handleCreateBoard} disabled={isLoading}>
- *       {isLoading ? 'Creating...' : 'Create Board'}
- *     </button>
- *   );
- * };
- * ```
- */
-
-/**
- * Validates required fields for creating a birthday board
- */
 export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInput>): {
   isValid: boolean;
   errors: string[];
@@ -76,7 +27,7 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
   if (!input.p_honoree_date_of_birth) {
     errors.push('Honoree date of birth is required');
   } else {
-    // Validate date format
+
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(input.p_honoree_date_of_birth)) {
       errors.push('Date of birth must be in YYYY-MM-DD format');
@@ -87,7 +38,6 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
     errors.push('Honoree hometown is required');
   }
 
-  // Validate email if provided
   if (input.p_honoree_email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(input.p_honoree_email)) {
@@ -95,7 +45,6 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
     }
   }
 
-  // Validate phone if provided
   if (input.p_honoree_phone) {
     const phoneRegex = /^[\d\s\-\+\(\)]+$/;
     if (!phoneRegex.test(input.p_honoree_phone)) {
@@ -103,12 +52,10 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
     }
   }
 
-  // Validate target amount if provided
   if (input.p_target_amount !== undefined && input.p_target_amount <= 0) {
     errors.push('Target amount must be greater than 0');
   }
 
-  // Validate expiry date if provided
   if (input.p_expiry_date) {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(input.p_expiry_date)) {
@@ -128,9 +75,6 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
   };
 }
 
-/**
- * Transforms form values to CreateBirthdayBoardInput format
- */
 export function transformFormToInput(formValues: any): CreateBirthdayBoardInput {
   return {
     p_board_type_id: formValues.board_type_id || formValues.p_board_type_id,
@@ -157,9 +101,6 @@ export function transformFormToInput(formValues: any): CreateBirthdayBoardInput 
   };
 }
 
-/**
- * Creates default values for a birthday board
- */
 export function getDefaultBirthdayBoardValues(): Partial<CreateBirthdayBoardInput> {
   return {
     p_honoree_theme_color: '#CE7ADD',

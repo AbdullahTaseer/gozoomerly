@@ -41,7 +41,6 @@ const Boards = () => {
 
       setBoards(data || []);
     } catch (err) {
-      console.error('Error fetching boards:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

@@ -99,10 +99,8 @@ const Circles = () => {
         return;
       }
 
-      // Successfully deleted - refresh the circles list
       await fetchUserCircles();
 
-      // Close modal and reset state
       setDeleteModalOpen(false);
       setCircleToDelete(null);
     } catch (err) {
@@ -162,7 +160,7 @@ const Circles = () => {
                   <div className='text-6xl mb-4'>👥</div>
                   <p className='text-xl font-semibold text-gray-700 mb-2'>No Circles Yet</p>
                   <p className='text-gray-500 mb-6'>You haven't joined any circles yet. Create your first circle to get started!</p>
-                  <GlobalButton title='Create Your First Circle' onClick={() => console.log('Create circle')} />
+                  <GlobalButton title='Create Your First Circle' onClick={() => {}} />
                 </div>
               </div>
             ) : (

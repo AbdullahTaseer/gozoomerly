@@ -8,7 +8,6 @@ import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 import DashNavbar from '@/components/navbar/DashNavbar';
 
-
 const Memories = () => {
   return (
     <>

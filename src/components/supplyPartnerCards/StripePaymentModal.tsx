@@ -33,12 +33,11 @@ const PaymentFormContent: React.FC<PaymentFormProps> = ({ cancelClick, selectedP
   const [error, setError] = useState<string | null>(null);
   const { createSubscription } = useCreateSubscription();
 
-  // Get stored values from localStorage
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get values from localStorage when component mounts
+
     const storedClientSecret = localStorage.getItem('clientSecret');
     const storedUserId = localStorage.getItem('userId');
 
@@ -264,7 +263,7 @@ const StripePaymentModal: React.FC<StripePaymentModalProps> = ({ cancelClick, se
       </div>
     );
   }
-  
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentFormContent cancelClick={cancelClick} selectedPlan={selectedPlan} />

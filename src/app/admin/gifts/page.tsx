@@ -29,7 +29,7 @@ const AdminGifts = () => {
 
   return (
     <div>
-      {/* Tabs */}
+      {}
       <div className="flex max-sm:flex-col items-center my-6 gap-4">
         <div className='flex gap-4'>
           <button

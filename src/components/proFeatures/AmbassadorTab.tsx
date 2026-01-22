@@ -14,7 +14,7 @@ import {
 import { useGetSubmissions } from '@/hooks/useGetSubmissions';
 import { authService } from '@/lib/supabase/auth';
 
-const PARTNER_ID = 4; // Partner ID for ambassador submissions
+const PARTNER_ID = 4;
 
 const AmbassadorTab = () => {
   const router = useRouter();
@@ -35,48 +35,37 @@ const AmbassadorTab = () => {
 
   const handleApplyClick = async () => {
     try {
-      // Get current user from Supabase
+
       const currentUser = await authService.getUser();
 
       if (!currentUser?.email) {
-        console.error('No user logged in or email not found');
         toast.error('Please log in to continue');
         return;
       }
 
-      console.log('Current user email:', currentUser.email);
-      console.log('Fetching submissions for partner:', PARTNER_ID);
-
-      // Fetch submissions from GraphQL API
       const submissions = await fetchSubmissions(PARTNER_ID, true);
-      console.log('Submissions fetched:', submissions);
 
-      // Find matching submission by email
       const matchingSubmission = submissions.find(
         (submission) => submission.user?.email?.toLowerCase() === currentUser.email?.toLowerCase()
       );
 
       if (matchingSubmission) {
-        // Store user_id from the matching submission in localStorage
+
         const userId = matchingSubmission.user?.user_id;
         if (userId) {
           localStorage.setItem('ambassador_user_id', userId);
-          console.log('User ID stored in localStorage:', userId);
         }
 
-        // Check if user has subscription
         if (matchingSubmission.subscription) {
           toast.success('You are already a pro member');
         } else {
-          // Navigate to subscription plan screen
+
           router.push('/subscriptionplan');
         }
       } else {
-        console.log('No matching submission found for email:', currentUser.email);
         toast.error('Please register on zoiax first');
       }
     } catch (err) {
-      console.error('Error in handleApplyClick:', err);
       toast.error('Something went wrong. Please try again.');
     }
   };
@@ -130,7 +119,7 @@ const AmbassadorTab = () => {
           <p className="text-lg md:text-xl text-center text-gray-800 leading-relaxed">
             Apply to become a Ambassador to build your future with zoiax a limild once in a lifetime opportunity.
           </p>
-        {/* Video Player */}
+        {}
         <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-black">
           <video
             ref={videoRef}
@@ -162,7 +151,7 @@ const AmbassadorTab = () => {
           )}
         </div>
 
-        {/* Content */}
+        {}
         <div className="space-y-4">
           <p className="text-base text-gray-800 leading-relaxed">
             Apply to become an Ambassador to build your future with zoiax a limited once in a lifetime opportunity.
@@ -171,7 +160,7 @@ const AmbassadorTab = () => {
             What one Ambassador. What is business circle, what are Ambassador packages.
           </p>
 
-          {/* Apply Button */}
+          {}
           <GlobalButton
             title={isLoading ? "Loading..." : "Apply to become an Ambassador"}
             width="100%"
@@ -181,7 +170,7 @@ const AmbassadorTab = () => {
           />
         </div>
 
-        {/* FAQ Section */}
+        {}
         <div className="mt-8">
           <h2 className="text-lg font-semibold mb-4">Frequently asked questions</h2>
           <Accordion type="single" collapsible defaultValue="item-1" className="space-y-3">

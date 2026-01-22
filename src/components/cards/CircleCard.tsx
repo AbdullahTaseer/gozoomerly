@@ -104,7 +104,7 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
           <MoreVertical size={20} className='text-gray-800' />
         </button>
 
-        {/* Dropdown Menu */}
+        {}
         {menuOpen && (
           <div className='absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden'>
             <button

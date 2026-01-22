@@ -54,51 +54,42 @@ const ChatPageContent = () => {
     loadingBoards,
   } = useChat();
 
-  // Handle conversationId or userId from URL query parameter
-  // This only runs when URL actually changes (user navigation, not programmatic setting)
   useEffect(() => {
     const conversationId = searchParams.get('conversationId');
     const userId = searchParams.get('userId');
-    
-    // Only process if we have params and userId is available
+
     if (!currentUserId) return;
-    
-    // Skip if the selected conversation already matches what's in the URL
-    // This prevents reloading when conversation is set programmatically
+
     if (conversationId && selectedConversation?.id === conversationId) {
-      // Update loadedFromUrl to prevent re-triggering
+
       const urlKey = `conv:${conversationId}`;
       if (urlKey !== loadedFromUrl) {
         setLoadedFromUrl(urlKey);
       }
       return;
     }
-    
-    // Determine what we're trying to load from URL
+
     const urlKey = conversationId ? `conv:${conversationId}` : userId ? `user:${userId}` : null;
-    
-    // Only load if URL params changed (different from what we've already loaded)
-    // AND we're not in the middle of setting it programmatically
+
     if (urlKey && urlKey !== loadedFromUrl) {
       if (conversationId) {
         handleConversationStart(conversationId);
         setLoadedFromUrl(urlKey);
       } else if (userId) {
-        // Start conversation with the userId
+
         handleStartConversation(userId);
         setLoadedFromUrl(urlKey);
       }
     } else if (!urlKey && loadedFromUrl) {
-      // Clear the flag when URL params are removed
+
       setLoadedFromUrl(null);
     }
   }, [searchParams, currentUserId, loadedFromUrl, handleStartConversation, selectedConversation]);
 
-  // Update chat open state when conversation is selected/deselected
   useEffect(() => {
     chatOpenState.setOpen(!!selectedConversation);
     return () => {
-      // Reset when component unmounts
+
       chatOpenState.setOpen(false);
     };
   }, [selectedConversation]);
@@ -107,12 +98,11 @@ const ChatPageContent = () => {
     if (!currentUserId) return;
 
     try {
-      // First try to get the conversation with full details
+
       const { conversation, error } = await getConversation(conversationId, currentUserId);
-      
+
       if (error) {
-        console.error('Error loading conversation with getConversation:', error);
-        // Fallback: try to find it in the conversations list from getUserConversations
+
         const { conversations: convs } = await getUserConversations(currentUserId);
         if (convs && convs.length > 0) {
           const foundConversation = convs.find(c => c.id === conversationId);
@@ -121,16 +111,14 @@ const ChatPageContent = () => {
             return;
           }
         }
-        console.error('Conversation not found:', conversationId);
         alert('Failed to load conversation. The conversation may not exist or you may not have access to it.');
       } else if (conversation) {
-        // Successfully loaded conversation
+
         setSelectedConversation(conversation);
       } else {
         alert('Failed to load conversation. Please try again.');
       }
     } catch (err) {
-      console.error('Error starting conversation:', err);
       alert('Failed to start conversation. Please try again.');
     }
   };

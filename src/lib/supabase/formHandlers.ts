@@ -2,7 +2,6 @@ import { apolloClient } from '@/lib/apolloClient';
 import { GET_FORM_HANDLERS_BY_PARTNER_ID, GET_FORM_HANDLER_BY_ID } from '@/graphql/queries/formHandler';
 import { FormHandler } from '@/types/formHandler';
 
-// Type definitions for GraphQL responses
 interface GetFormHandlersByPartnerIdResponse {
   getFormHandlersByPartnerId: FormHandler[];
 }
@@ -11,11 +10,6 @@ interface GetFormHandlerByIdResponse {
   getFormHandlerById: FormHandler;
 }
 
-/**
- * Fetches form handlers for a specific partner ID via GraphQL
- * @param partnerId - The partner ID to fetch form handlers for
- * @returns Array of form handlers or null if error
- */
 export async function getFormHandlersByPartnerId(
   partnerId: number
 ): Promise<FormHandler[] | null> {
@@ -30,17 +24,11 @@ export async function getFormHandlersByPartnerId(
     }
 
     return null;
-  } catch (error) {
-    console.error('Error fetching form handlers:', error);
+  } catch {
     return null;
   }
 }
 
-/**
- * Fetches a single form handler by ID via GraphQL
- * @param id - The form handler ID
- * @returns Form handler or null if not found
- */
 export async function getFormHandlerById(
   id: number
 ): Promise<FormHandler | null> {
@@ -55,8 +43,7 @@ export async function getFormHandlerById(
     }
 
     return null;
-  } catch (error) {
-    console.error('Error fetching form handler:', error);
+  } catch {
     return null;
   }
 }

@@ -95,7 +95,6 @@ const SocialConnections = () => {
           </div>
         </div>
 
-
         <div className="bg-white max-[768px]:bg-transparent rounded-2xl mt-12 py-8 px-8 max-[768px]:px-0">
 
           <TitleCard className="px-4" title="Circles for Deeper Connection" />

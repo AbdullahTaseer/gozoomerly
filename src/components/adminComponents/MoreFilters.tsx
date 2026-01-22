@@ -20,7 +20,7 @@ type MoreFiltersProps = {
   onFiltersChange?: (filters: string[]) => void;
 };
 
-const MoreFilters = ({ 
+const MoreFilters = ({
   options = [
     { value: 'all', label: 'All' },
     { value: 'today', label: 'Today' },
@@ -32,12 +32,11 @@ const MoreFilters = ({
   onFiltersChange
 }: MoreFiltersProps) => {
   const [internalSelectedFilters, setInternalSelectedFilters] = useState<string[]>([]);
-  
-  // Use external state if provided, otherwise use internal state
-  const selectedFilters = externalSelectedFilters !== undefined 
-    ? externalSelectedFilters 
+
+  const selectedFilters = externalSelectedFilters !== undefined
+    ? externalSelectedFilters
     : internalSelectedFilters;
-  
+
   const setSelectedFilters = (filters: string[]) => {
     if (onFiltersChange) {
       onFiltersChange(filters);
@@ -47,24 +46,24 @@ const MoreFilters = ({
   };
 
   const handleFilterToggle = (value: string) => {
-    // Compute the new filters array
+
     let newFilters: string[];
-    
+
     if (value === 'all') {
-      // If "All" is selected, clear all other selections
+
       newFilters = selectedFilters.includes('all') ? [] : ['all'];
     } else {
-      // Remove "All" if any specific filter is selected
+
       const withoutAll = selectedFilters.filter((f: string) => f !== 'all');
       if (withoutAll.includes(value)) {
-        // If already selected, remove it
+
         newFilters = withoutAll.filter((f: string) => f !== value);
       } else {
-        // Add the new filter
+
         newFilters = [...withoutAll, value];
       }
     }
-    
+
     setSelectedFilters(newFilters);
   };
 

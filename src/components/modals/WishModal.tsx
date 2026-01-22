@@ -67,7 +67,6 @@ const WishModal: React.FC<WishModalProps> = ({
 
   const totalSteps = 4;
 
-  // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
       media.forEach(item => {
@@ -124,11 +123,10 @@ const WishModal: React.FC<WishModalProps> = ({
     const mediaIds: string[] = [];
     const errors: string[] = [];
 
-    // Use the same uploadBoardMedia function used in board creation
     for (const item of media) {
       try {
-        const mediaType = item.type === 'image' ? 'image' as const 
-          : item.type === 'video' ? 'video' as const 
+        const mediaType = item.type === 'image' ? 'image' as const
+          : item.type === 'video' ? 'video' as const
           : 'audio' as const;
 
         const { data, error } = await uploadBoardMedia(
@@ -139,9 +137,8 @@ const WishModal: React.FC<WishModalProps> = ({
         );
 
         if (error) {
-          console.error('Error uploading file:', item.file.name, error);
           const errorMsg = error.message || 'Unknown upload error';
-          
+
           if (errorMsg.includes('Bucket not found') || errorMsg.includes('does not exist')) {
             errors.push(
               `Failed to upload ${item.file.name}: Storage bucket not found. ` +
@@ -164,7 +161,6 @@ const WishModal: React.FC<WishModalProps> = ({
           errors.push(`Failed to get media ID for ${item.file.name}`);
         }
       } catch (err: any) {
-        console.error('Unexpected error uploading media:', err);
         errors.push(`Error uploading ${item.file.name}: ${err.message || 'Unknown error'}`);
       }
     }
@@ -185,31 +181,24 @@ const WishModal: React.FC<WishModalProps> = ({
         return;
       }
 
-      // Upload media files first
       let mediaIds: string[] = [];
       let uploadErrors: string[] = [];
-      
+
       if (media.length > 0) {
         const uploadResult = await uploadMedia();
         mediaIds = uploadResult.mediaIds;
         uploadErrors = uploadResult.errors;
 
-        // Show warning if some media failed but allow wish creation to continue
         if (uploadErrors.length > 0 && mediaIds.length === 0) {
-          // All media failed
+
           setError(`Failed to upload media: ${uploadErrors.join(', ')}. Please try again or submit without media.`);
           return;
         } else if (uploadErrors.length > 0) {
-          // Some media failed, but some succeeded
-          console.warn('Some media uploads failed:', uploadErrors);
-          // Continue with successful uploads
         }
       }
 
-      // mediaIds is already an array, use it directly
       const mediaIdsArray = mediaIds;
 
-      // Call create_wish RPC
       const rpcParams = {
         p_sender_id: user.id,
         p_board_id: boardId,
@@ -220,19 +209,14 @@ const WishModal: React.FC<WishModalProps> = ({
         p_max_content_length: 1000,
       };
 
-      console.log('Creating wish with params:', rpcParams);
-
       let wishData;
       let rpcError;
 
-      // Try RPC first
       const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', rpcParams);
 
       if (rpcErr) {
-        console.warn('RPC create_wish failed, trying direct insert:', rpcErr);
         rpcError = rpcErr;
-        
-        // Fallback: Direct insert into wishes table
+
         const { data: directData, error: directError } = await supabase
           .from('wishes')
           .insert({
@@ -245,23 +229,21 @@ const WishModal: React.FC<WishModalProps> = ({
           .single();
 
         if (directError) {
-          console.error('Error creating wish (direct insert):', directError);
           setError(directError.message || 'Failed to create wish');
         return;
       }
 
         wishData = directData;
 
-        // Update board wishes count
         const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
         if (countError) {
-          // Fallback: manual update
+
           const { data: boardData } = await supabase
             .from('boards')
             .select('wishes_count')
             .eq('id', boardId)
             .single();
-          
+
           if (boardData) {
             await supabase
               .from('boards')
@@ -273,39 +255,26 @@ const WishModal: React.FC<WishModalProps> = ({
         wishData = rpcData;
       }
 
-      // Show success message if some media failed but wish was created
-      if (uploadErrors.length > 0 && mediaIds.length > 0) {
-        console.warn('Wish created but some media failed:', uploadErrors);
-        // You could show a toast here if you have a toast system
-      }
-
-      console.log('Wish created successfully:', wishData);
-
-      // Call onSubmit callback
       onSubmit?.({
         media,
         text,
         music: selectedMusic
       });
 
-      // Cleanup object URLs to prevent memory leaks
       media.forEach(item => {
         if (item.preview && item.preview.startsWith('blob:')) {
           URL.revokeObjectURL(item.preview);
         }
       });
 
-      // Reset form
       setMedia([]);
       setText('');
       setSelectedMusic(null);
       setSelectedMediaIndex(0);
       setStep(1);
 
-      // Close modal
       onClose();
     } catch (err: any) {
-      console.error('Error submitting wish:', err);
       setError(err.message || 'Failed to submit wish');
     } finally {
       setIsSubmitting(false);
@@ -329,12 +298,12 @@ const WishModal: React.FC<WishModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+      {}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Modal */}
+      {}
       <div className="relative bg-white rounded-[24px] w-[450px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden">
-        {/* Header with Progress */}
+        {}
         <div className="p-4 flex items-center gap-4">
           <button onClick={handleBack} className="p-1 hover:bg-gray-100 rounded-full">
             <ArrowLeft size={24} />
@@ -353,14 +322,14 @@ const WishModal: React.FC<WishModalProps> = ({
           </button>
         </div>
 
-        {/* Error Message */}
+        {}
         {error && (
           <div className="mx-4 mb-2 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
             {error}
           </div>
         )}
 
-        {/* Step 1: Upload Media */}
+        {}
         {step === 1 && (
           <div className="flex-1 flex flex-col p-6">
             <div className="text-center mb-8">
@@ -372,7 +341,7 @@ const WishModal: React.FC<WishModalProps> = ({
               </p>
             </div>
 
-            {/* Confetti decoration */}
+            {}
             <div className="relative flex-1 flex items-center justify-center">
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-4 left-8 w-2 h-2 bg-pink-400 rounded-full" />
@@ -421,14 +390,14 @@ const WishModal: React.FC<WishModalProps> = ({
           </div>
         )}
 
-        {/* Step 2: Edit Media */}
+        {}
         {step === 2 && (
           <div className="flex-1 flex flex-col">
             <div className="text-center py-2">
               <h2 className="text-xl font-bold text-black">Add Media</h2>
             </div>
 
-            {/* Main Preview */}
+            {}
             <div className="relative flex-1 bg-black min-h-[300px]">
               {media.length > 0 && (
                 <>
@@ -447,7 +416,7 @@ const WishModal: React.FC<WishModalProps> = ({
                     />
                   )}
 
-                  {/* Side Actions */}
+                  {}
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
                     <button
                       onClick={() => setShowTextOverlay(!showTextOverlay)}
@@ -468,7 +437,7 @@ const WishModal: React.FC<WishModalProps> = ({
                     </button>
                   </div>
 
-                  {/* Delete Button */}
+                  {}
                   <button
                     onClick={() => handleRemoveMedia(media[selectedMediaIndex].id)}
                     className="absolute top-4 right-4 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600"
@@ -478,7 +447,7 @@ const WishModal: React.FC<WishModalProps> = ({
                 </>
               )}
 
-              {/* Text Input Overlay */}
+              {}
               {showTextOverlay && (
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center p-4">
                   <div className="w-full max-w-sm">
@@ -500,7 +469,7 @@ const WishModal: React.FC<WishModalProps> = ({
               )}
             </div>
 
-            {/* Thumbnail Strip */}
+            {}
             <div className="p-4 bg-gray-900">
               <div className="flex gap-2 overflow-x-auto">
                 {media.map((item, index) => (
@@ -552,14 +521,14 @@ const WishModal: React.FC<WishModalProps> = ({
           </div>
         )}
 
-        {/* Step 3: Add Music */}
+        {}
         {step === 3 && (
           <div className="flex-1 flex flex-col h-[600px] max-h-[80vh]">
             <div className="text-center py-4">
               <h2 className="text-xl font-bold text-black">Add Music</h2>
             </div>
 
-            {/* Search */}
+            {}
             <div className="px-4 pb-4">
               <div className="relative">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -573,7 +542,7 @@ const WishModal: React.FC<WishModalProps> = ({
               </div>
             </div>
 
-            {/* Music List */}
+            {}
             <div className="flex-1 overflow-y-auto px-4 min-h-0">
               <div className="space-y-2">
                 {filteredMusic.map((music) => (
@@ -622,7 +591,7 @@ const WishModal: React.FC<WishModalProps> = ({
           </div>
         )}
 
-        {/* Step 4: Write Your Message */}
+        {}
         {step === 4 && (
           <div className="flex-1 flex flex-col p-6">
             <div className="text-center mb-6">

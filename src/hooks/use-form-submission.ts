@@ -15,7 +15,6 @@ interface ProcessSubmissionParams {
   brandId: number;
 }
 
-// Type definitions for GraphQL responses
 interface SubmitFormResult {
   id: number;
   form_id: number;
@@ -70,17 +69,10 @@ interface ProcessSubmissionResponse {
   processSubmission: SubmitFormResult;
 }
 
-/**
- * Custom hook for submitting and processing forms
- * Handles both form submission and processing in sequence
- */
 export const useFormSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Submit form data to the API
-   */
   const submitForm = async (params: SubmitFormParams) => {
     try {
       const result = await apolloClient.mutate<SubmitFormResponse>({
@@ -92,17 +84,13 @@ export const useFormSubmission = () => {
           file: params.file || null
         }
       });
-      
+
       return result.data?.submitForm;
     } catch (err) {
       throw err;
     }
   };
 
-  /**
-   * Process a submitted form
-   * This typically handles payment processing, user creation, etc.
-   */
   const processSubmission = async (params: ProcessSubmissionParams) => {
     try {
       const result = await apolloClient.mutate<ProcessSubmissionResponse>({
@@ -112,14 +100,13 @@ export const useFormSubmission = () => {
           brandId: params.brandId
         }
       });
-      
+
       return result.data?.processSubmission;
     } catch (err) {
       throw err;
     }
   };
 
- 
   const submitAndProcessForm = async (params: SubmitFormParams) => {
     setIsSubmitting(true);
     setError(null);

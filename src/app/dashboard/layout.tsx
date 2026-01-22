@@ -28,15 +28,15 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
-      {/* {!hideNavbarForBoardDetail && <DashNavbar />} */}
+      {}
       <main className="flex-1">
         {children}
       </main>
       {!hideNavbarForBoardDetail && <DashFooter />}
       {!shouldHideBottomTabs && <BottomTabs />}
-      <CreateOrShareModal 
-        isOpen={isCreateOrShareModalOpen} 
-        onClose={() => createOrShareModalState.close()} 
+      <CreateOrShareModal
+        isOpen={isCreateOrShareModalOpen}
+        onClose={() => createOrShareModalState.close()}
       />
     </div>
   );

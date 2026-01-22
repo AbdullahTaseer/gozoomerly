@@ -24,7 +24,7 @@ const PostsVideoCard = ({ goToProfile, videos = [] }: props) => {
     <>
       {videos.map((video, index) => {
         const uploader = video.profiles || { name: 'Unknown User', profile_pic_url: null };
-        
+
         return (
           <div key={video.id || index} className="border border-[#E8E8E8] rounded-[24px] overflow-clip mb-6">
             <div className="flex justify-between items-center flex-wrap gap-3 px-5 py-4">
@@ -65,7 +65,6 @@ const PostsVideoCard = ({ goToProfile, videos = [] }: props) => {
               Your browser does not support the video tag.
             </video>
           </div>
-
 
             <p className="mt-4 px-5 text-sm">
               {video.filename || 'Video contribution'}

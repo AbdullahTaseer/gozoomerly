@@ -31,9 +31,8 @@ export interface FeedCardProps {
   onVideoClick?: () => void;
 
   mediaItems?: MediaItem[];
-  thumbnailImage?: string; 
+  thumbnailImage?: string;
 
-  // Footer props
   likes?: number;
   isLiked?: boolean;
   comments?: number;
@@ -43,9 +42,8 @@ export interface FeedCardProps {
   onCommentClick?: () => void;
   onShareClick?: () => void;
   onMemoryClick?: () => void;
-  showOnlyLikeAndComment?: boolean; // If true, only show like and comment buttons
+  showOnlyLikeAndComment?: boolean;
 
-  // Share props
   shareUrl?: string;
   boardSlug?: string;
   boardId?: string;
@@ -88,7 +86,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const optionsRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
@@ -100,7 +97,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Generate share URL if not provided
   const generatedShareUrl = shareUrl || (boardSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/boards/${boardSlug}` : '');
 
   const handleVideoClick = () => {
@@ -168,7 +164,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
             <MoreVertical size={20} />
           </button>
 
-          {/* Dropdown Menu */}
+          {}
           {isOptionsOpen && (
             <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-200 py-2 min-w-[140px] z-10">
               <button
@@ -242,7 +238,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
         <>
           {(title || description) && (
             <div className="flex gap-4 mb-4">
-              {/* Only show small thumbnail if there are NO mediaItems (to avoid duplicate images) */}
+              {}
               {thumbnailImage && (!mediaItems || mediaItems.length === 0) && (
                 <div className="relative w-[80px] h-[80px] shrink-0 rounded-lg overflow-hidden bg-gray-200">
                   <Image
@@ -324,14 +320,14 @@ const FeedCard: React.FC<FeedCardProps> = ({
         <button
           onClick={onLikeClick}
           className={`flex items-center gap-2 transition-colors ${
-            isLiked 
-              ? 'text-pink-500 hover:text-pink-600' 
+            isLiked
+              ? 'text-pink-500 hover:text-pink-600'
               : 'text-black hover:text-pink-500'
           }`}
         >
-          <Heart 
-            size={18} 
-            className={isLiked ? 'fill-pink-500 stroke-pink-500' : 'stroke-2'} 
+          <Heart
+            size={18}
+            className={isLiked ? 'fill-pink-500 stroke-pink-500' : 'stroke-2'}
           />
           <span className="text-sm">{likes} Like{likes !== 1 ? 's' : ''}</span>
         </button>
@@ -373,7 +369,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
         )}
       </div>
 
-      {/* Share Modal */}
+      {}
       <ShareBoardModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
@@ -381,7 +377,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
         title={title}
       />
 
-      {/* Invite Modal */}
+      {}
       {boardId && (
         <InviteToBoardModal
           isOpen={isInviteModalOpen}

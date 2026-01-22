@@ -87,7 +87,6 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
 
   const handleAddMember = async (userId: string) => {
     if (!circleId) {
-      console.error('Circle ID is required to add members');
       return;
     }
 
@@ -95,9 +94,8 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
       setAddingMemberId(userId);
 
       const { error: addError } = await addCircleMember(circleId, userId, false);
-      
+
       if (addError) {
-        console.error('Failed to add member:', addError.message);
         alert(`Failed to add member: ${addError.message}`);
         return;
       }
@@ -109,7 +107,6 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-      console.error('Error adding member:', errorMessage);
       alert(`Error adding member: ${errorMessage}`);
     } finally {
       setAddingMemberId(null);
@@ -165,7 +162,7 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
               {searchQuery ? 'No connections found' : 'No Connections Yet'}
             </p>
             <p className="text-gray-500 text-sm">
-              {searchQuery 
+              {searchQuery
                 ? 'Try searching with a different name or email'
                 : 'Connect with friends to add them to circles!'}
             </p>
@@ -173,7 +170,7 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
         ) : (
           filteredConnections.map((connection) => {
             const userId = connection.connected_user_id || connection.user_id;
-            
+
             return (
               <div
                 key={`${connection.id}-${userId}`}

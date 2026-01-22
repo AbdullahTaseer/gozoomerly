@@ -40,12 +40,10 @@ const PostBoards = () => {
         console.error('Error fetching post boards:', postError);
       }
 
-      // Filter boards that have media
       let fetchedBoards = (postBoards || []).filter((board: any) =>
         (board.media_count || 0) > 0
       );
 
-      // Fetch top contributors for each board
       const supabase = createClient();
       const boardsWithContributors = await Promise.all(
         fetchedBoards.map(async (board) => {
@@ -124,5 +122,4 @@ const PostBoards = () => {
 };
 
 export default PostBoards;
-
 

@@ -44,7 +44,6 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
 
       if (fetchError) {
         setError('Failed to load participants');
-        console.error('Error fetching participants:', fetchError);
       } else if (data?.data) {
         const responseData = data.data;
         if (loadMore) {
@@ -58,7 +57,6 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
       }
     } catch (err) {
       setError('Failed to load participants');
-      console.error('Error in fetchParticipants:', err);
     } finally {
       setLoading(false);
     }
@@ -77,7 +75,7 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
       if (diffDays < 7) return `Joined ${diffDays} days ago`;
       if (diffDays < 30) return `Joined ${Math.floor(diffDays / 7)} weeks ago`;
       if (diffMonths < 12) return `Joined ${diffMonths} month${diffMonths !== 1 ? 's' : ''} ago`;
-      
+
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     } catch {
       return 'Joined recently';
@@ -141,7 +139,7 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
           key={participant.id}
           className="bg-[#F4F4F4] flex-wrap gap-3 rounded-[12px] px-4 py-3 flex justify-between items-center"
         >
-          <div 
+          <div
             className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => handleUserClick(participant.user.id)}
           >

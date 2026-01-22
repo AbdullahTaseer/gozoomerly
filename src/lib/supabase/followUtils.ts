@@ -14,7 +14,7 @@ export interface UserConnection {
 
 export async function getFollowers(userId: string, limit = 50, offset = 0): Promise<UserConnection[]> {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.rpc("get_user_connections", {
     p_user_id: userId,
     p_type: "followers",
@@ -31,7 +31,7 @@ export async function getFollowers(userId: string, limit = 50, offset = 0): Prom
 
 export async function getFollowing(userId: string, limit = 50, offset = 0): Promise<UserConnection[]> {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.rpc("get_user_connections", {
     p_user_id: userId,
     p_type: "following",
@@ -48,14 +48,13 @@ export async function getFollowing(userId: string, limit = 50, offset = 0): Prom
 
 export async function recalculateFollowingCount(userId: string): Promise<number> {
   const supabase = createClient();
-  
+
   const { count, error } = await supabase
     .from('follows')
     .select('*', { count: 'exact', head: true })
     .eq('follower_id', userId);
 
   if (error) {
-    console.error('Error counting following:', error);
     return 0;
   }
 
@@ -71,14 +70,13 @@ export async function recalculateFollowingCount(userId: string): Promise<number>
 
 export async function recalculateFollowersCount(userId: string): Promise<number> {
   const supabase = createClient();
-  
+
   const { count, error } = await supabase
     .from('follows')
     .select('*', { count: 'exact', head: true })
     .eq('followee_id', userId);
 
   if (error) {
-    console.error('Error counting followers:', error);
     return 0;
   }
 
@@ -94,7 +92,7 @@ export async function recalculateFollowersCount(userId: string): Promise<number>
 
 export async function followUser(followerId: string, followeeId: string) {
   const supabase = createClient();
-  
+
   try {
     const { data: existingFollow } = await supabase
       .from('follows')
@@ -119,7 +117,6 @@ export async function followUser(followerId: string, followeeId: string) {
       .single();
 
     if (followError) {
-      console.error('Error creating follow:', followError);
       return { success: false, error: followError };
     }
 
@@ -157,21 +154,20 @@ export async function followUser(followerId: string, followeeId: string) {
     }
 
     await Promise.all(updatePromises);
-    
-    return { 
+
+    return {
       success: true,
       data: followData
     };
-    
+
   } catch (error) {
-    console.error('Error in followUser:', error);
     return { success: false, error };
   }
 }
 
 export async function unfollowUser(followerId: string, followeeId: string) {
   const supabase = createClient();
-  
+
   try {
     const { error: deleteError } = await supabase
       .from('follows')
@@ -180,7 +176,6 @@ export async function unfollowUser(followerId: string, followeeId: string) {
       .eq('followee_id', followeeId);
 
     if (deleteError) {
-      console.error('Error deleting follow:', deleteError);
       return { success: false, error: deleteError };
     }
 
@@ -218,13 +213,12 @@ export async function unfollowUser(followerId: string, followeeId: string) {
     }
 
     await Promise.all(updatePromises);
-    
-    return { 
+
+    return {
       success: true
     };
-    
+
   } catch (error) {
-    console.error('Error in unfollowUser:', error);
     return { success: false, error };
   }
 }

@@ -19,9 +19,7 @@ const WishButton: React.FC<WishButtonProps> = ({
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSubmit = async (data: any) => {
-    console.log('Wish submitted:', data);
-    // TODO: Implement API call to submit the wish
-    // This would upload media and create the wish entry
+
   };
 
   return (

@@ -155,9 +155,9 @@ export async function isUserInCircle(circleId: string, userId: string) {
 }
 
 export async function addCircleMember(
-  circleId: string, 
-  memberId: string, 
-  isPinned: boolean = false, 
+  circleId: string,
+  memberId: string,
+  isPinned: boolean = false,
   notes?: string
 ) {
   const supabase = createClient();

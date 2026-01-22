@@ -45,7 +45,7 @@ const PasswordChangeForm = ({ onClose, onSuccess }: Omit<PasswordChangeModalProp
       alert(response.data?.message || 'Password updated successfully');
       onSuccess();
       onClose();
-      // Clear form
+
       setNewPassword('');
       setConfirmPassword('');
     } else {

@@ -22,13 +22,11 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError('Image size should be less than 5MB');
       return;
     }
 
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       setError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
@@ -43,15 +41,13 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}.${fileExt}`;
 
-      // Convert file to base64 for direct storage API
       const reader = new FileReader();
       reader.readAsArrayBuffer(file);
-      
+
       reader.onloadend = async () => {
         const arrayBuffer = reader.result as ArrayBuffer;
         const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Upload using direct storage API endpoint
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
           {
@@ -70,18 +66,15 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
           throw new Error(`Failed to upload image: ${error}`);
         }
 
-        // Construct public URL
         const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
 
-        // Update profile with the public URL
         await updateProfilePicture(publicUrl);
       };
-      
+
       reader.onerror = () => {
         throw new Error('Failed to read file');
       };
     } catch (err) {
-      console.error('Error uploading image:', err);
       setError(err instanceof Error ? err.message : 'Failed to upload image');
       setUploadingImage(false);
     }
@@ -90,8 +83,7 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
   const updateProfilePicture = async (imageUrl: string) => {
     try {
       const supabase = createClient();
-      
-      // Update profile with new image URL
+
       const { data: updatedProfile, error: updateError } = await supabase
         .from('profiles')
         .update({ profile_pic_url: imageUrl })
@@ -100,23 +92,20 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
         .single();
 
       if (updateError) {
-        console.error('Profile update error:', updateError);
         setError('Failed to update profile picture');
         return;
       }
 
-      // Also update user metadata
       await authService.updateUserProfile({
         avatar_url: imageUrl,
       });
 
       onUpdate(updatedProfile);
     } catch (err) {
-      console.error('Error updating profile:', err);
       setError('Failed to update profile');
     } finally {
       setUploadingImage(false);
-      // Reset file input
+
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -126,22 +115,22 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
   return (
     <div className='relative group shrink-0'>
       {profile?.profile_pic_url && profile.profile_pic_url !== '' ? (
-        <img 
-          src={profile.profile_pic_url} 
-          alt='Profile' 
-          className='rounded-full object-cover h-[90px] w-[90px]' 
+        <img
+          src={profile.profile_pic_url}
+          alt='Profile'
+          className='rounded-full object-cover h-[90px] w-[90px]'
           onError={(e) => {
-            // Fallback to default avatar if image fails to load
+
             (e.target as HTMLImageElement).src = ProfileAvatar.src || ProfileAvatar;
           }}
         />
       ) : (
-        <Image 
-          src={ProfileAvatar} 
-          alt='Default profile' 
-          height={90} 
-          width={90} 
-          className='rounded-full object-cover' 
+        <Image
+          src={ProfileAvatar}
+          alt='Default profile'
+          height={90}
+          width={90}
+          className='rounded-full object-cover'
         />
       )}
       <button

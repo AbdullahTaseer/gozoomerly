@@ -83,7 +83,7 @@ export interface CreateBoardInput {
 
 export async function getBoardTypes() {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('board_types')
     .select('*')
@@ -91,7 +91,6 @@ export async function getBoardTypes() {
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching board types:', error);
     return { data: null, error };
   }
 
@@ -115,7 +114,7 @@ export interface BoardTypeField {
 
 export async function getBoardTypeFields(boardTypeId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('board_type_fields')
     .select('*')
@@ -124,7 +123,6 @@ export async function getBoardTypeFields(boardTypeId: string) {
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching board type fields:', error);
     return { data: null, error };
   }
 
@@ -133,22 +131,22 @@ export async function getBoardTypeFields(boardTypeId: string) {
 
 export async function createBoard(userId: string, input: CreateBoardInput) {
   const supabase = createClient();
-  
+
   if (!userId) {
     return { data: null, error: { message: 'User ID is required to create a board' } };
   }
-  
+
   if (!input.title || input.title.trim() === '') {
     return { data: null, error: { message: 'Board title is required' } };
   }
-  
+
   const baseSlug = input.title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-  
+
   const slug = `${baseSlug}-${Date.now()}`;
-  
+
   const boardData: any = {
     creator_id: userId,
     title: input.title,
@@ -164,11 +162,11 @@ export async function createBoard(userId: string, input: CreateBoardInput) {
     invites_can_invite: input.invites_can_invite ?? false,
     status: 'draft'
   };
-  
+
   if (input.board_type_id) {
     boardData.board_type_id = input.board_type_id;
   }
-  
+
   const { data, error } = await supabase
     .from('boards')
     .insert([boardData])
@@ -176,8 +174,8 @@ export async function createBoard(userId: string, input: CreateBoardInput) {
     .single();
 
   if (error) {
-    return { 
-      data: null, 
+    return {
+      data: null,
       error: {
         ...error,
         message: `Failed to create board: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`
@@ -201,7 +199,7 @@ export async function createBoard(userId: string, input: CreateBoardInput) {
 
 export async function getUserBoards(userId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('boards')
     .select(`
@@ -231,14 +229,13 @@ export async function getUserBoards(userId: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching user boards:', error);
     return { data: null, error };
   }
 
   if (data) {
-    // Use counts directly from board table columns
+
     const boardsWithCounts = data.map(board => {
-      // Get counts directly from board table - handle null/undefined values
+
       const wishesCount = (board as any).wishes_count ?? 0;
       const participantsCount = (board as any).participants_count ?? 0;
       const contributorsCount = (board as any).contributors_count ?? 0;
@@ -263,7 +260,7 @@ export async function getUserBoards(userId: string) {
 
 export async function getBoardByIdRPC(boardId: string) {
   const supabase = createClient();
-  
+
   const rpcParams = {
     p_board_id: boardId,
   };
@@ -271,30 +268,28 @@ export async function getBoardByIdRPC(boardId: string) {
   const { data, error } = await supabase.rpc('get_board_by_id', rpcParams);
 
   if (error) {
-    console.error('Error fetching board via RPC:', error);
     return { data: null, error };
   }
 
   if (data && data.success && data.data) {
     const rpcBoard = data.data;
-    
-    // Normalize RPC response to match expected structure
+
     const normalizedBoard = {
       ...rpcBoard,
-      // Map creator to profiles for compatibility
+
       profiles: rpcBoard.creator ? {
         id: rpcBoard.creator.id,
         name: rpcBoard.creator.name,
         profile_pic_url: rpcBoard.creator.profile_pic_url,
       } : null,
-      // Map board_type to board_types for compatibility
+
       board_types: rpcBoard.board_type ? {
         name: rpcBoard.board_type.name,
         slug: rpcBoard.board_type.slug,
         icon: rpcBoard.board_type.icon,
         color_scheme: rpcBoard.board_type.color_scheme,
       } : null,
-      // Ensure all count fields are present
+
       contributors_count: rpcBoard.contributors_count ?? 0,
       wishes_count: rpcBoard.wishes_count ?? 0,
       participants_count: rpcBoard.participants_count ?? 0,
@@ -313,8 +308,7 @@ export async function getBoardByIdRPC(boardId: string) {
 
 export async function getBoardBySlug(slug: string) {
   const supabase = createClient();
-  
-  // First, get the board ID from slug
+
   const { data: boardData, error: slugError } = await supabase
     .from('boards')
     .select('id')
@@ -322,8 +316,7 @@ export async function getBoardBySlug(slug: string) {
     .single();
 
   if (slugError || !boardData) {
-    console.error('Error fetching board ID from slug:', slugError);
-    // Fallback to old method
+
     const { data, error } = await supabase
       .from('boards')
       .select(`
@@ -344,20 +337,18 @@ export async function getBoardBySlug(slug: string) {
       .single();
 
     if (error) {
-      console.error('Error fetching board:', error);
       return { data: null, error };
     }
 
     return { data, error: null };
   }
 
-  // Use RPC to get full board data
   return await getBoardByIdRPC(boardData.id);
 }
 
 export async function getBoardById(boardId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('boards')
     .select(`
@@ -378,7 +369,6 @@ export async function getBoardById(boardId: string) {
     .single();
 
   if (error) {
-    console.error('Error fetching board:', error);
     return { data: null, error };
   }
 
@@ -387,14 +377,14 @@ export async function getBoardById(boardId: string) {
 
 export async function updateBoard(boardId: string, updates: Partial<Board>) {
   const supabase = createClient();
-  
+
   const cleanedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
     if (value !== undefined) {
       acc[key] = value;
     }
     return acc;
   }, {} as Record<string, any>);
-  
+
   const { data, error } = await supabase
     .from('boards')
     .update(cleanedUpdates)
@@ -411,7 +401,7 @@ export async function updateBoard(boardId: string, updates: Partial<Board>) {
 
 export async function publishBoard(boardId: string) {
   const supabase = createClient();
-  
+
   const { data: existingBoard, error: fetchError } = await supabase
     .from('boards')
     .select('*')
@@ -419,18 +409,18 @@ export async function publishBoard(boardId: string) {
     .single();
 
   if (fetchError) {
-    return { 
-      data: null, 
-      error: { 
-        ...fetchError, 
-        message: `Failed to find board: ${fetchError.message}` 
+    return {
+      data: null,
+      error: {
+        ...fetchError,
+        message: `Failed to find board: ${fetchError.message}`
       }
     };
   }
 
   if (!existingBoard) {
-    return { 
-      data: null, 
+    return {
+      data: null,
       error: { message: 'Board not found. Please try creating the board again.' }
     };
   }
@@ -450,23 +440,21 @@ export async function publishBoard(boardId: string) {
     .single();
 
   if (error) {
-    return { 
-      data: null, 
+    return {
+      data: null,
       error: {
         ...error,
         message: `Failed to publish board: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`
       }
     };
   }
-  
+
   return { data, error: null };
 }
 
 export async function publishMultipleBoards(boardIds: string[]) {
   const supabase = createClient();
-  
-  console.log('Attempting to publish boards:', boardIds);
-  
+
   const { data, error } = await supabase
     .from('boards')
     .update({
@@ -477,18 +465,9 @@ export async function publishMultipleBoards(boardIds: string[]) {
     .select();
 
   if (error) {
-    console.error('Error publishing boards:', {
-      boardIds,
-      error,
-      errorMessage: error.message,
-      errorDetails: error.details,
-      errorCode: error.code,
-      errorHint: error.hint
-    });
     return { data: null, error };
   }
 
-  console.log('Boards published successfully:', data?.length || 0, 'boards');
   return { data, error: null };
 }
 
@@ -499,20 +478,19 @@ export async function addBoardGiftOptions(boardId: string, giftOptions: Array<{
   is_custom?: boolean;
 }>) {
   const supabase = createClient();
-  
+
   const optionsWithBoardId = giftOptions.map((option, index) => ({
     ...option,
     board_id: boardId,
     display_order: index
   }));
-  
+
   const { data, error } = await supabase
     .from('board_gift_options')
     .insert(optionsWithBoardId)
     .select();
 
   if (error) {
-    console.error('Error adding gift options:', error);
     return { data: null, error };
   }
 
@@ -521,7 +499,7 @@ export async function addBoardGiftOptions(boardId: string, giftOptions: Array<{
 
 export async function getBoardGiftOptions(boardId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('board_gift_options')
     .select('*')
@@ -529,7 +507,6 @@ export async function getBoardGiftOptions(boardId: string) {
     .order('display_order', { ascending: true });
 
   if (error) {
-    console.error('Error fetching gift options:', error);
     return { data: null, error };
   }
 
@@ -547,7 +524,7 @@ export async function addGiftContribution(
   }
 ) {
   const supabase = createClient();
-  
+
   const { data: currentBoard, error: boardError } = await supabase
     .from('boards')
     .select('total_raised, contributors_count')
@@ -555,7 +532,6 @@ export async function addGiftContribution(
     .single();
 
   if (boardError || !currentBoard) {
-    console.error('Error fetching board:', boardError);
     return { data: null, error: boardError || new Error('Board not found') };
   }
 
@@ -568,7 +544,6 @@ export async function addGiftContribution(
     display_order: 0
   };
 
-  
   try {
     giftOptionData.contributor_id = contributorId;
   } catch (e) {
@@ -581,7 +556,6 @@ export async function addGiftContribution(
     .single();
 
   if (error) {
-    console.error('Error adding gift:', error);
     return { data: null, error };
   }
 
@@ -596,7 +570,7 @@ export async function addGiftContribution(
       const newTotalRaised = (currentBoard.total_raised || 0) + giftData.amount;
       const newContributorsCount = (currentBoard.contributors_count || 0) + 1;
 
-      const { error: updateError } = await supabase
+      await supabase
         .from('boards')
         .update({
           total_raised: newTotalRaised,
@@ -604,10 +578,6 @@ export async function addGiftContribution(
           last_activity_at: new Date().toISOString()
         })
         .eq('id', boardId);
-
-      if (updateError) {
-        console.error('Error updating board raised amount:', updateError);
-      }
     }
   }
 
@@ -616,19 +586,18 @@ export async function addGiftContribution(
 
 export async function setBoardCircleVisibility(boardId: string, circleIds: string[]) {
   const supabase = createClient();
-  
+
   const visibilityRecords = circleIds.map(circleId => ({
     board_id: boardId,
     circle_id: circleId
   }));
-  
+
   const { data, error } = await supabase
     .from('board_circle_visibility')
     .insert(visibilityRecords)
     .select();
 
   if (error) {
-    console.error('Error setting circle visibility:', error);
     return { data: null, error };
   }
 
@@ -642,7 +611,7 @@ export interface CreateWishInput {
 
 export async function addWishToBoard(boardId: string, senderId: string, wish: CreateWishInput) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('wishes')
     .insert([{
@@ -655,7 +624,6 @@ export async function addWishToBoard(boardId: string, senderId: string, wish: Cr
     .single();
 
   if (error) {
-    console.error('Error adding wish:', error);
     return { data: null, error };
   }
 
@@ -669,40 +637,36 @@ export async function addWishToBoard(boardId: string, senderId: string, wish: Cr
 
 export async function likeWish(wishId: string) {
   const supabase = createClient();
-  
+
   try {
     const { data, error } = await supabase.rpc('like_wish', {
       p_wish_id: wishId,
     });
 
     if (error) {
-      console.error('Error liking wish:', error);
       return { data: null, error };
     }
 
     return { data, error: null };
   } catch (err) {
-    console.error('Error in likeWish:', err);
     return { data: null, error: err };
   }
 }
 
 export async function unlikeWish(wishId: string) {
   const supabase = createClient();
-  
+
   try {
     const { data, error } = await supabase.rpc('unlike_wish', {
       p_wish_id: wishId,
     });
 
     if (error) {
-      console.error('Error unliking wish:', error);
       return { data: null, error };
     }
 
     return { data, error: null };
   } catch (err) {
-    console.error('Error in unlikeWish:', err);
     return { data: null, error: err };
   }
 }
@@ -760,7 +724,7 @@ export async function getBoardParticipants(
   }
 ): Promise<{ data: GetBoardParticipantsResponse | null; error: any }> {
   const supabase = createClient();
-  
+
   try {
     const rpcParams: any = {
       p_board_id: boardId,
@@ -782,13 +746,11 @@ export async function getBoardParticipants(
     const { data, error } = await supabase.rpc('get_board_participants', rpcParams);
 
     if (error) {
-      console.error('Error fetching board participants:', error);
       return { data: null, error };
     }
 
     return { data: data as GetBoardParticipantsResponse, error: null };
   } catch (err) {
-    console.error('Error in getBoardParticipants:', err);
     return { data: null, error: err };
   }
 }
@@ -815,7 +777,7 @@ export async function addWishComment(
   parentCommentId?: string | null
 ): Promise<{ data: { comment_id: string } | null; error: any }> {
   const supabase = createClient();
-  
+
   try {
     const rpcParams: any = {
       p_wish_id: wishId,
@@ -826,13 +788,11 @@ export async function addWishComment(
     const { data, error } = await supabase.rpc('add_wish_comment', rpcParams);
 
     if (error) {
-      console.error('Error adding wish comment:', error);
       return { data: null, error };
     }
 
     return { data: data as { comment_id: string }, error: null };
   } catch (err) {
-    console.error('Error in addWishComment:', err);
     return { data: null, error: err };
   }
 }
@@ -864,9 +824,9 @@ export async function getWishComments(
   }
 ): Promise<{ data: WishComment[]; total?: number; error: any }> {
   const supabase = createClient();
-  
+
   try {
-    // Fetch root comments (parent_comment_id = null)
+
     const rootParams: any = {
       p_wish_id: wishId,
       p_parent_comment_id: null,
@@ -881,7 +841,6 @@ export async function getWishComments(
     );
 
     if (rootError) {
-      console.error('Error fetching root comments:', rootError);
       return { data: [], error: rootError };
     }
 
@@ -889,7 +848,6 @@ export async function getWishComments(
       return { data: [], total: rootData?.total || 0, error: null };
     }
 
-    // Convert RPC response to WishComment format
     const rootComments: WishComment[] = await Promise.all(
       rootData.items.map(async (comment: any) => {
         const commentObj: WishComment = {
@@ -908,11 +866,10 @@ export async function getWishComments(
           replies: [],
         };
 
-        // Fetch replies for this comment
         const replyParams: any = {
           p_wish_id: wishId,
           p_parent_comment_id: commentObj.comment_id,
-          p_limit: 100, // Fetch all replies (reasonable limit)
+          p_limit: 100,
           p_offset: 0,
           p_include_deleted: options?.includeDeleted || false,
         };
@@ -936,7 +893,7 @@ export async function getWishComments(
               name: reply.user?.name || 'Unknown User',
               profile_pic_url: reply.user?.profile_pic_url || null,
             },
-            replies: [], // Replies don't have nested replies in this implementation
+            replies: [],
           }));
         }
 
@@ -946,27 +903,24 @@ export async function getWishComments(
 
     return { data: rootComments, total: rootData.total, error: null };
   } catch (err) {
-    console.error('Error in getWishComments:', err);
     return { data: [], error: err };
   }
 }
 
-// Helper function to get total comment count for a wish (more efficient)
 export async function getWishCommentCount(wishId: string): Promise<{ count: number; error: any }> {
   const supabase = createClient();
-  
+
   try {
-    // Fetch root comments to get total count
+
     const { data: rootData, error: rootError } = await supabase.rpc('get_wish_comments', {
       p_wish_id: wishId,
       p_parent_comment_id: null,
-      p_limit: 100, // Fetch all root comments to count replies
+      p_limit: 100,
       p_offset: 0,
       p_include_deleted: false,
     });
 
     if (rootError) {
-      console.error('Error fetching comment count:', rootError);
       return { count: 0, error: rootError };
     }
 
@@ -974,10 +928,8 @@ export async function getWishCommentCount(wishId: string): Promise<{ count: numb
       return { count: 0, error: null };
     }
 
-    // Count root comments
     let totalCount = rootData.items.length;
-    
-    // Count replies for each root comment
+
     const replyCounts = await Promise.all(
       rootData.items.map(async (comment: any) => {
         const { data: replyData } = await supabase.rpc('get_wish_comments', {
@@ -990,11 +942,10 @@ export async function getWishCommentCount(wishId: string): Promise<{ count: numb
         return replyData?.total || 0;
       })
     );
-    
+
     const totalReplies = replyCounts.reduce((sum, count) => sum + count, 0);
     return { count: totalCount + totalReplies, error: null };
   } catch (err) {
-    console.error('Error in getWishCommentCount:', err);
     return { count: 0, error: err };
   }
 }
@@ -1060,7 +1011,7 @@ export async function getBoardMemories(
   }
 ): Promise<{ data: GetBoardMemoriesResponse | null; error: any }> {
   const supabase = createClient();
-  
+
   try {
     const rpcParams: any = {
       p_board_id: boardId,
@@ -1076,19 +1027,17 @@ export async function getBoardMemories(
     const { data, error } = await supabase.rpc('get_board_memories', rpcParams);
 
     if (error) {
-      console.error('Error fetching board memories:', error);
       return { data: null, error };
     }
 
     return { data: data as GetBoardMemoriesResponse, error: null };
   } catch (err) {
-    console.error('Error in getBoardMemories:', err);
     return { data: null, error: err };
   }
 }
 
 export async function getBoardWishes(
-  boardId: string, 
+  boardId: string,
   currentUserId?: string,
   options?: {
     limit?: number;
@@ -1096,7 +1045,7 @@ export async function getBoardWishes(
   }
 ) {
   const supabase = createClient();
-  
+
   try {
     const rpcParams: any = {
       p_board_id: boardId,
@@ -1115,7 +1064,6 @@ export async function getBoardWishes(
     );
 
     if (wishesError) {
-      console.error('Error fetching wishes:', wishesError);
       return { data: [], error: wishesError };
     }
 
@@ -1123,7 +1071,6 @@ export async function getBoardWishes(
       return { data: [], error: null };
     }
 
-    // Fetch user's likes to determine which wishes are liked
     const wishIds = wishesData.map((w: any) => w.wish_id);
     let userLikesSet: Set<string> = new Set();
 
@@ -1141,9 +1088,8 @@ export async function getBoardWishes(
       }
     }
 
-    // Map RPC response to our expected format
     const wishesWithDetails = wishesData.map((wish: any) => {
-      // Combine photos and videos into media array
+
       const media: Array<{
         id: string;
         media_type: string;
@@ -1151,7 +1097,6 @@ export async function getBoardWishes(
         thumbnail_url?: string;
       }> = [];
 
-      // Add photos
       if (wish.photos && Array.isArray(wish.photos)) {
         wish.photos.forEach((photo: any) => {
           media.push({
@@ -1163,7 +1108,6 @@ export async function getBoardWishes(
         });
       }
 
-      // Add videos
       if (wish.videos && Array.isArray(wish.videos)) {
         wish.videos.forEach((video: any) => {
           media.push({
@@ -1198,29 +1142,27 @@ export async function getBoardWishes(
 
     return { data: wishesWithDetails, error: null };
   } catch (err) {
-    console.error('Error in getBoardWishes:', err);
     return { data: [], error: err };
   }
 }
 
 export async function uploadBoardMedia(
-  boardId: string, 
-  userId: string, 
+  boardId: string,
+  userId: string,
   file: File,
   mediaType: 'image' | 'video' | 'audio'
 ) {
   const supabase = createClient();
-  
+
   const fileExt = file.name.split('.').pop();
   const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const bucketName = 'profile-images'; 
-  
+  const bucketName = 'profile-images';
+
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
     .upload(fileName, file);
 
   if (uploadError) {
-    console.error('Error uploading file:', uploadError);
     return { data: null, error: uploadError };
   }
 
@@ -1245,7 +1187,6 @@ export async function uploadBoardMedia(
     .single();
 
   if (error) {
-    console.error('Error saving media record:', error);
     await supabase.storage.from(bucketName).remove([fileName]);
     return { data: null, error };
   }
@@ -1266,13 +1207,12 @@ export async function uploadMultipleBoardMedia(
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      
+
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(fileName, file);
 
       if (uploadError) {
-        console.error('Error uploading file:', uploadError);
         results.failed.push(file.name);
         continue;
       }
@@ -1281,10 +1221,10 @@ export async function uploadMultipleBoardMedia(
         .from(bucketName)
         .getPublicUrl(fileName);
 
-      const mediaType = file.type.startsWith('image/') 
-        ? 'image' 
-        : file.type.startsWith('video/') 
-          ? 'video' 
+      const mediaType = file.type.startsWith('image/')
+        ? 'image'
+        : file.type.startsWith('video/')
+          ? 'video'
           : 'audio';
 
       const { data, error } = await supabase
@@ -1304,14 +1244,12 @@ export async function uploadMultipleBoardMedia(
         .single();
 
       if (error) {
-        console.error('Error saving media record:', error);
         await supabase.storage.from(bucketName).remove([fileName]);
         results.failed.push(file.name);
       } else if (data) {
         results.success.push(data.id);
       }
     } catch (err) {
-      console.error('Unexpected error uploading file:', file.name, err);
       results.failed.push(file.name);
     }
   }
@@ -1326,9 +1264,9 @@ export async function createBoardInvitation(
   inviteePhone?: string
 ) {
   const supabase = createClient();
-  
+
   const invitationCode = `${boardId}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-  
+
   const { data, error } = await supabase
     .from('board_invitations')
     .insert([{
@@ -1337,13 +1275,12 @@ export async function createBoardInvitation(
       invitee_email: inviteeEmail,
       invitee_phone: inviteePhone,
       invitation_code: invitationCode,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     }])
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating invitation:', error);
     return { data: null, error };
   }
 
@@ -1351,7 +1288,7 @@ export async function createBoardInvitation(
 }
 
 export async function createOrUpdateBoard(
-  userId: string, 
+  userId: string,
   boardId: string | null,
   updates: Partial<CreateBoardInput>
 ) {
@@ -1371,8 +1308,7 @@ export async function fetchLiveBoards(options?: {
   includePrivacy?: string[];
 }) {
   const supabase = createClient();
-  
-  // Fetch live/published boards without user participation requirement
+
   let query = supabase
     .from('boards')
     .select(`
@@ -1392,14 +1328,12 @@ export async function fetchLiveBoards(options?: {
     .eq('status', 'published')
     .order('created_at', { ascending: false });
 
-  // Filter by privacy if specified, otherwise default to public
   if (options?.includePrivacy) {
     query = query.in('privacy', options.includePrivacy);
   } else {
     query = query.eq('privacy', 'public');
   }
 
-  // Add pagination
   if (options?.limit) {
     query = query.limit(options.limit);
   }
@@ -1411,54 +1345,43 @@ export async function fetchLiveBoards(options?: {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Error fetching live boards:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       return { boards: [], error };
     }
 
     if (data) {
-      // Batch fetch all counts in just 3 queries instead of N*3 queries
+
       const boardIds = data.map(board => board.id);
-      
-      // Fetch all participants for all boards at once
+
       const { data: allParticipants } = await supabase
         .from('board_participants')
         .select('board_id')
         .in('board_id', boardIds);
-      
-      // Fetch all wishes for all boards at once
+
       const { data: allWishes } = await supabase
         .from('wishes')
         .select('board_id')
         .in('board_id', boardIds);
-      
-      // Fetch all media for all boards at once
+
       const { data: allMedia } = await supabase
         .from('media')
         .select('board_id')
         .in('board_id', boardIds);
-      
-      // Count per board
+
       const participantCounts = (allParticipants || []).reduce((acc, p) => {
         acc[p.board_id] = (acc[p.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
+
       const wishesCounts = (allWishes || []).reduce((acc, w) => {
         acc[w.board_id] = (acc[w.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
+
       const mediaCounts = (allMedia || []).reduce((acc, m) => {
         acc[m.board_id] = (acc[m.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
-      // Map the counts to boards
+
       const boardsWithCounts = data.map(board => ({
         ...board,
         participants_count: participantCounts[board.id] || 0,
@@ -1471,7 +1394,6 @@ export async function fetchLiveBoards(options?: {
 
     return { boards: [], error: null };
   } catch (err) {
-    console.error('Error in fetchLiveBoards:', err);
     return { boards: [], error: err };
   }
 }
@@ -1483,7 +1405,7 @@ export async function fetchActiveBoards(options?: {
   showAll?: boolean;
 }) {
   const supabase = createClient();
-  
+
   let query = supabase
     .from('boards')
     .select(`
@@ -1526,43 +1448,33 @@ export async function fetchActiveBoards(options?: {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching active boards:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
       return { boards: [], error };
     }
 
     if (data) {
-      // Batch fetch all invitation and media counts in just 2 queries
+
       const boardIds = data.map(board => board.id);
-      
-      // Fetch all invitations for all boards at once
+
       const { data: allInvitations } = await supabase
         .from('board_invitations')
         .select('board_id')
         .in('board_id', boardIds);
-      
-      // Fetch all media for all boards at once
+
       const { data: allMedia } = await supabase
         .from('media')
         .select('board_id')
         .in('board_id', boardIds);
-      
-      // Count invitations and media per board
+
       const invitationCounts = (allInvitations || []).reduce((acc, inv) => {
         acc[inv.board_id] = (acc[inv.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
+
       const mediaCounts = (allMedia || []).reduce((acc, media) => {
         acc[media.board_id] = (acc[media.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
-      
-      // Map the counts to boards
+
       const boardsWithCounts = data.map(board => ({
         ...board,
         invited_count: invitationCounts[board.id] || 0,
@@ -1574,14 +1486,13 @@ export async function fetchActiveBoards(options?: {
 
     return { boards: [], error: null };
   } catch (err) {
-    console.error('Unexpected error in fetchActiveBoards:', err);
     return { boards: [], error: err };
   }
 }
 
 export async function fetchUserBoards(userId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('boards')
     .select(`
@@ -1597,7 +1508,6 @@ export async function fetchUserBoards(userId: string) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching user boards:', error);
     return { boards: [], error };
   }
 
@@ -1606,7 +1516,7 @@ export async function fetchUserBoards(userId: string) {
 
 export async function searchBoards(query: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('boards')
     .select(`
@@ -1630,7 +1540,6 @@ export async function searchBoards(query: string) {
     .limit(20);
 
   if (error) {
-    console.error('Error searching boards:', error);
     return { boards: [], error };
   }
 
@@ -1639,7 +1548,7 @@ export async function searchBoards(query: string) {
 
 export async function getBoardStats(boardId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('boards')
     .select('total_raised, contributors_count, wishes_count, views_count, shares_count')
@@ -1647,7 +1556,6 @@ export async function getBoardStats(boardId: string) {
     .single();
 
   if (error) {
-    console.error('Error fetching board stats:', error);
     return { stats: null, error };
   }
 
@@ -1657,13 +1565,9 @@ export async function getBoardStats(boardId: string) {
 export async function incrementBoardView(boardId: string) {
   const supabase = createClient();
 
-  const { error } = await supabase.rpc('increment_board_views', {
+  await supabase.rpc('increment_board_views', {
     board_id: boardId
   });
-
-  if (error) {
-    console.error('Error incrementing board views:', error);
-  }
 }
 
 export interface InviteUserToBoardParams {
@@ -1695,7 +1599,6 @@ export async function inviteUserToBoard({
   });
 
   if (error) {
-    console.error('Error inviting user to board:', error);
     return { success: false, error: error.message, data: null };
   }
 

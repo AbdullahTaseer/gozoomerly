@@ -46,7 +46,6 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
 
       setUsers(data);
     } catch (error) {
-      console.error('Error loading users:', error);
     } finally {
       setLoading(false);
     }
@@ -64,11 +63,8 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
 
       if (result.success) {
         setInvitedUsers(prev => new Set(prev).add(userId));
-      } else {
-        console.error('Failed to invite user:', result.error);
       }
     } catch (error) {
-      console.error('Error inviting user:', error);
     } finally {
       setInvitingUserId(null);
     }
@@ -82,15 +78,15 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+      {}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
 
-      {/* Modal */}
+      {}
       <div className="relative bg-white rounded-[24px] w-[450px] max-w-[90vw] max-h-[80vh] flex flex-col">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold text-black">
             Invite to {boardTitle || 'Board'}
@@ -103,7 +99,7 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           </button>
         </div>
 
-        {/* Tabs */}
+        {}
         <div className="flex border-b">
           <button
             onClick={() => setActiveTab('followers')}
@@ -127,7 +123,7 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           </button>
         </div>
 
-        {/* Search */}
+        {}
         <div className="p-4">
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -141,7 +137,7 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           </div>
         </div>
 
-        {/* Users List */}
+        {}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -207,7 +203,7 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           )}
         </div>
 
-        {/* Done Button */}
+        {}
         <div className="p-4 border-t">
           <button
             onClick={onClose}

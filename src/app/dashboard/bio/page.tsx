@@ -57,13 +57,11 @@ const BioPage = () => {
         .single();
 
       if (profileError) {
-        console.error('Profile fetch error:', profileError);
         setError('Failed to load profile data');
       } else {
         setProfile(profileData);
       }
     } catch (err) {
-      console.error('Error fetching profile:', err);
       setError('Failed to load profile data');
     } finally {
       setLoading(false);

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-// 1. Import Poppins alongside Jost
+
 import { Jost, Poppins } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";

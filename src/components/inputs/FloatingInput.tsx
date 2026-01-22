@@ -100,7 +100,7 @@ const FloatingInput = ({
       />
       <label
         htmlFor={id}
-        className={`absolute left-3 bg-white px-1 text-gray-500 transition-all 
+        className={`absolute left-3 bg-white px-1 text-gray-500 transition-all
         top-1/2 -translate-y-1/2 text-[15px]
         peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-[15px] peer-placeholder-shown:text-gray-400
         peer-focus:-top-[1px] peer-focus:text-[14px]

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Background from "@/assets/svgs/hero-bg-img.svg";
 import WhiteLogo from "@/assets/svgs/Zoomerly-white.svg";
 
-
 const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
   const router = useRouter();

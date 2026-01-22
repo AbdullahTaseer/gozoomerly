@@ -18,10 +18,10 @@ interface PartnerRegistrationFormProps {
   };
 }
 
-export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = ({ 
+export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = ({
   partnerId,
-  onBack, 
-  initialValues 
+  onBack,
+  initialValues
 }) => {
   const router = useRouter();
   const { formHandlers, isLoading, error } = useFormHandlers(partnerId);
@@ -29,7 +29,6 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
   const [formData, setFormData] = useState<FormDataRecord>({});
   const [parsedFields, setParsedFields] = useState<FormField[]>([]);
 
-  // Map URL parameter names to form field names
   const mapUrlParamToFieldName = (fieldName: string): string[] => {
     const nameLower = fieldName.toLowerCase();
 
@@ -112,29 +111,20 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     }));
   };
 
-  /**
-   * Capitalize first letter of each word separated by underscore or space
-   * Example: "full name" -> "Full_Name", "invite code" -> "Invite_Code"
-   */
   const capitalizeFieldName = (name: string): string => {
     return name
-      .replace(/\s+/g, '_')  // Replace spaces with underscores
+      .replace(/\s+/g, '_')
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join('_');
   };
 
-  /**
-   * Get a standardized field name for submission
-   * Format: {field_id}_{Field_Name}
-   */
   const getFieldNameForSubmission = (field: FormField): string => {
     const fieldName = field.name || field.label || '';
     const nameLower = fieldName.toLowerCase();
-    
+
     let standardName: string;
 
-    // Map common field types to standard names
     if (nameLower.includes('password')) {
       standardName = 'Password';
     } else if (nameLower.includes('email')) {
@@ -142,20 +132,16 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     } else if (nameLower.includes('phone') || nameLower.includes('mobile') || nameLower.includes('tel')) {
       standardName = 'Phone';
     } else if (nameLower.includes('name') && !nameLower.includes('username')) {
-      // For name fields, use the actual field name
       standardName = capitalizeFieldName(fieldName);
     } else {
-      // For all other fields (including invite/referral codes), use the actual field name
       standardName = capitalizeFieldName(fieldName);
     }
 
-    // Clean up field ID - remove "invite_code_" prefix if it exists
     let cleanFieldId = field.id.toString();
     if (cleanFieldId.startsWith('invite_code_')) {
       cleanFieldId = cleanFieldId.replace('invite_code_', '');
     }
 
-    // Return format: {field_id}_{Field_Name}
     return `${cleanFieldId}_${standardName}`;
   };
 
@@ -168,10 +154,18 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
 
     try {
       const formHandler = formHandlers[0];
-      
-      // Transform formData to use field names instead of IDs
       const transformedData: FormDataRecord = {};
+      let inviteCodeField: FormField | null = null;
+
       parsedFields.forEach((field) => {
+        const fieldName = field.name || field.label || '';
+        const nameLower = fieldName.toLowerCase();
+
+        if (nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code')) {
+          inviteCodeField = field;
+          return;
+        }
+
         const fieldKey = getFieldNameForSubmission(field);
         const fieldValue = formData[field.id];
         if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
@@ -179,7 +173,11 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
         }
       });
 
-      // Prepare submission payload
+      if (inviteCodeField) {
+        const inviteCodeKey = getFieldNameForSubmission(inviteCodeField);
+        transformedData[inviteCodeKey] = '';
+      }
+
       const submissionPayload = {
         formId: formHandler.id,
         brandId: formHandler.brand_id,
@@ -187,24 +185,16 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
         file: null
       };
 
-      console.log('📤 Submitting form with payload:');
-      console.log(JSON.stringify(submissionPayload, null, 2));
-      
-      // Submit and process form via GraphQL API
       const result = await submitAndProcessForm(submissionPayload);
 
       if (result?.submitResult) {
-        // Check if user needs to complete payment
         if (result.submitResult.stripe_client_secret) {
-          // Redirect to payment page if needed
           router.push('/payment');
         } else {
-          // Redirect to thank you page
           router.push('/thankYou');
         }
       }
-    } catch (err) {
-      console.error('Form submission error:', err);
+    } catch {
     }
   };
 
@@ -402,7 +392,13 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
 
       {parsedFields.length > 0 ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {parsedFields.map(field => renderField(field))}
+          {parsedFields
+            .filter(field => {
+              const fieldName = field.name || field.label || '';
+              const nameLower = fieldName.toLowerCase();
+              return !(nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code'));
+            })
+            .map(field => renderField(field))}
 
           {submitError && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">

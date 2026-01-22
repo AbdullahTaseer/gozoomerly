@@ -2,9 +2,6 @@
 
 import { useFormHandlers } from '@/hooks/use-form-handlers';
 
-/**
- * Example component showing how to fetch and display form handlers for partner ID 4
- */
 export default function FormHandlersExample() {
   const { formHandlers, isLoading, error, refetch } = useFormHandlers(4);
 

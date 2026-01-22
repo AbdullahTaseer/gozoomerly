@@ -22,68 +22,24 @@ import BoardSlugParticipants from '@/components/cards/BoardSlugParticipants';
 import BoardSlugWishes from '@/components/cards/BoardSlugWishes';
 import BoardSlugMemories from '@/components/cards/BoardSlugMemories';
 
-// Helper function to fetch board by ID using server client
 async function getBoardById(boardId: string) {
-  console.log('=== getBoardById called with ID:', boardId);
-  
   if (!boardId) {
-    console.error('Board ID is missing');
     return { data: null, error: new Error('Board ID is required') };
   }
 
   const supabase = await createClient();
 
   try {
-    // Call get_board_by_id RPC - THIS IS THE MAIN API CALL
+
     const rpcParams = {
       p_board_id: boardId,
     };
-    
-    console.log('🚀 CALLING get_board_by_id RPC with params:', JSON.stringify(rpcParams, null, 2));
-    console.log('🚀 Supabase client type:', typeof supabase);
-    console.log('🚀 RPC method exists:', typeof supabase.rpc === 'function');
-    console.log('🚀 About to call: supabase.rpc("get_board_by_id", rpcParams)');
-    
-    // Make the RPC call
+
     const rpcResult = await supabase.rpc('get_board_by_id', rpcParams);
     const { data, error: rpcError } = rpcResult;
-    
-    console.log('🚀 RPC call completed, checking result...');
-    
-    console.log('✅ RPC CALL COMPLETED');
-    console.log('📦 RPC Response:', JSON.stringify({ 
-      hasData: !!data, 
-      dataType: typeof data,
-      dataIsArray: Array.isArray(data),
-      dataKeys: data && typeof data === 'object' ? Object.keys(data) : null,
-      hasError: !!rpcError,
-      errorType: typeof rpcError,
-      errorKeys: rpcError && typeof rpcError === 'object' ? Object.keys(rpcError) : null,
-      errorMessage: rpcError?.message,
-      errorCode: rpcError?.code,
-      errorDetails: rpcError?.details,
-      errorHint: rpcError?.hint,
-    }, null, 2));
-    
-    if (data) {
-      console.log('📊 RPC Data structure:', {
-        hasSuccess: 'success' in data,
-        hasDataKey: 'data' in data,
-        directKeys: typeof data === 'object' ? Object.keys(data) : null,
-        dataPreview: typeof data === 'object' ? JSON.stringify(data).substring(0, 200) : data
-      });
-    }
 
-    // Check if RPC returned an error
     if (rpcError) {
-      console.error('❌ RPC ERROR - get_board_by_id failed:', rpcError);
-      console.error('❌ Error details:', {
-        message: rpcError.message,
-        code: rpcError.code,
-        details: rpcError.details,
-        hint: rpcError.hint,
-      });
-      // Fallback to direct query if RPC fails
+
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('boards')
         .select(`
@@ -104,16 +60,13 @@ async function getBoardById(boardId: string) {
         .single();
 
       if (fallbackError) {
-        console.error('Fallback query also failed:', fallbackError);
         return { data: null, error: fallbackError };
       }
 
       return { data: fallbackData, error: null };
     }
 
-    // Check if data exists
     if (!data) {
-      console.warn('⚠️ RPC returned no data (null/undefined), falling back to direct query');
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('boards')
         .select(`
@@ -140,29 +93,27 @@ async function getBoardById(boardId: string) {
       return { data: fallbackData, error: null };
     }
 
-    // Check if data has the expected structure
     if (data && typeof data === 'object') {
-      // Check if it's the wrapped response format { success: true, data: {...} }
+
       if ('success' in data && 'data' in data && data.success && data.data) {
         const rpcBoard = data.data;
 
-        // Normalize RPC response to match expected structure
         const normalizedBoard = {
           ...rpcBoard,
-          // Map creator to profiles for compatibility
+
           profiles: rpcBoard.creator ? {
             id: rpcBoard.creator.id,
             name: rpcBoard.creator.name,
             profile_pic_url: rpcBoard.creator.profile_pic_url,
           } : null,
-          // Map board_type to board_types for compatibility
+
           board_types: rpcBoard.board_type ? {
             name: rpcBoard.board_type.name,
             slug: rpcBoard.board_type.slug,
             icon: rpcBoard.board_type.icon,
             color_scheme: rpcBoard.board_type.color_scheme,
           } : null,
-          // Ensure all count fields are present
+
           contributors_count: rpcBoard.contributors_count ?? 0,
           wishes_count: rpcBoard.wishes_count ?? 0,
           participants_count: rpcBoard.participants_count ?? 0,
@@ -175,19 +126,11 @@ async function getBoardById(boardId: string) {
         };
 
         return { data: normalizedBoard, error: null };
-      } 
-      // Check if data is directly the board object
+      }
+
       else if ('id' in data && 'title' in data) {
-        // Data is already the board object, normalize it
-        console.log('✅ RPC SUCCESS - Using direct board object format');
+
         const rpcBoard = data;
-        console.log('📊 RPC returned direct board object with counts:', {
-          invited_count: rpcBoard.invited_count,
-          participants_count: rpcBoard.participants_count,
-          wishes_count: rpcBoard.wishes_count,
-          gifters_count: rpcBoard.gifters_count,
-          media_count: rpcBoard.media_count,
-        });
         const normalizedBoard = {
           ...rpcBoard,
           profiles: rpcBoard.creator ? {
@@ -201,7 +144,7 @@ async function getBoardById(boardId: string) {
             icon: rpcBoard.board_type.icon,
             color_scheme: rpcBoard.board_type.color_scheme,
           } : null,
-          // Ensure all count fields are present from RPC
+
           contributors_count: rpcBoard.contributors_count ?? 0,
           wishes_count: rpcBoard.wishes_count ?? 0,
           participants_count: rpcBoard.participants_count ?? 0,
@@ -216,9 +159,6 @@ async function getBoardById(boardId: string) {
       }
     }
 
-    // If we get here, the response structure is unexpected
-    console.error('Unexpected RPC response structure:', data);
-    // Fallback to direct query
     const { data: fallbackData, error: fallbackError } = await supabase
       .from('boards')
       .select(`
@@ -244,8 +184,7 @@ async function getBoardById(boardId: string) {
 
     return { data: fallbackData, error: null };
   } catch (err) {
-    console.error('Exception in getBoardById:', err);
-    // Final fallback
+
     const supabase = await createClient();
     const { data: fallbackData, error: fallbackError } = await supabase
       .from('boards')
@@ -275,7 +214,7 @@ interface PageProps {
 }
 
 export async function generateMetadata(props: any): Promise<Metadata> {
-  // `props.params` may be a Promise in Next.js dynamic routes. Await it before using.
+
   const params = await props.params;
   const boardId = params.id;
   const { data: board } = await getBoardById(boardId);
@@ -297,7 +236,6 @@ export async function generateMetadata(props: any): Promise<Metadata> {
           : `${siteBase}${media.cdn_url.startsWith('/') ? '' : '/'}${media.cdn_url}`;
       }
     } catch (error) {
-      console.error('Error fetching cover media:', error);
     }
   }
 
@@ -384,8 +322,7 @@ export default async function BoardPage(props: any) {
   const supabase = await createClient();
   let giftOptions: any[] = [];
   let topContributors: any[] = [];
-  
-  // Use counts directly from RPC response
+
   const invitedCount = (board as any)?.invited_count ?? 0;
   const participantsCount = board?.participants_count ?? 0;
   const mediaCount = board?.media_count ?? 0;
@@ -414,8 +351,6 @@ export default async function BoardPage(props: any) {
         }));
     }
 
-    // Only fetch media if we need the actual media items (not just count)
-    // Count is already available from RPC
     const { data: allMedia } = await supabase
       .from('media')
       .select(`
@@ -473,7 +408,6 @@ export default async function BoardPage(props: any) {
   const boardDescription = board?.description || `Happy Birthday, ${honoreeFirstName || honoreeName}! 🎉`;
   const creatorName = (board as any)?.profiles?.name || 'Unknown';
   const creatorAvatar = (board as any)?.profiles?.profile_pic_url || staticProfileAvatar;
-
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -582,20 +516,7 @@ export default async function BoardPage(props: any) {
         participantsChildren={<BoardSlugParticipants boardId={board?.id || ''} />}
       />
 
-      {/* <div className='max-w-[900px] mx-auto px-4 py-8'>
-
-        {(boardImages.length > 0 || boardVideos.length > 0) && (
-          <div className='mt-6 space-y-6'>
-            {boardImages.length > 0 && (
-              <PostsImagesCarouselCard images={boardImages} />
-            )}
-
-            {boardVideos.length > 0 && (
-              <PostsVideoCard videos={boardVideos} />
-            )}
-          </div>
-        )}
-      </div> */}
+      {}
     </div>
   );
 }

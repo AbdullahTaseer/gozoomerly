@@ -43,7 +43,6 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
   const [lastParams, setLastParams] = useState<GetUserInvitationsInput | null>(null);
 
   const fetchUserInvitations = useCallback(async (params: GetUserInvitationsInput) => {
-    console.log('fetchUserInvitations called with params:', params);
     setIsLoading(true);
     setError(null);
     setLastParams(params);
@@ -51,28 +50,20 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
     try {
       const supabase = createClient();
 
-      console.log('Calling get_user_invitations RPC');
-
       const { data, error: rpcError } = await supabase.rpc(
         "get_user_invitations"
       );
 
-      console.log('get_user_invitations RPC response:', { data, error: rpcError });
-
       if (rpcError) {
         const errorMessage = rpcError.message || 'Failed to fetch user invitations';
         setError(errorMessage);
-        console.error('Error fetching user invitations:', rpcError);
         throw new Error(errorMessage);
       }
 
       if (data) {
-        console.log('get_user_invitations data:', data);
 
-        // Response is an array directly
         const invitationsArray = Array.isArray(data) ? data : (data.invitations || []);
 
-        // Deduplicate invitations by ID
         const uniqueInvitations = invitationsArray.filter(
           (invitation: any, index: number, self: any[]) =>
             index === self.findIndex((i) => i.id === invitation.id)
@@ -99,7 +90,6 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch user invitations';
       setError(errorMessage);
-      console.error('Error fetching user invitations:', err);
     } finally {
       setIsLoading(false);
     }
@@ -109,20 +99,14 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
     try {
       const supabase = createClient();
 
-      console.log('Accepting invitation:', invitationId);
-
       const { data, error: rpcError } = await supabase.rpc('accept_board_invitation', {
         p_invitation_id: invitationId
       });
 
       if (rpcError) {
-        console.error('Error accepting invitation:', rpcError);
         return { success: false, error: rpcError.message };
       }
 
-      console.log('Invitation accepted:', data);
-
-      // Remove the accepted invitation from the list
       setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
       setCounts(prev => ({
         ...prev,
@@ -134,7 +118,6 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
       return { success: true, data };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to accept invitation';
-      console.error('Error accepting invitation:', err);
       return { success: false, error: errorMessage };
     }
   }, []);
@@ -143,20 +126,14 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
     try {
       const supabase = createClient();
 
-      console.log('Declining invitation:', invitationId);
-
       const { data, error: rpcError } = await supabase.rpc('decline_board_invitation', {
         p_invitation_id: invitationId
       });
 
       if (rpcError) {
-        console.error('Error declining invitation:', rpcError);
         return { success: false, error: rpcError.message };
       }
 
-      console.log('Invitation declined:', data);
-
-      // Remove the declined invitation from the list
       setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
       setCounts(prev => ({
         ...prev,
@@ -168,7 +145,6 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
       return { success: true, data };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to decline invitation';
-      console.error('Error declining invitation:', err);
       return { success: false, error: errorMessage };
     }
   }, []);

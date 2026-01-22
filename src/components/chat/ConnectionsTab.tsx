@@ -65,10 +65,9 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
           </div>
         ) : (
           filteredConversations.map(conv => {
-            // Get the last message time - prefer from messages if this conversation is selected
+
             let lastMessageTime = conv.last_message_at;
 
-            // If this conversation is selected and has messages, use the latest message time from the messages array
             if (selectedConversation?.id === conv.id && messages.length > 0) {
               const lastMsg = messages[messages.length - 1];
               lastMessageTime = lastMsg.createdAt;
@@ -147,7 +146,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
                       handleFileUpload(e.target.files[0]);
-                      // Reset input so same file can be selected again
+
                       e.target.value = '';
                     }
                   }}

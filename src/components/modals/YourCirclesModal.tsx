@@ -32,14 +32,12 @@ const YourCirclesModal: React.FC<YourCirclesModalProps> = ({
       const { data, error: fetchError } = await getUserCircles(userId);
 
       if (fetchError) {
-        console.error("Error fetching circles:", fetchError);
         setError("Failed to load circles. Please try again.");
         setCircles([]);
       } else {
         setCircles(data || []);
       }
     } catch (error) {
-      console.error("Error:", error);
       setError("An unexpected error occurred.");
       setCircles([]);
     } finally {

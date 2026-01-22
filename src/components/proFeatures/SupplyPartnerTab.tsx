@@ -25,7 +25,7 @@ const SupplyPartnerTab = () => {
         <p className="text-lg md:text-xl text-center text-gray-800 leading-relaxed">
           Apply to become a supply partner to offer your services or sell at zoiax.
         </p>
-        {/* Video Player */}
+        {}
         <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-gray-200 bg-black">
           <video
             ref={videoRef}
@@ -57,7 +57,7 @@ const SupplyPartnerTab = () => {
           )}
         </div>
 
-        {/* Content */}
+        {}
         <div className="space-y-4">
           <p className="text-base text-gray-800 leading-relaxed">
             Apply to become a supply partner to offer your services or sell at zoiax.
@@ -66,7 +66,7 @@ const SupplyPartnerTab = () => {
             Industries zoiax building products and services in media, construction, wellness, education.
           </p>
 
-          {/* Benefits Section */}
+          {}
           <div className="mt-6 space-y-3">
             <h3 className="text-lg font-semibold text-gray-800">Benefits of becoming a Supply Partner:</h3>
             <ul className="space-y-2 text-sm text-gray-600">
@@ -93,7 +93,7 @@ const SupplyPartnerTab = () => {
             </ul>
           </div>
 
-          {/* Apply Button */}
+          {}
           <GlobalButton
             title="Apply to become a media supply partner"
             width="100%"

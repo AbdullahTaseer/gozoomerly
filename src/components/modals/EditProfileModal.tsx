@@ -79,7 +79,6 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
         .single();
 
       if (updateError) {
-        console.error('Failed to update profile', updateError);
         setError(updateError.message || 'Failed to update profile');
         setLoading(false);
         return;
@@ -95,14 +94,12 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
       });
 
       if (authErr) {
-        console.warn('Failed to update auth metadata', authErr);
       }
 
       setLoading(false);
       onSuccess && onSuccess(updatedProfile);
       onClose();
     } catch (err) {
-      console.error('Error saving profile', err);
       setError('Unexpected error while saving profile');
       setLoading(false);
     }

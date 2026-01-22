@@ -59,13 +59,11 @@ const Home = () => {
     loadBoards();
   }, []);
 
-  // Handle filter change - fetch boards with appropriate status
   const handleFilterChange = async (filter: string) => {
     setSelectedFilter(filter);
 
     if (!currentUserId) return;
 
-    // Map filter to API status parameter
     const statusMap: Record<string, string | null> = {
       'All': null,
       'New': 'new',
@@ -87,7 +85,6 @@ const Home = () => {
       const user = await authService.getUser();
 
       if (!user) {
-        console.error('No user logged in');
         setLoading(false);
         return;
       }
@@ -95,7 +92,6 @@ const Home = () => {
       setCurrentUserId(user.id);
       const supabase = createClient();
 
-      // Fetch all boards first to get counts, then filter for live
       await fetchUserBoardsRPC({
         p_user_id: user.id,
         p_status: null,
@@ -103,20 +99,17 @@ const Home = () => {
         p_offset: 0
       });
 
-      // Fetch user invitations
       await fetchUserInvitations({
         p_user_id: user.id,
         p_limit: 10,
         p_offset: 0
       });
 
-      // Fetch wishes for user's boards
       await fetchWishes({
-        p_board_ids: null, // Fetch wishes from all user's boards
+        p_board_ids: null,
         p_limit: 10
       });
 
-      // Fetch spotlight boards
       await fetchSpotlightBoards({
         p_limit: 10,
         p_offset: 0
@@ -165,7 +158,7 @@ const Home = () => {
           return {
             ...board,
             topContributors: contributorAvatars,
-            // Preserve count fields from board table
+
             participants_count: (board as any).participants_count ?? 0,
             wishes_count: (board as any).wishes_count ?? 0,
             gifters_count: (board as any).gifters_count ?? 0,
@@ -175,7 +168,6 @@ const Home = () => {
         });
       };
 
-      // Fetch user's boards using the same API as boards page
       const { data: userOwnBoards, error: userOwnBoardsError } = await getUserBoards(user.id);
       if (!userOwnBoardsError && userOwnBoards) {
         const followingWithContributors = await fetchContributors(userOwnBoards);
@@ -186,7 +178,6 @@ const Home = () => {
       }
 
     } catch (err) {
-      console.error('Error loading boards:', err);
     } finally {
       setLoading(false);
     }
@@ -341,7 +332,7 @@ const Home = () => {
                 </div>
               </div>
 
-              {/* Following Section */}
+              {}
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Following</h3>
@@ -355,20 +346,8 @@ const Home = () => {
                 <BoardsList boards={followingBoards} loading={loading} />
               </div>
 
-
-              {/* Past Boards Section */}
-              {/* <div>
-                <div className='flex items-center justify-between mb-4'>
-                  <h3 className='text-xl md:text-3xl font-bold text-black'>Past Boards</h3>
-                  <button
-                    onClick={() => router.push('/dashboard/allBoards/past')}
-                    className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
-                  >
-                    View all <ChevronRight size={16} />
-                  </button>
-                </div>
-                <BoardsList boards={pastBoards} loading={loading} />
-              </div> */}
+              {}
+              {}
             </div>
           ) : (
             <div>
@@ -389,11 +368,10 @@ const Home = () => {
                   </>
                 ) : wishes.length > 0 ? (
                   wishes.map((wish: any) => {
-                    // Get sender (wisher) details - try multiple possible field names
+
                     const senderName = wish.wisher?.name || wish.sender?.name || wish.sender_name || wish.user?.name || 'Unknown';
                     const senderAvatar = wish.wisher?.profile_pic_url || wish.sender?.profile_pic_url || wish.sender_profile_pic_url || wish.user?.profile_pic_url || undefined;
 
-                    // Map media to FeedCard format - try multiple possible field names
                     const mediaArray = wish.media || wish.photos || wish.videos || [];
                     const hasMedia = mediaArray.length > 0;
 
@@ -403,7 +381,6 @@ const Home = () => {
                       thumbnail: m.thumbnail_url || m.thumbnails?.small
                     })) : [];
 
-                    // Get first video and image
                     const firstVideo = mediaArray.find((m: any) => m.media_type === 'video');
                     const firstImage = mediaArray.find((m: any) => m.media_type === 'image');
 
@@ -414,25 +391,21 @@ const Home = () => {
                       ? new Date(wish.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                       : '';
 
-                    // Extract title from content (first line or first 50 chars)
                     const contentLines = (wish.content || '').split('\n').filter((line: string) => line.trim());
                     const firstLine = contentLines[0] || '';
                     const title = firstLine.length > 50
                       ? firstLine.substring(0, 50) + '...'
                       : (firstLine || wish.board_title || 'Wish');
 
-                    // Only show description if there's additional content beyond the title
                     let description = '';
                     if (contentLines.length > 1) {
-                      // Multiple lines - show lines after the first
+
                       description = contentLines.slice(1).join(' ').trim();
                     } else if (firstLine.length > 50) {
-                      // Single long line - show remainder after title
+
                       description = firstLine.substring(50).trim();
                     }
-                    // If single short line, don't show description (it's already the title)
 
-                    // Use carousel layout if there are multiple media items, horizontal if there's video
                     const layout = hasMedia && firstVideo ? 'horizontal' : 'carousel';
 
                     return (
@@ -470,7 +443,6 @@ const Home = () => {
             </div>
           )}
         </div>
-
 
       </div>
     </div>

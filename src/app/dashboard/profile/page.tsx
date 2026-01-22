@@ -92,15 +92,12 @@ const Profile = () => {
       const currentUser = await authService.getUser();
 
       if (!currentUser) {
-        console.error('No authenticated user found');
         router.push('/signin');
         return;
       }
 
-      console.log('Current user:', currentUser);
       setUser(currentUser);
 
-      // Fetch profile data from the profiles table
       const supabase = createClient();
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -109,7 +106,6 @@ const Profile = () => {
         .single();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        console.error('Profile fetch error:', profileError);
         setError(`Failed to load profile data: ${profileError.message}`);
       } else if (profileData) {
         const [actualFollowingCount, actualFollowersCount] = await Promise.all([
@@ -150,22 +146,12 @@ const Profile = () => {
           .single();
 
         if (insertError) {
-          console.error('Profile insert error:', insertError);
           setError(`Failed to create profile: ${insertError.message}`);
-
-          console.error('Insert error details:', {
-            code: insertError.code,
-            message: insertError.message,
-            details: insertError.details,
-            hint: insertError.hint,
-            profile: newProfile
-          });
         } else {
           setProfile(insertedProfile);
         }
       }
     } catch (err) {
-      console.error('Error fetching user data:', err);
       setError('Failed to load user data');
     } finally {
       setLoading(false);
@@ -381,7 +367,7 @@ const Profile = () => {
             currentEmail={user?.email || ''}
             onClose={() => setShowEmailModal(false)}
             onSuccess={async () => {
-              // Refresh user data
+
               await fetchUserData();
             }}
           />
@@ -438,7 +424,7 @@ const Profile = () => {
           isOpen={showFollowingModal}
           onClose={async () => {
             setIsShowFollowingModal(false);
-            // Recalculate counts when modal closes
+
             if (user?.id) {
               const [actualFollowingCount, actualFollowersCount] = await Promise.all([
                 recalculateFollowingCount(user.id),

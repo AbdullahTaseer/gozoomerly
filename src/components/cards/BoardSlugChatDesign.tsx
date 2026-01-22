@@ -57,7 +57,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
         );
 
         if (error) {
-          console.error('Error loading board conversation:', error);
           setLoading(false);
           return;
         }
@@ -68,7 +67,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
           await markConversationAsRead(conv.id, currentUserId);
         }
       } catch (err) {
-        console.error('Error in loadConversation:', err);
       } finally {
         setLoading(false);
       }
@@ -88,7 +86,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
       );
 
       if (error) {
-        console.error('Error loading messages:', error);
         return;
       }
 
@@ -115,7 +112,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
 
       setMessages(chatMessages);
     } catch (err) {
-      console.error('Error loading messages:', err);
     }
   };
 
@@ -165,7 +161,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
       });
 
       if (error) {
-        console.error('Error sending message:', error);
         alert('Failed to send message. Please try again.');
         return;
       }
@@ -197,7 +192,6 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
         });
       }
     } catch (err) {
-      console.error('Error sending message:', err);
       alert('Failed to send message. Please try again.');
     } finally {
       setSending(false);
@@ -308,14 +302,7 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
                           </p>
                         )}
                       </div>
-                      {/* <ImageWithFallback
-                        src={message.user.avatar || staticProfileAvatar}
-                        alt={message.user.name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full object-cover shrink-0"
-                        fallbackSrc={staticProfileAvatar}
-                      /> */}
+                      {}
                     </div>
                   ) : (
                     <div className="space-y-2">

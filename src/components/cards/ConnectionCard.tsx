@@ -24,7 +24,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
 }) => {
 
   return (
-    <div 
+    <div
       className={`bg-[#F7F7F7] rounded-[8px] p-4 flex items-center gap-4 relative ${onCardClick ? 'cursor-pointer hover:bg-[#F0F0F0] transition-colors' : ''}`}
       onClick={onCardClick}
     >
@@ -46,7 +46,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
         </div>
         <button
           onClick={(e) => {
-            e.stopPropagation(); // Prevent card click when button is clicked
+            e.stopPropagation();
             onClick?.();
           }}
           className={`px-4 py-2 cursor-pointer text-sm font-medium rounded-full hover:opacity-90 transition-opacity whitespace-nowrap ${buttonText === "Invite"
@@ -58,7 +58,6 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
           {buttonText || (isFollowing ? "Chat" : "Follow")}
         </button>
       </div>
-
 
     </div>
   );

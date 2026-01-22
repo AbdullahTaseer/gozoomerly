@@ -1,41 +1,29 @@
 import { createClient } from './client';
 
-/**
- * Helper function to safely extract last message as a string
- * In case the database returns an object instead of a string
- */
 function safeLastMessage(lastMessage: any): string | undefined {
   if (!lastMessage) return undefined;
-  
-  // If it's already a string, return it
+
   if (typeof lastMessage === 'string') return lastMessage;
-  
-  // If it's an object, try to extract the content
+
   if (typeof lastMessage === 'object') {
     return lastMessage.content || lastMessage.text || undefined;
   }
-  
+
   return undefined;
 }
 
-/**
- * Helper function to extract the other user from a direct conversation
- * @param participants - Array of conversation participants
- * @param currentUserId - The current user's ID
- * @returns The other user's information or undefined
- */
 function extractOtherUser(
   participants: any[] | undefined,
   currentUserId: string
 ): { id: string; name: string; profile_pic_url?: string } | undefined {
   if (!participants || participants.length === 0) return undefined;
-  
+
   const otherParticipant = participants.find(
     (p: any) => p.user_id !== currentUserId
   );
-  
+
   if (!otherParticipant) return undefined;
-  
+
   return {
     id: otherParticipant.user_id,
     name: otherParticipant.user?.name || 'Unknown User',
@@ -57,8 +45,8 @@ export interface Conversation {
   participants?: ConversationParticipant[];
   unread_count?: number;
   other_user?: {
-    user_id?: string;  // From RPC response
-    id?: string;       // Fallback for manually constructed
+    user_id?: string;
+    id?: string;
     name: string;
     profile_pic_url?: string;
     is_deleted?: boolean;
@@ -206,7 +194,6 @@ export async function getOrCreateDirectConversation(
   }
 }
 
-
 async function createNewDirectConversation(
   userId1: string,
   userId2: string
@@ -214,12 +201,11 @@ async function createNewDirectConversation(
   const supabase = createClient();
 
   try {
-   
+
     const conversationData: any = {
       type: 'direct',
     };
 
-   
     let { data: newConversation, error: createError } = await supabase
       .from('conversations')
       .insert({
@@ -238,8 +224,8 @@ async function createNewDirectConversation(
     }
 
     if (createError) {
-      return { 
-        conversation: null, 
+      return {
+        conversation: null,
         error: new Error(
           `Failed to create conversation: ${createError.message || JSON.stringify(createError)}\n\n` +
           `Please ensure the 'conversations' table exists with the correct schema.`
@@ -260,8 +246,8 @@ async function createNewDirectConversation(
 
     if (participantsError) {
       await supabase.from('conversations').delete().eq('id', newConversation.id);
-      return { 
-        conversation: null, 
+      return {
+        conversation: null,
         error: new Error(
           `Failed to add participants: ${participantsError.message || JSON.stringify(participantsError)}\n\n` +
           `Please ensure the 'conversation_participants' table exists.`
@@ -283,26 +269,21 @@ async function createNewDirectConversation(
 
     return { conversation, error: null };
   } catch (err: any) {
-    return { 
-      conversation: null, 
+    return {
+      conversation: null,
       error: new Error(err?.message || 'Unknown error creating conversation')
     };
   }
 }
 
-
-/**
- * Get user conversations using RPC function with pagination
- * Returns conversations with last message details
- */
 export async function getUserConversationsWithPagination(
   userId: string,
   limit: number = 10,
   offset: number = 0
-): Promise<{ 
-  conversations: Conversation[]; 
+): Promise<{
+  conversations: Conversation[];
   pagination: { total: number; limit: number; offset: number; has_more: boolean };
-  error: any 
+  error: any
 }> {
   const supabase = createClient();
 
@@ -314,23 +295,21 @@ export async function getUserConversationsWithPagination(
     });
 
     if (error) {
-      console.error('Error calling get_user_conversations RPC:', error);
-      return { 
-        conversations: [], 
+      return {
+        conversations: [],
         pagination: { total: 0, limit, offset, has_more: false },
-        error 
+        error
       };
     }
 
     if (!data || !data.data) {
-      return { 
-        conversations: [], 
+      return {
+        conversations: [],
         pagination: data?.pagination || { total: 0, limit, offset, has_more: false },
-        error: null 
+        error: null
       };
     }
 
-    // Map the RPC response to Conversation objects
     const conversations: Conversation[] = data.data.map((conv: any) => ({
       id: conv.id,
       type: conv.type,
@@ -346,26 +325,20 @@ export async function getUserConversationsWithPagination(
       unread_count: conv.unread_count || 0,
     }));
 
-    return { 
-      conversations, 
+    return {
+      conversations,
       pagination: data.pagination,
-      error: null 
+      error: null
     };
   } catch (err) {
-    console.error('Error in getUserConversationsWithPagination:', err);
-    return { 
-      conversations: [], 
+    return {
+      conversations: [],
       pagination: { total: 0, limit, offset, has_more: false },
-      error: err 
+      error: err
     };
   }
 }
 
-/**
- * Get the last message details for a conversation
- * @param conversation - The conversation object
- * @returns Object with last message details or null if no last message
- */
 export function getLastMessage(conversation: Conversation): {
   content: string;
   senderId: string;
@@ -384,29 +357,22 @@ export function getLastMessage(conversation: Conversation): {
   };
 }
 
-/**
- * Get formatted last message with sender info
- * @param conversation - The conversation object
- * @param currentUserId - The current user's ID
- * @returns Formatted string like "You: Hello" or "John: Hi there"
- */
 export function getFormattedLastMessage(
   conversation: Conversation,
   currentUserId: string
 ): string {
   const lastMsg = getLastMessage(conversation);
-  
+
   if (!lastMsg) {
     return 'No messages yet';
   }
 
   const isCurrentUser = lastMsg.senderId === currentUserId;
-  
+
   if (isCurrentUser) {
     return `You: ${lastMsg.content}`;
   }
 
-  // Find sender name from participants
   const sender = conversation.participants?.find(
     p => p.user_id === lastMsg.senderId
   );
@@ -415,14 +381,9 @@ export function getFormattedLastMessage(
   return `${senderName}: ${lastMsg.content}`;
 }
 
-/**
- * Get time ago for last message
- * @param conversation - The conversation object
- * @returns String like "2m ago", "1h ago", "Yesterday", etc.
- */
 export function getLastMessageTimeAgo(conversation: Conversation): string {
   const lastMsg = getLastMessage(conversation);
-  
+
   if (!lastMsg) {
     return '';
   }
@@ -454,28 +415,26 @@ export function getLastMessageTimeAgo(conversation: Conversation): string {
     return `${diffInDays}d ago`;
   }
 
-  // Format as date for older messages
   return messageTime.toLocaleDateString();
 }
 
 export async function getUserConversations(
   userId: string,
-  limit: number = 100,  // Increased default limit to show more conversations
+  limit: number = 100,
   offset: number = 0
 ): Promise<{ conversations: Conversation[]; error: any }> {
   const supabase = createClient();
 
   try {
-    // First try to use RPC function
+
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_conversations', {
       p_user_id: userId,
       p_limit: limit,
       p_offset: offset
     });
 
-    // If RPC works, use its data
     if (!rpcError && rpcData?.data) {
-      // Map the RPC response to Conversation objects
+
       const conversations: Conversation[] = rpcData.data.map((conv: any) => {
         return {
           id: conv.id,
@@ -490,7 +449,7 @@ export async function getUserConversations(
           last_message_sender_id: conv.last_message_sender_id,
           participants: conv.participants || [],
           unread_count: conv.unread_count || 0,
-          // Use other_user directly from RPC response
+
           other_user: conv.other_user || undefined,
         };
       });
@@ -500,12 +459,12 @@ export async function getUserConversations(
 
     let participantData: MinimalParticipantData[] | null;
     let participantError: any;
-    
+
     const initialQuery = await supabase
       .from('conversation_participants')
       .select('conversation_id, last_read_at, last_read_message_id')
       .eq('user_id', userId);
-    
+
     participantData = initialQuery.data;
     participantError = initialQuery.error;
 
@@ -514,17 +473,17 @@ export async function getUserConversations(
         .from('conversation_participants')
         .select('conversation_id')
         .eq('user_id', userId);
-      
+
       participantData = retry.data as MinimalParticipantData[] | null;
       participantError = retry.error;
     }
 
     if (participantError) {
-     
+
       if (participantError.message?.includes('relation') || participantError.message?.includes('does not exist')) {
-        return { 
-          conversations: [], 
-          error: new Error('Chat tables not found. Please set up the database tables first.') 
+        return {
+          conversations: [],
+          error: new Error('Chat tables not found. Please set up the database tables first.')
         };
       }
       return { conversations: [], error: participantError };
@@ -553,12 +512,12 @@ export async function getUserConversations(
       conversationsData.map(async (conv) => {
         let participantsData: RawParticipantData[] | null;
         let participantsError: any;
-        
+
         const initialQuery = await supabase
           .from('conversation_participants')
           .select('id, conversation_id, user_id, joined_at, last_read_at, last_read_message_id')
           .eq('conversation_id', conv.id);
-        
+
         participantsData = initialQuery.data;
         participantsError = initialQuery.error;
 
@@ -567,11 +526,10 @@ export async function getUserConversations(
             .from('conversation_participants')
             .select('id, conversation_id, user_id, joined_at')
             .eq('conversation_id', conv.id);
-          
+
           participantsData = retry.data as RawParticipantData[] | null;
           participantsError = retry.error;
         }
-
 
         const participants = await Promise.all(
           (participantsData || []).map(async (p: any) => {
@@ -601,8 +559,6 @@ export async function getUserConversations(
           })
         );
 
-        // Use the last message data directly from the conversation record
-        // No need to fetch from messages table - avoid unnecessary API calls
         const lastMessage = safeLastMessage(conv.last_message);
         const lastMessageAt = conv.last_message_at;
         const lastMessageSenderId = conv.last_message_sender_id;
@@ -625,29 +581,29 @@ export async function getUserConversations(
       })
     );
 
-    let uniqueConversations = conversationsWithParticipants.filter((conv, index, self) => 
+    let uniqueConversations = conversationsWithParticipants.filter((conv, index, self) =>
       index === self.findIndex(c => c.id === conv.id)
     );
 
     const seenPairs = new Map<string, Conversation>();
     const finalConversations: Conversation[] = [];
-    
+
     for (const conv of uniqueConversations) {
       if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
         finalConversations.push(conv);
         continue;
       }
-      
+
       const participantIds = conv.participants
         .map((p: any) => p.user_id)
         .sort()
         .join('-');
-      
+
       const existing = seenPairs.get(participantIds);
       if (existing) {
         const existingTime = existing.last_message_at ? new Date(existing.last_message_at).getTime() : 0;
         const currentTime = conv.last_message_at ? new Date(conv.last_message_at).getTime() : 0;
-        
+
         if (currentTime > existingTime) {
           const index = finalConversations.findIndex(c => c.id === existing.id);
           if (index !== -1) {
@@ -673,14 +629,12 @@ export async function getUserConversations(
   }
 }
 
-
 export async function getConversation(
   conversationId: string,
   userId: string
 ): Promise<{ conversation: Conversation | null; error: any }> {
   const supabase = createClient();
 
-  // First check if user is a participant
   const { data: participant } = await supabase
     .from('conversation_participants')
     .select('*')
@@ -692,7 +646,6 @@ export async function getConversation(
     return { conversation: null, error: new Error('Not a participant') };
   }
 
-  // Get conversation data
   const { data: convData, error: convError } = await supabase
     .from('conversations')
     .select('*')
@@ -703,7 +656,6 @@ export async function getConversation(
     return { conversation: null, error: convError || new Error('Conversation not found') };
   }
 
-  // Get participants manually (similar to getUserConversations)
   let participantsData: RawParticipantData[] | null;
   let participantsError: any;
 
@@ -715,13 +667,12 @@ export async function getConversation(
   participantsData = participantsQuery.data;
   participantsError = participantsQuery.error;
 
-  // Handle case where last_read_at might not exist
   if (participantsError && (participantsError.message?.includes('last_read_at') || participantsError.code === '42703')) {
     const retry = await supabase
       .from('conversation_participants')
       .select('id, conversation_id, user_id, joined_at')
       .eq('conversation_id', conversationId);
-    
+
     participantsData = retry.data as RawParticipantData[] | null;
     participantsError = retry.error;
   }
@@ -730,7 +681,6 @@ export async function getConversation(
     return { conversation: null, error: participantsError };
   }
 
-  // Fetch profile data for each participant
   const participants = await Promise.all(
     (participantsData || []).map(async (p: any) => {
       const { data: profileData } = await supabase
@@ -759,8 +709,6 @@ export async function getConversation(
     })
   );
 
-  // Use the last message data directly from the conversation record
-  // No need to fetch from messages table - avoid unnecessary API calls
   const lastMessage = safeLastMessage(convData.last_message);
   const lastMessageAt = convData.last_message_at;
   const lastMessageSenderId = convData.last_message_sender_id;
@@ -782,7 +730,6 @@ export async function getConversation(
 
   return { conversation, error: null };
 }
-
 
 export async function searchUsers(
   query: string,
@@ -809,7 +756,6 @@ export async function searchUsers(
   return { users: data || [], error: null };
 }
 
-
 export async function getOrCreateBoardConversation(
   boardId: string,
   boardName: string,
@@ -818,7 +764,7 @@ export async function getOrCreateBoardConversation(
   const supabase = createClient();
 
   try {
-    
+
     const { data: existingConversations, error: searchError } = await supabase
       .from('conversations')
       .select('*')
@@ -826,10 +772,9 @@ export async function getOrCreateBoardConversation(
       .eq('name', boardName)
       .limit(1);
 
-
     if (existingConversations && existingConversations.length > 0) {
       const existingConv = existingConversations[0];
-      
+
       const { data: participant } = await supabase
         .from('conversation_participants')
         .select('*')
@@ -872,8 +817,8 @@ export async function getOrCreateBoardConversation(
     }
 
     if (createError || !newConversation) {
-      return { 
-        conversation: null, 
+      return {
+        conversation: null,
         error: new Error(
           `Failed to create board conversation: ${createError?.message || 'Unknown error'}`
         )
@@ -889,8 +834,8 @@ export async function getOrCreateBoardConversation(
 
     if (participantsError) {
       await supabase.from('conversations').delete().eq('id', newConversation.id);
-      return { 
-        conversation: null, 
+      return {
+        conversation: null,
         error: new Error('Failed to add participant to board conversation')
       };
     }
@@ -909,13 +854,12 @@ export async function getOrCreateBoardConversation(
 
     return { conversation, error: null };
   } catch (err: any) {
-    return { 
-      conversation: null, 
+    return {
+      conversation: null,
       error: new Error(err?.message || 'Unknown error creating board conversation')
     };
   }
 }
-
 
 export async function markConversationAsRead(
   conversationId: string,
@@ -928,7 +872,6 @@ export async function markConversationAsRead(
     last_read_at: new Date().toISOString()
   };
 
-  // Store the last read message ID if provided
   if (lastReadMessageId) {
     updateData.last_read_message_id = lastReadMessageId;
   }
@@ -941,7 +884,6 @@ export async function markConversationAsRead(
 
   return { error };
 }
-
 
 export async function sendMessage(
   senderId: string,
@@ -994,8 +936,8 @@ export async function sendMessage(
   }
 
   if (error || !message) {
-    return { 
-      message: null, 
+    return {
+      message: null,
       error: error || new Error('Failed to create message')
     };
   }
@@ -1007,7 +949,7 @@ export async function sendMessage(
       .select('id, name, profile_pic_url')
       .eq('id', message.sender_id)
       .single();
-    
+
     senderProfile = profileData;
   } catch (profileErr) {
   }
@@ -1025,18 +967,15 @@ export async function sendMessage(
     },
   };
 
-  
   try {
     const now = new Date().toISOString();
-    
-    // Prepare the last message preview text
-    const lastMessagePreview = input.content || 
+
+    const lastMessagePreview = input.content ||
       (input.message_type === 'image' ? '📷 Image' :
        input.message_type === 'video' ? '🎥 Video' :
        input.message_type === 'audio' ? '🎵 Audio' :
        input.file_name || '📎 File');
-    
-    // Try to update with both last_message_id and last_message_sender_id
+
     let updateData: any = {
       updated_at: now,
       last_message: lastMessagePreview,
@@ -1044,45 +983,42 @@ export async function sendMessage(
       last_message_id: message.id,
       last_message_sender_id: message.sender_id
     };
-    
+
     let { error: updateError } = await supabase
       .from('conversations')
       .update(updateData)
       .eq('id', input.conversation_id);
-    
-    // If the column doesn't exist, retry without it
-    if (updateError && 
-        (updateError.code === '42703' || 
-         updateError.message?.toLowerCase().includes('column') || 
+
+    if (updateError &&
+        (updateError.code === '42703' ||
+         updateError.message?.toLowerCase().includes('column') ||
          updateError.message?.toLowerCase().includes('does not exist') ||
          updateError.message?.toLowerCase().includes('last_message_sender_id'))) {
-      
-      // Try without last_message_sender_id
+
       updateData = {
         updated_at: now,
         last_message: lastMessagePreview,
         last_message_at: now,
         last_message_id: message.id
       };
-      
+
       const result = await supabase
         .from('conversations')
         .update(updateData)
         .eq('id', input.conversation_id);
-      
+
       updateError = result.error;
-      
-      // If last_message_id also doesn't exist, try with just timestamp
-      if (updateError && 
-          (updateError.code === '42703' || 
+
+      if (updateError &&
+          (updateError.code === '42703' ||
            updateError.message?.toLowerCase().includes('last_message_id'))) {
-        
+
         updateData = {
           updated_at: now,
           last_message: lastMessagePreview,
           last_message_at: now
         };
-        
+
         const finalResult = await supabase
           .from('conversations')
           .update(updateData)
@@ -1095,7 +1031,6 @@ export async function sendMessage(
 
   return { message: messageWithSender, error: null };
 }
-
 
 export async function getConversationMessages(
   conversationId: string,
@@ -1131,7 +1066,6 @@ export async function getConversationMessages(
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
-  // If deleted_at column doesn't exist, retry without it
   if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
     result = await supabase
       .from('messages')
@@ -1154,7 +1088,6 @@ export async function getConversationMessages(
 
   return { messages: (result.data || []) as Message[], error: null };
 }
-
 
 export async function uploadMessageFile(
   conversationId: string,
@@ -1198,20 +1131,20 @@ export async function uploadMessageFile(
     if (uploadError) {
       const errorMessage = uploadError.message || '';
       const statusCode = (uploadError as any).statusCode || (uploadError as any).status;
-      
-      if (errorMessage.includes('Bucket not found') || 
+
+      if (errorMessage.includes('Bucket not found') ||
           errorMessage.includes('does not exist') ||
           statusCode === 404) {
-        return { 
-          fileUrl: null, 
+        return {
+          fileUrl: null,
           error: new Error(
             'Storage bucket "chat-files" not found. Please create it in Supabase Dashboard → Storage → Create Bucket. ' +
             'Name: chat-files, Public: true'
-          ) 
+          )
         };
       }
-      
-      if (statusCode === 400 || statusCode === 403 || 
+
+      if (statusCode === 400 || statusCode === 403 ||
           errorMessage.includes('403') || errorMessage.includes('400')) {
         return {
           fileUrl: null,
@@ -1223,7 +1156,7 @@ export async function uploadMessageFile(
           )
         };
       }
-      
+
       return { fileUrl: null, error: uploadError };
     }
 
@@ -1240,10 +1173,9 @@ export async function uploadMessageFile(
       error: null,
     };
   } catch (err: any) {
-    return { 
-      fileUrl: null, 
-      error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`) 
+    return {
+      fileUrl: null,
+      error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`)
     };
   }
 }
-

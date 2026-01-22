@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { apolloClient } from '../lib/apolloClient';
 import { CREATE_SUBSCRIPTION } from '../graphql/mutations/subscription';
-import { 
-  CreateSubscriptionResponse, 
-  CreateSubscriptionVariables, 
-  Subscription 
+import {
+  CreateSubscriptionResponse,
+  CreateSubscriptionVariables,
+  Subscription
 } from '../types/subscriptionPlan';
 
 interface CreateSubscriptionParams {

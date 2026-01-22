@@ -27,7 +27,6 @@ const AllBoards = () => {
     loadCounts();
   }, []);
 
-  // Update counts when boardCounts changes
   useEffect(() => {
     if (boardCounts) {
       setCounts(prev => ({
@@ -46,12 +45,10 @@ const AllBoards = () => {
       const user = await authService.getUser();
 
       if (!user) {
-        console.error('No user logged in');
         setLoading(false);
         return;
       }
 
-      // Fetch board counts using the RPC function
       await fetchUserBoards({
         p_user_id: user.id,
         p_status: null,
@@ -59,18 +56,15 @@ const AllBoards = () => {
         p_offset: 0
       });
 
-      // Fetch boards to calculate post count (boards with media)
       const { boards: allBoards } = await fetchActiveBoards({
         userId: user.id,
         showAll: true,
       });
 
-      // Count boards with media (post boards)
       const postCount = (allBoards || []).filter((board: any) =>
         (board.media_count || 0) > 0
       ).length;
 
-      // Count spotlight campaigns
       const spotlightCount = spotlightCampaigns.length;
 
       setCounts(prev => ({
@@ -79,7 +73,6 @@ const AllBoards = () => {
         spotlight: spotlightCount,
       }));
     } catch (err) {
-      console.error('Error loading board counts:', err);
     } finally {
       setLoading(false);
     }

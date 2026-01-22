@@ -35,15 +35,12 @@ const SignIn = () => {
     const response = loginMode === 'email'
       ? await authService.signInWithEmail({ email, password })
       : await authService.signInWithPhone({ phone, password });
-    console.log("Sign in response:", response);
 
     setLoading(false);
 
     if (response.success) {
-      console.log("Sign in successful, redirecting...");
       router.push('/dashboard');
     } else {
-      console.log("Sign in failed:", response.error);
       setError(response.error || 'Sign in failed');
     }
   };

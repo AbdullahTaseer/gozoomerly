@@ -1,4 +1,4 @@
-// compaign main screen 
+
 
 import Compaign_1 from "@/assets/svgs/compaign/compaign-1.svg";
 import Compaign_2 from "@/assets/svgs/compaign/compaign-2.svg";
@@ -22,7 +22,6 @@ export const compaignMainScreenData = [
   { imgSrc: Compaign_9, text: "Diwali" },
 ];
 
-
 interface MusicItem {
   id: number;
   title: string;
@@ -43,7 +42,6 @@ export const musicList: MusicItem[] = [
   { id: 11, title: "Upbeat Celebration", subtitle: "Energetic and fun vibes" },
   { id: 12, title: "Soft Ambient", subtitle: "Gentle background melody" },
 ];
-
 
 import gift_one from "@/assets/svgs/gifts/gift-1.svg";
 import gift_two from "@/assets/svgs/gifts/gift-2.svg";
@@ -68,8 +66,6 @@ export const giftsData = [
   { id: 9, label: "Boss Boost", price: 500, icon: gift_nine },
   { id: 10, label: "Dream Builder", price: 750, icon: gift_ten },
 ];
-
-
 
 import Community_1_avatar from "@/assets/svgs/community-1.svg";
 import Community_2_avatar from "@/assets/svgs/community-2.svg";
@@ -229,7 +225,6 @@ export const homeBoardsSwiper = [
   },
 ];
 
-
 import How_Img1 from "@/assets/svgs/as-simple-as-wishing.svg";
 import How_Img2 from "@/assets/svgs/as-simple-as-wishing-2.svg";
 import How_Img3 from "@/assets/svgs/as-simple-as-wishing-3.svg";
@@ -243,11 +238,6 @@ export const steps = [
   { number: "04", title: "Wish + Gift", desc: "Contributors send meaningful gifts alongside their messages.", img: How_Img4 },
   { number: "05", title: "Celebrate & Relive", desc: "Surprise boards deliver on the big day; event boards stay live and collaborative.", img: How_Img5 },
 ];
-
-
-// DASHBOARD MOCK DATA START
-
-// dashboard home avatar list 
 
 import avatarListIcon_1 from "@/assets/svgs/avatar-list-icon-1.svg";
 import avatarListIcon_2 from "@/assets/svgs/avatar-list-icon-2.svg";
@@ -271,9 +261,6 @@ export const avatarListData = [
   { imgPath: avatarListIcon_4, profileName: 'Leo' },
   { imgPath: avatarListIcon_3, profileName: 'Jamie' },
 ];
-
-
-// spotlight compaigns data 
 
 import SpotLightImg_1 from '@/assets/pngs/circle-1.png';
 import SpotLightImg_2 from '@/assets/pngs/circle-2.png';
@@ -474,9 +461,6 @@ export const spotlightCampaigns = [
   },
 ];
 
-
-// circles screen data
-
 import circleAvatar1 from '@/assets/svgs/circle-avatar-1.svg';
 import circleAvatar2 from '@/assets/svgs/circle-avatar-2.svg';
 import circleAvatar3 from '@/assets/svgs/circle-avatar-3.svg';
@@ -516,10 +500,6 @@ export const personalCircles = [
   },
 ];
 
-
-
-// chat list data 
-
 import chatAvatar_1 from "@/assets/svgs/chat-avatar-1.svg";
 import chatAvatar_2 from "@/assets/svgs/chat-avatar-2.svg";
 import chatAvatar_3 from "@/assets/svgs/chat-avatar-3.svg";
@@ -543,7 +523,6 @@ export const chatListData = [
   { id: 14, name: 'maxjacobson', message: 'Thank you, bro!', time: '3h', avatar: chatAvatar_2 },
 ];
 
-// Gradient overlays for invitation cards
 export const invitationGradients = [
   'bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/60',
   'bg-gradient-to-br from-[#C03737]/60 to-[#F44274]/60',
@@ -606,8 +585,6 @@ export const boardInvitations = [
   },
 ];
 
-// Feed Card mock data
-
 export interface FeedCardData {
   id: number;
   userName: string;
@@ -617,17 +594,17 @@ export interface FeedCardData {
   title: string;
   description: string;
   actionTag?: string;
-  // For horizontal layout
+
   videoThumbnail?: string;
   videoUrl?: string;
-  // For carousel layout
+
   thumbnailImage?: string;
   mediaItems?: Array<{
     type: 'image' | 'video';
     url: string;
     thumbnail?: string;
   }>;
-  // Footer stats
+
   likes: number;
   comments: number;
   shares: number;
@@ -920,7 +897,6 @@ export const inviteContacts: InviteContact[] = [
   },
 ];
 
-// Status images for Add Status Modal
 import { StaticImageData } from 'next/image';
 import PostCarousel1 from "@/assets/pngs/post-carousel-1.jpg";
 import PostCarousel2 from "@/assets/pngs/posts-carsousel-2.jpg";

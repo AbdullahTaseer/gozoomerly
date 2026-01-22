@@ -11,7 +11,7 @@ interface BoardSlugWishesProps {
   boardId: string;
   boardTitle?: string;
   boardSlug?: string;
-  refreshKey?: number | string; // Add refresh key to trigger refetch
+  refreshKey?: number | string;
 }
 
 interface WishWithDetails {
@@ -35,8 +35,8 @@ interface WishWithDetails {
   commentsCount: number;
 }
 
-const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({ 
-  boardId, 
+const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
+  boardId,
   boardTitle = '',
   boardSlug,
   refreshKey
@@ -72,24 +72,22 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
         setLoading(true);
         setError(null);
         const { data, error: fetchError } = await getBoardWishes(boardId, currentUserId || undefined);
-        
+
         if (fetchError) {
           setError('Failed to load wishes');
-          console.error('Error fetching wishes:', fetchError);
         } else {
-          // RPC already returns comments_count, so we can use it directly
+
           setWishes(data || []);
         }
       } catch (err) {
         setError('Failed to load wishes');
-        console.error('Error in fetchWishes:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchWishes();
-  }, [boardId, refreshKey, currentUserId]); // Add currentUserId to dependencies
+  }, [boardId, refreshKey, currentUserId]);
 
   const formatTimeAgo = (dateString: string): string => {
     const date = new Date(dateString);
@@ -128,7 +126,7 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
     setCommentsModalOpen(false);
     setSelectedWishId(null);
     setSelectedWish(null);
-    // Refresh wishes to update counts (RPC already includes comments_count)
+
     if (boardId) {
       const fetchWishes = async () => {
         try {
@@ -137,7 +135,6 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
             setWishes(data);
           }
         } catch (err) {
-          console.error('Error refreshing wishes:', err);
         }
       };
       fetchWishes();
@@ -150,7 +147,7 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
       return;
     }
 
-    if (likingWishId === wishId) return; // Prevent double clicks
+    if (likingWishId === wishId) return;
 
     setLikingWishId(wishId);
 
@@ -163,12 +160,9 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
       }
 
       if (result.error) {
-        console.error('Error toggling like:', result.error);
-        // Optionally show error toast
         return;
       }
 
-      // Optimistically update the UI
       setWishes(prevWishes =>
         prevWishes.map(wish => {
           if (wish.id === wishId) {
@@ -184,7 +178,6 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
         })
       );
     } catch (err) {
-      console.error('Error in handleLikeClick:', err);
     } finally {
       setLikingWishId(null);
     }
@@ -228,13 +221,12 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
           thumbnail: m.thumbnail_url || (m.media_type === 'video' ? m.cdn_url : undefined),
         }));
 
-        // Extract title from content (first line or first 50 chars)
         const contentLines = wish.content.split('\n').filter(line => line.trim());
         const firstLine = contentLines[0] || '';
-        const title = firstLine.length > 50 
+        const title = firstLine.length > 50
           ? firstLine.substring(0, 50) + '...'
           : (firstLine || boardTitle || 'Birthday Wish');
-        const description = contentLines.length > 1 
+        const description = contentLines.length > 1
           ? contentLines.slice(1).join(' ').trim()
           : (firstLine.length > 50 ? firstLine.substring(50).trim() : '');
 
@@ -266,7 +258,7 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
         );
       })}
 
-      {/* Comments Modal */}
+      {}
       {selectedWishId && selectedWish && (
         <WishCommentsModal
           isOpen={commentsModalOpen}

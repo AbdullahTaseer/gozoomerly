@@ -58,11 +58,11 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
         message,
         isCustom
       };
-      
+
       if (onGiftSaved) {
         onGiftSaved(giftData);
       }
-      
+
       goToPayment();
       return;
     }
@@ -116,7 +116,6 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
       });
 
       if (error) {
-        console.error('Error saving gift:', error);
         alert('Failed to save gift. Please try again.');
         setLoading(false);
         return;
@@ -128,7 +127,6 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
 
       goToPayment();
     } catch (error) {
-      console.error('Error processing gift:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -191,7 +189,6 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
           className="w-full rounded-lg border border-gray-300 p-3 text-sm outline-none resize-none min-h-[100px]"
         />
       </div>
-
 
       <GlobalButton
         title={loading ? "Processing..." : "Continue to Payment"}

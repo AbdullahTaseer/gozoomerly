@@ -31,16 +31,16 @@ const AddCircleCard = ({ avatar, name, time, message, onDelete, onMoveToFolder }
       </div>
 
       <div className="flex items-center space-x-4">
-        <Image 
-          src={Delete} 
-          alt="Delete" 
-          className="cursor-pointer hover:opacity-75" 
+        <Image
+          src={Delete}
+          alt="Delete"
+          className="cursor-pointer hover:opacity-75"
           onClick={onDelete}
         />
-        <Image 
-          src={MoveToFolder} 
-          alt="Move to folder" 
-          className="cursor-pointer hover:opacity-75" 
+        <Image
+          src={MoveToFolder}
+          alt="Move to folder"
+          className="cursor-pointer hover:opacity-75"
           onClick={onMoveToFolder}
         />
       </div>

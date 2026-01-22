@@ -51,7 +51,7 @@ const LikesCommentsGiftsCard = ({
         <Heart color='#F43C83' fill='#F43C83' />
       </div>
       <p className='pl-2'>{wishMessage}</p>
-      
+
       {whoCommentsAvatar &&
         <div className='px-6 py-2'>
           <div className='flex gap-2 items-center'>

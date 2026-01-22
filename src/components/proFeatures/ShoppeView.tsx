@@ -47,7 +47,7 @@ const ShoppeView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Categories Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Categories</h2>
@@ -60,10 +60,10 @@ const ShoppeView = () => {
           {categories.map((category, index) => (
             <div key={index} className="flex flex-col items-center gap-2 min-w-[80px]">
               <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center overflow-hidden hover:border-pink-500 transition-colors cursor-pointer relative">
-                <Image 
-                  src={category.image} 
-                  alt={category.name} 
-                  fill 
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
                   className="object-cover rounded-full"
                 />
               </div>
@@ -73,7 +73,7 @@ const ShoppeView = () => {
         </div>
       </div>
 
-      {/* Top Selling Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Top Selling</h2>
@@ -97,7 +97,7 @@ const ShoppeView = () => {
         </div>
       </div>
 
-      {/* New in Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">New in</h2>

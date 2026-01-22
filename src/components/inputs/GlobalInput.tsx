@@ -76,7 +76,6 @@ const GlobalInput = ({
         errorMessage = 'Only numbers and decimals allowed.';
       }
 
-
       if ((inputValue.match(/\./g) || []).length > 1) {
         errorMessage = 'Only one decimal point is allowed.';
       }
@@ -92,7 +91,6 @@ const GlobalInput = ({
       if (onChange) onChange(e);
     }
   };
-
 
   return (
     <div className={`space-y-1 w-full ${className}`} >

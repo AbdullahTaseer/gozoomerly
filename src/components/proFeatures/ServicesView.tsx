@@ -251,7 +251,7 @@ const ServicesView = () => {
 
   return (
     <div className="space-y-8">
-      {/* Suggested for you Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Suggested for you</h2>
@@ -267,7 +267,7 @@ const ServicesView = () => {
         </div>
       </div>
 
-      {/* Top Used Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Top Used</h2>
@@ -283,7 +283,7 @@ const ServicesView = () => {
         </div>
       </div>
 
-      {/* Near by Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Near by</h2>
@@ -299,7 +299,7 @@ const ServicesView = () => {
         </div>
       </div>
 
-      {/* Deals of the day Section */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Deals of the day</h2>

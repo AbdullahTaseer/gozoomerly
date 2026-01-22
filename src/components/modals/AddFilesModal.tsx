@@ -17,8 +17,8 @@ import { authService } from '@/lib/supabase/auth';
 export interface FileItem {
   id: number;
   src: string;
-  file?: File; 
-  mediaId?: string; 
+  file?: File;
+  mediaId?: string;
 }
 
 export type FontStyle = "modern" | "classic" | "signature";
@@ -28,9 +28,9 @@ export interface FileEditSettings {
   captionColor: string;
   captionBg: string;
   fontStyle: FontStyle;
-  fontSize: number; 
+  fontSize: number;
   textAlign: "left" | "center" | "right";
-  zoom: number; 
+  zoom: number;
 }
 
 type MediaUrlItem = {
@@ -137,7 +137,6 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
     try {
       const user = await authService.getUser();
       if (!user) {
-        console.error('User not authenticated');
         return;
       }
 
@@ -158,7 +157,6 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
         );
 
         if (error) {
-          console.error('Error uploading file:', fileItem.file.name, error);
           return null;
         }
 
@@ -181,15 +179,12 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
         type: item.type,
       }));
 
-      console.log('Successfully uploaded', successfulUploads.length, 'media files');
-
       if (onMediaUploaded) {
         onMediaUploaded(mediaIds, selectedMusic || undefined, mediaUrls);
       }
 
       doneOnclick();
     } catch (error) {
-      console.error('Error uploading media:', error);
       alert('Failed to upload some media files. Please try again.');
     } finally {
       setUploading(false);
@@ -220,15 +215,14 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
           <div className="flex justify-between items-center mb-4 p-2">
             <ArrowLeft onClick={() => setStep("files")} className="cursor-pointer" />
             <h2 className="font-semibold text-lg">Add Music</h2>
-            <button 
-              onClick={handleUploadAndDone} 
+            <button
+              onClick={handleUploadAndDone}
               disabled={uploading}
               className="bg-gradient-to-r cursor-pointer from-[#F43C83] to-[#845CBA] font-bold text-transparent bg-clip-text disabled:opacity-50"
             >
               {uploading ? "Uploading..." : "Done"}
             </button>
           </div>
-
 
           <div className="flex items-center border border-black rounded-full px-3 py-2 mb-4 mx-2">
             <Search size={16} className="text-black mr-2" />
@@ -240,7 +234,6 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
               className="flex-1 text-sm py-1 outline-none"
             />
           </div>
-
 
           <div className="h-[70vh] overflow-y-auto p-2">
             {musicList

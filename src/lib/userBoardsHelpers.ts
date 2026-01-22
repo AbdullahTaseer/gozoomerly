@@ -1,37 +1,27 @@
-/**
- * Helper functions for working with User Boards data
- * 
- * This file provides utility functions for filtering, sorting, and
- * processing user board data.
- */
+
 
 import { UserBoard, BoardStatus, BoardFilters } from '../types/userBoards';
 
-/**
- * Determines the status filter based on board properties
- */
 export function getBoardStatusFilter(board: UserBoard): BoardStatus {
-  // New boards: created within last 7 days and not yet deadline
+
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   const createdDate = new Date(board.created_at);
-  
+
   if (createdDate >= sevenDaysAgo && board.status === 'published') {
     if (!board.deadline_date || new Date(board.deadline_date) > new Date()) {
       return 'new';
     }
   }
 
-  // Past boards: completed, cancelled, or past deadline
   if (board.status === 'completed' || board.status === 'cancelled') {
     return 'past';
   }
-  
+
   if (board.deadline_date && new Date(board.deadline_date) < new Date()) {
     return 'past';
   }
 
-  // Live boards: published and active
   if (board.status === 'published') {
     return 'live';
   }
@@ -39,9 +29,6 @@ export function getBoardStatusFilter(board: UserBoard): BoardStatus {
   return null;
 }
 
-/**
- * Checks if a board is active/live
- */
 export function isBoardLive(board: UserBoard): boolean {
   return (
     board.status === 'published' &&
@@ -49,9 +36,6 @@ export function isBoardLive(board: UserBoard): boolean {
   );
 }
 
-/**
- * Checks if a board is past/expired
- */
 export function isBoardPast(board: UserBoard): boolean {
   return (
     board.status === 'completed' ||
@@ -60,18 +44,12 @@ export function isBoardPast(board: UserBoard): boolean {
   );
 }
 
-/**
- * Checks if a board is new (created within last 7 days)
- */
 export function isBoardNew(board: UserBoard): boolean {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   return new Date(board.created_at) >= sevenDaysAgo && isBoardLive(board);
 }
 
-/**
- * Formats the fundraising progress as a percentage
- */
 export function getFundraisingProgress(board: UserBoard): number {
   if (board.goal_type !== 'monetary' || !board.goal_amount || board.goal_amount === 0) {
     return 0;
@@ -79,9 +57,6 @@ export function getFundraisingProgress(board: UserBoard): number {
   return Math.min(100, Math.round((board.total_raised / board.goal_amount) * 100));
 }
 
-/**
- * Gets a human-readable status label
- */
 export function getStatusLabel(status: BoardStatus): string {
   switch (status) {
     case 'live':
@@ -95,9 +70,6 @@ export function getStatusLabel(status: BoardStatus): string {
   }
 }
 
-/**
- * Formats the deadline date relative to now
- */
 export function getDeadlineStatus(deadline?: string): {
   label: string;
   isUrgent: boolean;
@@ -127,9 +99,6 @@ export function getDeadlineStatus(deadline?: string): {
   }
 }
 
-/**
- * Gets the cover image URL with fallback
- */
 export function getCoverImageUrl(
   board: UserBoard,
   size: 'small' | 'medium' | 'large' | 'original' = 'medium'
@@ -149,23 +118,16 @@ export function getCoverImageUrl(
   }
 }
 
-/**
- * Gets the honoree's full name
- */
 export function getHonoreeName(board: UserBoard): string {
   if (!board.honoree_details) return 'Unknown';
-  
+
   const { first_name, last_name } = board.honoree_details;
   return `${first_name || ''} ${last_name || ''}`.trim() || 'Unknown';
 }
 
-/**
- * Filters boards locally (for client-side filtering)
- */
 export function filterBoards(boards: UserBoard[], filters: BoardFilters): UserBoard[] {
   let filtered = [...boards];
 
-  // Filter by status
   if (filters.status) {
     filtered = filtered.filter(board => {
       switch (filters.status) {
@@ -181,7 +143,6 @@ export function filterBoards(boards: UserBoard[], filters: BoardFilters): UserBo
     });
   }
 
-  // Filter by search
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
     filtered = filtered.filter(board => {
@@ -193,7 +154,6 @@ export function filterBoards(boards: UserBoard[], filters: BoardFilters): UserBo
     });
   }
 
-  // Sort boards
   if (filters.sortBy) {
     filtered.sort((a, b) => {
       let aValue: any;
@@ -228,9 +188,6 @@ export function filterBoards(boards: UserBoard[], filters: BoardFilters): UserBo
   return filtered;
 }
 
-/**
- * Groups boards by status
- */
 export function groupBoardsByStatus(boards: UserBoard[]): {
   live: UserBoard[];
   past: UserBoard[];
@@ -245,9 +202,6 @@ export function groupBoardsByStatus(boards: UserBoard[]): {
   };
 }
 
-/**
- * Calculates pagination info
- */
 export function calculatePagination(
   currentPage: number,
   totalRecords: number,
@@ -264,9 +218,6 @@ export function calculatePagination(
   };
 }
 
-/**
- * Gets engagement summary
- */
 export function getEngagementSummary(board: UserBoard): {
   total: number;
   label: string;

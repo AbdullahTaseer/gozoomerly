@@ -58,7 +58,6 @@ const CreateBirthdayBoard = () => {
 
   const { createBirthdayBoard, isLoading: isCreatingBoard, error: createBoardError } = useCreateBirthdayBoard();
 
-  // Group fields by step based on mockup screenshots
   const groupFieldsByStep = () => {
     if (!boardTypeFields.length) return {};
 
@@ -90,51 +89,43 @@ const CreateBirthdayBoard = () => {
   useEffect(() => {
     checkAuth();
 
-    // Get selected board type from localStorage
     const savedBoardType = localStorage.getItem('selectedBoardType');
     if (savedBoardType) {
       try {
         const boardType = JSON.parse(savedBoardType);
         setSelectedBoardType(boardType);
         fetchBoardTypeFields(boardType.id);
-        // Don't remove it yet - will remove after board is created
 
-        // Check if we're starting a new board or continuing an existing one
         const currentBoardId = localStorage.getItem('currentBoardId');
         const savedBoardData = localStorage.getItem('boardTypeFields');
 
-        // Only load saved data if we're continuing an existing board
-        // If there's no currentBoardId, we're starting fresh - clear old data
         if (!currentBoardId && savedBoardData) {
-          // Starting a new board - clear old saved data
+
           localStorage.removeItem('boardTypeFields');
           localStorage.removeItem('currentBoardId');
-          // Reset form state
+
           setCustomFieldValues({});
           setProfilePhotoPreview(null);
           setStep(1);
           setBoardId(null);
         } else if (currentBoardId && savedBoardData) {
-          // Continuing an existing board - load saved data
+
           try {
             const savedData = JSON.parse(savedBoardData);
             setCustomFieldValues(savedData);
-            // If profile photo URL exists, set it as preview
+
             if (savedData.profile_photo_url) {
               setProfilePhotoPreview(savedData.profile_photo_url);
             }
             setBoardId(currentBoardId);
           } catch (error) {
-            console.error('Error parsing saved board data:', error);
           }
         }
       } catch (error) {
-        console.error('Error parsing board type:', error);
         router.push('/compaign');
       }
     } else {
-      // No board type selected, redirect back to selection
-      console.log('No board type in localStorage, redirecting to /compaign');
+
       router.push('/compaign');
     }
   }, []);
@@ -145,7 +136,7 @@ const CreateBirthdayBoard = () => {
       router.push('/signin');
     } else {
       setUserId(user.id);
-      // Fetch user profile for creator info
+
       const supabase = createClient();
       const { data: profile } = await supabase
         .from('profiles')
@@ -166,7 +157,6 @@ const CreateBirthdayBoard = () => {
         setBoardTypeFields(data);
       }
     } catch (err) {
-      console.error('Error fetching board type fields:', err);
     } finally {
       setLoading(false);
     }
@@ -180,13 +170,11 @@ const CreateBirthdayBoard = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setProfilePhotoError('Image size should be less than 5MB');
       return;
     }
 
-    // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       setProfilePhotoError('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
@@ -206,17 +194,14 @@ const CreateBirthdayBoard = () => {
       const fileExt = file.name.split('.').pop();
       const fileName = `board-profile-${user.id}-${Date.now()}.${fileExt}`;
 
-      // Get session token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No active session');
       }
 
-      // Convert file to array buffer
       const arrayBuffer = await file.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
 
-      // Upload using direct storage API endpoint
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
         {
@@ -235,20 +220,16 @@ const CreateBirthdayBoard = () => {
         throw new Error(`Failed to upload image: ${error}`);
       }
 
-      // Construct public URL
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
 
-      // Create preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
 
-      // Store the URL in customFieldValues
       handleFieldChange('profile_photo_url', publicUrl);
     } catch (err) {
-      console.error('Error uploading profile photo:', err);
       setProfilePhotoError(err instanceof Error ? err.message : 'Failed to upload image');
     } finally {
       setUploadingProfilePhoto(false);
@@ -264,7 +245,7 @@ const CreateBirthdayBoard = () => {
     if (step === 2 && !boardId && userId && selectedBoardType) {
       setCreating(true);
       try {
-        // Map theme color to theme name
+
         const getThemeName = (color: string) => {
           const themeMap: Record<string, string> = {
             '#CE7ADD': 'fun-colorful',
@@ -278,19 +259,12 @@ const CreateBirthdayBoard = () => {
           return themeMap[color] || 'fun-colorful';
         };
 
-        // Get board type ID - can be either numeric or UUID string
         const boardTypeId = selectedBoardType.id;
         if (!boardTypeId) {
           toast.error('Invalid board type. Please go back and select a board type again.');
           setCreating(false);
           return;
         }
-
-        console.log('Creating board with params:', {
-          boardTypeId,
-          selectedBoardType,
-          customFieldValues
-        });
 
         const boardData: CreateBirthdayBoardInput = {
           p_board_type_id: boardTypeId,
@@ -436,7 +410,6 @@ const CreateBirthdayBoard = () => {
         }
       }
 
-      // Create a wish/memory with the uploaded media using RPC
       if (userId && uploadedMediaIds.length > 0) {
         const firstName = customFieldValues.first_name || '';
         const wishContent = `Happy Birthday, ${firstName}! Here's to an amazing year ahead! 🎉`;
@@ -453,8 +426,7 @@ const CreateBirthdayBoard = () => {
         });
 
         if (wishError) {
-          console.error('Failed to create memory with media via RPC:', wishError);
-          // Fallback: try direct insert
+
           const { error: directError } = await supabase
             .from('wishes')
             .insert({
@@ -465,7 +437,6 @@ const CreateBirthdayBoard = () => {
             });
 
           if (directError) {
-            console.error('Failed to create memory with direct insert:', directError);
           }
         }
       }
@@ -529,7 +500,6 @@ const CreateBirthdayBoard = () => {
       setSelectedMusicId(musicId);
       handleFieldChange('music_track_id', musicId);
     }
-    console.log('Media uploaded:', mediaIds, 'Music:', musicId, 'URLs:', mediaUrls);
   };
 
   const handleStep3Next = async () => {
@@ -578,7 +548,6 @@ const CreateBirthdayBoard = () => {
   };
 
   const handleGiftSaved = (giftData: any) => {
-    console.log('Gift saved temporarily:', giftData);
     setSavedGiftData(giftData);
   };
 
@@ -808,7 +777,7 @@ const CreateBirthdayBoard = () => {
                           )}
                         </div>
                       ))}
-                      {/* Profile Photo Upload - Always show in first step */}
+                      {}
                       <div>
                         <label className="block text-sm font-medium mb-2">
                           Profile Photo
@@ -881,7 +850,6 @@ const CreateBirthdayBoard = () => {
                           <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
                         </Switch.Root>
                       </div>
-
 
                       <GlobalButton
                         title="Next"
@@ -1170,7 +1138,6 @@ const CreateBirthdayBoard = () => {
                     </div>
                   </div>
                 )}
-
 
                 {step === 6 &&
                   <WhoCanJoin goToLiveBoard={handleStep6Next} />

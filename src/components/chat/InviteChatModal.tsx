@@ -17,7 +17,6 @@ interface User {
   status?: string;
 }
 
-
 interface InviteChatModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -55,17 +54,14 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
       setCurrentUserId(user.id);
       const supabase = createClient();
 
-      // Fetch all users on Zoiax (excluding current user)
       const { data: users, error } = await supabase
         .from('profiles')
         .select('id, name, profile_pic_url, email')
         .neq('id', user.id)
         .limit(50);
 
-      if (error) {
-        console.error('Error loading contacts:', error);
-      } else {
-        // Add default status message for each user
+      if (!error) {
+
         const usersWithStatus = (users || []).map(user => ({
           ...user,
           status: 'Have a nice day!',
@@ -73,29 +69,25 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         setContactsOnZoiax(usersWithStatus);
       }
 
-      // Invite contacts are loaded from MockData
     } catch (err) {
-      console.error('Error loading contacts:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleStartConversation = (userId: string) => {
-    // If onStartConversationWithUserId is provided (when already on chat page), use it directly
+
     if (onStartConversationWithUserId) {
       onStartConversationWithUserId(userId);
       onClose();
       return;
     }
-    
-    // Otherwise, navigate to chat page with userId - the chat page will handle creating/opening the conversation
+
     router.push(`/dashboard/chat?userId=${userId}`);
     onClose();
   };
 
   const handleInvite = (contact: typeof inviteContacts[0]) => {
-    console.log('Inviting contact:', contact);
     alert(`Invite sent to ${contact.name} at ${contact.phone}`);
   };
 
@@ -129,7 +121,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Contacts on Zoiax */}
+          {}
           <div>
             <h3 className="text-black text-base mb-3">Contacts on Zoiax</h3>
             <div className="space-y-4">
@@ -150,7 +142,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
             </div>
           </div>
 
-          {/* Invite to Zoiax */}
+          {}
           <div>
             <h3 className="text-black text-base mb-3">Invite to Zoiax</h3>
             <div className="space-y-4">
@@ -178,7 +170,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
 
   return (
     <>
-      {/* Overlay */}
+      {}
       <div
         className={`fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -186,7 +178,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         onClick={onClose}
       />
 
-      {/* Mobile Bottom Slide-up Modal */}
+      {}
       <div
         className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
           isOpen ? 'translate-y-0' : 'translate-y-full'
@@ -202,7 +194,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
         </div>
       </div>
 
-      {/* Desktop Centered Modal */}
+      {}
       <div
         className={`min-[770px]:flex hidden fixed inset-0 z-[1001] items-center justify-center transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'

@@ -26,24 +26,19 @@ const ActiveBoards = () => {
       const user = await authService.getUser();
 
       if (!user) {
-        console.error('No user logged in');
         setLoading(false);
         return;
       }
 
-      // Fetch user's boards and filter only live ones
       const { data: userBoards, error: boardsError } = await getUserBoards(user.id);
 
       if (boardsError) {
-        console.error('Error fetching user boards:', boardsError);
         setBoards([]);
         return;
       }
 
-      // Filter only live boards
       const liveBoards = (userBoards || []).filter(board => board.status === 'live');
 
-      // Fetch top contributors for each board
       const supabase = createClient();
       const boardsWithContributors = await Promise.all(
         liveBoards.map(async (board) => {
@@ -83,7 +78,6 @@ const ActiveBoards = () => {
               topContributors: contributorAvatars,
             };
           } catch (err) {
-            console.error('Error fetching contributors for board:', board.id, err);
             return {
               ...board,
               topContributors: [],
@@ -94,7 +88,6 @@ const ActiveBoards = () => {
 
       setBoards(boardsWithContributors);
     } catch (err) {
-      console.error('Error loading boards:', err);
       setBoards([]);
     } finally {
       setLoading(false);
@@ -122,5 +115,4 @@ const ActiveBoards = () => {
 };
 
 export default ActiveBoards;
-
 
