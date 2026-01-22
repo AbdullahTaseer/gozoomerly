@@ -1,5 +1,6 @@
 'use client';
 
+import React, { ComponentType } from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import {
