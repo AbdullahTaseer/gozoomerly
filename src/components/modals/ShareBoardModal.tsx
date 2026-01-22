@@ -57,15 +57,12 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
 
-      {}
       <div className="relative bg-white rounded-[24px] w-[400px] max-w-[90vw] p-6">
-        {}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-black">Share</h2>
           <button
@@ -76,14 +73,12 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
           </button>
         </div>
 
-        {}
         <div className="flex justify-center mb-6">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
             <Share2 size={32} className="text-gray-700" />
           </div>
         </div>
 
-        {}
         <div className="flex items-center border border-gray-300 rounded-full px-4 py-3 mb-6">
           <input
             type="text"
@@ -101,7 +96,6 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
           </button>
         </div>
 
-        {}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-black mb-4">Share via</h3>
           <div className="flex items-center gap-6">
@@ -129,7 +123,6 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
           </div>
         </div>
 
-        {}
         <button
           onClick={onClose}
           className="w-full py-4 rounded-full text-white font-semibold text-base"

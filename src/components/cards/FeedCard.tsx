@@ -97,7 +97,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const generatedShareUrl = shareUrl || (boardSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/dashboard/boards/${boardSlug}` : '');
+  const generatedShareUrl = shareUrl || (boardSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/u/boards/${boardSlug}` : '');
 
   const handleVideoClick = () => {
     if (onVideoClick) {
@@ -369,7 +369,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
         )}
       </div>
 
-      {}
       <ShareBoardModal
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
@@ -377,7 +376,6 @@ const FeedCard: React.FC<FeedCardProps> = ({
         title={title}
       />
 
-      {}
       {boardId && (
         <InviteToBoardModal
           isOpen={isInviteModalOpen}

@@ -91,32 +91,32 @@ const AllBoards = () => {
             <BoardCategoryCard
               count={counts.new}
               label="New Boards"
-              path="/dashboard/allBoards/new"
+              path="/u/allBoards/new"
             />
             <BoardCategoryCard
               count={counts.active}
               label="Active Boards"
-              path="/dashboard/allBoards/active"
+              path="/u/allBoards/active"
             />
             <BoardCategoryCard
               count={counts.your}
               label="Your Boards"
-              path="/dashboard/allBoards/your"
+              path="/u/allBoards/your"
             />
             <BoardCategoryCard
               count={counts.post}
               label="Post Boards"
-              path="/dashboard/allBoards/post"
+              path="/u/allBoards/post"
             />
             <BoardCategoryCard
               count={counts.past}
               label="Past Boards"
-              path="/dashboard/allBoards/past"
+              path="/u/allBoards/past"
             />
             <BoardCategoryCard
               count={counts.spotlight}
               label="Spotlight Campaigns"
-              path="/dashboard/allBoards/spotlight-compaign"
+              path="/u/allBoards/spotlight-compaign"
             />
           </div>
         )}

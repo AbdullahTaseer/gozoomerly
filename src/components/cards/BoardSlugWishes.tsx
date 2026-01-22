@@ -113,7 +113,7 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
   };
 
   const handleUserClick = (userId: string) => {
-    router.push(`/dashboard/visitProfile/${userId}`);
+    router.push(`/u/visitProfile/${userId}`);
   };
 
   const handleCommentClick = (wish: WishWithDetails) => {

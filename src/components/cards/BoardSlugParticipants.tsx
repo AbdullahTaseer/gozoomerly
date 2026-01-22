@@ -99,7 +99,7 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
   };
 
   const handleUserClick = (userId: string) => {
-    router.push(`/dashboard/visitProfile/${userId}`);
+    router.push(`/u/visitProfile/${userId}`);
   };
 
   if (loading && participants.length === 0) {

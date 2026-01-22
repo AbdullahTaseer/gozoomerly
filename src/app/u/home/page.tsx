@@ -186,7 +186,7 @@ const Home = () => {
   return (
     <div>
       <DashNavbar />
-      <MobileHeader title={'Boards'} complexRightHref="/dashboard/connections" complexRightTitle="Connections" />
+      <MobileHeader title={'Boards'} complexRightHref="/u/connections" complexRightTitle="Connections" />
       <div className='px-[7%] py-5 max-[769px]:px-3'>
         <div>
           <div className='flex items-center gap-3 mb-6 flex-shrink-0 max-w-[400px] mx-auto'>
@@ -227,7 +227,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>New Invites</h3>
                   <button
-                    onClick={() => router.push('/dashboard/allBoards/new')}
+                    onClick={() => router.push('/u/allBoards/new')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />
@@ -267,7 +267,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Active Social</h3>
                   <button
-                    onClick={() => router.push('/dashboard/allBoards/active')}
+                    onClick={() => router.push('/u/allBoards/active')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />
@@ -280,7 +280,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Active Pro</h3>
                   <button
-                    onClick={() => router.push('/dashboard/allBoards/active')}
+                    onClick={() => router.push('/u/allBoards/active')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />
@@ -293,7 +293,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Spotlight</h3>
                   <button
-                    onClick={() => router.push('/dashboard/allBoards/spotlight-compaign')}
+                    onClick={() => router.push('/u/allBoards/spotlight-compaign')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />
@@ -337,7 +337,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Following</h3>
                   <button
-                    onClick={() => router.push('/dashboard/allBoards/active')}
+                    onClick={() => router.push('/u/allBoards/active')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />
@@ -426,8 +426,8 @@ const Home = () => {
                         comments={wish.comments_count || 0}
                         shares={0}
                         memories={mediaArray.length || 0}
-                        onUserClick={() => router.push(`/dashboard/boards/${wish.board_id}`)}
-                        onVideoClick={() => router.push(`/dashboard/boards/${wish.board_id}`)}
+                        onUserClick={() => router.push(`/u/boards/${wish.board_id}`)}
+                        onVideoClick={() => router.push(`/u/boards/${wish.board_id}`)}
                         boardSlug={wish.board_slug}
                         boardId={wish.board_id}
                         showOnlyLikeAndComment={true}

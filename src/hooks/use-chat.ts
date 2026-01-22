@@ -61,7 +61,7 @@ export const useChat = () => {
       
       // Only restore from localStorage if there's no URL param (let URL params take priority)
       // Check if we're on the chat page and if there are URL params
-      const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/dashboard/chat');
+      const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/u/chat');
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasUrlParams = urlParams && (urlParams.get('conversationId') || urlParams.get('userId'));
       

@@ -78,7 +78,7 @@ const VisitProfilePage = () => {
       setCurrentUserId(currentUser.id);
 
       if (currentUser.id === profileId) {
-        router.push('/dashboard/profile');
+        router.push('/u/profile');
         return;
       }
 

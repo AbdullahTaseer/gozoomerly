@@ -61,7 +61,7 @@ const Boards = () => {
   };
 
   const handleViewBoard = (board: Board) => {
-    router.push(`/dashboard/boards/${board.id}`);
+    router.push(`/u/boards/${board.id}`);
   };
 
   return (

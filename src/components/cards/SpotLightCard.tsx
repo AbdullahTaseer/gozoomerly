@@ -37,7 +37,7 @@ const SpotLightCard = ({
   const progress = target > 0 ? Math.min((raised / target) * 100, 100) : 0;
 
   return (
-    <div className='min-w-[370px] bg-[#18171F] text-white space-y-4 p-4 rounded-[12px]'>
+    <div className='w-[400px] bg-[#18171F] text-white space-y-4 p-4 rounded-[12px]'>
       <h2 className='text-[24px]'>Campaign for {name}!</h2>
 
       <div className='bg-[#18171F] p-4 rounded-[12px] relative overflow-hidden'>

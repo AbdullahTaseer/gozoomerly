@@ -218,7 +218,7 @@ export async function generateMetadata(props: any): Promise<Metadata> {
   const boardId = params.id;
   const { data: board } = await getBoardById(boardId);
   const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const shareUrl = `${siteBase}/dashboard/boards/${boardId}`;
+  const shareUrl = `${siteBase}/u/boards/${boardId}`;
 
   let imageUrl = `${siteBase}/Zoomerly.svg`;
   if (board?.cover_media_id) {
@@ -316,7 +316,7 @@ export default async function BoardPage(props: any) {
   const boardId = params.id;
   const { data: board } = await getBoardById(boardId);
   const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
-  const shareUrl = `${siteBase}/dashboard/boards/${boardId}`;
+  const shareUrl = `${siteBase}/u/boards/${boardId}`;
 
   const supabase = await createClient();
   let giftOptions: any[] = [];
@@ -412,7 +412,7 @@ export default async function BoardPage(props: any) {
     <div className="w-full min-h-screen bg-white">
       <div className='flex justify-between items-center p-4 max-w-[1200px] mx-auto'>
         <div className='flex gap-4 items-center'>
-          <Link href={"/dashboard/boards"}>
+          <Link href={"/u/boards"}>
             <ArrowLeft className='cursor-pointer' />
           </Link>
           <p className='max-[450px]:text-[24px] max-[768px]:text-[32px] max-[1024px]:text-[42px] text-[52px]'>{honoreeName}</p>

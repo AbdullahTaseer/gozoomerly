@@ -39,7 +39,7 @@ const SignIn = () => {
     setLoading(false);
 
     if (response.success) {
-      router.push('/dashboard');
+      router.push('/u');
     } else {
       setError(response.error || 'Sign in failed');
     }

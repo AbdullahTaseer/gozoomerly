@@ -163,7 +163,7 @@ const WishCommentsModal: React.FC<WishCommentsModalProps> = ({
   };
 
   const handleUserClick = (userId: string) => {
-    router.push(`/dashboard/visitProfile/${userId}`);
+    router.push(`/u/visitProfile/${userId}`);
   };
 
   if (!isOpen) return null;

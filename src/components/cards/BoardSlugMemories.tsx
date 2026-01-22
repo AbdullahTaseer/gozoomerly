@@ -143,7 +143,7 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
   };
 
   const handleUserClick = (userId: string) => {
-    router.push(`/dashboard/visitProfile/${userId}`);
+    router.push(`/u/visitProfile/${userId}`);
   };
 
   const handleLikeClick = async (wishId: string, currentlyLiked: boolean) => {

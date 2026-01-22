@@ -1,6 +1,6 @@
 "use client";
 
-import {  useState, useEffect  } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import DashFooter from '@/components/footer/DashFooter';
 import BottomTabs from '@/components/footer/BottomTabs';
@@ -8,7 +8,7 @@ import CreateOrShareModal from '@/components/modals/CreateOrShareModal';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 import { chatOpenState } from '@/lib/chatOpenState';
 
-const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
+const UserLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname() || '';
   const [isCreateOrShareModalOpen, setIsCreateOrShareModalOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -23,12 +23,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
     return unsubscribe;
   }, []);
 
-  const hideNavbarForBoardDetail = /^\/dashboard\/boards\/[^\/]+$/.test(pathname);
+  const hideNavbarForBoardDetail = /^\/u\/boards\/[^\/]+$/.test(pathname);
   const shouldHideBottomTabs = isChatOpen;
 
   return (
     <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
-      {}
+      { }
       <main className="flex-1">
         {children}
       </main>
@@ -42,4 +42,4 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export default DashboardLayout;
+export default UserLayout;

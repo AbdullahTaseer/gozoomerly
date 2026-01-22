@@ -135,7 +135,7 @@ const CircleById = ({ params }: CircleByIdProps) => {
                   Try Again
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/circles')}
+                  onClick={() => router.push('/u/circles')}
                   className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
                 >
                   Back to Circles

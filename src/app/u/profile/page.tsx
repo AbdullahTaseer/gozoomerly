@@ -72,12 +72,12 @@ const Profile = () => {
   const [showFollowingModal, setIsShowFollowingModal] = useState(false);
 
   const menuItems = [
-    { label: "Memories", icon: MyMemories, href: '/dashboard/memories' },
-    { label: "Boards", icon: BoardsIcon, href: '/dashboard/boards' },
-    { label: "My Contributions", icon: MyContributors, href: '/dashboard/myContributions' },
-    { label: "Share with friends", icon: Friends, href: '/dashboard/friends' },
-    { label: "Bio", icon: Bio, href: '/dashboard/bio' },
-    { label: "Activity", icon: Activity, href: '/dashboard/activity' },
+    { label: "Memories", icon: MyMemories, href: '/u/memories' },
+    { label: "Boards", icon: BoardsIcon, href: '/u/boards' },
+    { label: "My Contributions", icon: MyContributors, href: '/u/myContributions' },
+    { label: "Share with friends", icon: Friends, href: '/u/friends' },
+    { label: "Bio", icon: Bio, href: '/u/bio' },
+    { label: "Activity", icon: Activity, href: '/u/activity' },
     { label: "Followers", icon: Follow, onClick: () => setIsShowFollowerModal(true) },
     { label: "Following", icon: Follow, onClick: () => setIsShowFollowingModal(true) },
   ];
@@ -287,7 +287,7 @@ const Profile = () => {
         <div className='py-4 border-b'>
           <div className='flex justify-between gap-3 items-center mb-2'>
             <p className='text-[20px] font-semibold'>Payment Method</p>
-            <Link href='/dashboard/paymentMethod' className='cursor-pointer hover:text-pink-500'>Change</Link>
+            <Link href='/u/paymentMethod' className='cursor-pointer hover:text-pink-500'>Change</Link>
           </div>
           <PaymentMethodCard
             showRadio={false}

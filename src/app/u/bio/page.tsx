@@ -96,7 +96,7 @@ const BioPage = () => {
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => router.push('/dashboard/profile')}
+            onClick={() => router.push('/u/profile')}
             className="p-2 hover:bg-gray-100 cursor-pointer rounded-lg transition-colors"
           >
             <ArrowLeft size={24} />

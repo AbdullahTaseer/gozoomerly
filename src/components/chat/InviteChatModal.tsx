@@ -83,7 +83,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
       return;
     }
 
-    router.push(`/dashboard/chat?userId=${userId}`);
+    router.push(`/u/chat?userId=${userId}`);
     onClose();
   };
 

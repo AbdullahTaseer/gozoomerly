@@ -4,7 +4,7 @@ export function generateInviteLink(slug: string): string {
     ? `${window.location.protocol}//${window.location.host}`
     : 'http://localhost:3000';
 
-  return `${baseUrl}/dashboard/boards/${slug}`;
+  return `${baseUrl}/u/boards/${slug}`;
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

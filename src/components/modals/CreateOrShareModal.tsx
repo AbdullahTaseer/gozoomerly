@@ -28,7 +28,7 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
       icon: Layers,
       label: 'Active Boards',
       onClick: () => {
-        router.push('/dashboard/allBoards/active');
+        router.push('/u/allBoards/active');
         onClose();
       },
     },
@@ -44,7 +44,7 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
       icon: ImageIcon,
       label: 'Share a Memory',
       onClick: () => {
-        router.push('/dashboard/connections');
+        router.push('/u/connections');
         onClose();
       },
     },

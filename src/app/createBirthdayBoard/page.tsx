@@ -481,7 +481,7 @@ const CreateBirthdayBoard = () => {
       setProfilePhotoPreview(null);
 
       toast.success('Board published successfully!');
-      router.push('/dashboard/home');
+      router.push('/u/home');
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';

@@ -338,7 +338,7 @@ const Connections = () => {
   const handleChatClick = async (connection: Connection) => {
     if (!currentUser?.id) return;
 
-    router.push(`/dashboard/chat?userId=${connection.profileId}`);
+    router.push(`/u/chat?userId=${connection.profileId}`);
   };
 
   const handleCardClick = (connection: Connection) => {
@@ -447,7 +447,7 @@ const Connections = () => {
   return (
     <>
       <DashNavbar />
-      <MobileHeader title="Connections" complexRightHref="/dashboard/home" complexRightTitle="Boards" />
+      <MobileHeader title="Connections" complexRightHref="/u/home" complexRightTitle="Boards" />
       <div className='px-[7%] max-[769px]:px-4 pb-8'>
         {}
         <div className='mt-6'>

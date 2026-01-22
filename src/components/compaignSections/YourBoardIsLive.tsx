@@ -175,7 +175,7 @@ const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uplo
           />
         )}
 
-        <Link href="/dashboard/home">
+        <Link href="/u/home">
           <GlobalButton
             title="Save as Draft & Go to Dashboard"
             height="48px"

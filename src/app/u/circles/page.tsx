@@ -171,7 +171,7 @@ const Circles = () => {
                   backgroundImage={circle.image_url || circle.color || '#667eea'}
                   avatars={circle.avatars}
                   memberCount={circle.memberCount}
-                  onClick={() => router.push(`/dashboard/circle/${circle.id}`)}
+                  onClick={() => router.push(`/u/circle/${circle.id}`)}
                   onEdit={() => handleEditCircle(circle)}
                   onDelete={() => handleDeleteCircle(circle.id, circle.name)}
                 />

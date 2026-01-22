@@ -41,15 +41,15 @@ const BottomTabs = () => {
           <TabItem
             icon={<Home size={22} />}
             label="Home"
-            active={pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/pro")}
-            onClick={() => router.push("/dashboard")}
+            active={pathname.startsWith("/u/home")}
+            onClick={() => router.push("/u/home")}
           />
 
           <TabItem
             icon={<Award size={22} />}
             label="Pro"
-            active={pathname.startsWith("/dashboard/pro")}
-            onClick={() => router.push("/dashboard/pro")}
+            active={pathname.startsWith("/u/proScreen")}
+            onClick={() => router.push("/u/proScreen")}
           />
 
           <div className="w-12" />
@@ -57,12 +57,12 @@ const BottomTabs = () => {
           <TabItem
             icon={<MessageCircle size={22} />}
             label="Chats"
-            active={pathname.startsWith("/dashboard/chat")}
-            onClick={() => router.push("/dashboard/chat")}
+            active={pathname.startsWith("/u/chat")}
+            onClick={() => router.push("/u/chat")}
           />
 
           <div
-            onClick={() => router.push("/dashboard/profile")}
+            onClick={() => router.push("/u/profile")}
             className="flex flex-col items-center gap-1 cursor-pointer"
           >
             <img
@@ -71,7 +71,7 @@ const BottomTabs = () => {
               className="w-7 h-7 rounded-full"
             />
             <span
-              className={`text-xs ${pathname.startsWith("/dashboard/profile")
+              className={`text-xs ${pathname.startsWith("/u/profile")
                 ? "text-white"
                 : "text-gray-400"
                 }`}

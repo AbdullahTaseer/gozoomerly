@@ -19,25 +19,25 @@ const DashNavbar = ({ hide = true }: props) => {
 
   const isActive = (option: string) => {
     if (option === "Home") {
-      return pathname === "/dashboard/home";
+      return pathname === "/u/home";
     }
     if (option === "Boards") {
-      return pathname === "/dashboard/boards" || pathname === "/dashboard/allBoards" || pathname.startsWith("/dashboard/boards/");
+      return pathname === "/u/boards" || pathname === "/u/allBoards" || pathname.startsWith("/u/boards/");
     }
     if (option === "Pro") {
-      return pathname === ("/dashboard/proScreen");
+      return pathname === ("/u/proScreen");
     }
     if (option === "Chat") {
-      return pathname === "/dashboard/chat";
+      return pathname === "/u/chat";
     }
     if (option === "Circles") {
-      return pathname === "/dashboard/circles";
+      return pathname === "/u/circles";
     }
     if (option === "Connections") {
-      return pathname === "/dashboard/connections";
+      return pathname === "/u/connections";
     }
     if (option === "Profile") {
-      return pathname === "/dashboard/profile";
+      return pathname === "/u/profile";
     }
 
     return false;
@@ -52,25 +52,25 @@ const DashNavbar = ({ hide = true }: props) => {
   const handleNavigation = (option: string) => {
     switch (option) {
       case "Home":
-        router.push("/dashboard/home");
+        router.push("/u/home");
         break;
       case "Boards":
-        router.push("/dashboard/boards");
+        router.push("/u/boards");
         break;
       case "Pro":
-        router.push("/dashboard/proScreen");
+        router.push("/u/proScreen");
         break;
       case "Chat":
-        router.push("/dashboard/chat");
+        router.push("/u/chat");
         break;
       case "Circles":
-        router.push("/dashboard/circles");
+        router.push("/u/circles");
         break;
       case "Connections":
-        router.push("/dashboard/connections");
+        router.push("/u/connections");
         break;
       case "Profile":
-        router.push("/dashboard/profile");
+        router.push("/u/profile");
         break;
       default:
         break;
@@ -80,7 +80,7 @@ const DashNavbar = ({ hide = true }: props) => {
   return (
     <>
       <div className={`${hide ? "max-[769px]:hidden" : ""} flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-4 max-[1024px]:pb-3 bg-white sticky shadow-sm top-0 z-[100]`}>
-        <Image src={AppLogo} onClick={() => router.push("/dashboard")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
+        <Image src={AppLogo} onClick={() => router.push("/u")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
         <div className='flex items-center gap-6 max-[900px]:gap-4 max-[769px]:hidden'>
           {desktopOptions.map((option, i) => (
             <p

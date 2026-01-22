@@ -77,29 +77,27 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {}
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
       />
 
-      {}
       <div className="relative bg-white rounded-[24px] w-[450px] max-w-[90vw] max-h-[80vh] flex flex-col">
-        {}
-        <div className="flex items-center justify-between p-6 border-b">
+      
+        <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-xl font-bold text-black">
             Invite to {boardTitle || 'Board'}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-1 hover:bg-gray-100 border border-black rounded-full transition-colors"
           >
-            <X size={24} className="text-gray-600" />
+            <X size={16} className="text-gray-600" />
           </button>
         </div>
 
-        {}
+        
         <div className="flex border-b">
           <button
             onClick={() => setActiveTab('followers')}
@@ -123,7 +121,6 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           </button>
         </div>
 
-        {}
         <div className="p-4">
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -137,7 +134,6 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           </div>
         </div>
 
-        {}
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -203,7 +199,6 @@ const InviteToBoardModal: React.FC<InviteToBoardModalProps> = ({
           )}
         </div>
 
-        {}
         <div className="p-4 border-t">
           <button
             onClick={onClose}

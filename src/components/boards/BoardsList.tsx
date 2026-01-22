@@ -34,11 +34,11 @@ export const BoardsList: React.FC<BoardsListProps> = ({ boards, loading = false 
   };
 
   const handleViewBoard = (board: Board) => {
-    router.push(`/dashboard/boards/${board.id}`);
+    router.push(`/u/boards/${board.id}`);
   };
 
   const handleCreatorClick = (creatorId: string) => {
-    router.push(`/dashboard/visitProfile/${creatorId}`);
+    router.push(`/u/visitProfile/${creatorId}`);
   };
 
   if (loading) {
