@@ -24,19 +24,45 @@ const SignIn = () => {
     if (e) e.preventDefault();
     setError('');
 
-    if (loginMode === 'email' && (!email || !password)) {
-      setError('Please fill in all fields');
-      return;
+    if (loginMode === 'email') {
+      const trimmedEmail = email ? email.trim() : '';
+      const trimmedPassword = password ? password.trim() : '';
+      if (!trimmedEmail || !trimmedPassword) {
+        setError('Please fill in all fields');
+        return;
+      }
     }
 
-    if (loginMode === 'phone' && (!phone || !password)) {
-      setError('Please fill in all fields');
-      return;
-    }
+    if (loginMode === 'phone') {
+      const trimmedPhone = phone ? phone.trim() : '';
+      const trimmedPassword = password ? password.trim() : '';
+      
+      // Check if fields are filled
+      if (!trimmedPhone || !trimmedPassword) {
+        setError('Please fill in all fields');
+        return;
+      }
 
-    if (loginMode === 'phone' && phoneError) {
-      setError(phoneError);
-      return;
+      // Basic phone validation - must start with + and have at least 1 digit after country code
+      if (!trimmedPhone.startsWith('+')) {
+        setError('Please select a country code');
+        return;
+      }
+
+      // Check if there's a number after the country code
+      // Country codes are 1-3 digits, so we need at least 4 characters total (+XXX)
+      // and at least one more character for the phone number
+      if (trimmedPhone.length < 5) {
+        setError('Please enter a valid phone number');
+        return;
+      }
+
+      // Extract the part after the country code (after + and 1-3 digits)
+      const afterCountryCode = trimmedPhone.replace(/^\+\d{1,3}/, '').trim();
+      if (!afterCountryCode || afterCountryCode.length === 0) {
+        setError('Please enter a valid phone number');
+        return;
+      }
     }
     setLoading(true);
     const response = loginMode === 'email'
