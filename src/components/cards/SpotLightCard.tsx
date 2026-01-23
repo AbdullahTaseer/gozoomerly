@@ -38,7 +38,7 @@ const SpotLightCard = ({
 
   return (
     <div className='w-[400px] bg-[#18171F] text-white space-y-4 p-4 rounded-[12px]'>
-      <h2 className='text-[24px]'>Campaign for {name}!</h2>
+      <h2 className='text-[24px] line-clamp-1'>Campaign for {name}!</h2>
 
       <div className='bg-[#18171F] p-4 rounded-[12px] relative overflow-hidden'>
         <div className='absolute inset-0 opacity-20 z-0'>
@@ -71,7 +71,7 @@ const SpotLightCard = ({
             </div>
           )}
 
-          <p className='text-white text-sm font-medium leading-relaxed'>
+          <p className='text-white line-clamp-4 text-sm font-medium leading-relaxed'>
             {description}
           </p>
 

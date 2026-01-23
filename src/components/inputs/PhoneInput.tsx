@@ -9,6 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { COUNTRY_PHONE_CODES } from "@/lib/MockData";
+import { Search } from "lucide-react";
 
 interface PhoneInputProps {
   id?: string;
@@ -41,10 +42,25 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState<string>("");
+  const [isOpen, setIsOpen] = useState(false);
   const lastSentValueRef = useRef<string>("");
   const isInitializedRef = useRef<boolean>(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const countries = Country.getAllCountries();
+  
+  // Filter countries based on search query
+  const filteredCountries = countries.filter((country) => {
+    if (!COUNTRY_PHONE_CODES[country.isoCode]) return false;
+    if (!countrySearchQuery.trim()) return true;
+    const query = countrySearchQuery.toLowerCase();
+    return (
+      country.name.toLowerCase().includes(query) ||
+      COUNTRY_PHONE_CODES[country.isoCode].includes(query) ||
+      country.isoCode.toLowerCase().includes(query)
+    );
+  });
 
   // Initialize from value prop if it contains country code (only on mount or external changes)
   useEffect(() => {
@@ -177,7 +193,20 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   const handleCountryChange = (countryIso: string) => {
     setSelectedCountryCode(countryIso);
     setLocalError(null);
+    setCountrySearchQuery("");
+    setIsOpen(false);
   };
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    } else {
+      setCountrySearchQuery("");
+    }
+  }, [isOpen]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -199,12 +228,14 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className={`w-full ${className}`} style={{ width }}>
       <div className="flex gap-2">
-        {/* Country Code Selector */}
+        {/* Country Code Selector with Search using shadcn Select */}
         <div className="relative" style={{ width: "120px", flexShrink: 0 }}>
           <Select
             value={selectedCountryCode}
             onValueChange={handleCountryChange}
             required={required}
+            open={isOpen}
+            onOpenChange={setIsOpen}
           >
             <SelectTrigger
               onFocus={() => setIsFocused(true)}
@@ -213,23 +244,60 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
               style={{ height }}
             >
               <SelectValue placeholder="Code" className="text-black">
-                {getDisplayValue() || "Select"}
+                {getDisplayValue() || "Code"}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="max-h-[300px] overflow-y-auto">
-              {countries
-                .filter((country) => COUNTRY_PHONE_CODES[country.isoCode])
-                .map((country) => (
-                  <SelectItem key={country.isoCode} value={country.isoCode}>
-                    <span className="flex items-center gap-2">
-                      <span>{country.flag}</span>
-                      <span>{country.name}</span>
-                      <span className="text-gray-500">
-                        {COUNTRY_PHONE_CODES[country.isoCode]}
+            <SelectContent className="max-h-[400px]">
+              {/* Search Input */}
+              <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={countrySearchQuery}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      setCountrySearchQuery(e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      // Prevent closing dropdown when typing
+                      if (e.key === "Escape") {
+                        setIsOpen(false);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Search country..."
+                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Country List */}
+              <div className="overflow-y-auto max-h-[280px]">
+                {filteredCountries.length > 0 ? (
+                  filteredCountries.map((country) => (
+                    <SelectItem
+                      key={country.isoCode}
+                      value={country.isoCode}
+                      className="cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2 w-full">
+                        <span>{country.flag}</span>
+                        <span className="flex-1">{country.name}</span>
+                        <span className="text-gray-500 text-xs">
+                          {COUNTRY_PHONE_CODES[country.isoCode]}
+                        </span>
                       </span>
-                    </span>
-                  </SelectItem>
-                ))}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <div className="px-3 py-4 text-center text-sm text-gray-500">
+                    No countries found
+                  </div>
+                )}
+              </div>
             </SelectContent>
           </Select>
         </div>
