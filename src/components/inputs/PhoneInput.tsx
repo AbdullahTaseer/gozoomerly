@@ -23,6 +23,7 @@ interface PhoneInputProps {
   height?: string;
   required?: boolean;
   placeholder?: string;
+  validateOnMount?: boolean;
 }
 
 const PhoneInput: React.FC<PhoneInputProps> = ({
@@ -37,6 +38,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   height = "50px",
   required = false,
   placeholder,
+  validateOnMount = false,
 }) => {
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("");
   const [phoneNumber, setPhoneNumber] = useState<string>("");
@@ -44,13 +46,13 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [countrySearchQuery, setCountrySearchQuery] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const lastSentValueRef = useRef<string>("");
   const isInitializedRef = useRef<boolean>(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const countries = Country.getAllCountries();
   
-  // Filter countries based on search query
   const filteredCountries = countries.filter((country) => {
     if (!COUNTRY_PHONE_CODES[country.isoCode]) return false;
     if (!countrySearchQuery.trim()) return true;
@@ -62,22 +64,17 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     );
   });
 
-  // Initialize from value prop if it contains country code (only on mount or external changes)
   useEffect(() => {
-    // Calculate what our current full phone would be
     const currentFullPhone = selectedCountryCode && COUNTRY_PHONE_CODES[selectedCountryCode]
       ? `${COUNTRY_PHONE_CODES[selectedCountryCode]}${phoneNumber}`
       : phoneNumber;
 
-    // If the value matches what we last sent, it's our own update - ignore it
     if (value === lastSentValueRef.current) {
       return;
     }
 
-    // Only update if the incoming value is different from what we have
     if (value !== currentFullPhone) {
       if (value) {
-        // Check if value starts with a country code
         const matchedCode = Object.entries(COUNTRY_PHONE_CODES).find(([_, code]) =>
           value.startsWith(code)
         );
@@ -86,7 +83,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           setSelectedCountryCode(countryIso);
           setPhoneNumber(value.replace(code, "").trim());
         } else if (value.startsWith("+")) {
-          // Try to extract country code from value
           const codeMatch = value.match(/^\+(\d{1,3})/);
           if (codeMatch) {
             const code = `+${codeMatch[1]}`;
@@ -106,7 +102,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           setPhoneNumber(value);
         }
       } else if (!isInitializedRef.current) {
-        // Value is empty, reset only on initial mount
         setSelectedCountryCode("");
         setPhoneNumber("");
         isInitializedRef.current = true;
@@ -116,15 +111,11 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     }
   }, [value]);
 
-  // Validate and notify parent
   useEffect(() => {
-    // Ensure we're initialized before calling onChange
-    // But allow onChange if user is actively typing (phoneNumber has value)
     if (!isInitializedRef.current && !phoneNumber && !selectedCountryCode) {
       return;
     }
 
-    // Mark as initialized if we have any user input
     if (!isInitializedRef.current && (phoneNumber || selectedCountryCode)) {
       isInitializedRef.current = true;
     }
@@ -133,20 +124,29 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       ? `${COUNTRY_PHONE_CODES[selectedCountryCode]}${phoneNumber}`
       : phoneNumber;
 
-    // Only call onChange if the value actually changed
     if (fullPhone !== lastSentValueRef.current && onChange) {
       lastSentValueRef.current = fullPhone;
       onChange(fullPhone);
     }
   }, [selectedCountryCode, phoneNumber, onChange]);
 
-  // Separate validation effect
   useEffect(() => {
-    if (!isInitializedRef.current) {
+    if (validateOnMount) {
+      setShouldShowValidation(true);
+    }
+  }, [validateOnMount]);
+
+  const validate = (force = false) => {
+    if (!force && !shouldShowValidation) {
+      if (!required) {
+        if (onValidationError) {
+          onValidationError("");
+        }
+        return;
+      }
       return;
     }
 
-    // Only validate if required
     if (!required) {
       setLocalError(null);
       if (onValidationError) {
@@ -155,7 +155,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       return;
     }
 
-    // Validation
     if (!selectedCountryCode) {
       const errorMsg = "Country code is required";
       setLocalError(errorMsg);
@@ -183,21 +182,33 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       return;
     }
 
-    // All validation passed - clear error
     setLocalError(null);
     if (onValidationError) {
       onValidationError("");
     }
-  }, [selectedCountryCode, phoneNumber, required, onValidationError]);
+  };
+
+  useEffect(() => {
+    if (shouldShowValidation) {
+      validate(true);
+    }
+  }, [selectedCountryCode, phoneNumber, required, onValidationError, shouldShowValidation]);
+
+  useEffect(() => {
+    if (validateOnMount) {
+      validate(true);
+    }
+  }, [validateOnMount]);
 
   const handleCountryChange = (countryIso: string) => {
     setSelectedCountryCode(countryIso);
-    setLocalError(null);
+    if (shouldShowValidation) {
+      setLocalError(null);
+    }
     setCountrySearchQuery("");
     setIsOpen(false);
   };
 
-  // Focus search input when dropdown opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -210,10 +221,11 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
-    // Only allow digits, spaces, hyphens, and parentheses
     if (inputValue === "" || /^[\d\s\-\(\)]*$/.test(inputValue)) {
       setPhoneNumber(inputValue);
-      setLocalError(null);
+      if (shouldShowValidation) {
+        setLocalError(null);
+      }
     }
   };
 
@@ -228,7 +240,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className={`w-full ${className}`} style={{ width }}>
       <div className="flex gap-2">
-        {/* Country Code Selector with Search using shadcn Select */}
         <div className="relative" style={{ width: "120px", flexShrink: 0 }}>
           <Select
             value={selectedCountryCode}
@@ -248,7 +259,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-[400px]">
-              {/* Search Input */}
               <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
                 <div className="relative">
                   <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
@@ -262,7 +272,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                     }}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      // Prevent closing dropdown when typing
                       if (e.key === "Escape") {
                         setIsOpen(false);
                       }
@@ -274,7 +283,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
                 </div>
               </div>
 
-              {/* Country List */}
               <div className="overflow-y-auto max-h-[280px]">
                 {filteredCountries.length > 0 ? (
                   filteredCountries.map((country) => (
@@ -302,7 +310,6 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
           </Select>
         </div>
 
-        {/* Phone Number Input */}
         <div className="relative flex-1">
           <input
             id={id}
@@ -315,7 +322,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
             required={required && !!selectedCountryCode}
             style={{ height, width: "100%" }}
             className={`peer block w-full rounded-md border border-[#2E2C39] px-4 text-[16px] text-black focus:outline-none placeholder-transparent autofill:bg-white ${
-              (error || localError) ? "border-black" : ""
+              (error || (localError && shouldShowValidation)) ? "border-black" : ""
             }`}
           />
           <label
@@ -332,7 +339,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
         </div>
       </div>
 
-      {(error || localError) && (
+      {((error && shouldShowValidation) || (localError && shouldShowValidation)) && (
         <div className="mt-1">
           <span className="text-sm text-red-500">{error || localError}</span>
         </div>

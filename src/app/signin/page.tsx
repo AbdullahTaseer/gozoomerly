@@ -19,10 +19,15 @@ const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  const [shouldValidatePhone, setShouldValidatePhone] = useState(false);
 
   const handleSignIn = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError('');
+    
+    if (loginMode === 'email') {
+      setPhoneError('');
+    }
 
     if (loginMode === 'email') {
       const trimmedEmail = email ? email.trim() : '';
@@ -37,30 +42,34 @@ const SignIn = () => {
       const trimmedPhone = phone ? phone.trim() : '';
       const trimmedPassword = password ? password.trim() : '';
       
-      // Check if fields are filled
-      if (!trimmedPhone || !trimmedPassword) {
-        setError('Please fill in all fields');
+      if (!trimmedPassword) {
+        const errorMsg = 'Please fill in all fields';
+        setError(errorMsg);
         return;
       }
 
-      // Basic phone validation - must start with + and have at least 1 digit after country code
+      setShouldValidatePhone(true);
+      
+      if (!trimmedPhone) {
+        return;
+      }
+
       if (!trimmedPhone.startsWith('+')) {
-        setError('Please select a country code');
+        const errorMsg = 'Please select a country code';
+        setPhoneError(errorMsg);
         return;
       }
 
-      // Check if there's a number after the country code
-      // Country codes are 1-3 digits, so we need at least 4 characters total (+XXX)
-      // and at least one more character for the phone number
       if (trimmedPhone.length < 5) {
-        setError('Please enter a valid phone number');
+        const errorMsg = 'Please enter a valid phone number';
+        setPhoneError(errorMsg);
         return;
       }
 
-      // Extract the part after the country code (after + and 1-3 digits)
       const afterCountryCode = trimmedPhone.replace(/^\+\d{1,3}/, '').trim();
       if (!afterCountryCode || afterCountryCode.length === 0) {
-        setError('Please enter a valid phone number');
+        const errorMsg = 'Please enter a valid phone number';
+        setPhoneError(errorMsg);
         return;
       }
     }
@@ -110,7 +119,11 @@ const SignIn = () => {
         <div className="flex gap-2 my-6">
           <button
             type="button"
-            onClick={() => setLoginMode('email')}
+            onClick={() => {
+              setLoginMode('email');
+              setPhoneError('');
+              setError('');
+            }}
             className={`flex-1 py-2 px-4 rounded-md transition-colors ${loginMode === 'email'
                 ? 'bg-pink-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -120,7 +133,10 @@ const SignIn = () => {
           </button>
           <button
             type="button"
-            onClick={() => setLoginMode('phone')}
+            onClick={() => {
+              setLoginMode('phone');
+              setError('');
+            }}
             className={`flex-1 py-2 px-4 rounded-md transition-colors ${loginMode === 'phone'
                 ? 'bg-pink-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -149,11 +165,17 @@ const SignIn = () => {
             height='46px'
             className="mt-4"
             value={phone}
-            onChange={(value) => setPhone(value)}
-            onValidationError={(message) => setPhoneError(message)}
-            error={phoneError}
+            onChange={(value) => {
+              setPhone(value);
+              setShouldValidatePhone(false);
+            }}
+            onValidationError={(message) => {
+              setPhoneError(message);
+            }}
+            error={undefined}
             required={true}
             placeholder="Enter phone number"
+            validateOnMount={shouldValidatePhone}
           />
         )}
 
