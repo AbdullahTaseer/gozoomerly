@@ -2,7 +2,7 @@
 
 import {  useState, useEffect, useRef  } from 'react';
 import Image from 'next/image';
-import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2, Pause, Play } from 'lucide-react';
 import { Story } from '@/lib/supabase/stories';
 import { viewStory, deleteStory } from '@/lib/supabase/stories';
 import toast from 'react-hot-toast';
@@ -28,31 +28,43 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const elapsedTimeRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const currentGroup = storyGroups[currentGroupIndex];
   const currentStory = currentGroup?.stories[currentStoryIndex];
   const isOwnStory = currentUserId && currentGroup?.user?.id === currentUserId;
 
+  // Reset elapsed time when story changes
   useEffect(() => {
-    if (isOpen && currentStory) {
+    if (currentStory) {
+      setElapsedTime(0);
+      elapsedTimeRef.current = 0;
       setProgress(0);
+    }
+  }, [currentStory?.id]);
 
+  useEffect(() => {
+    if (isOpen && currentStory && !isPaused) {
       if (currentUserId && currentStory.id) {
         viewStory(currentStory.id, currentUserId).catch(() => {});
       }
 
       const duration = 5000;
       const interval = 100;
-      let elapsed = 0;
 
       progressIntervalRef.current = setInterval(() => {
-        elapsed += interval;
-        const newProgress = Math.min((elapsed / duration) * 100, 100);
+        elapsedTimeRef.current += interval;
+        setElapsedTime(elapsedTimeRef.current);
+        const newProgress = Math.min((elapsedTimeRef.current / duration) * 100, 100);
         setProgress(newProgress);
 
-        if (elapsed >= duration) {
+        if (elapsedTimeRef.current >= duration) {
+          elapsedTimeRef.current = 0;
+          setElapsedTime(0);
           handleNextStory();
         }
       }, interval);
@@ -62,14 +74,21 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           clearInterval(progressIntervalRef.current);
         }
       };
+    } else if (isPaused && progressIntervalRef.current) {
+      // Clear interval when paused
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
     }
-  }, [isOpen, currentGroupIndex, currentStoryIndex, currentStory?.id, currentUserId]);
+  }, [isOpen, currentGroupIndex, currentStoryIndex, currentStory?.id, currentUserId, isPaused]);
 
   useEffect(() => {
     if (isOpen) {
       setCurrentGroupIndex(initialGroupIndex);
       setCurrentStoryIndex(0);
       setProgress(0);
+      setElapsedTime(0);
+      elapsedTimeRef.current = 0;
+      setIsPaused(false);
     }
   }, [isOpen, initialGroupIndex]);
 
@@ -87,12 +106,20 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
 
   useEffect(() => {
     if (videoRef.current && currentStory?.content_type === 'video') {
-      videoRef.current.play().catch(() => {});
+      if (!isPaused) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
     }
-  }, [currentStory]);
+  }, [currentStory, isPaused]);
 
   const handleNextStory = () => {
     if (!currentGroup) return;
+
+    setElapsedTime(0);
+    elapsedTimeRef.current = 0;
+    setProgress(0);
 
     if (currentStoryIndex < currentGroup.stories.length - 1) {
       setCurrentStoryIndex(currentStoryIndex + 1);
@@ -111,6 +138,10 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   const handlePreviousStory = () => {
     if (!currentGroup) return;
 
+    setElapsedTime(0);
+    elapsedTimeRef.current = 0;
+    setProgress(0);
+
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex(currentStoryIndex - 1);
     } else {
@@ -128,6 +159,22 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     if (index < currentGroup.stories.length) {
       setCurrentStoryIndex(index);
       setProgress(0);
+      setElapsedTime(0);
+      elapsedTimeRef.current = 0;
+    }
+  };
+
+  const handleTogglePause = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsPaused(!isPaused);
+    
+    // Pause/resume video if it's a video story
+    if (videoRef.current) {
+      if (isPaused) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
     }
   };
 
@@ -242,6 +289,13 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleTogglePause}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+            title={isPaused ? 'Play' : 'Pause'}
+          >
+            {isPaused ? <Play size={20} /> : <Pause size={20} />}
+          </button>
           {isOwnStory && (
             <button
               onClick={(e) => {
