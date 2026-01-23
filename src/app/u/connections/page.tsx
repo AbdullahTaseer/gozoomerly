@@ -247,31 +247,25 @@ const Connections = () => {
       storyGroupIndex: stories.findIndex(s => s.user?.id === storyGroup.user?.id),
     }));
 
-    const displayItems: StoryDisplayItem[] = [
-      {
-        id: 'add',
-        name: 'Add status',
-        isAdd: true,
-        avatar: currentUser?.user_metadata?.avatar_url || ProfileAvatar,
-        backgroundImage: undefined,
-        hasUnviewed: false,
-        stories: [],
-      },
-    ];
+    const displayItems: StoryDisplayItem[] = [];
 
-    if (userStories && userStoriesIndex >= 0 && userStories.stories.length > 0) {
-      displayItems.push({
-        id: `story-${userStories.user?.id}`,
-        name: userStories.user?.name || 'Your Story',
-        avatar: userStories.user?.profile_pic_url || currentUser?.user_metadata?.avatar_url || ProfileAvatar,
-        backgroundImage: userStories.stories[0]?.media?.cdn_url || userStories.user?.profile_pic_url || ProfileAvatar,
-        isAdd: false,
-        hasUnviewed: false,
-        stories: userStories.stories,
-        storyGroupIndex: userStoriesIndex,
-      });
-    }
+    // Add "Add status" button with user's status as background (like Instagram/WhatsApp)
+    const userStatusBackground = userStories && userStories.stories.length > 0
+      ? userStories.stories[0]?.media?.cdn_url || userStories.user?.profile_pic_url || ProfileAvatar
+      : undefined;
 
+    displayItems.push({
+      id: 'add',
+      name: 'Add status',
+      isAdd: true,
+      avatar: currentUser?.user_metadata?.avatar_url || ProfileAvatar,
+      backgroundImage: userStatusBackground,
+      hasUnviewed: false,
+      stories: userStories?.stories || [],
+      storyGroupIndex: userStoriesIndex >= 0 ? userStoriesIndex : undefined,
+    });
+
+    // Add other users' stories
     displayItems.push(...otherStoryItems);
 
     return displayItems;
@@ -480,11 +474,12 @@ const Connections = () => {
         <div className='mt-6'>
           <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
             {storiesData.map((status, index) => {
-
               const isUserStory = !status.isAdd && status.id === `story-${currentUser?.id}`;
 
               const storyGroupIndex = status.isAdd
-                ? undefined
+                ? (status as any).storyGroupIndex !== undefined
+                  ? (status as any).storyGroupIndex
+                  : undefined
                 : (status as any).storyGroupIndex !== undefined
                   ? (status as any).storyGroupIndex
                   : stories.findIndex(s => s.user?.id === currentUser?.id && isUserStory);
@@ -494,13 +489,24 @@ const Connections = () => {
                   key={status.id}
                   type={status.isAdd ? 'add' : 'user'}
                   profileImage={status.avatar}
-                  backgroundImage={status.isAdd ? undefined : status.backgroundImage}
+                  backgroundImage={status.backgroundImage}
                   name={status.isAdd ? undefined : status.name}
-                  onClick={() =>
-                    status.isAdd
-                      ? handleAddStatusClick()
-                      : handleStatusClick(status.name, storyGroupIndex, isUserStory)
-                  }
+                  onClick={() => {
+                    if (status.isAdd) {
+                      // Clicking background opens status viewer if user has status
+                      if (status.stories && status.stories.length > 0 && storyGroupIndex !== undefined) {
+                        handleStatusClick(status.name, storyGroupIndex, true);
+                      }
+                    } else {
+                      handleStatusClick(status.name, storyGroupIndex, isUserStory);
+                    }
+                  }}
+                  onAddClick={() => {
+                    if (status.isAdd) {
+                      // Clicking + icon opens add/edit status modal
+                      handleAddStatusClick();
+                    }
+                  }}
                 />
               );
             })}
@@ -648,6 +654,12 @@ const Connections = () => {
         storyGroups={stories}
         initialGroupIndex={selectedStoryGroupIndex}
         currentUserId={currentUser?.id}
+        onStoryDeleted={() => {
+          // Refresh stories after deletion
+          if (currentUser?.id) {
+            fetchStories();
+          }
+        }}
       />
     </>
   );

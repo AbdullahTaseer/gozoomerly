@@ -2,9 +2,10 @@
 
 import {  useState, useEffect, useRef  } from 'react';
 import Image from 'next/image';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { Story } from '@/lib/supabase/stories';
-import { viewStory } from '@/lib/supabase/stories';
+import { viewStory, deleteStory } from '@/lib/supabase/stories';
+import toast from 'react-hot-toast';
 
 interface StoryViewerModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface StoryViewerModalProps {
   storyGroups: { user: Story['user']; stories: Story[]; hasUnviewed: boolean }[];
   initialGroupIndex?: number;
   currentUserId?: string;
+  onStoryDeleted?: () => void; // Callback to refresh stories after deletion
 }
 
 const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
@@ -20,15 +22,18 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   storyGroups,
   initialGroupIndex = 0,
   currentUserId,
+  onStoryDeleted,
 }) => {
   const [currentGroupIndex, setCurrentGroupIndex] = useState(initialGroupIndex);
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const currentGroup = storyGroups[currentGroupIndex];
   const currentStory = currentGroup?.stories[currentStoryIndex];
+  const isOwnStory = currentUserId && currentGroup?.user?.id === currentUserId;
 
   useEffect(() => {
     if (isOpen && currentStory) {
@@ -67,6 +72,18 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
       setProgress(0);
     }
   }, [isOpen, initialGroupIndex]);
+
+  // Adjust story index if current story group changes (e.g., after deletion)
+  useEffect(() => {
+    if (currentGroup && currentStoryIndex >= currentGroup.stories.length) {
+      if (currentGroup.stories.length > 0) {
+        setCurrentStoryIndex(currentGroup.stories.length - 1);
+      } else {
+        // No stories left, close modal
+        onClose();
+      }
+    }
+  }, [currentGroup, currentStoryIndex, onClose]);
 
   useEffect(() => {
     if (videoRef.current && currentStory?.content_type === 'video') {
@@ -111,6 +128,55 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
     if (index < currentGroup.stories.length) {
       setCurrentStoryIndex(index);
       setProgress(0);
+    }
+  };
+
+  const handleDeleteStory = async () => {
+    if (!currentStory || !currentUserId || !isOwnStory) return;
+
+    const confirmed = window.confirm('Are you sure you want to delete this status?');
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await deleteStory(currentStory.id, currentUserId);
+      
+      if (error) {
+        console.error('Delete story error:', error);
+        toast.error(`Failed to delete status: ${error.message || 'Unknown error'}`);
+        setIsDeleting(false);
+        return;
+      }
+
+      toast.success('Status deleted successfully');
+      
+      // Check if this was the last story
+      const remainingStories = currentGroup.stories.filter(s => s.id !== currentStory.id);
+      
+      // If no stories left in the group, close the modal
+      if (remainingStories.length === 0) {
+        onClose();
+        // Call the callback to refresh stories in parent
+        if (onStoryDeleted) {
+          onStoryDeleted();
+        }
+        return;
+      }
+
+      // Call the callback to refresh stories in parent
+      if (onStoryDeleted) {
+        onStoryDeleted();
+      }
+
+      // Adjust story index - if we're at the end, go to previous, otherwise stay at same index
+      if (currentStoryIndex >= remainingStories.length) {
+        setCurrentStoryIndex(remainingStories.length - 1);
+      }
+      // If not at the end, the same index will now show the next story after parent refreshes
+    } catch (error) {
+      toast.error('Failed to delete status');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -175,12 +241,30 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
             </p>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-        >
-          <X size={24} />
-        </button>
+        <div className="flex items-center gap-2">
+          {isOwnStory && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteStory();
+              }}
+              disabled={isDeleting}
+              className="text-white hover:bg-red-500/20 rounded-full p-2 transition-colors disabled:opacity-50"
+              title="Delete status"
+            >
+              <Trash2 size={20} />
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+          >
+            <X size={24} />
+          </button>
+        </div>
       </div>
 
       {}

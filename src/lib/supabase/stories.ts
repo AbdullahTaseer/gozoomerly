@@ -170,6 +170,7 @@ export async function getFollowingStories(
       `)
       .in('user_id', userIdsToFetch)
       .gt('expires_at', now)
+      .neq('status', 'deleted')
       .order('created_at', { ascending: false });
 
     const hasMeaningfulError = storiesError && (
@@ -258,14 +259,33 @@ export async function deleteStory(
 ): Promise<{ error: any }> {
   const supabase = createClient();
 
-  const { error } = await supabase
+  // First try soft delete (update status)
+  const { error: updateError } = await supabase
     .from('stories')
     .update({ status: 'deleted', deleted_at: new Date().toISOString() })
     .eq('id', storyId)
     .eq('user_id', userId);
 
-  if (error) {
-    return { error };
+  // If soft delete fails (maybe deleted_at column doesn't exist), try just updating status
+  if (updateError) {
+    const { error: statusError } = await supabase
+      .from('stories')
+      .update({ status: 'deleted' })
+      .eq('id', storyId)
+      .eq('user_id', userId);
+
+    if (statusError) {
+      // If both fail, try hard delete
+      const { error: deleteError } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', storyId)
+        .eq('user_id', userId);
+
+      if (deleteError) {
+        return { error: deleteError };
+      }
+    }
   }
 
   return { error: null };
