@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useFormHandlers } from '@/hooks/use-form-handlers';
 import { useFormSubmission } from '@/hooks/use-form-submission';
 import { FormField, FieldValue, FormDataRecord } from '@/types/formHandler';
-import { ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
+import FloatingInput from '@/components/inputs/FloatingInput';
+import FloatingSelect from '@/components/inputs/FloatingSelect';
+import GlobalButton from '@/components/buttons/GlobalButton';
+import { SelectItem } from '@/components/ui/select';
+import { Country, State, City } from 'country-state-city';
 
 interface PartnerRegistrationFormProps {
   partnerId: number;
@@ -28,6 +33,15 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
   const { submitAndProcessForm, isSubmitting, error: submitError } = useFormSubmission();
   const [formData, setFormData] = useState<FormDataRecord>({});
   const [parsedFields, setParsedFields] = useState<FormField[]>([]);
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [countryCode, setCountryCode] = useState<string>('');
+  const [stateCode, setStateCode] = useState<string>('');
+
+  const countries = Country.getAllCountries();
+  const states = countryCode ? State.getStatesOfCountry(countryCode) : [];
+  const cities = countryCode && stateCode ? City.getCitiesOfState(countryCode, stateCode) : [];
+
 
   const mapUrlParamToFieldName = (fieldName: string): string[] => {
     const nameLower = fieldName.toLowerCase();
@@ -80,34 +94,86 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
         const initialData: FormDataRecord = {};
         normalizedFields.forEach((field: FormField) => {
           initialData[field.id] = field.value || '';
+          const fieldName = (field.name || field.label || '').toLowerCase();
 
           if (initialValues) {
-            const fieldName = field.name || field.label || '';
-
-            if (mapUrlParamToFieldName(fieldName).includes('email') && initialValues.email) {
+            if (mapUrlParamToFieldName(field.name || field.label || '').includes('email') && initialValues.email) {
               initialData[field.id] = initialValues.email;
-            } else if (mapUrlParamToFieldName(fieldName).includes('name') && initialValues.name) {
+            } else if (mapUrlParamToFieldName(field.name || field.label || '').includes('name') && initialValues.name) {
               initialData[field.id] = initialValues.name;
-            } else if (mapUrlParamToFieldName(fieldName).some(name =>
+            } else if (mapUrlParamToFieldName(field.name || field.label || '').some(name =>
               ['phone', 'phoneNumber', 'phone_number', 'mobile', 'telephone'].includes(name)
             ) && initialValues.phone) {
               initialData[field.id] = initialValues.phone;
-            } else if (mapUrlParamToFieldName(fieldName).some(name =>
-              ['inviteCode', 'invite_code', 'referralCode', 'referral_code', 'code'].includes(name)
-            ) && initialValues.referralCode) {
-              initialData[field.id] = initialValues.referralCode;
+            }
+          }
+
+        });
+        setFormData(initialData);
+
+        normalizedFields.forEach((field: FormField) => {
+          const fieldName = (field.name || field.label || '').toLowerCase();
+          const fieldValue = initialData[field.id];
+          
+          if (fieldName.includes('country') && fieldValue) {
+            const countryName = String(fieldValue);
+            const country = countries.find(c => c.name === countryName);
+            if (country) {
+              setCountryCode(country.isoCode);
             }
           }
         });
-        setFormData(initialData);
       }
     }
   }, [formHandlers, initialValues]);
+
+  useEffect(() => {
+    if (countryCode) {
+      const currentStates = State.getStatesOfCountry(countryCode);
+      parsedFields.forEach((field: FormField) => {
+        const fieldName = (field.name || field.label || '').toLowerCase();
+        const fieldValue = formData[field.id];
+        
+        if (fieldName.includes('state') && fieldValue) {
+          const stateName = String(fieldValue);
+          const state = currentStates.find(s => s.name === stateName);
+          if (state) {
+            setStateCode(state.isoCode);
+          }
+        }
+      });
+    }
+  }, [countryCode, parsedFields, formData]);
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/[A-Z]/.test(password)) {
+      return 'Password must contain at least one capital letter';
+    }
+    return null;
+  };
 
   const handleInputChange = (fieldId: string, value: FieldValue) => {
     setFormData(prev => ({
       ...prev,
       [fieldId]: value
+    }));
+
+    if (fieldErrors[fieldId]) {
+      setFieldErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldId];
+        return newErrors;
+      });
+    }
+  };
+
+  const togglePasswordVisibility = (fieldId: string) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [fieldId]: !prev[fieldId]
     }));
   };
 
@@ -157,6 +223,29 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
       return;
     }
 
+    const passwordFields = parsedFields.filter(field => {
+      const fieldName = (field.name || field.label || '').toLowerCase();
+      return fieldName.includes('password') && field.type === 'password';
+    });
+
+    const passwordErrors: Record<string, string> = {};
+    let hasPasswordErrors = false;
+
+    passwordFields.forEach(field => {
+      const fieldId = field.id;
+      const passwordValue = String(formData[fieldId] || '');
+      const error = validatePassword(passwordValue);
+      if (error) {
+        passwordErrors[fieldId] = error;
+        hasPasswordErrors = true;
+      }
+    });
+
+    if (hasPasswordErrors) {
+      setFieldErrors(prev => ({ ...prev, ...passwordErrors }));
+      return;
+    }
+
     try {
       const formHandler = formHandlers[0];
       
@@ -168,26 +257,32 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
         const fieldName = field.name || field.label || '';
         const nameLower = fieldName.toLowerCase();
         
-        // Find invite code field but don't add it yet - we'll send empty string
         if (nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code')) {
           inviteCodeField = field;
-          return; // Skip adding this field to transformedData
+          return;
         }
         
         const fieldKey = getFieldNameForSubmission(field);
-        const fieldValue = formData[field.id];
+        let fieldValue = formData[field.id];
+        
+        if (nameLower.includes('country') && countryCode) {
+          const selectedCountry = countries.find(c => c.isoCode === countryCode);
+          fieldValue = selectedCountry?.name || countryCode;
+        } else if (nameLower.includes('state') && stateCode) {
+          const selectedState = states.find(s => s.isoCode === stateCode);
+          fieldValue = selectedState?.name || stateCode;
+        }
+        
         if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
           transformedData[fieldKey] = fieldValue;
         }
       });
       
-      // Send empty string for invite code using the invite code field's format
       if (inviteCodeField) {
         const inviteCodeKey = getFieldNameForSubmission(inviteCodeField);
         transformedData[inviteCodeKey] = '';
       }
 
-      // Prepare submission payload
       const submissionPayload = {
         formId: formHandler.id,
         brandId: formHandler.brand_id,
@@ -198,12 +293,9 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
       const result = await submitAndProcessForm(submissionPayload);
 
       if (result?.submitResult) {
-        // Check if user needs to complete payment
         if (result.submitResult.stripe_client_secret) {
-          // Redirect to payment page if needed
           router.push('/payment');
         } else {
-          // Redirect to thank you page
           router.push('/thankYou');
         }
       }
@@ -250,13 +342,13 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     const fieldLabel = field.label;
     const fieldPlaceholder = field.placeholder || '';
     const fieldType = field.type || 'text';
+    const fieldName = field.name || field.label || '';
 
     const isChecked = rawValue === true || fieldValue === 'true';
 
     switch (fieldType) {
       case 'text':
       case 'email':
-      case 'password':
       case 'tel':
       case 'url':
       case 'number':
@@ -273,6 +365,47 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
               required={field.required}
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder:text-sm focus:outline-none focus:ring-[#E3418B] focus:border-[#E3418B]"
             />
+          </div>
+        );
+
+      case 'password':
+        const isPasswordVisible = showPasswords[fieldId] || false;
+        const passwordError = fieldErrors[fieldId];
+        const nameLower = (fieldName || '').toLowerCase();
+        const isPasswordField = nameLower.includes('password');
+        
+        return (
+          <div key={field.id} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {fieldLabel} {field.required && <span className="text-red-500">*</span>}
+            </label>
+            <div className="relative">
+              <input
+                type={isPasswordVisible ? 'text' : 'password'}
+                value={fieldValue}
+                onChange={(e) => handleInputChange(fieldId, e.target.value)}
+                placeholder={fieldPlaceholder}
+                required={field.required}
+                className={`w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder:text-sm focus:outline-none focus:ring-[#E3418B] focus:border-[#E3418B] ${
+                  passwordError ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => togglePasswordVisibility(fieldId)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                tabIndex={-1}
+              >
+                {isPasswordVisible ? (
+                  <EyeOff size={20} className="text-gray-500" />
+                ) : (
+                  <Eye size={20} className="text-gray-500" />
+                )}
+              </button>
+            </div>
+            {isPasswordField && passwordError && (
+              <p className="mt-1 text-sm text-red-500">{passwordError}</p>
+            )}
           </div>
         );
 
@@ -386,33 +519,157 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     }
   };
 
-  return (
-    <div className="max-w-[500px] w-full mx-auto">
-      <div className="flex items-center gap-2 justify-between mb-6">
-        {onBack && (
+  const getFieldType = (field: FormField): 'text' | 'email' | 'date' | 'select' | 'password' | 'other' => {
+    const fieldName = (field.name || field.label || '').toLowerCase();
+    const fieldType = field.type || 'text';
+    
+    if (fieldType === 'password') return 'password';
+    if (fieldType === 'email' || fieldName.includes('email')) return 'email';
+    if (fieldType === 'date' || fieldName.includes('date') || fieldName.includes('birthday') || fieldName.includes('birth')) return 'date';
+    if (fieldType === 'select' || fieldType === 'dropdown' || fieldName.includes('country') || fieldName.includes('state') || fieldName.includes('city')) return 'select';
+    return 'text';
+  };
+
+  const renderFieldWithFloating = (field: FormField) => {
+    const fieldId = field.id;
+    const rawValue = formData[fieldId];
+    const fieldValue = rawValue === null || rawValue === undefined
+      ? ''
+      : typeof rawValue === 'boolean'
+        ? rawValue.toString()
+        : rawValue instanceof Date
+          ? rawValue.toISOString().split('T')[0]
+          : String(rawValue);
+    const fieldLabel = field.label;
+    const fieldName = (field.name || field.label || '').toLowerCase();
+    const fieldType = getFieldType(field);
+
+    if (fieldType === 'password') {
+      const isPasswordVisible = showPasswords[fieldId] || false;
+      const passwordError = fieldErrors[fieldId];
+      
+      return (
+        <div key={field.id} className="relative">
+          <FloatingInput
+            id={fieldId.toString()}
+            title={fieldLabel}
+            type={isPasswordVisible ? 'text' : 'password'}
+            value={fieldValue}
+            onChange={(e) => handleInputChange(fieldId, e.target.value)}
+            width="100%"
+            className={passwordError ? 'border-red-500' : ''}
+          />
           <button
-            onClick={onBack}
-            className="text-sm h-10 w-10 hover:bg-gray-200 rounded-full justify-center items-center cursor-pointer flex gap-2 text-black"
+            type="button"
+            onClick={() => togglePasswordVisibility(fieldId)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none z-10"
+            tabIndex={-1}
           >
-            <ArrowLeft className='w-5 h-5 shrink-0' />
+            {isPasswordVisible ? (
+              <EyeOff size={20} className="text-gray-500" />
+            ) : (
+              <Eye size={20} className="text-gray-500" />
+            )}
           </button>
-        )}
-        <h3 className="text-xl font-bold text-gray-900">
-          Registration Form
-        </h3>
-        <div />
+          {passwordError && (
+            <p className="mt-1 text-sm text-red-500">{passwordError}</p>
+          )}
+        </div>
+      );
+    }
+
+    if (fieldType === 'select') {
+      if (fieldName.includes('country')) {
+        return (
+          <FloatingSelect
+            key={field.id}
+            label={fieldLabel}
+            value={countryCode}
+            onChange={(val) => {
+              setCountryCode(val);
+              setStateCode('');
+              const selectedCountry = countries.find(c => c.isoCode === val);
+              handleInputChange(fieldId, selectedCountry?.name || val);
+            }}
+          >
+            {countries.map((c) => (
+              <SelectItem key={c.isoCode} value={c.isoCode}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </FloatingSelect>
+        );
+      }
+      if (fieldName.includes('state')) {
+        return (
+          <FloatingSelect
+            key={field.id}
+            label={fieldLabel}
+            value={stateCode}
+            onChange={(val) => {
+              setStateCode(val);
+              const selectedState = states.find(s => s.isoCode === val);
+              handleInputChange(fieldId, selectedState?.name || val);
+            }}
+            disabled={!countryCode}
+          >
+            {states.map((s) => (
+              <SelectItem key={s.isoCode} value={s.isoCode}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </FloatingSelect>
+        );
+      }
+      if (fieldName.includes('city')) {
+        return (
+          <FloatingSelect
+            key={field.id}
+            label={fieldLabel}
+            value={fieldValue}
+            onChange={(val) => handleInputChange(fieldId, val)}
+            disabled={!stateCode}
+          >
+            {cities.map((cityObj) => (
+              <SelectItem key={cityObj.name} value={cityObj.name}>
+                {cityObj.name}
+              </SelectItem>
+            ))}
+          </FloatingSelect>
+        );
+      }
+    }
+
+    return (
+      <FloatingInput
+        key={field.id}
+        id={fieldId.toString()}
+        title={fieldLabel}
+        type={fieldType === 'date' ? 'date' : fieldType === 'email' ? 'email' : 'text'}
+        value={fieldValue}
+        onChange={(e) => handleInputChange(fieldId, e.target.value)}
+        width="100%"
+      />
+    );
+  };
+
+  return (
+    <div className="max-w-lg w-full mx-auto">
+      <div className="text-center mb-6">
+        <p className="text-center poppin-font text-[36px] font-medium mb-2">Enter your info</p>
+        <p className="text-center font-poppins">Please enter your information</p>
       </div>
 
+
       {parsedFields.length > 0 ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           {parsedFields
             .filter(field => {
-              // Hide invite code fields
               const fieldName = field.name || field.label || '';
               const nameLower = fieldName.toLowerCase();
               return !(nameLower.includes('invite') || nameLower.includes('referral') || nameLower.includes('code'));
             })
-            .map(field => renderField(field))}
+            .map(field => renderFieldWithFloating(field))}
 
           {submitError && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -420,19 +677,15 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
             </div>
           )}
 
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`w-full py-3 px-4 rounded-md focus:outline-none cursor-pointer text-sm transition-colors ${
-                isSubmitting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-[#E3418B] text-white hover:bg-[#d13178]'
-              }`}
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit Registration'}
-            </button>
-          </div>
+          <GlobalButton
+            title={isSubmitting ? 'Submitting...' : 'Submit'}
+            height="50px"
+            onClick={(e) => {
+              e.preventDefault();
+              handleSubmit(e);
+            }}
+            disabled={isSubmitting}
+          />
         </form>
       ) : (
         <p className="text-gray-500">No form fields available.</p>

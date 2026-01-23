@@ -366,7 +366,6 @@ const Connections = () => {
     }
 
     try {
-
       const { mediaId, error: uploadError } = await uploadStoryMedia(currentUser.id, file);
 
       if (uploadError || !mediaId) {
@@ -388,10 +387,50 @@ const Connections = () => {
       }
 
       toast.success('Story created successfully!');
-
       fetchStories();
     } catch (error) {
       toast.error('Failed to create story');
+    }
+  };
+
+  const handleMultipleStoriesCreate = async (storiesData: { file: File; caption: string }[]) => {
+    if (!currentUser?.id) {
+      toast.error('Please sign in to create stories');
+      return;
+    }
+
+    if (storiesData.length === 0) {
+      return;
+    }
+
+    try {
+      const uploadPromises = storiesData.map(async ({ file, caption }) => {
+        const { mediaId, error: uploadError } = await uploadStoryMedia(currentUser.id, file);
+
+        if (uploadError || !mediaId) {
+          throw new Error(`Failed to upload story media: ${uploadError?.message || 'Unknown error'}`);
+        }
+
+        const contentType = file.type.startsWith('video/') ? 'video' : 'image';
+
+        const { data: story, error: createError } = await createStory(currentUser.id, {
+          content_type: contentType,
+          media_id: mediaId,
+          caption: caption || undefined,
+        });
+
+        if (createError || !story) {
+          throw new Error(`Failed to create story: ${createError?.message || 'Unknown error'}`);
+        }
+
+        return story;
+      });
+
+      await Promise.all(uploadPromises);
+      toast.success(`${storiesData.length} ${storiesData.length === 1 ? 'story' : 'stories'} created successfully!`);
+      fetchStories();
+    } catch (error: any) {
+      toast.error(error?.message || 'Failed to create stories');
     }
   };
 
@@ -419,19 +458,7 @@ const Connections = () => {
   };
 
   const handleAddStatusClick = () => {
-
-    const userStoryIndex = stories.findIndex(
-      (group) => group.user?.id === currentUser?.id
-    );
-
-    if (userStoryIndex >= 0 && stories[userStoryIndex].stories.length > 0) {
-
-      setSelectedStoryGroupIndex(userStoryIndex);
-      setStoryViewerOpen(true);
-    } else {
-
-      handleAddStatus();
-    }
+    handleAddStatus();
   };
 
   const filterOptions = useMemo(() => {
@@ -611,6 +638,7 @@ const Connections = () => {
         onClose={() => setAddStatusModalVisible(false)}
         onImageSelect={handleStatusImageSelect}
         onStoryCreate={handleStoryCreate}
+        onMultipleStoriesCreate={handleMultipleStoriesCreate}
       />
 
       {}

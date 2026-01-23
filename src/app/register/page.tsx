@@ -191,7 +191,7 @@ const SignupFlow = () => {
   return (
     <AuthLayout>
 
-      {step !== 5 &&
+      {step !== 4 && step !== 3 &&
         <div className='w-full mt-6 max-w-lg'>
           <div className='w-full flex gap-3 items-center'>
             <ArrowLeft className={`shrink-0 ${step === 1 ? "cursor-not-allowed" : "cursor-pointer"}`} color='black' onClick={handleBack} />
