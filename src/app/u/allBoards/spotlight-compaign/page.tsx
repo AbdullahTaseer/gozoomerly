@@ -1,33 +1,69 @@
+'use client';
+
+import { useEffect } from 'react';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import TitleCard from '@/components/cards/TitleCard';
-import DashNavbar from '@/components/navbar/DashNavbar';
-import { spotlightCampaigns } from '@/lib/MockData';
+import MobileHeader from '@/components/navbar/MobileHeader';
+import { useGetSpotlightBoards } from '@/hooks/useGetSpotlightBoards';
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 
 const SpotlightCampaigns = () => {
+  const {
+    spotlightBoards,
+    isLoading: spotlightLoading,
+    fetchSpotlightBoards
+  } = useGetSpotlightBoards();
+
+  useEffect(() => {
+    loadSpotlightBoards();
+  }, []);
+
+  const loadSpotlightBoards = async () => {
+    try {
+      await fetchSpotlightBoards({
+        p_limit: 1000,
+        p_offset: 0
+      });
+    } catch (err) {
+      console.error('Failed to load spotlight boards:', err);
+    }
+  };
+
   return (
     <>
+      <MobileHeader title='Spotlight Campaigns' />
       <div className='py-8 px-[7%] max-[769px]:px-3'>
         <TitleCard title='Spotlight Campaigns' className='text-left' />
-        <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full'>
-          {spotlightCampaigns.map((campaign) => (
-            <SpotLightCard
-              key={campaign.id}
-              name={campaign.name}
-              description={campaign.description}
-              spotLightImg={campaign.spotLightImg}
-              participants={campaign.participants}
-              wished={campaign.wished}
-              supports={campaign.supports}
-              memories={campaign.memories}
-              chats={campaign.chats}
-              raised={campaign.raised}
-              target={campaign.target}
-              organizerName={campaign.organizerName}
-              organizerAvatar={campaign.organizerAvatar}
-              organizerHometown={campaign.organizerHometown}
-              topContributors={campaign.topContributors}
-            />
-          ))}
+        <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full flex-wrap max-[769px]:flex-col'>
+          {spotlightLoading ? (
+            [1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className='min-w-[370px] h-[350px] bg-gray-100 rounded-[12px] animate-pulse' />
+            ))
+          ) : spotlightBoards.length > 0 ? (
+            spotlightBoards.map((board) => (
+              <SpotLightCard
+                key={board.id}
+                name={board.name}
+                description={board.description}
+                spotLightImg={board.spotlight_img || ProfileAvatar}
+                participants={board.participants}
+                wished={board.wished}
+                supports={board.supports}
+                memories={board.memories}
+                chats={board.chats}
+                raised={board.raised}
+                target={board.target}
+                organizerName={board.organizer_name}
+                organizerAvatar={board.organizer_avatar || ProfileAvatar}
+                organizerHometown={board.organizer_hometown}
+                topContributors={board.top_contributors.length > 0 ? board.top_contributors : []}
+              />
+            ))
+          ) : (
+            <div className='text-center py-12 w-full'>
+              <p className='text-gray-500'>No spotlight boards found</p>
+            </div>
+          )}
         </div>
       </div>
     </>

@@ -1,6 +1,6 @@
 'use client';
 
-import {  useState, useEffect  } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SpotLightCard from '@/components/cards/SpotLightCard';
 import { fetchUserBoards, getUserBoards, type Board } from '@/lib/supabase/boards';
@@ -331,8 +331,7 @@ const Home = () => {
                   )}
                 </div>
               </div>
-
-              {}
+  
               <div>
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Following</h3>
@@ -346,8 +345,6 @@ const Home = () => {
                 <BoardsList boards={followingBoards} loading={loading} />
               </div>
 
-              {}
-              {}
             </div>
           ) : (
             <div>
