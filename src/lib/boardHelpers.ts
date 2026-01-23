@@ -46,9 +46,22 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
   }
 
   if (input.p_honoree_phone) {
-    const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-    if (!phoneRegex.test(input.p_honoree_phone)) {
-      errors.push('Invalid phone number format');
+    // Phone number must start with + (country code is required)
+    if (!input.p_honoree_phone.startsWith('+')) {
+      errors.push('Phone number must include country code (e.g., +1234567890)');
+    } else {
+      const phoneRegex = /^\+[\d\s\-\(\)]+$/;
+      if (!phoneRegex.test(input.p_honoree_phone)) {
+        errors.push('Invalid phone number format');
+      }
+      // Ensure there are digits after the country code
+      const digitsAfterPlus = input.p_honoree_phone.replace(/^\+/, '').replace(/[\s\-\(\)]/g, '');
+      if (digitsAfterPlus.length < 7) {
+        errors.push('Phone number is too short');
+      }
+      if (digitsAfterPlus.length > 15) {
+        errors.push('Phone number is too long');
+      }
     }
   }
 

@@ -16,6 +16,7 @@ import AddGift from "@/components/compaignSections/AddGift";
 import WhoCanJoin from "@/components/compaignSections/WhoCanJoin";
 import YourBoardIsLive from "@/components/compaignSections/YourBoardIsLive";
 import GlobalInput from "@/components/inputs/GlobalInput";
+import PhoneInput from "@/components/inputs/PhoneInput";
 import GlobalButton from "@/components/buttons/GlobalButton";
 import { authService } from '@/lib/supabase/auth';
 import {
@@ -649,13 +650,15 @@ const CreateBirthdayBoard = () => {
 
       case 'phone':
         return (
-          <GlobalInput
-            type="tel"
+          <PhoneInput
+            id={field.field_key}
+            title={field.label}
             placeholder={field.placeholder || field.label}
             value={customFieldValues[field.field_key] || ''}
-            onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
+            onChange={(value) => handleFieldChange(field.field_key, value)}
             width="100%"
             height="48px"
+            required={field.is_required || false}
           />
         );
 

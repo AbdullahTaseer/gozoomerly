@@ -8,6 +8,7 @@ import { FormField, FieldValue, FormDataRecord } from '@/types/formHandler';
 import { Eye, EyeOff } from 'lucide-react';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import FloatingSelect from '@/components/inputs/FloatingSelect';
+import PhoneInput from '@/components/inputs/PhoneInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { SelectItem } from '@/components/ui/select';
 import { Country, State, City } from 'country-state-city';
@@ -542,6 +543,7 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
           : String(rawValue);
     const fieldLabel = field.label;
     const fieldName = (field.name || field.label || '').toLowerCase();
+    const fieldPlaceholder = field.placeholder || '';
     const fieldType = getFieldType(field);
 
     if (fieldType === 'password') {
@@ -638,6 +640,22 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
           </FloatingSelect>
         );
       }
+    }
+
+    // Check if this is a phone field
+    if (fieldName.includes('phone') || fieldName.includes('mobile') || fieldName.includes('tel')) {
+      return (
+        <PhoneInput
+          key={field.id}
+          id={fieldId.toString()}
+          title={fieldLabel}
+          value={fieldValue}
+          onChange={(value) => handleInputChange(fieldId, value)}
+          width="100%"
+          required={field.required}
+          placeholder={fieldPlaceholder}
+        />
+      );
     }
 
     return (

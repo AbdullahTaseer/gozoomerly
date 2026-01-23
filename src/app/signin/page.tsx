@@ -6,6 +6,7 @@ import GlobalButton from '@/components/buttons/GlobalButton';
 import { authService } from '@/lib/supabase/auth';
 import AuthLayout from '@/components/authLayout/AuthLayout';
 import FloatingInput from '@/components/inputs/FloatingInput';
+import PhoneInput from '@/components/inputs/PhoneInput';
 import { Eye, EyeOff } from 'lucide-react';
 
 const SignIn = () => {
@@ -17,6 +18,7 @@ const SignIn = () => {
   const [loginMode, setLoginMode] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   const handleSignIn = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -29,6 +31,11 @@ const SignIn = () => {
 
     if (loginMode === 'phone' && (!phone || !password)) {
       setError('Please fill in all fields');
+      return;
+    }
+
+    if (loginMode === 'phone' && phoneError) {
+      setError(phoneError);
       return;
     }
     setLoading(true);
@@ -109,16 +116,18 @@ const SignIn = () => {
             onChange={(e) => setEmail(e.target.value)}
           />
         ) : (
-          <FloatingInput
+          <PhoneInput
             id={"phone"}
             title='Phone Number'
             width='100%'
             height='46px'
             className="mt-4"
-            type='tel'
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+1234567890"
+            onChange={(value) => setPhone(value)}
+            onValidationError={(message) => setPhoneError(message)}
+            error={phoneError}
+            required={true}
+            placeholder="Enter phone number"
           />
         )}
 
