@@ -25,6 +25,7 @@ interface UserProfile {
   followers_count?: number;
   following_count?: number;
   boards_created_count?: number;
+  yours_boards_count?: number;
 }
 
 const VisitProfilePage = () => {
@@ -242,7 +243,7 @@ const VisitProfilePage = () => {
           </div>
 
           <div className="flex gap-8 mt-3 max-[768px]:justify-center max-[768px]:gap-6">
-            <p><span className="font-semibold">{profile.boards_created_count || 0}</span> posts</p>
+            <p><span className="font-semibold">{profile.yours_boards_count || 0}</span> Campaigns</p>
             <p><span className="font-semibold">{profile.followers_count || 0}</span> followers</p>
             <p><span className="font-semibold">{profile.following_count || 0}</span> following</p>
           </div>

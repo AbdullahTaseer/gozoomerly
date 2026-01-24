@@ -404,9 +404,48 @@ export default async function BoardPage(props: any) {
   };
 
   const boardTitle = board?.title || `${honoreeName} birthday`;
+
+  // Get chat count
+  let chatCount = 0;
+  if (board?.id && boardTitle) {
+    try {
+      // Find the conversation for this board by name
+      const { data: conversations } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('type', 'group')
+        .eq('name', boardTitle)
+        .limit(1);
+      
+      if (conversations && conversations.length > 0) {
+        const conversationId = conversations[0].id;
+        
+        // Count messages in this conversation
+        const { count, error: countError } = await supabase
+          .from('messages')
+          .select('*', { count: 'exact', head: true })
+          .eq('conversation_id', conversationId);
+        
+        // If deleted_at column doesn't exist, try without it
+        if (countError && (countError.message?.includes('deleted_at') || countError.code === '42703')) {
+          const { count: countWithoutDeleted } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .eq('conversation_id', conversationId);
+          
+          chatCount = countWithoutDeleted || 0;
+        } else {
+          chatCount = count || 0;
+        }
+      }
+    } catch (err) {
+      // If error, chatCount remains 0
+    }
+  }
   const boardDescription = board?.description || `Happy Birthday, ${honoreeFirstName || honoreeName}! 🎉`;
   const creatorName = (board as any)?.profiles?.name || 'Unknown';
   const creatorAvatar = (board as any)?.profiles?.profile_pic_url || staticProfileAvatar;
+  const creatorId = (board as any)?.profiles?.id || (board as any)?.creator_id || '';
 
   return (
     <div className="w-full min-h-screen bg-white">
@@ -453,19 +492,38 @@ export default async function BoardPage(props: any) {
         <div className="relative p-8 max-w-[1200px] mx-auto z-20">
           <div className='flex justify-between items-center flex-wrap gap-4'>
             <p className='bg-black rounded-full text-white py-1 px-3 text-sm'>Time left to wish : {formatDeadlineDate(board.deadline_date) || "00-00-00"}</p>
-            <div className="flex items-center gap-2 mt-6">
-              <p className="text-white text-[15px]">Created by</p>
-              <div className="flex items-center gap-2">
-                <Image
-                  src={creatorAvatar}
-                  alt={creatorName}
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
-                <p className="text-white font-semibold text-sm">{creatorName}</p>
+            {creatorId && (
+              <Link href={`/u/visitProfile/${creatorId}`}>
+                <div className="flex items-center gap-2 mt-6 cursor-pointer hover:opacity-80 transition-opacity">
+                  <p className="text-white text-[15px]">Created by</p>
+                  <div className="flex items-center gap-2">
+                    <Image
+                      src={creatorAvatar}
+                      alt={creatorName}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
+                    />
+                    <p className="text-white font-semibold text-sm">{creatorName}</p>
+                  </div>
+                </div>
+              </Link>
+            )}
+            {!creatorId && (
+              <div className="flex items-center gap-2 mt-6">
+                <p className="text-white text-[15px]">Created by</p>
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={creatorAvatar}
+                    alt={creatorName}
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover"
+                  />
+                  <p className="text-white font-semibold text-sm">{creatorName}</p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex items-center mt-6 gap-4">
             <Image
@@ -513,6 +571,7 @@ export default async function BoardPage(props: any) {
         memoriesChildren={<BoardSlugMemories boardId={board?.id || ''} boardTitle={boardTitle} boardSlug={boardId} />}
         chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />}
         participantsChildren={<BoardSlugParticipants boardId={board?.id || ''} />}
+        chatCount={chatCount}
       />
 
       {}

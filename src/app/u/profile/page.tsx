@@ -56,7 +56,7 @@ interface UserProfile {
   profile_pic_url?: string;
   followers_count?: number;
   following_count?: number;
-  boards_created_count?: number;
+  yours_boards_count?: number;
 }
 
 const Profile = () => {
@@ -233,7 +233,7 @@ const Profile = () => {
                 </span>
               </div>
               <span className='my-auto'>
-                <p className='text-white text-[24px] font-bold'>{profile?.boards_created_count || 0}</p>
+                <p className='text-white text-[24px] font-bold'>{profile?.yours_boards_count || 0}</p>
                 <p className='text-[#F0F0F0] text-sm'>Campaigns</p>
               </span>
               <span className='my-auto'>

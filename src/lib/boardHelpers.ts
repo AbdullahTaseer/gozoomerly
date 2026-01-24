@@ -51,8 +51,8 @@ export function validateBirthdayBoardInput(input: Partial<CreateBirthdayBoardInp
       errors.push('Phone number must include country code (e.g., +1234567890)');
     } else {
       const phoneRegex = /^\+[\d\s\-\(\)]+$/;
-      if (!phoneRegex.test(input.p_honoree_phone)) {
-        errors.push('Invalid phone number format');
+    if (!phoneRegex.test(input.p_honoree_phone)) {
+      errors.push('Invalid phone number format');
       }
       // Ensure there are digits after the country code
       const digitsAfterPlus = input.p_honoree_phone.replace(/^\+/, '').replace(/[\s\-\(\)]/g, '');

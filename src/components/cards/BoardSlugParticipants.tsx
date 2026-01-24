@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { getBoardParticipants, type BoardParticipant } from "@/lib/supabase/boards";
+import { followUser, unfollowUser } from "@/lib/supabase/followUtils";
+import { authService } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/client";
 
 interface BoardSlugParticipantsProps {
   boardId: string;
@@ -18,6 +21,9 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
   const limit = 20;
 
   useEffect(() => {
@@ -26,8 +32,68 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
       return;
     }
 
+    getCurrentUser();
     fetchParticipants();
   }, [boardId]);
+
+  // Check following status when both user and participants are available
+  useEffect(() => {
+    if (currentUserId && participants.length > 0) {
+      checkFollowingStatus(currentUserId, participants);
+    }
+  }, [currentUserId, participants.length]);
+
+  useEffect(() => {
+    if (currentUserId && participants.length > 0) {
+      checkFollowingStatus(currentUserId, participants);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUserId, participants.length]);
+
+  const getCurrentUser = async () => {
+    try {
+      const user = await authService.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+      }
+    } catch (err) {
+      // User not logged in
+    }
+  };
+
+  const checkFollowingStatus = async (userId: string, participantList: BoardParticipant[]) => {
+    if (participantList.length === 0 || !userId) return;
+    
+    try {
+      const supabase = createClient();
+      const participantIds = participantList.map(p => p.user.id).filter(Boolean);
+      
+      if (participantIds.length === 0) return;
+      
+      const { data: follows, error } = await supabase
+        .from('follows')
+        .select('followee_id')
+        .eq('follower_id', userId)
+        .in('followee_id', participantIds);
+      
+      if (error) {
+        console.error('Error checking follow status:', error);
+        return;
+      }
+      
+      if (follows) {
+        const followingMap: Record<string, boolean> = {};
+        follows.forEach(follow => {
+          if (follow.followee_id) {
+            followingMap[follow.followee_id] = true;
+          }
+        });
+        setFollowingStatus(prev => ({ ...prev, ...followingMap }));
+      }
+    } catch (err) {
+      console.error('Error checking follow status:', err);
+    }
+  };
 
   const fetchParticipants = async (loadMore = false) => {
     try {
@@ -46,14 +112,23 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
         setError('Failed to load participants');
       } else if (data?.data) {
         const responseData = data.data;
+        const newParticipants = loadMore 
+          ? [...participants, ...responseData.participants]
+          : responseData.participants;
+        
         if (loadMore) {
-          setParticipants(prev => [...prev, ...responseData.participants]);
+          setParticipants(newParticipants);
         } else {
-          setParticipants(responseData.participants);
+          setParticipants(newParticipants);
         }
         setTotalParticipants(responseData.total_participants);
         setHasMore(responseData.pagination.has_more);
         setOffset(currentOffset + responseData.participants.length);
+        
+        // Check following status after loading participants
+        if (currentUserId) {
+          checkFollowingStatus(currentUserId, newParticipants);
+        }
       }
     } catch (err) {
       setError('Failed to load participants');
@@ -100,6 +175,36 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
 
   const handleUserClick = (userId: string) => {
     router.push(`/u/visitProfile/${userId}`);
+  };
+
+  const handleFollowToggle = async (participantId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!currentUserId || currentUserId === participantId) {
+      return;
+    }
+
+    setFollowLoading(prev => ({ ...prev, [participantId]: true }));
+
+    try {
+      const isFollowing = followingStatus[participantId];
+      
+      if (isFollowing) {
+        const result = await unfollowUser(currentUserId, participantId);
+        if (result.success) {
+          setFollowingStatus(prev => ({ ...prev, [participantId]: false }));
+        }
+      } else {
+        const result = await followUser(currentUserId, participantId);
+        if (result.success) {
+          setFollowingStatus(prev => ({ ...prev, [participantId]: true }));
+        }
+      }
+    } catch (err) {
+      // Handle error
+    } finally {
+      setFollowLoading(prev => ({ ...prev, [participantId]: false }));
+    }
   };
 
   if (loading && participants.length === 0) {
@@ -183,15 +288,33 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
             </div>
           </div>
 
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleUserClick(participant.user.id);
-            }}
-            className="bg-white text-md text-black rounded-full py-1 px-5 hover:bg-gray-100 transition-colors shrink-0"
-          >
-            View Profile
-          </button>
+          {currentUserId && currentUserId !== participant.user.id ? (
+            <button
+              onClick={(e) => handleFollowToggle(participant.user.id, e)}
+              disabled={followLoading[participant.user.id]}
+              className={`text-md rounded-full py-1 px-5 transition-colors shrink-0 border ${
+                followingStatus[participant.user.id]
+                  ? 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  : 'bg-pink-500 text-white border-pink-500 hover:bg-pink-600'
+              } ${followLoading[participant.user.id] ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {followLoading[participant.user.id] 
+                ? 'Loading...' 
+                : followingStatus[participant.user.id] 
+                  ? 'Following' 
+                  : 'Follow'}
+            </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleUserClick(participant.user.id);
+              }}
+              className="bg-white text-md text-black rounded-full py-1 px-5 hover:bg-gray-100 transition-colors shrink-0"
+            >
+              View Profile
+            </button>
+          )}
         </div>
       ))}
 

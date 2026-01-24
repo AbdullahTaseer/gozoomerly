@@ -1,20 +1,13 @@
 "use client";
 import React, { useState } from "react";
 
-const TABS = [
-  { id: "wishes", label: "Wishes" },
-  { id: "gifts", label: "Gifts" },
-  { id: "memories", label: "Memories" },
-  { id: "chats", label: "Chats (8)" },
-  { id: "participants", label: "Participants" },
-];
-
 interface BoardSlugTabsCardProps {
   wishesChildren?: React.ReactNode;
   giftsChildren?: React.ReactNode;
   memoriesChildren?: React.ReactNode;
   chatsChildren?: React.ReactNode;
   participantsChildren?: React.ReactNode;
+  chatCount?: number;
 }
 
 const BoardSlugTabsCard = ({
@@ -23,8 +16,17 @@ const BoardSlugTabsCard = ({
   memoriesChildren,
   chatsChildren,
   participantsChildren,
+  chatCount = 0,
 }: BoardSlugTabsCardProps) => {
   const [activeTab, setActiveTab] = useState("wishes");
+
+  const TABS = [
+    { id: "wishes", label: "Wishes" },
+    { id: "gifts", label: "Gifts" },
+    { id: "memories", label: "Memories" },
+    { id: "chats", label: `Chats (${chatCount})` },
+    { id: "participants", label: "Participants" },
+  ];
 
   return (
     <div className="bg-white max-w-[1100px] mx-auto p-4 pb-0">
