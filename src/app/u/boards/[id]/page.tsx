@@ -510,19 +510,19 @@ export default async function BoardPage(props: any) {
               </Link>
             )}
             {!creatorId && (
-              <div className="flex items-center gap-2 mt-6">
-                <p className="text-white text-[15px]">Created by</p>
-                <div className="flex items-center gap-2">
-                  <Image
-                    src={creatorAvatar}
-                    alt={creatorName}
-                    width={32}
-                    height={32}
-                    className="rounded-full object-cover"
-                  />
-                  <p className="text-white font-semibold text-sm">{creatorName}</p>
-                </div>
+            <div className="flex items-center gap-2 mt-6">
+              <p className="text-white text-[15px]">Created by</p>
+              <div className="flex items-center gap-2">
+                <Image
+                  src={creatorAvatar}
+                  alt={creatorName}
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover"
+                />
+                <p className="text-white font-semibold text-sm">{creatorName}</p>
               </div>
+            </div>
             )}
           </div>
           <div className="flex items-center mt-6 gap-4">

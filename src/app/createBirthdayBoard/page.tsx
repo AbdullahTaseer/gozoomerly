@@ -169,6 +169,12 @@ const CreateBirthdayBoard = () => {
 
   const handleProfilePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    
+    // Reset input value to allow selecting the same file again
+    if (event.target) {
+      event.target.value = '';
+    }
+    
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -789,8 +795,14 @@ const CreateBirthdayBoard = () => {
                           )}
                         </label>
                         <div className="relative">
-                          <label
-                            onClick={() => !uploadingProfilePhoto && profilePhotoInputRef.current?.click()}
+                          <div
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (!uploadingProfilePhoto && profilePhotoInputRef.current) {
+                                profilePhotoInputRef.current.click();
+                              }
+                            }}
                             className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingProfilePhoto
                               ? 'border-gray-300 bg-gray-50 cursor-wait'
                               : profilePhotoPreview || customFieldValues.profile_photo_url
@@ -820,15 +832,19 @@ const CreateBirthdayBoard = () => {
                                 <p className="text-sm text-gray-500">Upload Profile Photo</p>
                               </div>
                             )}
-                            <input
-                              ref={profilePhotoInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleProfilePhotoUpload}
-                              className="hidden"
-                              disabled={uploadingProfilePhoto}
-                            />
-                          </label>
+                          </div>
+                          <input
+                            ref={profilePhotoInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePhotoUpload}
+                            onClick={(e) => {
+                              // Reset value on click to allow selecting the same file again
+                              (e.target as HTMLInputElement).value = '';
+                            }}
+                            className="hidden"
+                            disabled={uploadingProfilePhoto}
+                          />
                           {profilePhotoError && (
                             <p className="text-sm text-red-500 mt-1">{profilePhotoError}</p>
                           )}
