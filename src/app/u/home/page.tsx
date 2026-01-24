@@ -171,7 +171,7 @@ const Home = () => {
       const { data: userOwnBoards, error: userOwnBoardsError } = await getUserBoards(user.id);
       if (!userOwnBoardsError && userOwnBoards) {
         const followingWithContributors = await fetchContributors(userOwnBoards);
-        setFollowingBoards(followingWithContributors);
+        setFollowingBoards(followingWithContributors.slice(0, 5));
       } else {
         const followingWithContributors = await fetchContributors(userBoardsData || []);
         setFollowingBoards(followingWithContributors.slice(0, 5));
@@ -336,7 +336,7 @@ const Home = () => {
                 <div className='flex items-center justify-between mb-4'>
                   <h3 className='text-xl md:text-3xl font-bold text-black'>Following</h3>
                   <button
-                    onClick={() => router.push('/u/allBoards/active')}
+                    onClick={() => router.push('/u/allBoards/following')}
                     className='flex items-center gap-1 text-sm text-gray-600 hover:text-black transition-colors'
                   >
                     View all <ChevronRight size={16} />

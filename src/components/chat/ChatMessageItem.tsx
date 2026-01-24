@@ -45,17 +45,7 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
             </span>
           </div>
         )}
-        {showHeader && isOwnMessage && (
-          <div className="flex items-center gap-2 text-xs px-3 justify-end flex-row-reverse">
-            <span className="text-foreground/50 text-xs text-left">
-              {new Date(message.createdAt).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </span>
-          </div>
-        )}
+
 
         <div
           className={cn(
@@ -121,6 +111,17 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
             </div>
           )}
         </div>
+        {showHeader && isOwnMessage && (
+          <div className="flex items-center gap-2 text-xs px-3 justify-end flex-row-reverse">
+            <span className="text-foreground/50 text-xs text-left">
+              {new Date(message.createdAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              })}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
