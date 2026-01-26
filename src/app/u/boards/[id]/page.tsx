@@ -416,23 +416,23 @@ export default async function BoardPage(props: any) {
         .eq('type', 'group')
         .eq('name', boardTitle)
         .limit(1);
-      
+
       if (conversations && conversations.length > 0) {
         const conversationId = conversations[0].id;
-        
+
         // Count messages in this conversation
         const { count, error: countError } = await supabase
           .from('messages')
           .select('*', { count: 'exact', head: true })
           .eq('conversation_id', conversationId);
-        
+
         // If deleted_at column doesn't exist, try without it
         if (countError && (countError.message?.includes('deleted_at') || countError.code === '42703')) {
           const { count: countWithoutDeleted } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })
             .eq('conversation_id', conversationId);
-          
+
           chatCount = countWithoutDeleted || 0;
         } else {
           chatCount = count || 0;
@@ -510,29 +510,30 @@ export default async function BoardPage(props: any) {
               </Link>
             )}
             {!creatorId && (
-            <div className="flex items-center gap-2 mt-6">
-              <p className="text-white text-[15px]">Created by</p>
-              <div className="flex items-center gap-2">
-                <Image
-                  src={creatorAvatar}
-                  alt={creatorName}
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
-                <p className="text-white font-semibold text-sm">{creatorName}</p>
+              <div className="flex items-center gap-2 mt-6">
+                <p className="text-white text-[15px]">Created by</p>
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={creatorAvatar}
+                    alt={creatorName}
+                    width={32}
+                    height={32}
+                    className="rounded-full object-cover"
+                  />
+                  <p className="text-white font-semibold text-sm">{creatorName}</p>
+                </div>
               </div>
-            </div>
             )}
           </div>
           <div className="flex items-center mt-6 gap-4">
-            <Image
-              src={honoreeProfilePhoto}
-              alt={honoreeName}
-              width={65}
-              height={65}
-              className="rounded-full object-cover"
-            />
+            <div className='relative h-16 w-16'>
+              <Image
+                src={honoreeProfilePhoto}
+                alt={honoreeName}
+                fill
+                className="rounded-full object-cover"
+              />
+            </div>
 
             <div>
               <p className="text-white font-semibold text-lg">{honoreeName}</p>
@@ -574,7 +575,7 @@ export default async function BoardPage(props: any) {
         chatCount={chatCount}
       />
 
-      {}
+      { }
     </div>
   );
 }
