@@ -9,6 +9,7 @@ import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import type { Conversation } from '@/lib/supabase/chat';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
+import type { TypingUser } from '@/hooks/use-typing-indicator';
 
 interface BoardsTabProps {
   currentUserId: string | null;
@@ -30,6 +31,9 @@ interface BoardsTabProps {
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
   activeBoards?: any[];
   loadingBoards?: boolean;
+  // Typing indicator props
+  typingUsers?: TypingUser[];
+  isTyping?: boolean;
 }
 
 const BoardsTab: React.FC<BoardsTabProps> = ({
@@ -52,7 +56,19 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
   shouldShowHeader,
   activeBoards = [],
   loadingBoards = false,
+  typingUsers = [],
+  isTyping = false,
 }) => {
+  const getTypingText = (): string => {
+    if (typingUsers.length === 0) return '';
+    if (typingUsers.length === 1) {
+      return `${typingUsers[0].user_name || 'Someone'} is typing...`;
+    }
+    if (typingUsers.length === 2) {
+      return `${typingUsers[0].user_name || 'Someone'} and ${typingUsers[1].user_name || 'someone'} are typing...`;
+    }
+    return `${typingUsers.length} people are typing...`;
+  };
   return (
     <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
       <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
@@ -148,6 +164,9 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
               </div>
               <div className='flex-1'>
                 <p className='font-bold'>{getConversationName(selectedConversation)}</p>
+                {isTyping && (
+                  <p className='text-xs text-gray-400'>{getTypingText()}</p>
+                )}
               </div>
             </div>
 
@@ -167,6 +186,16 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                       showHeader={shouldShowHeader(msg, index)}
                     />
                   ))}
+                  {isTyping && typingUsers.length > 0 && (
+                    <div className="flex items-center gap-2 px-2 py-1 text-gray-500 text-xs">
+                      <div className="flex space-x-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span>{getTypingText()}</span>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </>
               )}

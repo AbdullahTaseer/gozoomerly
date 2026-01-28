@@ -52,6 +52,10 @@ const ChatPageContent = () => {
     shouldShowHeader,
     activeBoards,
     loadingBoards,
+    typingUsers,
+    isTyping,
+    isUserOnline,
+    getLastSeenText,
   } = useChat();
 
   useEffect(() => {
@@ -243,6 +247,10 @@ const ChatPageContent = () => {
             formatTime={formatTime}
             getLastMessageWithSender={getLastMessageWithSender}
             shouldShowHeader={shouldShowHeader}
+            typingUsers={typingUsers}
+            isTyping={isTyping}
+            isUserOnline={isUserOnline}
+            getLastSeenText={getLastSeenText}
           />
         ) : (
           <BoardsTab
@@ -265,6 +273,8 @@ const ChatPageContent = () => {
             shouldShowHeader={shouldShowHeader}
             activeBoards={activeBoards}
             loadingBoards={loadingBoards}
+            typingUsers={typingUsers}
+            isTyping={isTyping}
           />
         )}
       </div>

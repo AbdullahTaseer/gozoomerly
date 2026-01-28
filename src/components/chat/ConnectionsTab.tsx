@@ -9,6 +9,7 @@ import ZoomerlyLogo from "@/assets/svgs/Zoomerly.svg";
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import type { Conversation } from '@/lib/supabase/chat';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
+import type { TypingUser } from '@/hooks/use-typing-indicator';
 
 interface ConnectionsTabProps {
   currentUserId: string | null;
@@ -28,6 +29,13 @@ interface ConnectionsTabProps {
   formatTime: (dateString?: string) => string;
   getLastMessageWithSender: (conv: Conversation) => string;
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
+  // Typing indicator props
+  typingUsers?: TypingUser[];
+  isTyping?: boolean;
+  // Online status props
+  isUserOnline?: (userId: string) => boolean;
+  // Last seen props
+  getLastSeenText?: (userId: string) => string;
 }
 
 const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
@@ -48,7 +56,26 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   formatTime,
   getLastMessageWithSender,
   shouldShowHeader,
+  typingUsers = [],
+  isTyping = false,
+  isUserOnline,
+  getLastSeenText,
 }) => {
+  const getOtherUserId = (conv: Conversation): string | null => {
+    if (conv.type !== 'direct') return null;
+    if (conv.other_user?.user_id) return conv.other_user.user_id;
+    if (conv.other_user?.id) return conv.other_user.id;
+    const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+    return otherParticipant?.user_id || null;
+  };
+
+  const getTypingText = (): string => {
+    if (typingUsers.length === 0) return '';
+    if (typingUsers.length === 1) {
+      return `${typingUsers[0].user_name || 'Someone'} is typing...`;
+    }
+    return 'Multiple people are typing...';
+  };
   return (
     <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
       <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
@@ -72,6 +99,9 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
               lastMessageTime = lastMsg.createdAt;
             }
 
+            const otherUserId = getOtherUserId(conv);
+            const userOnline = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
+
             return (
               <ChatCard
                 key={conv.id}
@@ -80,6 +110,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                 message={getLastMessageWithSender(conv)}
                 time={formatTime(lastMessageTime)}
                 isActive={selectedConversation?.id === conv.id}
+                isOnline={userOnline}
                 onClick={() => setSelectedConversation(conv)}
               />
             );
@@ -106,9 +137,26 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     target.src = ProfileAvatar.src || ProfileAvatar;
                   }}
                 />
+                {(() => {
+                  const otherUserId = getOtherUserId(selectedConversation);
+                  const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
+                  return online ? (
+                    <span className='absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-[#2A2D3A] rounded-full' />
+                  ) : null;
+                })()}
               </div>
               <div className='flex-1'>
                 <p className='font-bold'>{getConversationName(selectedConversation)}</p>
+                {(() => {
+                  const otherUserId = getOtherUserId(selectedConversation);
+                  const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
+                  const lastSeenText = otherUserId && getLastSeenText ? getLastSeenText(otherUserId) : 'Offline';
+                  return (
+                    <p className='text-xs text-gray-400'>
+                      {isTyping ? getTypingText() : online ? 'Online' : lastSeenText}
+                    </p>
+                  );
+                })()}
               </div>
             </div>
 
@@ -128,6 +176,16 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                       showHeader={shouldShowHeader(msg, index)}
                     />
                   ))}
+                  {isTyping && typingUsers.length > 0 && (
+                    <div className="flex items-center gap-2 px-2 py-1 text-gray-500 text-xs">
+                      <div className="flex space-x-1">
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span>{getTypingText()}</span>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </>
               )}

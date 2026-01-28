@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import { ChatMessage, useRealtimeChat } from '@/hooks/use-realtime-chat';
+import { useTypingIndicator } from '@/hooks/use-typing-indicator';
+import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useLastSeen } from '@/hooks/use-last-seen';
 import {
   getUserConversations,
   getConversationMessages,
@@ -24,6 +27,8 @@ const authService = new AuthService();
 export const useChat = () => {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined);
+  const [currentUserProfilePic, setCurrentUserProfilePic] = useState<string | undefined>(undefined);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -56,16 +61,30 @@ export const useChat = () => {
         return;
       }
       setCurrentUserId(user.id);
+
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, profile_pic_url')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setCurrentUserName(profile.name || undefined);
+          setCurrentUserProfilePic(profile.profile_pic_url || undefined);
+        }
+      } catch (err) {
+        // Profile fetch failed, continue without it
+      }
       
       await loadConversations(user.id);
       
-      // Only restore from localStorage if there's no URL param (let URL params take priority)
-      // Check if we're on the chat page and if there are URL params
       const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/u/chat');
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasUrlParams = urlParams && (urlParams.get('conversationId') || urlParams.get('userId'));
       
-      // Only restore from localStorage if no URL params are present
       if (!hasUrlParams) {
         const savedConversationId = localStorage.getItem('selectedConversationId');
         
@@ -74,16 +93,20 @@ export const useChat = () => {
             const { conversation, error } = await getConversation(savedConversationId, user.id);
             if (!error && conversation) {
               setSelectedConversation(conversation);
-              // Update conversations list with the restored conversation
               setConversations(prev => {
                 const existing = prev.find(c => c.id === conversation.id);
                 if (existing) {
-                  return prev.map(c => c.id === conversation.id ? conversation : c);
+                  return prev.map(c => c.id === conversation.id ? {
+                    ...conversation,
+                    last_message: conversation.last_message || c.last_message,
+                    last_message_at: conversation.last_message_at || c.last_message_at,
+                    last_message_id: conversation.last_message_id || c.last_message_id,
+                    last_message_sender_id: conversation.last_message_sender_id || c.last_message_sender_id,
+                  } : c);
                 }
                 return [conversation, ...prev];
               });
             } else {
-              // Clear invalid saved conversation
               localStorage.removeItem('selectedConversationId');
             }
           } catch (err) {
@@ -215,35 +238,40 @@ export const useChat = () => {
 
   useEffect(() => {
     if (selectedConversation && currentUserId) {
-      // Save selected conversation to localStorage for restoration after reload
       localStorage.setItem('selectedConversationId', selectedConversation.id);
       
-      // Optimize: Load messages and fetch full conversation in parallel if needed
       const needsFullConversation = selectedConversation.type === 'direct' && 
         (!selectedConversation.participants || 
          selectedConversation.participants.length === 0 || 
          !selectedConversation.participants.some((p: any) => p.user?.name));
       
-      // Load messages immediately
       loadMessages(selectedConversation.id);
       
-      // Mark as read immediately
       markConversationAsRead(selectedConversation.id, currentUserId).catch(() => {});
       
-      // Fetch full conversation in parallel if needed (non-blocking)
       if (needsFullConversation) {
         getConversation(selectedConversation.id, currentUserId).then(({ conversation: fullConv, error }) => {
           if (!error && fullConv) {
-            setSelectedConversation(fullConv);
-            // Update in conversations list too
-            setConversations(prev => prev.map(conv => 
-              conv.id === fullConv.id ? fullConv : conv
+            setSelectedConversation(prev => prev ? {
+              ...fullConv,
+              last_message: fullConv.last_message || prev.last_message,
+              last_message_at: fullConv.last_message_at || prev.last_message_at,
+              last_message_id: fullConv.last_message_id || prev.last_message_id,
+              last_message_sender_id: fullConv.last_message_sender_id || prev.last_message_sender_id,
+            } : fullConv);
+            setConversations(prev => prev.map(conv =>
+              conv.id === fullConv.id ? {
+                ...fullConv,
+                last_message: fullConv.last_message || conv.last_message,
+                last_message_at: fullConv.last_message_at || conv.last_message_at,
+                last_message_id: fullConv.last_message_id || conv.last_message_id,
+                last_message_sender_id: fullConv.last_message_sender_id || conv.last_message_sender_id,
+              } : conv
             ));
           }
         }).catch(() => {});
       }
     } else {
-      // Clear saved conversation when none is selected
       localStorage.removeItem('selectedConversationId');
     }
   }, [selectedConversation, currentUserId, loadMessages]);
@@ -395,6 +423,54 @@ export const useChat = () => {
     enabled: !!selectedConversation && !!currentUserId,
   });
 
+  const { typingUsers, sendTyping, isTyping } = useTypingIndicator({
+    conversationId: selectedConversation?.id || null,
+    currentUserId,
+    currentUserName,
+    enabled: !!selectedConversation && !!currentUserId,
+  });
+
+  const { onlineUsers, isUserOnline } = useOnlineStatus({
+    currentUserId,
+    currentUserName,
+    currentUserProfilePic,
+    enabled: !!currentUserId,
+  });
+
+  const conversationUserIds = useMemo(() => {
+    const userIds: string[] = [];
+    conversations.forEach((conv) => {
+      if (conv.type === 'direct') {
+        if (conv.other_user?.user_id) {
+          userIds.push(conv.other_user.user_id);
+        } else if (conv.other_user?.id) {
+          userIds.push(conv.other_user.id);
+        } else if (conv.participants) {
+          const otherParticipant = conv.participants.find(
+            (p: any) => p.user_id !== currentUserId
+          );
+          if (otherParticipant?.user_id) {
+            userIds.push(otherParticipant.user_id);
+          }
+        }
+      }
+    });
+    return [...new Set(userIds)]; 
+  }, [conversations, currentUserId]);
+
+  const { getLastSeenText } = useLastSeen({
+    userIds: conversationUserIds,
+    enabled: !!currentUserId && conversationUserIds.length > 0,
+    refreshInterval: 60000, 
+  });
+
+  const handleNewMessageChange = useCallback((value: string) => {
+    setNewMessage(value);
+    if (value.trim()) {
+      sendTyping();
+    }
+  }, [sendTyping]);
+
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -427,13 +503,11 @@ export const useChat = () => {
     if (!currentUserId) return;
 
     try {
-      // Check if conversation already exists in the list
       const existingConversation = conversations.find(conv => 
         conv.type === 'direct' && 
         conv.participants?.some((p: any) => p.user_id === userId)
       );
 
-      // If conversation exists, open it immediately without reloading
       if (existingConversation) {
         isSettingProgrammaticallyRef.current = true;
         setSearchQuery('');
@@ -459,12 +533,10 @@ export const useChat = () => {
         return;
       }
 
-      // Set the conversation immediately with basic data (optimistic update)
       isSettingProgrammaticallyRef.current = true;
       setSearchQuery('');
       setShowSearchResults(false);
 
-      // Add to conversations list immediately
       setConversations(prev => {
         const unique = prev.filter((conv, index, self) =>
           index === self.findIndex(c => c.id === conv.id)
@@ -476,21 +548,29 @@ export const useChat = () => {
         return [newConversation, ...unique];
       });
 
-      // Set conversation immediately so UI updates right away
       setSelectedConversation(newConversation);
 
-      // Fetch full conversation with participants in background (non-blocking)
       getConversation(newConversation.id, currentUserId).then(({ conversation: fullConversation, error: fetchError }) => {
         if (!fetchError && fullConversation) {
-          // Update with full conversation data
-          setSelectedConversation(fullConversation);
-          setConversations(prev => prev.map(conv => 
-            conv.id === fullConversation.id ? fullConversation : conv
+          setSelectedConversation(prev => prev ? {
+            ...fullConversation,
+            last_message: fullConversation.last_message || prev.last_message,
+            last_message_at: fullConversation.last_message_at || prev.last_message_at,
+            last_message_id: fullConversation.last_message_id || prev.last_message_id,
+            last_message_sender_id: fullConversation.last_message_sender_id || prev.last_message_sender_id,
+          } : fullConversation);
+          setConversations(prev => prev.map(conv =>
+            conv.id === fullConversation.id ? {
+              ...fullConversation,
+              last_message: fullConversation.last_message || conv.last_message,
+              last_message_at: fullConversation.last_message_at || conv.last_message_at,
+              last_message_id: fullConversation.last_message_id || conv.last_message_id,
+              last_message_sender_id: fullConversation.last_message_sender_id || conv.last_message_sender_id,
+            } : conv
           ));
         }
       }).catch(() => {});
 
-      // Reset flag after a short delay
       setTimeout(() => {
         isSettingProgrammaticallyRef.current = false;
       }, 100);
@@ -758,21 +838,17 @@ export const useChat = () => {
   }, [selectedConversation, currentUserId, uploading]);
 
   const getConversationName = useCallback((conv: Conversation): string => {
-    // For direct conversations, prioritize showing the other user's name
     if (conv.type === 'direct') {
-      // Use other_user if available (from RPC response)
       if (conv.other_user) {
         if (conv.other_user.name) {
           return conv.other_user.name;
         }
-        // Fallback to user_id if name is not available
         const userId = conv.other_user.user_id || conv.other_user.id;
         if (userId) {
           return `User ${userId.substring(0, 8)}`;
         }
       }
       
-      // Fallback to searching through participants
       if (conv.participants && conv.participants.length > 0) {
         const otherParticipant = conv.participants.find(
           (p: any) => p.user_id !== currentUserId
@@ -791,14 +867,12 @@ export const useChat = () => {
       return 'Unknown User';
     }
     
-    // For group conversations, use the conversation name
     if (conv.name) return conv.name;
     
     return 'Conversation';
   }, [currentUserId]);
 
   const getConversationAvatar = useCallback((conv: Conversation): string | StaticImport => {
-    // For direct conversations, use other_user if available
     if (conv.type === 'direct' && conv.other_user?.profile_pic_url) {
       const picUrl = conv.other_user.profile_pic_url.trim();
       if (picUrl && picUrl !== 'null' && picUrl !== 'undefined' && picUrl !== '') {
@@ -806,7 +880,6 @@ export const useChat = () => {
       }
     }
     
-    // Fallback to searching through participants
     if (conv.type === 'direct' && conv.participants && conv.participants.length > 0) {
       const otherParticipant = conv.participants.find(
         (p: any) => p.user_id !== currentUserId
@@ -844,65 +917,54 @@ export const useChat = () => {
     let senderId: string | undefined;
     let senderName: string | undefined;
     
-    // Check if this is the selected conversation with loaded messages (most up-to-date)
     if (selectedConversation?.id === conv.id && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
       messageContent = lastMsg.content || lastMsg.fileName || 'Media';
       senderId = lastMsg.senderId;
       senderName = lastMsg.user?.name;
     } else {
-      // Use conversation's last_message data
       if (!conv.last_message) return "No message yet";
       
       messageContent = conv.last_message;
       senderId = conv.last_message_sender_id;
     }
     
-    // Add sender prefix
     if (senderId === currentUserId) {
       return `You: ${messageContent}`;
     }
     
-    // Try to get sender name from messages array (if selected conversation)
     if (senderName) {
       return `${senderName}: ${messageContent}`;
     }
     
-    // Try to get sender name from other_user
     if (conv.other_user && senderId === (conv.other_user.user_id || conv.other_user.id)) {
       return `${conv.other_user.name}: ${messageContent}`;
     }
     
-    // Try to get sender name from participants
     const sender = conv.participants?.find((p: any) => p.user_id === senderId);
     if (sender?.user?.name) {
       return `${sender.user.name}: ${messageContent}`;
     }
     
-    // Fallback: just return the message without sender prefix
     return messageContent;
   }, [currentUserId, selectedConversation, messages]);
 
   const filteredConversations = conversations.filter(conv => {
-    // Always show the selected conversation
     if (selectedConversation && conv.id === selectedConversation.id) {
       return true;
     }
-    
-    // Filter by tab type first
+
     if (selectedTab === 'Connections' && conv.type !== 'direct') {
       return false;
     }
     if (selectedTab === 'Boards' && conv.type !== 'group') {
       return false;
     }
-    
-    // Only show conversations with messages
+
     if (!conv.last_message) {
       return false;
     }
-    
-    // Apply search query filter if present
+
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     const name = getConversationName(conv).toLowerCase();
@@ -934,7 +996,7 @@ export const useChat = () => {
     isConnected,
     realtimeError,
     setSelectedConversation,
-    setNewMessage,
+    setNewMessage: handleNewMessageChange,
     setSearchQuery,
     setShowSearchResults,
     setSelectedTab,
@@ -949,6 +1011,12 @@ export const useChat = () => {
     shouldShowHeader,
     activeBoards,
     loadingBoards,
+    typingUsers,
+    isTyping,
+    sendTyping,
+    onlineUsers,
+    isUserOnline,
+    getLastSeenText,
   };
 };
 
