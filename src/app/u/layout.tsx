@@ -7,6 +7,7 @@ import BottomTabs from '@/components/footer/BottomTabs';
 import CreateOrShareModal from '@/components/modals/CreateOrShareModal';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 import { chatOpenState } from '@/lib/chatOpenState';
+import { OnlineStatusProvider } from '@/components/providers/OnlineStatusProvider';
 
 const UserLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname() || '';
@@ -27,18 +28,20 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
   const shouldHideBottomTabs = isChatOpen;
 
   return (
-    <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
-      { }
-      <main className="flex-1">
-        {children}
-      </main>
-      {!hideNavbarForBoardDetail && <DashFooter />}
-      {!shouldHideBottomTabs && <BottomTabs />}
-      <CreateOrShareModal
-        isOpen={isCreateOrShareModalOpen}
-        onClose={() => createOrShareModalState.close()}
-      />
-    </div>
+    <OnlineStatusProvider>
+      <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
+        { }
+        <main className="flex-1">
+          {children}
+        </main>
+        {!hideNavbarForBoardDetail && <DashFooter />}
+        {!shouldHideBottomTabs && <BottomTabs />}
+        <CreateOrShareModal
+          isOpen={isCreateOrShareModalOpen}
+          onClose={() => createOrShareModalState.close()}
+        />
+      </div>
+    </OnlineStatusProvider>
   );
 };
 

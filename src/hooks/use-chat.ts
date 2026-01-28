@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import { ChatMessage, useRealtimeChat } from '@/hooks/use-realtime-chat';
 import { useTypingIndicator } from '@/hooks/use-typing-indicator';
-import { useOnlineStatus } from '@/hooks/use-online-status';
+import { useGlobalOnlineStatus } from '@/components/providers/OnlineStatusProvider';
 import { useLastSeen } from '@/hooks/use-last-seen';
 import {
   getUserConversations,
@@ -28,7 +28,6 @@ export const useChat = () => {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined);
-  const [currentUserProfilePic, setCurrentUserProfilePic] = useState<string | undefined>(undefined);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -44,11 +43,9 @@ export const useChat = () => {
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSettingProgrammaticallyRef = useRef(false);
   
-  // Hook for fetching user boards
   const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
   const fetchUserBoardsRef = useRef(fetchUserBoards);
   
-  // Update ref when function changes
   useEffect(() => {
     fetchUserBoardsRef.current = fetchUserBoards;
   }, [fetchUserBoards]);
@@ -73,15 +70,12 @@ export const useChat = () => {
 
         if (profile) {
           setCurrentUserName(profile.name || undefined);
-          setCurrentUserProfilePic(profile.profile_pic_url || undefined);
         }
       } catch (err) {
-        // Profile fetch failed, continue without it
       }
       
       await loadConversations(user.id);
       
-      const isChatPage = typeof window !== 'undefined' && window.location.pathname.includes('/u/chat');
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
       const hasUrlParams = urlParams && (urlParams.get('conversationId') || urlParams.get('userId'));
       
@@ -193,7 +187,6 @@ export const useChat = () => {
           };
         });
 
-        // Optimize: Only fetch unique sender profiles to avoid duplicate requests
         const messagesNeedingProfiles = chatMessages.filter(
           m => m.user.name === 'Loading...' || m.user.name === 'Unknown' || !m.user.avatar
         );
@@ -204,7 +197,6 @@ export const useChat = () => {
           const { createClient } = await import('@/lib/supabase/client');
           const supabase = createClient();
 
-          // Batch fetch all unique profiles at once
           const { data: profilesData } = await supabase
             .from('profiles')
             .select('id, name, profile_pic_url')
@@ -303,9 +295,7 @@ export const useChat = () => {
     }
   }, [selectedTab, currentUserId]);
 
-  // Filter active boards from the fetched boards
   const activeBoards = boards.filter((board: any) => {
-    // Active boards are those with status 'published' and deadline not passed
     return (
       board.status === 'published' &&
       (!board.deadline_date || new Date(board.deadline_date) > new Date())
@@ -430,12 +420,7 @@ export const useChat = () => {
     enabled: !!selectedConversation && !!currentUserId,
   });
 
-  const { onlineUsers, isUserOnline } = useOnlineStatus({
-    currentUserId,
-    currentUserName,
-    currentUserProfilePic,
-    enabled: !!currentUserId,
-  });
+  const { onlineUsers, isUserOnline } = useGlobalOnlineStatus();
 
   const conversationUserIds = useMemo(() => {
     const userIds: string[] = [];
@@ -628,7 +613,6 @@ export const useChat = () => {
       return updated;
     });
 
-    // Get the last message ID from the messages array
     const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
     
     sendMessage(currentUserId, {
@@ -681,7 +665,6 @@ export const useChat = () => {
             : conv
         ));
         
-        // Update selected conversation with real message ID
         setSelectedConversation(prev => 
           prev ? {
             ...prev,
@@ -705,7 +688,7 @@ export const useChat = () => {
   const handleFileUpload = useCallback(async (file: File) => {
     if (!selectedConversation || !currentUserId || uploading) return;
 
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024; 
     if (file.size > maxSize) {
       toast.error('File size must be less than 10MB');
       return;
@@ -771,7 +754,6 @@ export const useChat = () => {
         setMessages(prev => prev.filter(m => m.id !== tempMessageId));
       }
 
-      // Get the last message ID from the messages array
       const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
 
       const { error: sendError, message: sentMessage } = await sendMessage(currentUserId, {
@@ -912,7 +894,6 @@ export const useChat = () => {
   }, []);
 
   const getLastMessageWithSender = useCallback((conv: Conversation): string => {
-    // Determine the message content and sender
     let messageContent: string;
     let senderId: string | undefined;
     let senderName: string | undefined;
@@ -980,43 +961,43 @@ export const useChat = () => {
   }, [messages]);
 
   return {
-    currentUserId,
-    conversations,
-    selectedConversation,
-    messages,
-    newMessage,
     loading,
-    uploading,
-    searchQuery,
-    searchResults,
-    showSearchResults,
-    searching,
-    selectedTab,
-    messagesEndRef,
-    isConnected,
-    realtimeError,
-    setSelectedConversation,
-    setNewMessage: handleNewMessageChange,
-    setSearchQuery,
-    setShowSearchResults,
-    setSelectedTab,
-    handleStartConversation,
-    handleSend,
-    handleFileUpload,
-    getConversationName,
-    getConversationAvatar,
-    formatTime,
-    getLastMessageWithSender,
-    filteredConversations,
-    shouldShowHeader,
-    activeBoards,
-    loadingBoards,
-    typingUsers,
+    messages,
     isTyping,
+    searching,
+    uploading,
+    newMessage,
+    formatTime,
     sendTyping,
+    handleSend,
+    searchQuery,
+    selectedTab,
     onlineUsers,
+    isConnected,
+    typingUsers,
+    activeBoards,
     isUserOnline,
+    searchResults,
+    realtimeError,
+    conversations,
+    currentUserId,
+    loadingBoards,
+    setSelectedTab,
+    setSearchQuery,
+    messagesEndRef,
     getLastSeenText,
+    shouldShowHeader,
+    handleFileUpload,
+    showSearchResults,
+    getConversationName,
+    selectedConversation,
+    setShowSearchResults,
+    getConversationAvatar,
+    filteredConversations,
+    handleStartConversation,
+    setSelectedConversation,
+    getLastMessageWithSender,
+    setNewMessage: handleNewMessageChange,
   };
 };
 
