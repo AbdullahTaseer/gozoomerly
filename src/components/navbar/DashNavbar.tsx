@@ -91,7 +91,7 @@ const DashNavbar = ({ hide = true }: props) => {
               {option}
             </p>
           ))}
-          <AnimatedButton onClick={() => createOrShareModalState.open()} height='42px' title='Create' width='110px' />
+          <AnimatedButton onClick={() => createOrShareModalState.open()} title='Create' width='110px' />
         </div>
         <div className='hidden max-[769px]:block'>
           <BellIconIndicator />

@@ -9,11 +9,12 @@ import Avatar_1 from "@/assets/svgs/start-celebration-avatar-1.svg";
 import Avatar_2 from "@/assets/svgs/start-celebration-avatar-2.svg";
 import Avatar_3 from "@/assets/svgs/start-celebration-avatar-3.svg";
 import Particles from "@/assets/svgs/start-you-first-celebration.svg";
+import ArrowRight from "@/assets/svgs/ArrowRight-black.svg"
 
 const StartYourFirstCelebration = () => {
 
   return (
-    <section className="px-[5%] max-[768px]:px-0 py-10">
+    <section className="px-[5%] max-[768px]:px-0">
       <div className={`relative rounded-[20px] max-[768px]:rounded-none bg-gradient-to-b from-pink-500 via-pink-400 to-purple-500 text-white text-center px-6 py-12 overflow-hidden`}>
 
         <Image
@@ -36,8 +37,8 @@ const StartYourFirstCelebration = () => {
 
         <Image src={Avatar_3} alt="1" height={80} width={80} className="hidden max-[768px]:block" />
 
-        <div className="w-[350px] max-[520px]:w-full mb-16 max-[768px]:mb-0 mx-auto">
-          <GlobalButton title='Create Your Board' height="48px" bgColor="white" color="black" width="100%" hover={{ bgColor: 'white' }} />
+        <div className="w-[300px] max-[520px]:w-full mb-16 max-[768px]:mb-0 mx-auto">
+          <GlobalButton title='Create Your Board' icon={ArrowRight} height="56px" bgColor="white" color="black" width="100%" hover={{ bgColor: 'white' }} className="flex-row-reverse" />
         </div>
 
       </div>
