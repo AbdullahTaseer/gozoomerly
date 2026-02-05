@@ -14,8 +14,18 @@ import {
   getOrCreateDirectConversation,
   getConversation,
   searchUsers,
+  createChatMedia,
+  uploadChatMediaFile,
+  sendMessageWithMedia,
+  cancelChatMedia,
+  getMediaTypeFromMime,
+  validateMediaSize,
+  getMediaPublicUrl,
+  MEDIA_LIMITS,
   type Conversation,
+  type MediaType,
 } from '@/lib/supabase/chat';
+import type { ChatMessageMedia } from '@/hooks/use-realtime-chat';
 import { AuthService } from '@/lib/supabase/auth';
 import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
@@ -34,6 +44,18 @@ export const useChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  
+  interface DraftMedia {
+    mediaId: string;
+    file: File;
+    previewUrl: string;
+    mediaType: MediaType;
+    fileName: string;
+    fileSize: number;
+    uploading: boolean;
+    error?: string;
+  }
+  const [draftMedia, setDraftMedia] = useState<DraftMedia[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -170,6 +192,34 @@ export const useChat = () => {
             (msg.sender_id ? 'Loading...' : 'Unknown');
           const senderAvatar = msg.sender?.profile_pic_url || undefined;
 
+          // Extract media from message.media array and generate public URLs
+          let media: ChatMessageMedia[] | undefined;
+          if (msg.media && Array.isArray(msg.media) && msg.media.length > 0) {
+            media = msg.media.map((m: any) => ({
+              id: m.id,
+              mediaType: m.media_type,
+              url: getMediaPublicUrl(m.bucket, m.path),
+              filename: m.filename,
+              mimeType: m.mime_type,
+              sizeBytes: m.size_bytes,
+              orderIndex: m.order_index,
+            }));
+          }
+
+          // For backward compatibility, use first media as fileUrl if no legacy file_url
+          const fileUrl = msg.file_url || (media && media.length > 0 ? media[0].url : undefined);
+          const fileName = msg.file_name || (media && media.length > 0 ? media[0].filename : undefined);
+          
+          // Determine message type
+          let messageType = msg.message_type || 'text';
+          if (media && media.length > 0) {
+            if (media.length === 1) {
+              messageType = media[0].mediaType === 'document' ? 'file' : media[0].mediaType;
+            } else {
+              messageType = 'mixed';
+            }
+          }
+
           return {
             id: msg.id,
             content: msg.content || '',
@@ -181,9 +231,10 @@ export const useChat = () => {
             },
             conversationId: msg.conversation_id,
             senderId: msg.sender_id,
-            messageType: msg.message_type || 'text',
-            fileUrl: msg.file_url,
-            fileName: msg.file_name,
+            messageType,
+            fileUrl,
+            fileName,
+            media,
           };
         });
 
@@ -565,15 +616,116 @@ export const useChat = () => {
   }, [currentUserId, conversations]);
 
   const handleSend = useCallback(async () => {
-    if (!newMessage.trim() || !selectedConversation || !currentUserId) return;
+    if ((!newMessage.trim() && draftMedia.length === 0) || !selectedConversation || !currentUserId) return;
 
-    const messageContent = newMessage.trim();
+    const messageContent = newMessage.trim() || null;
+    const mediaIds = draftMedia.map(d => d.mediaId).filter(id => !!id);
+    
+    // If we have draft media, use the new RPC flow
+    if (mediaIds.length > 0) {
+      try {
+        setUploading(true);
+        
+        const now = new Date().toISOString();
+        // Determine media preview text based on draft media types
+        const mediaTypes = draftMedia.map(d => d.mediaType);
+        const hasImage = mediaTypes.includes('image');
+        const hasVideo = mediaTypes.includes('video');
+        const hasAudio = mediaTypes.includes('audio');
+        const hasDocument = mediaTypes.includes('document');
+        
+        let mediaPreview = '';
+        if (hasImage && mediaTypes.length === 1) mediaPreview = '📷 Image';
+        else if (hasVideo && mediaTypes.length === 1) mediaPreview = '🎥 Video';
+        else if (hasAudio && mediaTypes.length === 1) mediaPreview = '🎵 Audio';
+        else if (hasDocument && mediaTypes.length === 1) mediaPreview = `📎 ${draftMedia[0].fileName}`;
+        else mediaPreview = `${mediaTypes.length} attachments`;
+        
+        const lastMessageText = messageContent || mediaPreview;
+        
+        const updatedConversation = {
+          ...selectedConversation,
+          last_message: lastMessageText,
+          last_message_at: now,
+          last_message_sender_id: currentUserId,
+        };
+        setSelectedConversation(updatedConversation);
+        
+        setConversations(prev => {
+          const updated = prev.map(conv =>
+            conv.id === selectedConversation.id
+              ? { ...conv, last_message: lastMessageText, last_message_at: now, last_message_sender_id: currentUserId }
+              : conv
+          );
+          const updatedConv = updated.find(c => c.id === selectedConversation.id);
+          if (updatedConv) {
+            return [updatedConv, ...updated.filter(c => c.id !== selectedConversation.id)];
+          }
+          return updated;
+        });
+        
+        // Step 3: Send message with all media IDs
+        const { data: rpcResult, error: rpcError } = await sendMessageWithMedia(
+          currentUserId,
+          selectedConversation.id,
+          messageContent,
+          mediaIds
+        );
+
+        if (rpcError) {
+          setConversations(prev => prev.map(conv =>
+            conv.id === selectedConversation.id ? selectedConversation : conv
+          ));
+          setSelectedConversation(selectedConversation);
+          toast.error(rpcError.message || 'Failed to send message. Please try again.');
+          return;
+        }
+
+        if (rpcResult?.success) {
+          setDraftMedia([]);
+          setNewMessage('');
+          
+          if (rpcResult.created_at) {
+            setConversations(prev => prev.map(conv =>
+              conv.id === selectedConversation.id
+                ? { ...conv, last_message: lastMessageText, last_message_at: rpcResult.created_at, last_message_id: rpcResult.message_id, last_message_sender_id: currentUserId }
+                : conv
+            ));
+            setSelectedConversation(prev => prev ? {
+              ...prev,
+              last_message: lastMessageText,
+              last_message_at: rpcResult.created_at,
+              last_message_id: rpcResult.message_id,
+              last_message_sender_id: currentUserId
+            } : prev);
+          }
+          
+          // The realtime listener will handle adding the message to the UI
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+      } catch (err: any) {
+        // Revert optimistic update on error
+        setConversations(prev => prev.map(conv =>
+          conv.id === selectedConversation.id ? selectedConversation : conv
+        ));
+        setSelectedConversation(selectedConversation);
+        toast.error('Failed to send message. Please try again.');
+      } finally {
+        setUploading(false);
+      }
+      return;
+    }
+
+    // Text-only message (legacy flow)
+    const messageContentText = newMessage.trim();
     const tempMessageId = `temp-${Date.now()}`;
     const now = new Date().toISOString();
 
     const optimisticMessage: ChatMessage = {
       id: tempMessageId,
-      content: messageContent,
+      content: messageContentText,
       createdAt: now,
       user: {
         id: currentUserId,
@@ -594,7 +746,7 @@ export const useChat = () => {
 
     const updatedConversation = {
       ...selectedConversation,
-      last_message: messageContent,
+      last_message: messageContentText,
       last_message_at: now,
       last_message_sender_id: currentUserId,
     };
@@ -603,7 +755,7 @@ export const useChat = () => {
     setConversations(prev => {
       const updated = prev.map(conv =>
         conv.id === selectedConversation.id
-          ? { ...conv, last_message: messageContent, last_message_at: now, last_message_sender_id: currentUserId }
+          ? { ...conv, last_message: messageContentText, last_message_at: now, last_message_sender_id: currentUserId }
           : conv
       );
       const updatedConv = updated.find(c => c.id === selectedConversation.id);
@@ -617,7 +769,7 @@ export const useChat = () => {
     
     sendMessage(currentUserId, {
       conversation_id: selectedConversation.id,
-      content: messageContent,
+      content: messageContentText,
       message_type: 'text',
       last_message_id: lastMessageId,
     }).then(({ error, message: sentMessage }) => {
@@ -652,7 +804,6 @@ export const useChat = () => {
           return filtered;
         });
         
-        // Update conversations with the real message ID
         setConversations(prev => prev.map(conv =>
           conv.id === selectedConversation.id
             ? { 
@@ -683,141 +834,124 @@ export const useChat = () => {
       setSelectedConversation(selectedConversation);
       toast.error('Failed to send message. Please try again.');
     });
-  }, [newMessage, selectedConversation, currentUserId]);
+  }, [newMessage, selectedConversation, currentUserId, draftMedia]);
+
+  const removeDraftMedia = useCallback(async (mediaId: string) => {
+    if (!currentUserId) return;
+    
+    await cancelChatMedia(currentUserId, mediaId);
+    
+    setDraftMedia(prev => prev.filter(d => d.mediaId !== mediaId));
+  }, [currentUserId]);
+
+  useEffect(() => {
+    return () => {
+      if (draftMedia.length > 0 && currentUserId) {
+        draftMedia.forEach(draft => {
+          if (!draft.mediaId.startsWith('temp-')) {
+            cancelChatMedia(currentUserId, draft.mediaId).catch(() => {});
+          }
+          if (draft.previewUrl) {
+            URL.revokeObjectURL(draft.previewUrl);
+          }
+        });
+      }
+    };
+  }, [selectedConversation?.id]);
 
   const handleFileUpload = useCallback(async (file: File) => {
-    if (!selectedConversation || !currentUserId || uploading) return;
+    if (!selectedConversation || !currentUserId) return;
 
-    const maxSize = 10 * 1024 * 1024; 
-    if (file.size > maxSize) {
-      toast.error('File size must be less than 10MB');
+    if (draftMedia.length >= MEDIA_LIMITS.maxAttachments) {
+      toast.error(`Maximum ${MEDIA_LIMITS.maxAttachments} attachments per message`);
       return;
     }
 
+    const validation = validateMediaSize(file);
+    if (!validation.valid) {
+      toast.error(validation.error || 'File too large');
+      return;
+    }
+
+    const currentTotalSize = draftMedia.reduce((sum, d) => sum + d.fileSize, 0);
+    if (currentTotalSize + file.size > MEDIA_LIMITS.maxTotalSize) {
+      const maxMB = Math.round(MEDIA_LIMITS.maxTotalSize / (1024 * 1024));
+      toast.error(`Total message size cannot exceed ${maxMB}MB`);
+      return;
+    }
+
+    const mediaType = getMediaTypeFromMime(file.type);
+    
+    let previewUrl = '';
+    if (mediaType === 'image') {
+      previewUrl = URL.createObjectURL(file);
+    } else if (mediaType === 'video') {
+      previewUrl = URL.createObjectURL(file);
+    } else {
+      previewUrl = '';
+    }
+
+    const tempDraftId = `temp-${Date.now()}`;
+    const draftEntry: DraftMedia = {
+      mediaId: tempDraftId,
+      file,
+      previewUrl,
+      mediaType,
+      fileName: file.name,
+      fileSize: file.size,
+      uploading: true,
+    };
+
+    setDraftMedia(prev => [...prev, draftEntry]);
+
     try {
-      setUploading(true);
+      const { data: mediaData, error: createError } = await createChatMedia(
+        currentUserId,
+        file,
+        mediaType === 'video' || mediaType === 'audio' ? {
+        } : undefined
+      );
 
-      const messageType = file.type.startsWith('image/') ? 'image' :
-        file.type.startsWith('video/') ? 'video' :
-          file.type.startsWith('audio/') ? 'audio' : 'file';
-
-      const tempMessageId = `temp-file-${Date.now()}`;
-      const now = new Date().toISOString();
-
-      if (messageType === 'image') {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const previewUrl = e.target?.result as string;
-          const optimisticMessage: ChatMessage = {
-            id: tempMessageId,
-            content: '',
-            createdAt: now,
-            user: {
-              id: currentUserId,
-              name: 'You',
-              avatar: undefined,
-            },
-            conversationId: selectedConversation.id,
-            senderId: currentUserId,
-            messageType: 'image',
-            fileUrl: previewUrl,
-            fileName: file.name,
-          };
-          setMessages(prev => [...prev, optimisticMessage]);
-        };
-        reader.readAsDataURL(file);
+      if (createError || !mediaData) {
+        setDraftMedia(prev => prev.filter(d => d.mediaId !== tempDraftId));
+        toast.error(createError?.message || 'Failed to prepare media upload');
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        return;
       }
 
-      const { fileUrl, error: uploadError } = await uploadMessageFile(
-        selectedConversation.id,
-        currentUserId,
+      const { success, error: uploadError } = await uploadChatMediaFile(
+        mediaData.bucket,
+        mediaData.path,
         file
       );
 
-      if (uploadError || !fileUrl) {
-        if (messageType === 'image') {
-          setMessages(prev => prev.filter(m => m.id !== tempMessageId));
-        }
-
+      if (!success || uploadError) {
+        await cancelChatMedia(currentUserId, mediaData.media_id);
+        setDraftMedia(prev => prev.filter(d => d.mediaId !== tempDraftId));
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        
         const errorMessage = uploadError?.message || 'Failed to upload file';
-        if (errorMessage.includes('Bucket not found') || errorMessage.includes('chat-files')) {
-          toast.error('Storage bucket not configured! Please create the "chat-files" bucket in Supabase.');
-        } else if (errorMessage.includes('Permission') || errorMessage.includes('403') || errorMessage.includes('400')) {
-          toast.error('Storage permissions issue! The "chat-files" bucket exists but permissions are not set up.');
+        if (errorMessage.includes('Bucket not found')) {
+          toast.error('Storage bucket not configured! Please create the storage bucket in Supabase.');
+        } else if (errorMessage.includes('Permission') || errorMessage.includes('403')) {
+          toast.error('Storage permissions issue! Check bucket permissions.');
         } else {
           toast.error(`Failed to upload file: ${errorMessage}`);
         }
         return;
       }
 
-      if (messageType === 'image') {
-        setMessages(prev => prev.filter(m => m.id !== tempMessageId));
-      }
-
-      const lastMessageId = messages.length > 0 ? messages[messages.length - 1].id : null;
-
-      const { error: sendError, message: sentMessage } = await sendMessage(currentUserId, {
-        conversation_id: selectedConversation.id,
-        message_type: messageType,
-        file_url: fileUrl,
-        file_name: file.name,
-        file_size: file.size,
-        file_type: file.type,
-        last_message_id: lastMessageId,
-      });
-
-      if (sendError) {
-        toast.error('Failed to send file. Please try again.');
-      } else if (sentMessage) {
-        const lastMessageText = messageType === 'image' ? '📷 Image' :
-          messageType === 'video' ? '🎥 Video' :
-            messageType === 'audio' ? '🎵 Audio' :
-              file.name || 'Media';
-        const updatedConv = {
-          ...selectedConversation,
-          last_message: lastMessageText,
-          last_message_at: sentMessage.created_at,
-          last_message_id: sentMessage.id,
-          last_message_sender_id: sentMessage.sender_id,
-        };
-
-        setSelectedConversation(updatedConv);
-
-        setConversations(prev => {
-          const updated = prev.map(conv =>
-            conv.id === selectedConversation.id
-              ? { 
-                  ...conv, 
-                  last_message: lastMessageText, 
-                  last_message_at: sentMessage.created_at,
-                  last_message_id: sentMessage.id,
-                  last_message_sender_id: sentMessage.sender_id
-                }
-              : conv
-          );
-          const updatedConvItem = updated.find(c => c.id === selectedConversation.id);
-          if (updatedConvItem) {
-            const others = updated.filter(c => c.id !== selectedConversation.id);
-            const sortedOthers = others.sort((a, b) => {
-              const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-              const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-              return timeB - timeA;
-            });
-            return [updatedConvItem, ...sortedOthers];
-          }
-          return updated;
-        });
-
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      }
-    } catch (err) {
+      setDraftMedia(prev => prev.map(d => 
+        d.mediaId === tempDraftId 
+          ? { ...d, mediaId: mediaData.media_id, uploading: false }
+          : d
+      ));
+    } catch (err: any) {
+      setDraftMedia(prev => prev.filter(d => d.mediaId !== tempDraftId));
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       toast.error('Failed to upload file. Please try again.');
-    } finally {
-      setUploading(false);
     }
-  }, [selectedConversation, currentUserId, uploading]);
+  }, [selectedConversation, currentUserId, draftMedia]);
 
   const getConversationName = useCallback((conv: Conversation): string => {
     if (conv.type === 'direct') {
@@ -897,17 +1031,61 @@ export const useChat = () => {
     let messageContent: string;
     let senderId: string | undefined;
     let senderName: string | undefined;
+    let messageType: string | undefined;
     
     if (selectedConversation?.id === conv.id && messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
-      messageContent = lastMsg.content || lastMsg.fileName || 'Media';
+      messageType = lastMsg.messageType;
+      
+      // For media messages, don't show filename - show media type instead
+      if (lastMsg.messageType === 'image' || lastMsg.media?.some(m => m.mediaType === 'image')) {
+        messageContent = lastMsg.content || 'Image';
+      } else if (lastMsg.messageType === 'video' || lastMsg.media?.some(m => m.mediaType === 'video')) {
+        messageContent = lastMsg.content || 'Video';
+      } else if (lastMsg.messageType === 'audio' || lastMsg.media?.some(m => m.mediaType === 'audio')) {
+        messageContent = lastMsg.content || 'Audio';
+      } else if (lastMsg.messageType === 'file' || lastMsg.media?.some(m => m.mediaType === 'document')) {
+        messageContent = lastMsg.content || 'Document';
+      } else {
+        messageContent = lastMsg.content || lastMsg.fileName || 'Media';
+      }
+      
       senderId = lastMsg.senderId;
       senderName = lastMsg.user?.name;
     } else {
-      if (!conv.last_message) return "No message yet";
-      
-      messageContent = conv.last_message;
+      if (!conv.last_message) {
+        if (conv.last_message_at) {
+          messageContent = 'Media';
+        } else {
+          return "No message yet";
+        }
+      } else {
+        messageContent = conv.last_message;
+      }
       senderId = conv.last_message_sender_id;
+    }
+    
+    // Replace filenames with media type labels (check both messageType and filename patterns)
+    // Check for image filenames first (most common)
+    if (messageType === 'image' || 
+        (messageContent && /\.(jpg|jpeg|png|gif|webp|bmp|svg|heic|heif)$/i.test(messageContent) && 
+         !messageContent.includes(' ') && messageContent.length < 100)) {
+      messageContent = 'Image';
+    }
+    else if (messageType === 'video' || 
+             (messageContent && /\.(mp4|mov|avi|wmv|flv|webm|mkv)$/i.test(messageContent) && 
+              !messageContent.includes(' ') && messageContent.length < 100)) {
+      messageContent = 'Video';
+    }
+    else if (messageType === 'audio' || 
+             (messageContent && /\.(mp3|wav|ogg|aac|flac|m4a)$/i.test(messageContent) && 
+              !messageContent.includes(' ') && messageContent.length < 100)) {
+      messageContent = 'Audio';
+    }
+    else if (messageType === 'file' || 
+             (messageContent && /\.(pdf|doc|docx|txt|zip|rar)$/i.test(messageContent) && 
+              !messageContent.includes(' ') && messageContent.length < 100)) {
+      messageContent = 'Document';
     }
     
     if (senderId === currentUserId) {
@@ -942,14 +1120,15 @@ export const useChat = () => {
       return false;
     }
 
-    if (!conv.last_message) {
+   
+    if (!conv.last_message_at && !conv.last_message) {
       return false;
     }
 
     if (!searchQuery) return true;
     const searchLower = searchQuery.toLowerCase();
     const name = getConversationName(conv).toLowerCase();
-    const lastMessage = (conv.last_message || '').toLowerCase();
+    const lastMessage = (conv.last_message || 'Media').toLowerCase();
     return name.includes(searchLower) || lastMessage.includes(searchLower);
   });
 
@@ -970,6 +1149,7 @@ export const useChat = () => {
     formatTime,
     sendTyping,
     handleSend,
+    draftMedia,
     searchQuery,
     selectedTab,
     onlineUsers,
@@ -987,6 +1167,7 @@ export const useChat = () => {
     messagesEndRef,
     getLastSeenText,
     shouldShowHeader,
+    removeDraftMedia,
     handleFileUpload,
     showSearchResults,
     getConversationName,

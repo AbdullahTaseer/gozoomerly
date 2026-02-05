@@ -56,6 +56,8 @@ const ChatPageContent = () => {
     isTyping,
     isUserOnline,
     getLastSeenText,
+    draftMedia,
+    removeDraftMedia,
   } = useChat();
 
   useEffect(() => {
@@ -251,6 +253,8 @@ const ChatPageContent = () => {
             isTyping={isTyping}
             isUserOnline={isUserOnline}
             getLastSeenText={getLastSeenText}
+            draftMedia={draftMedia}
+            removeDraftMedia={removeDraftMedia}
           />
         ) : (
           <BoardsTab
@@ -275,6 +279,8 @@ const ChatPageContent = () => {
             loadingBoards={loadingBoards}
             typingUsers={typingUsers}
             isTyping={isTyping}
+            draftMedia={draftMedia}
+            removeDraftMedia={removeDraftMedia}
           />
         )}
       </div>

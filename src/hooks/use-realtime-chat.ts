@@ -4,6 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
+export interface ChatMessageMedia {
+  id: string;
+  mediaType: 'image' | 'video' | 'audio' | 'document';
+  url: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes?: number;
+  orderIndex?: number;
+}
+
 export interface ChatMessage {
   id: string;
   content: string;
@@ -15,9 +25,12 @@ export interface ChatMessage {
   };
   conversationId: string;
   senderId: string;
-  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file';
+  messageType?: 'text' | 'image' | 'video' | 'audio' | 'file' | 'mixed';
   fileUrl?: string;
   fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  media?: ChatMessageMedia[];
 }
 
 export interface UseRealtimeChatOptions {
@@ -106,6 +119,47 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               senderName = `User ${message.sender_id.substring(0, 8)}`;
             }
 
+            let media: ChatMessageMedia[] | undefined;
+            if (message.message_type && message.message_type !== 'text') {
+              try {
+                const { data: messageMediaData } = await supabaseRef.current
+                  .from('message_media')
+                  .select(`
+                    order_index,
+                    media:media_id (
+                      id,
+                      media_type,
+                      filename,
+                      mime_type,
+                      size_bytes,
+                      bucket,
+                      path
+                    )
+                  `)
+                  .eq('message_id', message.id)
+                  .order('order_index', { ascending: true });
+
+                if (messageMediaData && messageMediaData.length > 0) {
+                  const { getMediaPublicUrl } = await import('@/lib/supabase/chat');
+                  media = messageMediaData
+                    .map((mm: any) => {
+                      if (!mm.media) return null;
+                      return {
+                        id: mm.media.id,
+                        mediaType: mm.media.media_type,
+                        url: getMediaPublicUrl(mm.media.bucket, mm.media.path),
+                        filename: mm.media.filename,
+                        mimeType: mm.media.mime_type,
+                        sizeBytes: mm.media.size_bytes,
+                        orderIndex: mm.order_index,
+                      };
+                    })
+                    .filter((m: any) => m !== null) as ChatMessageMedia[];
+                }
+              } catch (mediaErr) {
+              }
+            }
+
             const chatMessage: ChatMessage = {
               id: message.id,
               content: message.content || '',
@@ -120,6 +174,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               messageType: message.message_type || 'text',
               fileUrl: message.file_url,
               fileName: message.file_name,
+              media,
             };
 
             if (onMessageReceivedRef.current) {
@@ -163,6 +218,48 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               senderName = `User ${message.sender_id.substring(0, 8)}`;
             }
 
+            let media: ChatMessageMedia[] | undefined;
+            if (message.message_type && message.message_type !== 'text') {
+              try {
+                const { data: messageMediaData } = await supabaseRef.current
+                  .from('message_media')
+                  .select(`
+                    order_index,
+                    media:media_id (
+                      id,
+                      media_type,
+                      filename,
+                      mime_type,
+                      size_bytes,
+                      bucket,
+                      path
+                    )
+                  `)
+                  .eq('message_id', message.id)
+                  .order('order_index', { ascending: true });
+
+                if (messageMediaData && messageMediaData.length > 0) {
+                  const { getMediaPublicUrl } = await import('@/lib/supabase/chat');
+                  media = messageMediaData
+                    .map((mm: any) => {
+                      if (!mm.media) return null;
+                      return {
+                        id: mm.media.id,
+                        mediaType: mm.media.media_type,
+                        url: getMediaPublicUrl(mm.media.bucket, mm.media.path),
+                        filename: mm.media.filename,
+                        mimeType: mm.media.mime_type,
+                        sizeBytes: mm.media.size_bytes,
+                        orderIndex: mm.order_index,
+                      };
+                    })
+                    .filter((m: any) => m !== null) as ChatMessageMedia[];
+                }
+              } catch (mediaErr) {
+                // If media fetch fails, fall back to legacy file_url
+              }
+            }
+
             const chatMessage: ChatMessage = {
               id: message.id,
               content: message.content || '',
@@ -177,6 +274,9 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
               messageType: message.message_type || 'text',
               fileUrl: message.file_url,
               fileName: message.file_name,
+              fileSize: message.file_size,
+              fileType: message.file_type,
+              media,
             };
 
             onMessageUpdatedRef.current?.(chatMessage);

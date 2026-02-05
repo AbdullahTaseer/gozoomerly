@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { PlusCircle, Send, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Send, ArrowLeft, X } from 'lucide-react';
 import ChatCard from '@/components/cards/ChatCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
@@ -10,6 +10,18 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import type { Conversation } from '@/lib/supabase/chat';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
 import type { TypingUser } from '@/hooks/use-typing-indicator';
+import type { MediaType } from '@/lib/supabase/chat';
+
+interface DraftMedia {
+  mediaId: string;
+  file: File;
+  previewUrl: string;
+  mediaType: MediaType;
+  fileName: string;
+  fileSize: number;
+  uploading: boolean;
+  error?: string;
+}
 
 interface ConnectionsTabProps {
   currentUserId: string | null;
@@ -29,13 +41,12 @@ interface ConnectionsTabProps {
   formatTime: (dateString?: string) => string;
   getLastMessageWithSender: (conv: Conversation) => string;
   shouldShowHeader: (message: ChatMessage, index: number) => boolean;
-  // Typing indicator props
   typingUsers?: TypingUser[];
   isTyping?: boolean;
-  // Online status props
   isUserOnline?: (userId: string) => boolean;
-  // Last seen props
   getLastSeenText?: (userId: string) => string;
+  draftMedia?: DraftMedia[];
+  removeDraftMedia?: (mediaId: string) => void;
 }
 
 const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
@@ -60,6 +71,8 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   isTyping = false,
   isUserOnline,
   getLastSeenText,
+  draftMedia = [],
+  removeDraftMedia,
 }) => {
   const getOtherUserId = (conv: Conversation): string | null => {
     if (conv.type !== 'direct') return null;
@@ -191,58 +204,120 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
               )}
             </div>
 
-            <div className='p-4 bg-[#F7F7F7] flex items-center gap-4'>
-              <div className='bg-white p-2 rounded-full relative'>
-                <input
-                  type="file"
-                  id="fileUpload"
-                  className="hidden"
-                  disabled={uploading}
-                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
-                  multiple={false}
-                  onChange={(e) => {
-                    if (e.target.files && e.target.files[0]) {
-                      handleFileUpload(e.target.files[0]);
+            <div className='p-4 bg-[#F7F7F7]'>
+              {/* Draft Media Previews */}
+              {draftMedia.length > 0 && (
+                <div className='mb-3 flex flex-wrap gap-2'>
+                  {draftMedia.map((draft) => (
+                    <div
+                      key={draft.mediaId}
+                      className='relative bg-white rounded-lg p-2 border border-gray-200'
+                    >
+                      {draft.uploading ? (
+                        <div className='w-20 h-20 flex items-center justify-center'>
+                          <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500'></div>
+                        </div>
+                      ) : draft.mediaType === 'image' && draft.previewUrl ? (
+                        <div className='relative w-20 h-20'>
+                          <Image
+                            src={draft.previewUrl}
+                            alt={draft.fileName}
+                            fill
+                            className='object-cover rounded'
+                            unoptimized
+                          />
+                        </div>
+                      ) : draft.mediaType === 'video' && draft.previewUrl ? (
+                        <div className='relative w-20 h-20 bg-gray-100 rounded flex items-center justify-center'>
+                          <video
+                            src={draft.previewUrl}
+                            className='w-full h-full object-cover rounded'
+                            muted
+                          />
+                          <div className='absolute inset-0 flex items-center justify-center'>
+                            <div className='w-8 h-8 bg-black/50 rounded-full flex items-center justify-center'>
+                              <span className='text-white text-xs'>▶</span>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className='w-20 h-20 flex items-center justify-center bg-gray-100 rounded'>
+                          <span className='text-2xl'>
+                            {draft.mediaType === 'audio' ? '🎵' : '📎'}
+                          </span>
+                        </div>
+                      )}
+                      {removeDraftMedia && (
+                        <button
+                          onClick={() => removeDraftMedia(draft.mediaId)}
+                          className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors'
+                          disabled={draft.uploading}
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
+                      <p className='text-xs mt-1 truncate w-20' title={draft.fileName}>
+                        {draft.fileName}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-                      e.target.value = '';
-                    }
-                  }}
-                />
-                <label
-                  htmlFor="fileUpload"
-                  className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                  title="Upload file or image"
+              <div className='flex items-center gap-4'>
+                <div className='bg-white p-2 rounded-full relative'>
+                  <input
+                    type="file"
+                    id="fileUpload"
+                    className="hidden"
+                    disabled={uploading}
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+                    multiple={true}
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        Array.from(e.target.files).forEach(file => {
+                          handleFileUpload(file);
+                        });
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor="fileUpload"
+                    className={uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    title="Upload file or image"
+                  >
+                    <PlusCircle size={24} className='text-black' />
+                  </label>
+                </div>
+
+                <div className='flex-1 relative'>
+                  <GlobalInput
+                    placeholder={uploading ? 'Uploading...' : 'Write your message...'}
+                    height='40px'
+                    width='100%'
+                    borderRadius='100px'
+                    bgColor='white'
+                    inputClassName="pl-4 pr-12 border-none"
+                    value={newMessage}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                      if (e.key === "Enter" && !e.shiftKey && !uploading) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    disabled={uploading}
+                  />
+                </div>
+                <button
+                  className='bg-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed'
+                  onClick={handleSend}
+                  disabled={uploading || (!newMessage.trim() && draftMedia.length === 0)}
                 >
-                  <PlusCircle size={24} className='text-black' />
-                </label>
+                  <Send size={18} className='text-black' />
+                </button>
               </div>
-
-              <div className='flex-1 relative'>
-                <GlobalInput
-                  placeholder={uploading ? 'Uploading...' : 'Write your message...'}
-                  height='40px'
-                  width='100%'
-                  borderRadius='100px'
-                  bgColor='white'
-                  inputClassName="pl-4 pr-12 border-none"
-                  value={newMessage}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === "Enter" && !e.shiftKey && !uploading) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  disabled={uploading}
-                />
-              </div>
-              <button
-                className='bg-white p-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed'
-                onClick={handleSend}
-                disabled={uploading || !newMessage.trim()}
-              >
-                <Send size={18} className='text-black' />
-              </button>
             </div>
           </>
         ) : (

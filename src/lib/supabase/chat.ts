@@ -82,12 +82,26 @@ type MinimalParticipantData = {
   last_read_message_id?: any;
 };
 
+export interface MessageMedia {
+  id: string;
+  media_type: 'image' | 'video' | 'audio' | 'document';
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  bucket: string;
+  path: string;
+  duration_seconds?: number;
+  dimensions?: { width: number; height: number };
+  metadata?: Record<string, any>;
+  order_index?: number;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
   content?: string;
-  message_type: 'text' | 'image' | 'video' | 'audio' | 'file';
+  message_type: 'text' | 'image' | 'video' | 'audio' | 'file' | 'mixed';
   file_url?: string;
   file_name?: string;
   file_size?: number;
@@ -102,6 +116,7 @@ export interface Message {
     name: string;
     profile_pic_url?: string;
   };
+  media?: MessageMedia[];
 }
 
 export interface CreateConversationInput {
@@ -302,7 +317,10 @@ export async function getUserConversationsWithPagination(
       };
     }
 
-    if (!data || !data.data) {
+    // Handle RPC response - could be data.data or data directly
+    const rpcConversations = data?.data || (Array.isArray(data) ? data : []);
+    
+    if (!rpcConversations || !Array.isArray(rpcConversations) || rpcConversations.length === 0) {
       return {
         conversations: [],
         pagination: data?.pagination || { total: 0, limit, offset, has_more: false },
@@ -310,20 +328,72 @@ export async function getUserConversationsWithPagination(
       };
     }
 
-    const conversations: Conversation[] = data.data.map((conv: any) => ({
-      id: conv.id,
-      type: conv.type,
-      name: conv.name,
-      created_by: conv.created_by,
-      created_at: conv.created_at,
-      updated_at: conv.updated_at,
-      last_message_at: conv.last_message_at,
-      last_message: conv.last_message,
-      last_message_id: conv.last_message_id,
-      last_message_sender_id: conv.last_message_sender_id,
-      participants: conv.participants || [],
-      unread_count: conv.unread_count || 0,
-    }));
+    const conversations: Conversation[] = rpcConversations.map((conv: any) => {
+      const lastMessage = conv.last_message_content || conv.last_message || null;
+      const lastMessageAt = conv.last_message_created_at || conv.last_message_at || null;
+      const updatedAt = conv.last_activity_at || conv.updated_at || conv.created_at;
+      
+      let otherUser = conv.other_user;
+      if (!otherUser && conv.other_participants && Array.isArray(conv.other_participants) && conv.other_participants.length > 0) {
+        const otherParticipant = conv.other_participants[0];
+        otherUser = {
+          user_id: otherParticipant.user_id,
+          id: otherParticipant.user_id,
+          name: otherParticipant.name || 'Unknown User',
+          profile_pic_url: otherParticipant.profile_pic_url,
+        };
+      }
+      
+      let participants = conv.participants || [];
+      if (participants.length === 0 && conv.other_participants && Array.isArray(conv.other_participants)) {
+        participants = conv.other_participants.map((p: any) => ({
+          id: p.user_id || '',
+          conversation_id: conv.id,
+          user_id: p.user_id,
+          joined_at: conv.created_at,
+          user: {
+            id: p.user_id,
+            name: p.name || 'Unknown User',
+            profile_pic_url: p.profile_pic_url,
+          },
+        }));
+      }
+      
+      let lastMessageText = safeLastMessage(lastMessage);
+      if (!lastMessageText && conv.last_message_type) {
+        if (conv.last_message_media_count > 1) {
+          lastMessageText = `${conv.last_message_media_count} attachments`;
+        } else if (conv.last_message_type === 'image') {
+          lastMessageText = '📷 Image';
+        } else if (conv.last_message_type === 'video') {
+          lastMessageText = '🎥 Video';
+        } else if (conv.last_message_type === 'audio') {
+          lastMessageText = '🎵 Audio';
+        } else if (conv.last_message_type === 'document') {
+          lastMessageText = '📎 File';
+        } else if (conv.last_message_type === 'mixed') {
+          lastMessageText = `${conv.last_message_media_count || 2} attachments`;
+        } else {
+          lastMessageText = 'Media';
+        }
+      }
+      
+      return {
+        id: conv.id,
+        type: conv.type,
+        name: conv.name || undefined,
+        created_by: conv.created_by || '',
+        created_at: conv.created_at,
+        updated_at: updatedAt,
+        last_message_at: lastMessageAt,
+        last_message: lastMessageText,
+        last_message_id: conv.last_message_id || undefined,
+        last_message_sender_id: conv.last_message_sender_id || undefined,
+        participants: participants,
+        unread_count: conv.unread_count || 0,
+        other_user: otherUser || undefined,
+      };
+    });
 
     return {
       conversations,
@@ -433,24 +503,73 @@ export async function getUserConversations(
       p_offset: offset
     });
 
-    if (!rpcError && rpcData?.data) {
-
-      const conversations: Conversation[] = rpcData.data.map((conv: any) => {
+    const rpcConversations = rpcData?.data || rpcData || [];
+    
+    if (!rpcError && Array.isArray(rpcConversations) && rpcConversations.length > 0) {
+      const conversations: Conversation[] = rpcConversations.map((conv: any) => {
+        const lastMessage = conv.last_message_content || conv.last_message || null;
+        const lastMessageAt = conv.last_message_created_at || conv.last_message_at || null;
+        const updatedAt = conv.last_activity_at || conv.updated_at || conv.created_at;
+        
+        let otherUser = conv.other_user;
+        if (!otherUser && conv.other_participants && Array.isArray(conv.other_participants) && conv.other_participants.length > 0) {
+          const otherParticipant = conv.other_participants[0];
+          otherUser = {
+            user_id: otherParticipant.user_id,
+            id: otherParticipant.user_id,
+            name: otherParticipant.name || 'Unknown User',
+            profile_pic_url: otherParticipant.profile_pic_url,
+          };
+        }
+        
+        let participants = conv.participants || [];
+        if (participants.length === 0 && conv.other_participants && Array.isArray(conv.other_participants)) {
+          participants = conv.other_participants.map((p: any) => ({
+            id: p.user_id || '',
+            conversation_id: conv.id,
+            user_id: p.user_id,
+            joined_at: conv.created_at,
+            user: {
+              id: p.user_id,
+              name: p.name || 'Unknown User',
+              profile_pic_url: p.profile_pic_url,
+            },
+          }));
+        }
+        
+        let lastMessageText = safeLastMessage(lastMessage);
+        if (!lastMessageText && conv.last_message_type) {
+          if (conv.last_message_media_count > 1) {
+            lastMessageText = `${conv.last_message_media_count} attachments`;
+          } else if (conv.last_message_type === 'image') {
+            lastMessageText = '📷 Image';
+          } else if (conv.last_message_type === 'video') {
+            lastMessageText = '🎥 Video';
+          } else if (conv.last_message_type === 'audio') {
+            lastMessageText = '🎵 Audio';
+          } else if (conv.last_message_type === 'document') {
+            lastMessageText = '📎 File';
+          } else if (conv.last_message_type === 'mixed') {
+            lastMessageText = `${conv.last_message_media_count || 2} attachments`;
+          } else {
+            lastMessageText = 'Media';
+          }
+        }
+        
         return {
           id: conv.id,
           type: conv.type,
-          name: conv.name,
-          created_by: conv.created_by,
+          name: conv.name || undefined,
+          created_by: conv.created_by || '',
           created_at: conv.created_at,
-          updated_at: conv.updated_at,
-          last_message_at: conv.last_message_at,
-          last_message: safeLastMessage(conv.last_message),
-          last_message_id: conv.last_message_id,
-          last_message_sender_id: conv.last_message_sender_id,
-          participants: conv.participants || [],
+          updated_at: updatedAt,
+          last_message_at: lastMessageAt,
+          last_message: lastMessageText,
+          last_message_id: conv.last_message_id || undefined,
+          last_message_sender_id: conv.last_message_sender_id || undefined,
+          participants: participants,
           unread_count: conv.unread_count || 0,
-
-          other_user: conv.other_user || undefined,
+          other_user: otherUser || undefined,
         };
       });
 
@@ -1059,6 +1178,21 @@ export async function getConversationMessages(
         id,
         name,
         profile_pic_url
+      ),
+      message_media (
+        order_index,
+        media:media_id (
+          id,
+          media_type,
+          filename,
+          mime_type,
+          size_bytes,
+          bucket,
+          path,
+          duration_seconds,
+          dimensions,
+          metadata
+        )
       )
     `)
     .eq('conversation_id', conversationId)
@@ -1066,7 +1200,7 @@ export async function getConversationMessages(
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
-  if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+  if (result.error && (result.error.message?.includes('message_media') || result.error.message?.includes('does not exist'))) {
     result = await supabase
       .from('messages')
       .select(`
@@ -1078,6 +1212,39 @@ export async function getConversationMessages(
         )
       `)
       .eq('conversation_id', conversationId)
+      .is('deleted_at', null)
+      .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1);
+  }
+
+  // Fallback if deleted_at doesn't exist
+  if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+    result = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:sender_id (
+          id,
+          name,
+          profile_pic_url
+        ),
+        message_media (
+          order_index,
+          media:media_id (
+            id,
+            media_type,
+            filename,
+            mime_type,
+            size_bytes,
+            bucket,
+            path,
+            duration_seconds,
+            dimensions,
+            metadata
+          )
+        )
+      `)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
       .range(offset, offset + limit - 1);
   }
@@ -1086,7 +1253,52 @@ export async function getConversationMessages(
     return { messages: [], error: result.error };
   }
 
-  return { messages: (result.data || []) as Message[], error: null };
+  const messages: Message[] = (result.data || []).map((msg: any) => {
+    const message: Message = {
+      id: msg.id,
+      conversation_id: msg.conversation_id,
+      sender_id: msg.sender_id,
+      content: msg.content,
+      message_type: msg.message_type || 'text',
+      file_url: msg.file_url,
+      file_name: msg.file_name,
+      file_size: msg.file_size,
+      file_type: msg.file_type,
+      reply_to_id: msg.reply_to_id,
+      edited_at: msg.edited_at,
+      deleted_at: msg.deleted_at,
+      created_at: msg.created_at,
+      updated_at: msg.updated_at,
+      sender: msg.sender,
+    };
+
+    if (msg.message_media && Array.isArray(msg.message_media) && msg.message_media.length > 0) {
+      message.media = msg.message_media
+        .map((mm: any) => {
+          if (!mm.media) return null;
+          const media = mm.media;
+          return {
+            id: media.id,
+            media_type: media.media_type,
+            filename: media.filename,
+            mime_type: media.mime_type,
+            size_bytes: media.size_bytes,
+            bucket: media.bucket,
+            path: media.path,
+            duration_seconds: media.duration_seconds,
+            dimensions: media.dimensions,
+            metadata: media.metadata,
+            order_index: mm.order_index,
+          } as MessageMedia;
+        })
+        .filter((m: MessageMedia | null) => m !== null)
+        .sort((a: MessageMedia, b: MessageMedia) => (a.order_index || 0) - (b.order_index || 0));
+    }
+
+    return message;
+  });
+
+  return { messages, error: null };
 }
 
 export async function uploadMessageFile(
@@ -1178,4 +1390,271 @@ export async function uploadMessageFile(
       error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`)
     };
   }
+}
+
+export const MEDIA_LIMITS = {
+  image: 10 * 1024 * 1024,    // 10 MB
+  audio: 16 * 1024 * 1024,    // 16 MB
+  video: 100 * 1024 * 1024,   // 100 MB
+  document: 50 * 1024 * 1024, // 50 MB
+  maxAttachments: 10,
+  maxTotalSize: 150 * 1024 * 1024, // 150 MB
+};
+
+export type MediaType = 'image' | 'video' | 'audio' | 'document';
+
+export interface CreateChatMediaResponse {
+  success: boolean;
+  media_id: string;
+  bucket: string;
+  path: string;
+  storage_path: string;
+}
+
+export interface ChatMedia {
+  id: string;
+  media_type: MediaType;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  bucket: string;
+  path: string;
+  duration_seconds?: number;
+  dimensions?: { width: number; height: number };
+  metadata?: Record<string, any>;
+}
+
+export interface SendMessageWithMediaResponse {
+  success: boolean;
+  message_id: string;
+  created_at: string;
+}
+
+export function getMediaTypeFromMime(mimeType: string): MediaType {
+  if (mimeType.startsWith('image/')) return 'image';
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('audio/')) return 'audio';
+  return 'document';
+}
+
+
+export function validateMediaSize(file: File): { valid: boolean; error?: string } {
+  const mediaType = getMediaTypeFromMime(file.type);
+  const limit = MEDIA_LIMITS[mediaType];
+
+  if (file.size > limit) {
+    const limitMB = Math.round(limit / (1024 * 1024));
+    return {
+      valid: false,
+      error: `${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)} size must be less than ${limitMB}MB`
+    };
+  }
+
+  return { valid: true };
+}
+
+
+export async function createChatMedia(
+  senderId: string,
+  file: File,
+  options?: {
+    durationSeconds?: number;
+    dimensions?: { width: number; height: number };
+    metadata?: Record<string, any>;
+  }
+): Promise<{ data: CreateChatMediaResponse | null; error: any }> {
+  const supabase = createClient();
+
+  const mediaType = getMediaTypeFromMime(file.type);
+
+  const validation = validateMediaSize(file);
+  if (!validation.valid) {
+    return { data: null, error: new Error(validation.error) };
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('create_chat_media', {
+      p_sender_id: senderId,
+      p_media_type: mediaType,
+      p_filename: file.name,
+      p_mime_type: file.type || 'application/octet-stream',
+      p_size_bytes: file.size,
+      p_duration_seconds: options?.durationSeconds || null,
+      p_dimensions: options?.dimensions || null,
+      p_metadata: options?.metadata || null,
+    });
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    return { data: data as CreateChatMediaResponse, error: null };
+  } catch (err: any) {
+    return {
+      data: null,
+      error: new Error(`Failed to create media: ${err?.message || 'Unknown error'}`)
+    };
+  }
+}
+
+export async function uploadChatMediaFile(
+  bucket: string,
+  path: string,
+  file: File
+): Promise<{ success: boolean; error: any }> {
+  const supabase = createClient();
+
+  try {
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, {
+        contentType: file.type || 'application/octet-stream',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      const errorMessage = uploadError.message || '';
+      const statusCode = (uploadError as any).statusCode || (uploadError as any).status;
+
+      if (errorMessage.includes('Bucket not found') ||
+          errorMessage.includes('does not exist') ||
+          statusCode === 404) {
+        return {
+          success: false,
+          error: new Error(
+            `Storage bucket "${bucket}" not found. Please create it in Supabase Dashboard → Storage → Create Bucket.`
+          )
+        };
+      }
+
+      if (statusCode === 400 || statusCode === 403) {
+        return {
+          success: false,
+          error: new Error(
+            'Permission denied. Please check storage policies allow authenticated users to upload.'
+          )
+        };
+      }
+
+      return { success: false, error: uploadError };
+    }
+
+    return { success: true, error: null };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: new Error(`Upload failed: ${err?.message || 'Unknown error'}`)
+    };
+  }
+}
+
+
+export async function cancelChatMedia(
+  userId: string,
+  mediaId: string
+): Promise<{ success: boolean; error: any }> {
+  const supabase = createClient();
+
+  try {
+    const { error } = await supabase.rpc('cancel_chat_media', {
+      p_user_id: userId,
+      p_media_id: mediaId,
+    });
+
+    if (error) {
+      return { success: false, error };
+    }
+
+    return { success: true, error: null };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: new Error(`Failed to cancel media: ${err?.message || 'Unknown error'}`)
+    };
+  }
+}
+
+
+export async function sendMessageWithMedia(
+  senderId: string,
+  conversationId: string,
+  content: string | null,
+  mediaIds: string[]
+): Promise<{ data: SendMessageWithMediaResponse | null; error: any }> {
+  const supabase = createClient();
+
+  try {
+    const { data, error } = await supabase.rpc('send_message', {
+      p_sender_id: senderId,
+      p_conversation_id: conversationId,
+      p_content: content || null,
+      p_media_ids: mediaIds.length > 0 ? mediaIds : null,
+    });
+
+    if (error) {
+      if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+        return { data: null, error: new Error('send_message RPC not available. Using legacy method.') };
+      }
+      return { data: null, error };
+    }
+
+    return { data: data as SendMessageWithMediaResponse, error: null };
+  } catch (err: any) {
+    return {
+      data: null,
+      error: new Error(`Failed to send message: ${err?.message || 'Unknown error'}`)
+    };
+  }
+}
+
+
+export function getMediaPublicUrl(bucket: string, path: string): string {
+  const supabase = createClient();
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+
+export async function uploadChatMedia(
+  senderId: string,
+  file: File,
+  options?: {
+    durationSeconds?: number;
+    dimensions?: { width: number; height: number };
+    metadata?: Record<string, any>;
+    onProgress?: (progress: number) => void;
+  }
+): Promise<{
+  mediaId: string | null;
+  publicUrl: string | null;
+  error: any
+}> {
+  const { data: mediaData, error: createError } = await createChatMedia(
+    senderId,
+    file,
+    options
+  );
+
+  if (createError || !mediaData) {
+    return { mediaId: null, publicUrl: null, error: createError };
+  }
+
+  const { success, error: uploadError } = await uploadChatMediaFile(
+    mediaData.bucket,
+    mediaData.path,
+    file
+  );
+
+  if (!success || uploadError) {
+    await cancelChatMedia(senderId, mediaData.media_id);
+    return { mediaId: null, publicUrl: null, error: uploadError };
+  }
+
+  const publicUrl = getMediaPublicUrl(mediaData.bucket, mediaData.path);
+
+  return {
+    mediaId: mediaData.media_id,
+    publicUrl,
+    error: null
+  };
 }
