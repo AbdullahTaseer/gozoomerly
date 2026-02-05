@@ -2,6 +2,7 @@
 
 import {  useState  } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { authService } from '@/lib/supabase/auth';
 import AuthLayout from '@/components/authLayout/AuthLayout';
@@ -221,6 +222,16 @@ const SignIn = () => {
           onClick={handleSignIn}
           className={loading ? 'opacity-50 cursor-not-allowed' : ''}
         />
+
+        <p className='text-center mt-4 text-sm'>
+          Don&apos;t have an account?{' '}
+          <Link 
+            href="/register" 
+            className='text-pink-600 font-medium hover:text-pink-700 hover:underline'
+          >
+            Sign up
+          </Link>
+        </p>
       </form>
     </AuthLayout>
   );
