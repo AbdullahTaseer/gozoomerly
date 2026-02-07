@@ -19,7 +19,7 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, isOnline = f
       className={`flex items-center gap-4 p-3 cursor-pointer transition-colors duration-200 ${isActive ? 'bg-[#2A2D3A] text-white' : 'text-black'
         }`}
     >
-      <div className='relative h-[45px] w-[45px] rounded-full border border-[#48484A]'>
+      <div className='relative h-[45px] w-[45px] shrink-0 rounded-full border border-[#48484A]'>
         <Image
           src={imgPath || ProfileAvatar}
           alt={name}
@@ -38,9 +38,9 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, isOnline = f
       <div className='flex-1'>
         <div className='flex justify-between items-center'>
           <p className='font-bold line-clamp-1 text-sm'>{name}</p>
-          <p className='text-xs '>{time}</p>
+          <p className='text-xs'>{time}</p>
         </div>
-        <p className='text-xs truncate pr-4'>{message}</p>
+        <p className='text-xs line-clamp-1 overflow-clip text-ellipsis pr-4'>{message}</p>
       </div>
     </div>
   );

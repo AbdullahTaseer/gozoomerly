@@ -14,7 +14,7 @@ interface ChatMessageItemProps {
 export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessageItemProps) => {
   return (
     <div className={`flex mt-2 gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-      {!isOwnMessage && (
+      {/* {!isOwnMessage && (
         <div className="flex-shrink-0">
           <div className="relative h-8 w-8 rounded-full overflow-hidden">
             <Image
@@ -29,11 +29,11 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
             />
           </div>
         </div>
-      )}
+      )} */}
       <div
         className={cn('max-w-[75%] w-fit flex flex-col gap-1', { 'items-end': isOwnMessage, 'items-start': !isOwnMessage })}
       >
-        {showHeader && !isOwnMessage && (
+        {/* {showHeader && !isOwnMessage && (
           <div className="flex items-center gap-2 text-xs px-3">
             <span className="text-foreground/70 font-medium">
               {message.user?.name || 'Unknown User'}
@@ -46,28 +46,16 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
               })}
             </span>
           </div>
-        )}
-
-        {/* Text content with background bubble */}
-        {message.content && (
-          <div
-            className={cn(
-              'rounded-xl text-sm py-2 px-3 w-fit max-w-full',
-              isOwnMessage ? 'bg-[#2A2D3A] text-white' : 'bg-[#F7F7F7] text-black'
-            )}
-          >
-            <p className="break-words">{message.content}</p>
-          </div>
-        )}
+        )} */}
 
         {/* Display media from media array (new RPC flow) - WhatsApp-style grid layout */}
         {message.media && message.media.length > 0 && (
-          <div className={cn(message.content ? 'mt-2' : '')}>
+          <div>
             {(() => {
               // Group images and videos together for grid layout
               const visualMedia = message.media.filter(m => m.mediaType === 'image' || m.mediaType === 'video');
               const otherMedia = message.media.filter(m => m.mediaType !== 'image' && m.mediaType !== 'video');
-              
+
               return (
                 <>
                   {/* Images and videos in grid layout (WhatsApp style) */}
@@ -75,16 +63,16 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                     <div className={cn(
                       'grid gap-1',
                       visualMedia.length === 1 ? 'grid-cols-1' :
-                      visualMedia.length === 2 ? 'grid-cols-2' :
-                      visualMedia.length === 3 ? 'grid-cols-2' :
-                      visualMedia.length === 4 ? 'grid-cols-2' :
-                      'grid-cols-3',
+                        visualMedia.length === 2 ? 'grid-cols-2' :
+                          visualMedia.length === 3 ? 'grid-cols-2' :
+                            visualMedia.length === 4 ? 'grid-cols-2' :
+                              'grid-cols-3',
                       'max-w-md'
                     )}>
                       {visualMedia.map((mediaItem: ChatMessageMedia, index: number) => {
                         // For 3 items: first 2 in top row, 3rd spans full width below
                         const isThirdItem = visualMedia.length === 3 && index === 2;
-                        
+
                         return (
                           <div
                             key={mediaItem.id}
@@ -103,9 +91,9 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                 className={cn(
                                   'rounded-lg object-cover w-full h-full border-0',
                                   visualMedia.length === 1 ? 'max-h-96' :
-                                  visualMedia.length === 2 ? 'aspect-square' :
-                                  visualMedia.length === 3 ? (isThirdItem ? 'aspect-[2/1]' : 'aspect-square') :
-                                  'aspect-square'
+                                    visualMedia.length === 2 ? 'aspect-square' :
+                                      visualMedia.length === 3 ? (isThirdItem ? 'aspect-[2/1]' : 'aspect-square') :
+                                        'aspect-square'
                                 )}
                                 unoptimized
                               />
@@ -117,9 +105,9 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                   className={cn(
                                     'rounded-lg w-full h-full object-cover border-0 outline-none',
                                     visualMedia.length === 1 ? 'max-h-96' :
-                                    visualMedia.length === 2 ? 'aspect-square' :
-                                    visualMedia.length === 3 ? (isThirdItem ? 'aspect-[2/1]' : 'aspect-square') :
-                                    'aspect-square'
+                                      visualMedia.length === 2 ? 'aspect-square' :
+                                        visualMedia.length === 3 ? (isThirdItem ? 'aspect-[2/1]' : 'aspect-square') :
+                                          'aspect-square'
                                   )}
                                 />
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -137,7 +125,7 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                       })}
                     </div>
                   )}
-                  
+
                   {/* Other media types (audio, documents) - displayed separately */}
                   {otherMedia.length > 0 && (
                     <div className={cn('flex flex-col gap-2', visualMedia.length > 0 ? 'mt-2' : '')}>
@@ -168,11 +156,11 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                   <div className={`${isOwnMessage ? 'text-gray-300' : 'text-gray-600'} text-xs mt-1`}>
                                     {mediaItem.sizeBytes && (
                                       <span>
-                                        {mediaItem.sizeBytes < 1024 
+                                        {mediaItem.sizeBytes < 1024
                                           ? `${mediaItem.sizeBytes} B`
                                           : mediaItem.sizeBytes < 1024 * 1024
-                                          ? `${(mediaItem.sizeBytes / 1024).toFixed(1)} kB`
-                                          : `${(mediaItem.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
+                                            ? `${(mediaItem.sizeBytes / 1024).toFixed(1)} kB`
+                                            : `${(mediaItem.sizeBytes / (1024 * 1024)).toFixed(1)} MB`}
                                       </span>
                                     )}
                                     {mediaItem.sizeBytes && mediaItem.mimeType && ' • '}
@@ -202,6 +190,19 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* Text content with background bubble - shown below media */}
+        {message.content && (
+          <div
+            className={cn(
+              'rounded-xl text-sm py-2 px-3 w-fit max-w-full',
+              isOwnMessage ? 'bg-[#2A2D3A] text-white' : 'bg-[#F7F7F7] text-black',
+              (message.media && message.media.length > 0) || message.fileUrl ? 'mt-2' : ''
+            )}
+          >
+            <p className="break-words">{message.content}</p>
           </div>
         )}
 
@@ -253,11 +254,11 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                     <div className={`${isOwnMessage ? 'text-gray-300' : 'text-gray-600'} text-xs mt-1`}>
                       {message.fileSize && (
                         <span>
-                          {message.fileSize < 1024 
+                          {message.fileSize < 1024
                             ? `${message.fileSize} B`
                             : message.fileSize < 1024 * 1024
-                            ? `${(message.fileSize / 1024).toFixed(1)} kB`
-                            : `${(message.fileSize / (1024 * 1024)).toFixed(1)} MB`}
+                              ? `${(message.fileSize / 1024).toFixed(1)} kB`
+                              : `${(message.fileSize / (1024 * 1024)).toFixed(1)} MB`}
                         </span>
                       )}
                       {message.fileSize && message.fileType && ' • '}
@@ -285,6 +286,17 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
         {showHeader && isOwnMessage && (
           <div className="flex items-center gap-2 text-xs px-3 justify-end flex-row-reverse">
             <span className="text-foreground/50 text-xs text-left">
+              {new Date(message.createdAt).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              })}
+            </span>
+          </div>
+        )}
+        {showHeader && !isOwnMessage && (
+          <div className="flex items-center gap-2 text-xs px-3">
+            <span className="text-foreground/50 text-xs">
               {new Date(message.createdAt).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
