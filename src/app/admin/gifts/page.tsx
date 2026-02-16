@@ -16,7 +16,7 @@ const AdminGifts = () => {
   const getStatusColor = (status: string) => {
     const colorMap: { [key: string]: { bg: string; text: string } } = {
       'Paid': { bg: 'bg-green-100', text: 'text-green-800' },
-      'Pending': { bg: 'bg-pink-100', text: 'text-pink-800' }, 
+      'Pending': { bg: 'bg-pink-100', text: 'text-pink-800' },
     };
     return colorMap[status] || { bg: 'bg-gray-100', text: 'text-gray-800' };
   };
