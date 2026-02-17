@@ -2,11 +2,11 @@
 
 import {  useState, useEffect  } from 'react';
 import Image from 'next/image';
+import { authService } from '@/lib/supabase/auth';
+import { inviteUserToBoard } from '@/lib/supabase/boards';
 import { X, Search, Check, Loader2 } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { getFollowers, getFollowing, UserConnection } from '@/lib/supabase/followUtils';
-import { inviteUserToBoard } from '@/lib/supabase/boards';
-import { authService } from '@/lib/supabase/auth';
 
 interface InviteToBoardModalProps {
   isOpen: boolean;
