@@ -1556,17 +1556,37 @@ export async function cancelChatMedia(
   const supabase = createClient();
 
   try {
-    const { error } = await supabase.rpc('cancel_chat_media', {
+    const { data, error } = await supabase.rpc('cancel_chat_media', {
       p_user_id: userId,
       p_media_id: mediaId,
     });
 
     if (error) {
-      return { success: false, error };
+      // Extract detailed error information
+      const errorDetails = {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        originalError: error
+      };
+      
+      console.error('cancel_chat_media RPC error:', errorDetails);
+      
+      // Return a more informative error object
+      return { 
+        success: false, 
+        error: errorDetails.message || 
+               errorDetails.details || 
+               errorDetails.hint || 
+               `RPC error: ${errorDetails.code || 'Unknown'}` ||
+               error
+      };
     }
 
     return { success: true, error: null };
   } catch (err: any) {
+    console.error('cancel_chat_media exception:', err);
     return {
       success: false,
       error: new Error(`Failed to cancel media: ${err?.message || 'Unknown error'}`)

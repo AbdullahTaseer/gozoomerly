@@ -11,6 +11,9 @@ import type { Conversation } from '@/lib/supabase/chat';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
 import type { TypingUser } from '@/hooks/use-typing-indicator';
 import type { MediaType } from '@/lib/supabase/chat';
+import { cancelChatMedia } from '@/lib/supabase/chat';
+import { useCallback } from 'react';
+import toast from 'react-hot-toast';
 
 interface DraftMedia {
   mediaId: string;
@@ -86,6 +89,79 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
     }
     return `${typingUsers.length} people are typing...`;
   };
+
+  const handleDeleteMedia = useCallback(async (mediaId: string) => {
+    if (!currentUserId) {
+      toast.error('Unable to delete media: User not authenticated');
+      return;
+    }
+    
+    if (!mediaId) {
+      toast.error('Unable to delete media: Invalid media ID');
+      return;
+    }
+    
+    try {
+      const { success, error } = await cancelChatMedia(currentUserId, mediaId);
+      
+      if (!success) {
+        // Extract error message from various possible error formats
+        let errorMessage = 'Failed to delete media';
+        
+        if (error) {
+          if (typeof error === 'string') {
+            errorMessage = error;
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === 'object') {
+            // Check common Supabase error properties
+            errorMessage = (error as any).message || 
+                          (error as any).details || 
+                          (error as any).hint ||
+                          (error as any).error || 
+                          (error as any).code ||
+                          'Unknown error';
+            
+            // If still empty, try to stringify (but avoid circular references)
+            if (errorMessage === 'Unknown error' || !errorMessage) {
+              try {
+                const errorStr = JSON.stringify(error, null, 2);
+                if (errorStr && errorStr !== '{}') {
+                  errorMessage = errorStr;
+                }
+              } catch {
+                // If stringify fails, use toString
+                errorMessage = error.toString() || 'Unknown error';
+              }
+            }
+          }
+        }
+        
+        console.error('Failed to delete media:', {
+          mediaId,
+          userId: currentUserId,
+          error,
+          errorType: typeof error,
+          errorKeys: error && typeof error === 'object' ? Object.keys(error) : [],
+          errorString: typeof error === 'object' ? JSON.stringify(error) : String(error)
+        });
+        
+        toast.error(errorMessage);
+      } else {
+        toast.success('Media deleted successfully');
+      }
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.toString() || 'An unexpected error occurred';
+      console.error('Error deleting media:', {
+        mediaId,
+        userId: currentUserId,
+        error: err,
+        errorType: typeof err,
+        errorKeys: err && typeof err === 'object' ? Object.keys(err) : []
+      });
+      toast.error(`Failed to delete media: ${errorMessage}`);
+    }
+  }, [currentUserId]);
   return (
     <div className='flex h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-140px)] max-[500px]:h-[calc(100vh-190px)] my-3'>
       <div className={`w-[350px] max-[900px]:w-full border-black/15 border flex-col overflow-y-auto scrollbar-hide ${selectedConversation ? 'max-[900px]:hidden' : 'flex'}`}>
@@ -201,6 +277,8 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                       message={msg}
                       isOwnMessage={msg.senderId === currentUserId}
                       showHeader={shouldShowHeader(msg, index)}
+                      currentUserId={currentUserId}
+                      onDeleteMedia={handleDeleteMedia}
                     />
                   ))}
                   {isTyping && typingUsers.length > 0 && (

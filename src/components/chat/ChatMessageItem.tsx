@@ -3,15 +3,23 @@ import type { ChatMessage, ChatMessageMedia } from '@/hooks/use-realtime-chat';
 import Image from 'next/image';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { getMediaPublicUrl } from '@/lib/supabase/chat';
-import { Download, FileText } from 'lucide-react';
+import { Download, FileText, X } from 'lucide-react';
 
 interface ChatMessageItemProps {
   message: ChatMessage;
   isOwnMessage: boolean;
   showHeader: boolean;
+  currentUserId?: string | null;
+  onDeleteMedia?: (mediaId: string) => Promise<void>;
 }
 
-export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessageItemProps) => {
+export const ChatMessageItem = ({ message, isOwnMessage, showHeader, currentUserId, onDeleteMedia }: ChatMessageItemProps) => {
+  const handleDeleteMedia = async (e: React.MouseEvent, mediaId: string) => {
+    e.stopPropagation();
+    if (onDeleteMedia && isOwnMessage) {
+      await onDeleteMedia(mediaId);
+    }
+  };
   return (
     <div className={`flex mt-2 gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
       {/* {!isOwnMessage && (
@@ -117,6 +125,15 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                 </div>
                               </div>
                             )}
+                            {isOwnMessage && onDeleteMedia && (
+                              <button
+                                onClick={(e) => handleDeleteMedia(e, mediaItem.id)}
+                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                                title="Delete media"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
                             {visualMedia.length > 1 && (
                               <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors rounded-lg" />
                             )}
@@ -130,7 +147,7 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                   {otherMedia.length > 0 && (
                     <div className={cn('flex flex-col gap-2', visualMedia.length > 0 ? 'mt-2' : '')}>
                       {otherMedia.map((mediaItem: ChatMessageMedia) => (
-                        <div key={mediaItem.id} className="relative">
+                        <div key={mediaItem.id} className="relative group">
                           {mediaItem.mediaType === 'audio' ? (
                             <div className={`${isOwnMessage ? 'bg-[#2A2D3A]' : 'bg-[#F7F7F7]'} rounded-lg p-3`}>
                               <audio
@@ -138,6 +155,15 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                 controls
                                 className="w-full"
                               />
+                              {isOwnMessage && onDeleteMedia && (
+                                <button
+                                  onClick={(e) => handleDeleteMedia(e, mediaItem.id)}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                                  title="Delete media"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
                             </div>
                           ) : (
                             <div className={`${isOwnMessage ? 'bg-[#3A3D4A]' : 'bg-[#E8E8E8]'} rounded-lg p-3 max-w-sm`}>
@@ -181,6 +207,15 @@ export const ChatMessageItem = ({ message, isOwnMessage, showHeader }: ChatMessa
                                   <Download size={20} />
                                 </a>
                               </div>
+                              {isOwnMessage && onDeleteMedia && (
+                                <button
+                                  onClick={(e) => handleDeleteMedia(e, mediaItem.id)}
+                                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1.5 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                                  title="Delete media"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
