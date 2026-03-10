@@ -225,6 +225,109 @@ export const homeBoardsSwiper = [
   },
 ];
 
+export const memoriesScreenData = [
+  {
+    id: 1,
+    coverImage: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&q=80',
+    title: 'Random 2025',
+    creatorName: 'Sean Parker',
+    creatorAvatar: Community_1_avatar,
+    timestamp: '12:34 am, Today',
+    photosCount: 12,
+    viewsCount: 13,
+  },
+  {
+    id: 2,
+    coverImage: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+    title: 'Trip to Dubai with friends',
+    creatorName: 'Sean Parker',
+    creatorAvatar: Community_1_avatar,
+    timestamp: '12:34 am, Today',
+    photosCount: 14,
+    viewsCount: 17,
+  },
+  {
+    id: 3,
+    coverImage: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&q=80',
+    title: 'Wedding memories',
+    creatorName: 'Asha & David',
+    creatorAvatar: Community_2_avatar,
+    timestamp: '2:15 pm, Yesterday',
+    photosCount: 45,
+    viewsCount: 89,
+  },
+];
+
+export const shareScreenData = [
+  {
+    id: 2,
+    coverImage: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+    title: 'Trip to Dubai with friends',
+    sharedWith: { name: 'Jordan Mitchell', avatar: Community_1_avatar },
+  },
+];
+
+export const paidTransactionsData = [
+  {
+    id: 1,
+    amount: 250,
+    recipientName: 'Alex Johnson',
+    occasion: 'his birthday',
+    date: 'Oct 15, 2025',
+    boardTitle: 'Alex Johnson birthday',
+    recipientDetails: 'Home Town : Miami, FL Birthday : Sep 12, 1988',
+    recipientAvatar: Community_1_avatar,
+    overlayColor: '#ef4444',
+  },
+  {
+    id: 2,
+    amount: 200,
+    recipientName: 'Mia Thompson',
+    occasion: 'her birthday',
+    date: 'Nov 1, 2025',
+    boardTitle: 'Mia Thompson birthday',
+    recipientDetails: 'Home Town : Miami, FL Birthday : Sep 12, 1988',
+    recipientAvatar: Community_2_avatar,
+    overlayColor: '#22c55e',
+  },
+  {
+    id: 3,
+    amount: 20,
+    recipientName: 'Liam Smith',
+    occasion: 'his Christmas',
+    date: 'Dec 5, 2025',
+    boardTitle: 'Liam Smith Christmas board',
+    recipientDetails: 'Home Town : Miami, FL',
+    recipientAvatar: Community_1_avatar,
+    overlayColor: '#ec4899',
+  },
+];
+
+export const receivedTransactionsData = [
+  {
+    id: 1,
+    amount: 150,
+    senderName: 'Samantha Carter',
+    occasion: 'birthday gift',
+    date: 'Oct 20, 2025',
+    boardTitle: 'Sean Parker birthday',
+    recipientDetails: 'Home Town : Miami, FL Birthday : Sep 12, 1988',
+    recipientAvatar: Community_1_avatar,
+    overlayColor: '#8b5cf6',
+  },
+  {
+    id: 2,
+    amount: 75,
+    senderName: 'Jordan Mitchell',
+    occasion: 'wedding wishes',
+    date: 'Nov 10, 2025',
+    boardTitle: 'Asha & David\'s Wedding',
+    recipientDetails: 'Home Town : New York, NY',
+    recipientAvatar: Community_2_avatar,
+    overlayColor: '#f59e0b',
+  },
+];
+
 import How_Img1 from "@/assets/svgs/as-simple-as-wishing.svg";
 import How_Img2 from "@/assets/svgs/as-simple-as-wishing-2.svg";
 import How_Img3 from "@/assets/svgs/as-simple-as-wishing-3.svg";
@@ -583,6 +686,64 @@ export const boardInvitations = [
     inviterName: "Emily Johnson",
     gradientClass: invitationGradients[5],
   },
+];
+
+export interface ExploreCardData {
+  id: number;
+  title: string;
+  image: string;
+  extraCount: number;
+  heightVariant: 'tall' | 'medium' | 'short';
+}
+
+export const exploreCards: ExploreCardData[] = [
+  { id: 1, title: 'Fashion show', image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400', extraCount: 10, heightVariant: 'tall' },
+  { id: 2, title: 'Houses', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400', extraCount: 10, heightVariant: 'medium' },
+  { id: 3, title: 'Cooking', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400', extraCount: 5, heightVariant: 'short' },
+  { id: 4, title: 'kick boxing', image: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=400', extraCount: 5, heightVariant: 'medium' },
+  { id: 5, title: 'food', image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400', extraCount: 5, heightVariant: 'medium' },
+  { id: 6, title: 'Cooking expert', image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400', extraCount: 10, heightVariant: 'short' },
+  { id: 7, title: 'Music', image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=400', extraCount: 10, heightVariant: 'tall' },
+  { id: 8, title: 'Makeup', image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400', extraCount: 5, heightVariant: 'medium' },
+  { id: 9, title: 'Dance show', image: 'https://images.unsplash.com/photo-1504609813442-a8924e83f76e?w=400', extraCount: 10, heightVariant: 'medium' },
+  { id: 10, title: 'Dance show', image: 'https://images.unsplash.com/photo-1518834107812-67b0b7c58434?w=400', extraCount: 10, heightVariant: 'short' },
+  { id: 11, title: 'Makeup', image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400', extraCount: 10, heightVariant: 'medium' },
+  { id: 12, title: 'Travel', image: 'https://images.unsplash.com/photo-1527631746610-bca00a040d60?w=400', extraCount: 5, heightVariant: 'short' },
+  { id: 13, title: 'food', image: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400', extraCount: 5, heightVariant: 'tall' },
+  { id: 14, title: 'Cooking expert', image: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?w=400', extraCount: 10, heightVariant: 'medium' },
+  { id: 15, title: 'Music', image: 'https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=400', extraCount: 10, heightVariant: 'short' },
+  { id: 16, title: 'Makeup', image: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400', extraCount: 5, heightVariant: 'medium' },
+  { id: 17, title: 'Photography', image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400', extraCount: 12, heightVariant: 'short' },
+  { id: 18, title: 'Art & Design', image: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400', extraCount: 8, heightVariant: 'tall' },
+  { id: 19, title: 'Fitness', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400', extraCount: 15, heightVariant: 'medium' },
+  { id: 20, title: 'Gardening', image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400', extraCount: 7, heightVariant: 'short' },
+  { id: 21, title: 'Pets', image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400', extraCount: 9, heightVariant: 'medium' },
+  { id: 22, title: 'Gaming', image: 'https://images.unsplash.com/photo-1511882150382-421056c89033?w=400', extraCount: 18, heightVariant: 'tall' },
+  { id: 23, title: 'Books', image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400', extraCount: 6, heightVariant: 'medium' },
+  { id: 24, title: 'Tech', image: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=400', extraCount: 14, heightVariant: 'short' },
+  { id: 25, title: 'Nature', image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400', extraCount: 11, heightVariant: 'medium' },
+  { id: 26, title: 'Beach', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400', extraCount: 8, heightVariant: 'tall' },
+  { id: 27, title: 'Mountains', image: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400', extraCount: 10, heightVariant: 'short' },
+  { id: 28, title: 'Wedding', image: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=400', extraCount: 7, heightVariant: 'medium' },
+  { id: 29, title: 'Birthday', image: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400', extraCount: 12, heightVariant: 'short' },
+  { id: 30, title: 'Yoga', image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400', extraCount: 9, heightVariant: 'medium' },
+  { id: 31, title: 'Coffee', image: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400', extraCount: 6, heightVariant: 'tall' },
+  { id: 32, title: 'Street style', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400', extraCount: 13, heightVariant: 'medium' },
+  { id: 33, title: 'Camping', image: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=400', extraCount: 8, heightVariant: 'short' },
+  { id: 34, title: 'Movies', image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400', extraCount: 11, heightVariant: 'medium' },
+  { id: 35, title: 'Sports', image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400', extraCount: 16, heightVariant: 'tall' },
+  { id: 36, title: 'Interior Design', image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400', extraCount: 5, heightVariant: 'short' },
+  { id: 37, title: 'Street food', image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400', extraCount: 9, heightVariant: 'medium' },
+  { id: 38, title: 'Minimalism', image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400', extraCount: 7, heightVariant: 'short' },
+  { id: 39, title: 'Vintage', image: 'https://images.unsplash.com/photo-1558171813-4c088753af8f?w=400', extraCount: 10, heightVariant: 'medium' },
+  { id: 40, title: 'Sunset', image: 'https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=400', extraCount: 14, heightVariant: 'tall' },
+];
+
+export const explorePlaceholderAvatars = [
+  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
 ];
 
 export interface FeedCardData {

@@ -40,7 +40,6 @@ const GlobalButton = ({
   borderRadius = '50px',
   bgColor,
   onClick,
-  aos = "zoom-in",
   disabled = false,
 }: Props) => {
 
@@ -49,7 +48,6 @@ const GlobalButton = ({
 
   return (
     <div
-      {...(aos ? { 'data-aos': aos } : {})}
       style={{
         width,
         color,

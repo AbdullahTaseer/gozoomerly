@@ -47,15 +47,8 @@ const SpotlightCampaigns = () => {
                 description={board.description}
                 spotLightImg={board.spotlight_img || ProfileAvatar}
                 participants={board.participants}
-                wished={board.wished}
-                supports={board.supports}
-                memories={board.memories}
-                chats={board.chats}
-                raised={board.raised}
-                target={board.target}
                 organizerName={board.organizer_name}
                 organizerAvatar={board.organizer_avatar || ProfileAvatar}
-                organizerHometown={board.organizer_hometown}
                 topContributors={board.top_contributors.length > 0 ? board.top_contributors : []}
               />
             ))

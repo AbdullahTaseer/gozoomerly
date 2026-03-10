@@ -5,8 +5,10 @@ import { ChatMessage, useRealtimeChat } from '@/hooks/use-realtime-chat';
 import { useTypingIndicator } from '@/hooks/use-typing-indicator';
 import { useGlobalOnlineStatus } from '@/components/providers/OnlineStatusProvider';
 import { useLastSeen } from '@/hooks/use-last-seen';
+import type { ChatTab } from '@/components/filters/ChatFilters';
 import {
   getUserConversations,
+  getOrCreateBoardConversation,
   getConversationMessages,
   sendMessage,
   uploadMessageFile,
@@ -60,7 +62,7 @@ export const useChat = () => {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'Connections' | 'Boards'>('Connections');
+  const [selectedTab, setSelectedTab] = useState<ChatTab>('All');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isSettingProgrammaticallyRef = useRef(false);
@@ -320,17 +322,17 @@ export const useChat = () => {
   }, [selectedConversation, currentUserId, loadMessages]);
 
   useEffect(() => {
-    if (selectedConversation) {
-      if (selectedTab === 'Connections' && selectedConversation.type !== 'direct') {
-        setSelectedConversation(null);
-      } else if (selectedTab === 'Boards' && selectedConversation.type !== 'group') {
-        setSelectedConversation(null);
-      }
+    if (!selectedConversation) return;
+    const keepSelected =
+      (selectedTab === 'One-to-One' || selectedTab === 'All') && selectedConversation.type === 'direct' ||
+      (selectedTab === 'Board Chats' || selectedTab === 'Group Chats' || selectedTab === 'All') && selectedConversation.type === 'group';
+    if (!keepSelected) {
+      setSelectedConversation(null);
     }
   }, [selectedTab, selectedConversation]);
 
   useEffect(() => {
-    if (selectedTab === 'Boards' && currentUserId && fetchUserBoardsRef.current) {
+    if ((selectedTab === 'Board Chats' || selectedTab === 'All') && currentUserId && fetchUserBoardsRef.current) {
       const loadActiveBoards = async () => {
         const fn = fetchUserBoardsRef.current;
         if (fn) {
@@ -614,6 +616,26 @@ export const useChat = () => {
       toast.error('Failed to start conversation');
     }
   }, [currentUserId, conversations]);
+
+  const handleStartBoardConversation = useCallback(async (boardId: string, boardTitle: string) => {
+    if (!currentUserId) return;
+    try {
+      const { conversation, error } = await getOrCreateBoardConversation(boardId, boardTitle, currentUserId);
+      if (error) {
+        toast.error('Failed to open board chat');
+        return;
+      }
+      if (!conversation) return;
+      setConversations(prev => {
+        const exists = prev.some(c => c.id === conversation.id);
+        if (exists) return prev.map(c => c.id === conversation.id ? conversation : c);
+        return [conversation, ...prev];
+      });
+      setSelectedConversation(conversation);
+    } catch (err: any) {
+      toast.error('Failed to open board chat');
+    }
+  }, [currentUserId]);
 
   const handleSend = useCallback(async () => {
     if ((!newMessage.trim() && draftMedia.length === 0) || !selectedConversation || !currentUserId) return;
@@ -1108,28 +1130,26 @@ export const useChat = () => {
     return messageContent;
   }, [currentUserId, selectedConversation, messages]);
 
+  const directConversations = conversations.filter(conv =>
+    conv.type === 'direct' &&
+    (conv.last_message_at || conv.last_message) &&
+    (!searchQuery ||
+      getConversationName(conv).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (conv.last_message || 'Media').toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+  const groupConversations = conversations.filter(conv =>
+    conv.type === 'group' &&
+    (conv.last_message_at || conv.last_message) &&
+    (!searchQuery ||
+      getConversationName(conv).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (conv.last_message || 'Media').toLowerCase().includes(searchQuery.toLowerCase()))
+  );
   const filteredConversations = conversations.filter(conv => {
-    if (selectedConversation && conv.id === selectedConversation.id) {
-      return true;
-    }
-
-    if (selectedTab === 'Connections' && conv.type !== 'direct') {
-      return false;
-    }
-    if (selectedTab === 'Boards' && conv.type !== 'group') {
-      return false;
-    }
-
-   
-    if (!conv.last_message_at && !conv.last_message) {
-      return false;
-    }
-
-    if (!searchQuery) return true;
-    const searchLower = searchQuery.toLowerCase();
-    const name = getConversationName(conv).toLowerCase();
-    const lastMessage = (conv.last_message || 'Media').toLowerCase();
-    return name.includes(searchLower) || lastMessage.includes(searchLower);
+    if (selectedConversation && conv.id === selectedConversation.id) return true;
+    if (selectedTab === 'All') return directConversations.includes(conv) || groupConversations.includes(conv);
+    if (selectedTab === 'One-to-One') return directConversations.includes(conv);
+    if (selectedTab === 'Group Chats' || selectedTab === 'Board Chats') return groupConversations.includes(conv);
+    return false;
   });
 
   const shouldShowHeader = useCallback((message: ChatMessage, index: number): boolean => {
@@ -1175,7 +1195,10 @@ export const useChat = () => {
     setShowSearchResults,
     getConversationAvatar,
     filteredConversations,
+    directConversations,
+    groupConversations,
     handleStartConversation,
+    handleStartBoardConversation,
     setSelectedConversation,
     getLastMessageWithSender,
     setNewMessage: handleNewMessageChange,

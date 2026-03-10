@@ -8,23 +8,23 @@ import MobileHeader from '@/components/navbar/MobileHeader';
 import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import CoverCard from '@/components/cards/CoverCard';
-import { memoriesScreenData } from '@/lib/MockData';
+import { shareScreenData } from '@/lib/MockData';
 
-const Memories = () => {
+const SharePage = () => {
   const router = useRouter();
   const [search, setSearch] = useState('');
 
-  const filteredMemories = memoriesScreenData.filter(
-    (m) =>
-      m.title.toLowerCase().includes(search.toLowerCase()) ||
-      m.creatorName.toLowerCase().includes(search.toLowerCase())
+  const filteredItems = shareScreenData.filter(
+    (item) =>
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      item.sharedWith.name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
     <div className="text-black">
       <DashNavbar />
       <MobileHeader
-        title="Memories"
+        title="Share"
         showBack
         onBackClick={() => router.push('/u/profile')}
         profileRight
@@ -37,7 +37,7 @@ const Memories = () => {
             className="flex items-center gap-2 text-black shrink-0"
           >
             <ArrowLeft size={24} />
-            <span className="text-3xl font-bold">Memories</span>
+            <span className="text-3xl font-bold">Share</span>
           </button>
           <div className="relative w-[260px] shrink-0">
             <Search size={18} className="absolute top-3 left-3 text-gray-500" />
@@ -69,27 +69,24 @@ const Memories = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMemories.map((memory) => (
+          {filteredItems.map((item) => (
             <CoverCard
-              key={memory.id}
-              coverImage={memory.coverImage}
-              title={memory.title}
-              creatorName={memory.creatorName}
-              creatorAvatar={memory.creatorAvatar}
-              timestamp={memory.timestamp}
-              photosCount={memory.photosCount}
-              viewsCount={memory.viewsCount}
+              key={item.id}
+              coverImage={item.coverImage}
+              title={item.title}
+              variant="share"
+              sharedWith={item.sharedWith}
               onClick={() => {}}
             />
           ))}
         </div>
 
-        {filteredMemories.length === 0 && (
-          <p className="text-center text-gray-500 py-12">No memories found</p>
+        {filteredItems.length === 0 && (
+          <p className="text-center text-gray-500 py-12">No shared items found</p>
         )}
       </div>
     </div>
   );
 };
 
-export default Memories;
+export default SharePage;

@@ -1,45 +1,32 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import Bio from "@/assets/svgs/bio.svg";
-import Friends from "@/assets/svgs/friends.svg";
 import {
-  Bell,
-  ChevronRight,
-  LockKeyhole,
-  Mail,
-  Trash2,
-  UserLock,
-  Smartphone,
-  Edit2,
+  LayoutGrid,
+  Clock,
+  Heart,
+  Bookmark,
+  Share2,
+  HelpCircle,
+  Settings,
+  Play,
 } from 'lucide-react';
-import Activity from "@/assets/svgs/activity.svg";
-import TitleCard from '@/components/cards/TitleCard';
-import Follow from "@/assets/svgs/following.svg";
-import BoardsIcon from "@/assets/svgs/board-icon.svg";
-import MyContributors from "@/assets/svgs/coins 1.svg";
-import MyMemories from "@/assets/svgs/memory-icon.svg";
-import MastercardImg from "@/assets/svgs/Mastercard.svg";
-import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
+import EditIcon from "@/assets/svgs/Pencil.svg";
 import Particles from "@/assets/svgs/why-people-love-particles.svg";
-import PaymentMethodCard from '@/components/cards/PaymentMethodCard';
-import * as Switch from '@radix-ui/react-switch';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ProfilePictureUpload from './ProfilePictureUpload';
-import GlobalModal from '@/components/modals/GlobalModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import EditProfileModal from '@/components/modals/EditProfileModal';
-import EmailChangeForm from '@/components/modals/EmailChangeModal';
-import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 import FollowersModalContent from '@/components/modals/FollowersModalContent';
 import FollowingModalContent from '@/components/modals/FollowingModalContent';
 import { recalculateFollowingCount, recalculateFollowersCount } from '@/lib/supabase/followUtils';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalButton from '@/components/buttons/GlobalButton';
+import BellIconIndicator from '@/components/cards/BellIconIndicator';
 
 interface UserProfile {
   id: string;
@@ -66,22 +53,18 @@ const Profile = () => {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showEditProfileModal, setShowEditProfileModal] = useState(false);
   const [showFollowerModal, setIsShowFollowerModal] = useState(false);
   const [showFollowingModal, setIsShowFollowingModal] = useState(false);
-  const [logoutModal, setIsLogoutModal] = useState(false);
 
-  const menuItems = [
-    { label: "Memories", icon: MyMemories, href: '/u/memories' },
-    { label: "Boards", icon: BoardsIcon, href: '/u/boards' },
-    { label: "My Contributions", icon: MyContributors, href: '/u/myContributions' },
-    { label: "Share with friends", icon: Friends, href: '/u/friends' },
-    { label: "Bio", icon: Bio, href: '/u/bio' },
-    { label: "Activity", icon: Activity, href: '/u/activity' },
-    { label: "Followers", icon: Follow, onClick: () => setIsShowFollowerModal(true) },
-    { label: "Following", icon: Follow, onClick: () => setIsShowFollowingModal(true) },
+  const featureCards = [
+    { label: "Boards", icon: LayoutGrid, href: '/u/boards' },
+    { label: "Memories", icon: Clock, href: '/u/memories' },
+    { label: "Liked", icon: Heart, href: '/u/likes' },
+    { label: "Saved", icon: Bookmark, href: '#' },
+    { label: "Shared", icon: Share2, href: '/u/share' },
+    { label: "Support", icon: HelpCircle, href: '/u/support' },
+    { label: "Settings", icon: Settings, href: '/u/settings' },
   ];
 
   useEffect(() => {
@@ -164,9 +147,11 @@ const Profile = () => {
     if (profile) setShowEditProfileModal(true);
   };
 
-  const handleLogout = async () => {
-    await authService.signOut();
-    router.push('/signin');
+  const getUsername = () => {
+    const u = (profile as any)?.username;
+    if (u) return `@${u.replace(/^@/, '')}`;
+    const name = profile?.name || 'user';
+    return `@${name.toLowerCase().replace(/\s+/g, '')}`;
   };
 
   const formatBirthDate = (dateString?: string) => {
@@ -176,16 +161,11 @@ const Profile = () => {
     return `Birthday on ${date.toLocaleDateString('en-US', options)}`;
   };
 
-  const formatLocation = (country?: string, state?: string, city?: string) => {
-    const parts = [city, state, country].filter(Boolean);
-    return parts.join(', ') || 'Location not set';
-  };
-
   return (
-    <div>
+    <div className='pb-5'>
       <DashNavbar />
-      <MobileHeader title={'Profile'} rightText='Edit' rightTextClick={handleEdit} />
-      <div className='px-[7%] max-[768px]:px-6'>
+      <MobileHeader homeRight={true} titleColor='bg-clip-text text-transparent bg-linear-to-r from-[#E5408A] to-[#845CBA]' />
+      <div className='px-[5%] max-[768px]:px-4'>
         {loading ? (
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>
@@ -208,183 +188,86 @@ const Profile = () => {
         ) : (
           <>
 
-            <TitleCard title='Profile' className='text-left max-[769px]:hidden' />
+            <div className='flex justify-between items-center max-[769px]:hidden mt-6'>
+              <p className='text-3xl font-bold text-black'>Profile</p>
+              <BellIconIndicator />
+            </div>
 
-            <div className='bg-[#1B1D26] p-16 max-[1100px]:p-10 mt-4 relative rounded-[24px] overflow-hidden'>
-              <Image src={Particles} alt="" className='absolute object-cover' />
-
-              <div className='relative z-10'>
-                <button
-                  onClick={handleEdit}
-                  className='absolute max-[769px]:hidden -top-10 max-[1100px]:-top-4 -right-10 max-[1100px]:-right-4 cursor-pointer p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors'
-                >
-                  <Edit2 size={20} className='text-white' />
-                </button>
-
-                <div className='grid grid-cols-5 max-[900px]:grid-cols-3 gap-4'>
-                  <div className='flex items-center max-[500px]:flex-col gap-3 col-span-2 max-[900px]:col-span-3'>
+            <div className='max-w-[748px] mx-auto'>
+              <div className='bg-gradient-to-r from-[#845CBA] to-[#F43C83] p-10 max-[500px]:p-4 mt-4 relative rounded-2xl overflow-hidden'>
+                <Image src={Particles} alt="" className='absolute inset-0 object-cover' aria-hidden />
+                <div className='relative z-10 flex max-[630px]:items-start items-center max-[630px]:flex-col justify-between gap-4'>
+                  <div className='flex items-center gap-4 min-w-0'>
                     <ProfilePictureUpload
                       profile={profile}
                       onUpdate={(updatedProfile) => setProfile(updatedProfile)}
                       userId={user?.id || ''}
                     />
-                    <span>
-                      <p className='text-white text-[24px] font-bold'>{profile?.name || 'User'}</p>
-                      <p className='text-[#F0F0F0] text-sm'>{formatBirthDate(profile?.birth_date)}</p>
-                      <p className='text-[#F0F0F0] text-sm'>{formatLocation(profile?.country, profile?.state, profile?.city)}</p>
-                    </span>
+                    <div className='min-w-0'>
+                      <p className='text-white text-xl font-bold truncate'>{profile?.name || 'User'}</p>
+                      <p className='text-white/90 text-sm'>{formatBirthDate(profile?.birth_date) || 'Add your birthday'}</p>
+                    </div>
                   </div>
-                  <span className='my-auto'>
-                    <p className='text-white text-[24px] font-bold'>{profile?.yours_boards_count || 0}</p>
-                    <p className='text-[#F0F0F0] text-sm'>Campaigns</p>
-                  </span>
-                  <span className='my-auto'>
-                    <p className='text-white text-[24px] font-bold'>{profile?.followers_count || 0}</p>
-                    <p className='text-[#F0F0F0] text-sm'>Followers</p>
-                  </span>
-                  <span className='my-auto'>
-                    <p className='text-white text-[24px] font-bold'>{profile?.following_count || 0}</p>
-                    <p className='text-[#F0F0F0] text-sm'>Following</p>
-                  </span>
-                </div>
-
-                <div className='mt-6'>
-                  <p className='text-white font-semibold mb-2'>Bio</p>
-                  <p className='text-[#F0F0F0] text-sm'>{profile?.bio || 'No bio added yet'}</p>
-                </div>
-
-                {profile?.work && (
-                  <div className='mt-4'>
-                    <p className='text-white font-semibold mb-2'>Work</p>
-                    <p className='text-[#F0F0F0] text-sm'>{profile?.work}</p>
+                  <div className='flex items-center max-[630px]:justify-center max-[630px]:w-full gap-6 shrink-0'>
+                    <button onClick={() => setIsShowFollowerModal(true)} className='text-center'>
+                      <p className='text-white text-xl font-bold'>{(profile?.followers_count ?? 0) >= 1000 ? `${((profile?.followers_count ?? 0) / 1000).toFixed(1)}K` : (profile?.followers_count ?? 0)}</p>
+                      <p className='text-white/90 text-sm'>Follower</p>
+                    </button>
+                    <button onClick={() => setIsShowFollowingModal(true)} className='text-center'>
+                      <p className='text-white text-xl font-bold'>{profile?.following_count ?? 0}</p>
+                      <p className='text-white/90 text-sm'>Following</p>
+                    </button>
                   </div>
-                )}
-
-              </div>
-            </div>
-
-            <div className='mt-4 bg-white border-b pb-4'>
-              {menuItems.map((item, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => {
-                    if (item.href) {
-                      router.push(item.href);
-                    } else if (item.onClick) {
-                      item.onClick();
-                    }
-                  }}
-                  className="w-full text-left flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-100"
-                >
-                  <div className="flex items-center gap-3">
-                    <Image src={item.icon} alt="" width={20} height={20} />
-                    <span className="text-gray-800 font-medium">{item.label}</span>
-                  </div>
-                  <ChevronRight className="text-[#8A8A8A]" size={22} />
-                </button>
-              ))}
-            </div>
-
-            <div className='py-4 border-b'>
-              <div className='flex justify-between gap-3 items-center mb-2'>
-                <p className='text-[20px] font-semibold'>Payment Method</p>
-                <Link href='/u/paymentMethod' className='cursor-pointer hover:text-pink-500'>Change</Link>
-              </div>
-              <PaymentMethodCard
-                showRadio={false}
-                cardImg={MastercardImg}
-                cardName='Mastercard'
-                cardNumber='**** 5930'
-              />
-            </div>
-
-            <div className='py-4 border-b'>
-              <p className='text-[20px] font-semibold mb-3'>Notification Settings</p>
-              <div className='flex items-center justify-between px-1 py-2'>
-                <div className='flex items-center gap-3'>
-                  <Bell size={20} />
-                  <span className='text-gray-800'>In-app Notifications</span>
+                  <button onClick={handleEdit} className='p-2 absolute -right-7 max-[500px]:right-0 -top-7 max-[500px]:-top-2 rounded-lg hover:bg-white/10 transition-colors'>
+                    <Image src={EditIcon} alt='' />
+                  </button>
                 </div>
-                <Switch.Root defaultChecked className="w-11 h-6 bg-[#0D0C10] rounded-full relative data-[state=checked]:bg-pink-500">
-                  <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
-                </Switch.Root>
               </div>
-              <div className='flex items-center justify-between px-1 py-2'>
+
+              <div className='grid grid-cols-2 gap-3 mt-6'>
+                {featureCards.map((item, idx) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        if (item.href && item.href !== '#') {
+                          router.push(item.href);
+                        }
+                      }}
+                      className="p-4 bg-white space-y-2 cursor-pointer border border-gray-200 rounded-xl text-left hover:bg-gray-50 transition-colors"
+                    >
+                      <IconComponent size={20} className='text-black' />
+                      <span className='text-gray-800 font-medium'>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className='mt-6 p-6 bg-gray-50 rounded-2xl border border-gray-100'>
+                <p className='text-xl lg:text-2xl font-medium text-black mb-2'>Want to become ambassadors earn passive income?</p>
+                <p className='text-black lg:text-lg leading-relaxed mb-4'>
+                  Zoiax is a modern messenger that helps people communicate, stay connected through real-life moments, and grow into something more at their own pace.
+                </p>
                 <div className='flex items-center gap-3'>
-                  <Smartphone size={20} />
-                  <span className='text-gray-800'>SMS Notifications</span>
+                  <GlobalButton
+                    title="Learn more"
+                    width="140px"
+                    height="44px"
+                    bgColor="white"
+                    color="#000"
+                    borderColor="#000"
+                    borderWidth="1px"
+                    hover={{ bgColor: '#f5f5f5' }}
+                    className='flex-1'
+                  />
+                  <button className='w-12 h-12 rounded-full bg-black flex items-center justify-center hover:bg-gray-800 transition-colors'>
+                    <Play size={20} className='text-white' />
+                  </button>
                 </div>
-                <Switch.Root className="w-11 h-6 rounded-full bg-[#0D0C10] relative data-[state=checked]:bg-pink-500">
-                  <Switch.Thumb className="block w-5 h-5 bg-white rounded-full transition-transform translate-x-0.5 data-[state=checked]:translate-x-5.5" />
-                </Switch.Root>
               </div>
             </div>
-
-            <div className='py-4 border-b'>
-              <p className='text-[20px] font-semibold mb-3'>Account Settings</p>
-              <div
-                className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
-                onClick={() => setShowEmailModal(true)}
-              >
-                <div className='flex items-center gap-3'>
-                  <Mail size={20} />
-                  <span className='text-gray-800'>Email: {user?.email || 'Not set'}</span>
-                </div>
-                <ChevronRight className='text-[#8A8A8A]' size={22} />
-              </div>
-              <div
-                className='flex items-center justify-between px-1 py-2 cursor-pointer hover:bg-gray-100'
-                onClick={() => setShowPasswordModal(true)}
-              >
-                <div className='flex items-center gap-3'>
-                  <LockKeyhole size={20} />
-                  <span className='text-gray-800'>Change password</span>
-                </div>
-                <ChevronRight className='text-[#8A8A8A]' size={22} />
-              </div>
-            </div>
-
-            <div className='py-4'>
-              <div className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'>
-                <Trash2 size={20} className='text-red-500' />
-                <span className='text-red-500'>Delete Account</span>
-              </div>
-              <div onClick={() => setIsLogoutModal(true)} className='flex items-center gap-3 px-1 py-2 cursor-pointer hover:bg-gray-100'>
-                <UserLock size={20} />
-                <span className='text-gray-800'>Log out</span>
-              </div>
-            </div>
-
-            <GlobalModal
-              isOpen={showEmailModal}
-              onClose={() => setShowEmailModal(false)}
-              title="Change Email"
-              className='w-[400px] max-[420px]:w-[95vw]'
-            >
-              <EmailChangeForm
-                currentEmail={user?.email || ''}
-                onClose={() => setShowEmailModal(false)}
-                onSuccess={async () => {
-
-                  await fetchUserData();
-                }}
-              />
-            </GlobalModal>
-
-            <GlobalModal
-              isOpen={showPasswordModal}
-              onClose={() => setShowPasswordModal(false)}
-              title="Change Password"
-              className='w-[400px] max-[420px]:w-[95vw]'
-            >
-              <PasswordChangeForm
-                onClose={() => setShowPasswordModal(false)}
-                onSuccess={() => {
-
-                }}
-              />
-            </GlobalModal>
 
             <EditProfileModal
               isOpen={showEditProfileModal}
@@ -396,7 +279,7 @@ const Profile = () => {
               }}
             />
 
-            <GlobalModal
+            <ModalOrBottomSlider
               title='Followers'
               isOpen={showFollowerModal}
               onClose={async () => {
@@ -413,12 +296,12 @@ const Profile = () => {
                   } : null);
                 }
               }}
-              className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+              contentClassName='pb-0'
             >
               <FollowersModalContent userId={user?.id} />
-            </GlobalModal>
+            </ModalOrBottomSlider>
 
-            <GlobalModal
+            <ModalOrBottomSlider
               title='Following'
               isOpen={showFollowingModal}
               onClose={async () => {
@@ -436,27 +319,13 @@ const Profile = () => {
                   } : null);
                 }
               }}
-              className='w-[550px] pb-0 max-[600px]:w-[90vw]'
+              contentClassName='pb-0'
             >
               <FollowingModalContent userId={user?.id} />
-            </GlobalModal>
+            </ModalOrBottomSlider>
           </>
         )}
       </div>
-      <GlobalModal
-        title='Confirmation'
-        isOpen={logoutModal}
-        onClose={() => setIsLogoutModal(false)}
-        className='w-[320px]'
-      >
-        <div>
-          <p className='text-center'>Are you sure you want to logout ?</p>
-          <div className='grid grid-cols-2 gap-4 mt-6'>
-            <GlobalButton title='Cancel' />
-            <GlobalButton onClick={handleLogout} title='Yes' />
-          </div>
-        </div>
-      </GlobalModal>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 'use client';
 
-import {  useEffect  } from 'react';
-import { Camera, Calendar, Image as ImageIcon, UserPlus, Star, Award, Gem, X, Layers } from 'lucide-react';
+import { useEffect } from 'react';
+import { MessageCircleMore, Layers, Share2, X, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface CreateOrShareModalProps {
@@ -23,111 +23,71 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
     };
   }, [isOpen]);
 
-  const actionCards = [
+  const actions = [
     {
-      icon: Layers,
-      label: 'Active Boards',
+      icon: MessageCircleMore,
+      label: 'New Chat',
       onClick: () => {
-        router.push('/u/allBoards/active');
+        router.push('/u/chat');
         onClose();
       },
     },
     {
       icon: Calendar,
-      label: 'Create a Board',
-      onClick: () => {
-        router.push('/compaign');
-        onClose();
-      },
-    },
-    {
-      icon: ImageIcon,
-      label: 'Share a Memory',
+      label: 'Post status',
       onClick: () => {
         router.push('/u/connections');
         onClose();
       },
     },
     {
-      icon: UserPlus,
-      label: 'Invite Contacts',
+      icon: Layers,
+      label: 'New board',
       onClick: () => {
-        console.log('Invite Contacts clicked');
+        router.push('/compaign');
+        onClose();
+      },
+    },
+    {
+      icon: Share2,
+      label: 'Share memories',
+      onClick: () => {
+        router.push('/u/connections');
         onClose();
       },
     },
   ];
 
-  const membershipTiers = [
-    {
-      icon: Star,
-      label: 'Pro',
-      color: 'bg-orange-500',
-    },
-    {
-      icon: Award,
-      label: 'Ambassador',
-      color: 'bg-blue-500',
-    },
-    {
-      icon: Gem,
-      label: 'Axium',
-      color: 'bg-green-500',
-    },
-  ];
-
   const content = (
     <>
-      <div className='flex justify-between items-start mb-6'>
-        <div>
-          <h2 className="text-2xl font-bold text-black mb-2">Create or Share</h2>
-          <p className="text-sm text-gray-600">Celebrate, share, or bring people together.</p>
-        </div>
-
+      <div className="px-3 flex items-center gap-4 justify-between">
+        <h3 className="text-black text-[20px] 3sm:text-[18px] 2xs:text-[14px] font-[700] tracking-normal">
+          Create or Share
+        </h3>
         <button
           onClick={onClose}
-          className="w-6 h-6 rounded-full border border-black flex items-center justify-center hover:bg-gray-200 transition-colors z-10 flex-shrink-0"
+          className="hover:bg-gray-100 border border-black w-[28px] h-[28px] rounded-full flex items-center justify-center cursor-pointer shrink-0"
         >
-          <X size={18} className="text-black" />
+          <X size={18} />
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        {actionCards.map((card, index) => {
-          const IconComponent = card.icon;
+      <div className="space-y-3 mt-4">
+        {actions.map((action, index) => {
+          const IconComponent = action.icon;
           return (
             <button
               key={index}
-              onClick={card.onClick}
-              className="bg-[#1b1d26] rounded-lg p-4 flex flex-col items-center gap-3 hover:bg-gray-800 active:bg-gray-800 transition-colors"
+              onClick={action.onClick}
+              className="w-full flex items-center cursor-pointer gap-3 px-4 py-3.5 rounded-lg bg-[#1b1d26] hover:bg-[#252730] active:bg-[#252730] transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                <IconComponent size={20} className="text-white" />
+              <div className="w-10 h-10 shrink-0 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+                <IconComponent size={20} className="text-white" strokeWidth={2} />
               </div>
-              <span className="text-white text-sm font-medium text-center">{card.label}</span>
+              <span className="text-white font-medium">{action.label}</span>
             </button>
           );
         })}
-      </div>
-
-      <div className="bg-[#1b1d26] rounded-lg p-4">
-        <h3 className="text-white font-bold text-lg mb-1">Xaioz</h3>
-        <p className="text-white/80 text-sm mb-4">Build a business or community</p>
-
-        <div className="flex gap-2">
-          {membershipTiers.map((tier, index) => {
-            const IconComponent = tier.icon;
-            return (
-              <div
-                key={index}
-                className={`${tier.color} rounded-lg px-3 py-2 flex items-center gap-2 flex-1 justify-center`}
-              >
-                <IconComponent size={16} className="text-white" />
-                <span className="text-white text-xs font-medium">{tier.label}</span>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </>
   );
@@ -160,7 +120,7 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
         onClick={onClose}
       >
         <div
-          className={`bg-white rounded-2xl shadow-2xl w-[90%] max-w-md transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+          className={`bg-white rounded-xl shadow-2xl w-[90%] max-w-md transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
           onClick={(e) => e.stopPropagation()}
         >

@@ -1,7 +1,7 @@
 'use client';
 
-import {  useState  } from 'react';
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { LockKeyhole } from 'lucide-react';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { authService } from '@/lib/supabase/auth';
@@ -54,9 +54,11 @@ const PasswordChangeForm = ({ onClose, onSuccess }: Omit<PasswordChangeModalProp
   };
 
   return (
-    <div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex flex-col items-center">
+      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-4 shrink-0">
+        <LockKeyhole size={28} className="text-black" strokeWidth={2} />
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4 w-full">
         <FloatingInput
           id="new-password"
           title="New Password"

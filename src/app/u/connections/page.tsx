@@ -1,12 +1,12 @@
 'use client';
 
-import {  useState, useEffect, useMemo  } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import StatusCard from '@/components/cards/StatusCard';
 import ConnectionCard from '@/components/cards/ConnectionCard';
-import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
+import ProfileAvatar from '@/assets/svgs/avatar-list-icon-4.svg';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import DashNavbar from '@/components/navbar/DashNavbar';
@@ -21,6 +21,7 @@ import { getFollowers, getFollowing, followUser } from '@/lib/supabase/followUti
 import { getUserCircles, getCircleMembers, addCircleMember, CircleWithDetails } from '@/lib/supabase/circles';
 import { uploadStoryMedia, createStory, getStoriesGroupedByUser, Story } from '@/lib/supabase/stories';
 import toast from 'react-hot-toast';
+import GlobalButton from '@/components/buttons/GlobalButton';
 
 interface Connection {
   id: string;
@@ -468,120 +469,120 @@ const Connections = () => {
   return (
     <>
       <DashNavbar />
-      <MobileHeader title="Connections" complexRightHref="/u/home" complexRightTitle="Boards" />
-      <div className='px-[7%] max-[769px]:px-4 pb-8'>
-        {}
-        <div className='mt-6'>
-          <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
-            {storiesData.map((status, index) => {
-              const isUserStory = !status.isAdd && status.id === `story-${currentUser?.id}`;
+      <MobileHeader title="Connections" className="justify-center" />
+      <div className='px-[5%] max-[769px]:px-4 py-6'>
+        <div className='flex justify-between items-center pb-6 max-[769px]:hidden'>
+          <p className='text-[36px] text-black font-semibold'>Connections</p>
+          <GlobalButton title='Contacts not on zoiax' width='183px' />
+        </div>
+        <div className='flex gap-2 overflow-x-auto scrollbar-hide pb-2'>
+          {storiesData.map((status, index) => {
+            const isUserStory = !status.isAdd && status.id === `story-${currentUser?.id}`;
 
-              const storyGroupIndex = status.isAdd
-                ? (status as any).storyGroupIndex !== undefined
-                  ? (status as any).storyGroupIndex
-                  : undefined
-                : (status as any).storyGroupIndex !== undefined
-                  ? (status as any).storyGroupIndex
-                  : stories.findIndex(s => s.user?.id === currentUser?.id && isUserStory);
+            const storyGroupIndex = status.isAdd
+              ? (status as any).storyGroupIndex !== undefined
+                ? (status as any).storyGroupIndex
+                : undefined
+              : (status as any).storyGroupIndex !== undefined
+                ? (status as any).storyGroupIndex
+                : stories.findIndex(s => s.user?.id === currentUser?.id && isUserStory);
 
-              return (
-                <StatusCard
-                  key={status.id}
-                  type={status.isAdd ? 'add' : 'user'}
-                  profileImage={status.avatar}
-                  backgroundImage={status.backgroundImage}
-                  name={status.isAdd ? undefined : status.name}
-                  onClick={() => {
-                    if (status.isAdd) {
-                      // Clicking background opens status viewer if user has status
-                      if (status.stories && status.stories.length > 0 && storyGroupIndex !== undefined) {
-                        handleStatusClick(status.name, storyGroupIndex, true);
-                      }
-                    } else {
-                      handleStatusClick(status.name, storyGroupIndex, isUserStory);
+            return (
+              <StatusCard
+                key={status.id}
+                type={status.isAdd ? 'add' : 'user'}
+                profileImage={status.avatar}
+                backgroundImage={status.backgroundImage}
+                name={status.isAdd ? undefined : status.name}
+                onClick={() => {
+                  if (status.isAdd) {
+                    if (status.stories && status.stories.length > 0 && storyGroupIndex !== undefined) {
+                      handleStatusClick(status.name, storyGroupIndex, true);
                     }
-                  }}
-                  onAddClick={() => {
-                    if (status.isAdd) {
-                      // Clicking + icon opens add/edit status modal
-                      handleAddStatusClick();
-                    }
-                  }}
-                />
-              );
-            })}
-          </div>
+                  } else {
+                    handleStatusClick(status.name, storyGroupIndex, isUserStory);
+                  }
+                }}
+                onAddClick={() => {
+                  if (status.isAdd) {
+                    handleAddStatusClick();
+                  }
+                }}
+              />
+            );
+          })}
         </div>
 
-        {}
-        <div className='my-6 max-[500px]:my-4 flex justify-between max-[660px]:flex-col-reverse gap-4 max-[660px]:items-center'>
-          <div className='flex items-center justify-start max-[660px]:justify-center gap-3 max-[350px]:gap-1 w-full max-[430px]:justify-between overflow-x-auto scrollbar-hide pb-2'>
+        <div className='my-6 max-[500px]:my-4 flex justify-between max-[660px]:flex-col gap-4'>
+          <div className='relative w-[300px] max-[660px]:w-full'>
+            <Search size={18} className='absolute top-3 left-3' />
+            <GlobalInput
+              placeholder='Search'
+              height='42px'
+              width='100%'
+              borderRadius='100px'
+              inputClassName="pl-10 border-[#EAEAEA]"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+            />
+          </div>
+          <div className='flex items-center gap-3 overflow-x-auto scrollbar-hide pb-2'>
+            <div className='hidden max-[769px]:block'>
+              <GlobalButton title='Contacts not on zoiax' width='183px' />
+            </div>
             {filterOptions.map((filterId) => (
               <button
                 key={filterId}
                 onClick={() => setSelectedFilter(filterId)}
                 className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors whitespace-nowrap shrink-0
-                  ${
-                    selectedFilter === filterId
-                      ? 'bg-[#1B1D26] text-white'
-                      : 'bg-white text-[#1B1D26] hover:bg-gray-100'
+                  ${selectedFilter === filterId
+                    ? 'bg-[#1B1D26] text-white'
+                    : 'bg-white text-[#1B1D26] hover:bg-gray-100'
                   }`}
               >
                 {getFilterDisplayName(filterId)}
               </button>
             ))}
           </div>
-          <div className='relative w-[300px] max-[430px]:w-full'>
-            <Search size={18} className='absolute top-3 left-3' />
-            <GlobalInput
-              placeholder='Search connections...'
-              height='42px'
-              width='100%'
-              borderRadius='100px'
-              inputClassName="pl-10"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-          </div>
         </div>
 
-        {}
-        {loading && combinedConnections.length === 0 ? (
-          <div className='flex flex-col items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-4'></div>
-            <p className='text-gray-500'>Loading connections...</p>
-          </div>
-        ) : combinedConnections.length === 0 ? (
-          <div className='text-center py-12'>
-            <p className='text-gray-500'>
-              {searchValue
-                ? `No connections found matching "${searchValue}"`
-                : 'No connections yet'}
-            </p>
-          </div>
-        ) : (
-          <div className='space-y-4 mt-4'>
-            {combinedConnections.map((connection) => (
-              <ConnectionCard
-                key={connection.id}
-                profileImage={connection.avatar || ProfileAvatar}
-                name={connection.name}
-                username={connection.username}
-                isFollowing={connection.status === 'following'}
-                onCardClick={() => handleCardClick(connection)}
-                onClick={() =>
-                  connection.status === 'following'
-                    ? handleChatClick(connection)
-                    : handleFollowToggle(connection)
-                }
-                buttonText={connection.status === 'following' ? 'Chat' : 'Follow'}
-              />
-            ))}
-          </div>
-        )}
+        <div className='max-w-[748px] mx-auto'>
+          {loading && combinedConnections.length === 0 ? (
+            <div className='flex flex-col items-center justify-center py-12'>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-4'></div>
+              <p className='text-gray-500'>Loading connections...</p>
+            </div>
+          ) : combinedConnections.length === 0 ? (
+            <div className='text-center py-12'>
+              <p className='text-gray-500'>
+                {searchValue
+                  ? `No connections found matching "${searchValue}"`
+                  : 'No connections yet'}
+              </p>
+            </div>
+          ) : (
+            <div className='space-y-4 mt-4'>
+              {combinedConnections.map((connection) => (
+                <ConnectionCard
+                  key={connection.id}
+                  profileImage={connection.avatar || ProfileAvatar}
+                  name={connection.name}
+                  username={connection.username}
+                  isFollowing={connection.status === 'following'}
+                  onCardClick={() => handleCardClick(connection)}
+                  onClick={() =>
+                    connection.status === 'following'
+                      ? handleChatClick(connection)
+                      : handleFollowToggle(connection)
+                  }
+                  buttonText={connection.status === 'following' ? 'Chat' : 'Follow'}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-        {}
-        {inviteContacts.length > 0 && (
+        {/* {inviteContacts.length > 0 && (
           <div className='mt-8'>
             <h3 className="text-black text-lg font-semibold mb-4">Invite to Zoiax</h3>
             <div className='space-y-4'>
@@ -598,10 +599,9 @@ const Connections = () => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </div>
 
-      {}
       <GlobalModal
         title="Your Circles"
         isOpen={circlesModalVisible}
@@ -626,7 +626,6 @@ const Connections = () => {
         />
       </GlobalModal>
 
-      {}
       <GlobalModal
         title="Create Circles"
         isOpen={createCircleModalVisible}
@@ -638,7 +637,6 @@ const Connections = () => {
         />
       </GlobalModal>
 
-      {}
       <AddStatusModal
         isOpen={addStatusModalVisible}
         onClose={() => setAddStatusModalVisible(false)}
@@ -647,7 +645,6 @@ const Connections = () => {
         onMultipleStoriesCreate={handleMultipleStoriesCreate}
       />
 
-      {}
       <StoryViewerModal
         isOpen={storyViewerOpen}
         onClose={() => setStoryViewerOpen(false)}

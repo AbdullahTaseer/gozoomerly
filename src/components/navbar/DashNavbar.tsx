@@ -4,10 +4,12 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import AnimatedButton from '../buttons/AnimatedButton';
+import PlusIcon from "@/assets/svgs/Plus.svg";
 import BellIconIndicator from '../cards/BellIconIndicator';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
+import GlobalButton from '../buttons/GlobalButton';
 
-const desktopOptions = ["Home", "Boards", "Pro", "Chat", "Circles", "Connections", "Profile"];
+const desktopOptions = ["Home", "Connections", "Chat", "Profile"];
 
 type props = {
   hide?: boolean;
@@ -79,7 +81,7 @@ const DashNavbar = ({ hide = true }: props) => {
 
   return (
     <>
-      <div className={`${hide ? "max-[769px]:hidden" : ""} flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-4 max-[1024px]:pb-3 bg-white sticky shadow-sm top-0 z-[100]`}>
+      <div className={`${hide ? "max-[769px]:hidden" : ""} flex justify-between items-center gap-3 px-[5%] max-[769px]:px-4 pb-4 pt-4 max-[1024px]:pb-3 bg-[#F7F7F7] sticky shadow-sm top-0 z-[100]`}>
         <Image src={AppLogo} onClick={() => router.push("/u")} alt="Logo" className='w-[140px] max-[900px]:w-[123px] cursor-pointer' />
         <div className='flex items-center gap-6 max-[900px]:gap-4 max-[769px]:hidden'>
           {desktopOptions.map((option, i) => (
@@ -91,7 +93,8 @@ const DashNavbar = ({ hide = true }: props) => {
               {option}
             </p>
           ))}
-          <AnimatedButton onClick={() => createOrShareModalState.open()} title='Create' width='110px' />
+          {/* <AnimatedButton title='Create' width='110px' /> */}
+          <GlobalButton icon={PlusIcon} width='120px' height='46px' onClick={() => createOrShareModalState.open()} title='Create' />
         </div>
         <div className='hidden max-[769px]:block'>
           <BellIconIndicator />

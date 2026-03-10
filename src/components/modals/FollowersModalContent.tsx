@@ -1,11 +1,12 @@
 'use client';
 
-import {  useState, useEffect  } from 'react';
-import { Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, UserMinus } from 'lucide-react';
 import GlobalInput from '../inputs/GlobalInput';
 import FollowCard from '../cards/FollowCard';
 import Avatar from "@/assets/svgs/boy-avatar.svg";
 import { getFollowers, type UserConnection } from '@/lib/supabase/followUtils';
+import ConfirmationModal from './ConfirmationModal';
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
 import { authService } from '@/lib/supabase/auth';
 
@@ -19,6 +20,7 @@ const FollowersModalContent = ({ userId }: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [followingStatus, setFollowingStatus] = useState<Record<string, boolean>>({});
+  const [unfollowConfirm, setUnfollowConfirm] = useState<{ name: string; userId: string } | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -61,22 +63,37 @@ const FollowersModalContent = ({ userId }: Props) => {
     }
   };
 
-  const handleToggleFollow = async (followerUserId: string) => {
+  const handleToggleFollow = (followerUserId: string, name: string) => {
+    const isFollowing = followingStatus[followerUserId];
+    if (isFollowing) {
+      setUnfollowConfirm({ name, userId: followerUserId });
+    } else {
+      doFollow(followerUserId);
+    }
+  };
+
+  const doFollow = async (followerUserId: string) => {
     try {
       const currentUser = await authService.getUser();
       if (!currentUser) return;
-
-      const isFollowing = followingStatus[followerUserId];
-
-      if (isFollowing) {
-        await unfollowUser(currentUser.id, followerUserId);
-        setFollowingStatus(prev => ({ ...prev, [followerUserId]: false }));
-      } else {
-        await followUser(currentUser.id, followerUserId);
-        setFollowingStatus(prev => ({ ...prev, [followerUserId]: true }));
-      }
+      await followUser(currentUser.id, followerUserId);
+      setFollowingStatus(prev => ({ ...prev, [followerUserId]: true }));
     } catch (err: any) {
-      console.error('Error toggling follow:', err);
+      console.error('Error following:', err);
+    }
+  };
+
+  const doUnfollow = async () => {
+    if (!unfollowConfirm) return;
+    try {
+      const currentUser = await authService.getUser();
+      if (!currentUser) return;
+      await unfollowUser(currentUser.id, unfollowConfirm.userId);
+      setFollowingStatus(prev => ({ ...prev, [unfollowConfirm.userId]: false }));
+    } catch (err: any) {
+      console.error('Error unfollowing:', err);
+    } finally {
+      setUnfollowConfirm(null);
     }
   };
 
@@ -116,7 +133,7 @@ const FollowersModalContent = ({ userId }: Props) => {
               data={user.notes || `Followed on ${new Date(user.followed_at).toLocaleDateString()}`}
               imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
               btnTitle={followingStatus[user.user_id] ? "Following" : "Follow"}
-              onClickBtn={() => handleToggleFollow(user.user_id)}
+              onClickBtn={() => handleToggleFollow(user.user_id, user.name || 'Unknown')}
             />
           ))
         ) : (
@@ -125,6 +142,16 @@ const FollowersModalContent = ({ userId }: Props) => {
           </p>
         )}
       </div>
+
+      <ConfirmationModal
+        isOpen={!!unfollowConfirm}
+        onClose={() => setUnfollowConfirm(null)}
+        title="Unfollow"
+        icon={UserMinus}
+        message={unfollowConfirm ? `Are you sure you want to unfollow ${unfollowConfirm.name}?` : ''}
+        primaryLabel="Yes, Unfollow"
+        onPrimaryClick={doUnfollow}
+      />
     </div>
   );
 };

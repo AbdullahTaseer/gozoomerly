@@ -22,7 +22,7 @@ const InvitationBoardCard = ({
 }: InvitationBoardCardProps) => {
 
   return (
-    <div className='relative rounded-[13px] overflow-hidden min-w-[350px] flex flex-col justify-between'>
+    <div className='relative rounded-[13px] overflow-hidden flex flex-col justify-between'>
       <div className='absolute inset-0'>
         <Image
           src={backgroundImage}
@@ -33,17 +33,17 @@ const InvitationBoardCard = ({
         <div className={`absolute inset-0 ${gradientClass}`} />
       </div>
 
-      <div className='relative z-10 p-6 flex flex-col justify-between h-full'>
+      <div className='relative z-10 p-4 flex flex-col justify-between h-full'>
         <h2 className='text-white text-2xl font-bold'>{title}</h2>
 
         <div className='flex items-center gap-4 mt-4'>
           <div className='relative shrink-0'>
-            <div className='w-20 h-20 rounded-full border-2 border-pink-300 p-0.5'>
+            <div className='w-13 h-13 rounded-full border-2 border-pink-300 p-0.5'>
               <Image
                 src={profileImage}
                 alt={inviterName}
-                width={80}
-                height={80}
+                width={52}
+                height={52}
                 className='rounded-full object-cover w-full h-full'
               />
             </div>

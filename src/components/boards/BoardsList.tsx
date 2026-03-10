@@ -43,7 +43,7 @@ export const BoardsList: React.FC<BoardsListProps> = ({ boards, loading = false 
 
   if (loading) {
     return (
-      <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full'>
+      <div className='grid grid-cols-3 mt-6 gap-6 h-full'>
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className='min-w-[340px] h-[400px] bg-gray-100 rounded-lg animate-pulse' />
         ))}
@@ -60,7 +60,7 @@ export const BoardsList: React.FC<BoardsListProps> = ({ boards, loading = false 
   }
 
   return (
-    <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full'>
+    <div className='grid sm:grid-cols-2 lg:grid-cols-3 mt-6 gap-6 h-full'>
       {boards.map((board) => {
         const honoreeFirstName = board.honoree_details?.first_name || '';
         const honoreeLastName = board.honoree_details?.last_name || '';
@@ -94,7 +94,7 @@ export const BoardsList: React.FC<BoardsListProps> = ({ boards, loading = false 
             gradient={board.board_types?.color_scheme?.gradient}
             onNameClick={() => handleViewBoard(board)}
             onCreatorClick={() => handleCreatorClick(board.creator_id)}
-            className='w-[340px] h-full'
+            className='w-full h-full'
           />
         );
       })}

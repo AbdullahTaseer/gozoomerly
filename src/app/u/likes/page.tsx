@@ -1,3 +1,5 @@
+"use client";
+
 import Likes_1 from "@/assets/pngs/likes-1.svg";
 import Likes_2 from "@/assets/pngs/Likes-2.svg";
 import Likes_3 from "@/assets/pngs/Likes-3.svg";
@@ -7,9 +9,12 @@ import Likes_6 from "@/assets/pngs/Likes-6.svg";
 import LikeAvatar from "@/assets/svgs/likes-ava-1.svg";
 import LikeAvatar2 from "@/assets/svgs/avatar-list-icon-1.svg";
 
-import TitleCard from '@/components/cards/TitleCard';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import MobileHeader from "@/components/navbar/MobileHeader";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import BellIconIndicator from "@/components/cards/BellIconIndicator";
 
 const likesData = [
   {
@@ -57,11 +62,21 @@ const likesData = [
 ];
 
 const LikesPage = () => {
+  const router = useRouter();
   return (
     <>
-      <DashNavbar hide={false} />
-      <div className="px-[7%] max-[768px]:px-6 pb-4">
-        <TitleCard title="Likes" className="text-left" />
+      <DashNavbar />
+      <MobileHeader
+        title="Likes"
+        showBack={true}
+        onBackClick={() => router.push('/u/profile')}
+        profileRight={true}
+      />
+      <div className="px-[5%] max-[768px]:px-4 py-5">
+        <button onClick={() => router.push('/u/profile')} className="flex max-[769px]:hidden pb-5 items-center gap-2 text-black">
+          <ArrowLeft size={24} />
+          <span className="text-3xl font-bold">Likes</span>
+        </button>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {likesData.map((like, index) => (
             <LikesCommentsGiftsCard

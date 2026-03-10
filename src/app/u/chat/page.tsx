@@ -1,10 +1,9 @@
 'use client';
 
-import {  useState, useEffect, Suspense  } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Search, X, Plus } from 'lucide-react';
-import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import ChatTabs from '@/components/filters/ChatFilters';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
@@ -12,7 +11,6 @@ import MobileHeader from '@/components/navbar/MobileHeader';
 import { useChat } from '@/hooks/use-chat';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import ConnectionsTab from '@/components/chat/ConnectionsTab';
-import BoardsTab from '@/components/chat/BoardsTab';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteChatModal from '@/components/chat/InviteChatModal';
 import { getConversation, getUserConversations } from '@/lib/supabase/chat';
@@ -42,6 +40,9 @@ const ChatPageContent = () => {
     setShowSearchResults,
     setSelectedTab,
     handleStartConversation,
+    handleStartBoardConversation,
+    directConversations,
+    groupConversations,
     handleSend,
     handleFileUpload,
     getConversationName,
@@ -132,21 +133,19 @@ const ChatPageContent = () => {
   return (
     <>
       <DashNavbar />
-      <MobileHeader title={selectedTab === "Connections" ? "Connections" : "Boards"} RightIcon={Plus} rightIconClick={() => setIsInviteModalOpen(true)} />
-      <div className='px-[7%] max-[900px]:px-3 text-white'>
-        <div className='px-4 flex items-center justify-between max-[769px]:justify-center gap-2 mt-6'>
-          <div className='max-[769px]:hidden'>
-            <TitleCard title={selectedTab === "Connections" ? "Connections" : "Boards"} className='text-left' />
-          </div>
-          <div className='relative w-[300px] flex gap-3 max-[769px]:justify-center'>
+      <MobileHeader title='Chat' />
+      <div className='px-[5%] max-[900px]:px-4 text-black'>
+        <div className='flex justify-between max-[769px]:flex-wrap gap-4 mt-6'>
+          <p className='text-2xl min-[769px]:text-[28px] font-bold text-black shrink-0 hidden min-[769px]:block'>Chat</p>
+          <div className='relative ml-auto w-[360px] max-[1050px]:w-[220px] max-[769px]:w-full'>
             <div className="relative">
               <Search size={18} className='absolute top-3 left-3 text-gray-400' />
               <GlobalInput
-                placeholder={selectedTab === "Connections" ? 'Search friends & family' : 'Search boards'}
+                placeholder="Search"
                 height='42px'
                 width='100%'
                 borderRadius='100px'
-                inputClassName="pl-10 pr-10"
+                inputClassName="pl-10 pr-10 border-[#EAEAEA]"
                 value={searchQuery}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setSearchQuery(e.target.value);
@@ -175,8 +174,8 @@ const ChatPageContent = () => {
               )}
             </div>
 
-            {showSearchResults && searchQuery.trim() && selectedTab === "Connections" && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#2A2D3A] rounded-lg shadow-lg border border-gray-700 max-h-64 overflow-y-auto z-50">
+            {showSearchResults && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50">
                 {searching ? (
                   <div className="p-4 text-center text-gray-400">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
@@ -184,12 +183,12 @@ const ChatPageContent = () => {
                   </div>
                 ) : searchResults.length > 0 ? (
                   <div className="py-2">
-                    <p className="px-4 py-2 text-xs text-gray-400 font-semibold">Users</p>
+                    <p className="px-4 py-2 text-xs text-gray-500 font-semibold">Users</p>
                     {searchResults.map((user) => (
                       <button
                         key={user.id}
                         onClick={() => handleStartConversation(user.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-[#3A3D4A] transition-colors"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-black"
                       >
                         <Image
                           src={user.profile_pic_url || ProfileAvatar}
@@ -217,72 +216,41 @@ const ChatPageContent = () => {
                 )}
               </div>
             )}
-            <div className='max-[769px]:hidden'>
-              <GlobalButton title="Add" onClick={() => setIsInviteModalOpen(true)} width='70px' />
-            </div>
           </div>
+          <ChatTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />
         </div>
 
-        <div className='px-4 mt-4'>
-          <ChatTabs
-            selectedTab={selectedTab}
-            onTabChange={setSelectedTab}
-          />
-        </div>
-
-        {selectedTab === "Connections" ? (
-          <ConnectionsTab
-            currentUserId={currentUserId}
-            selectedConversation={selectedConversation}
-            messages={messages}
-            newMessage={newMessage}
-            loading={loading}
-            uploading={uploading}
-            messagesEndRef={messagesEndRef}
-            filteredConversations={filteredConversations}
-            setSelectedConversation={setSelectedConversation}
-            setNewMessage={setNewMessage}
-            handleSend={handleSend}
-            handleFileUpload={handleFileUpload}
-            getConversationName={getConversationName}
-            getConversationAvatar={getConversationAvatar}
-            formatTime={formatTime}
-            getLastMessageWithSender={getLastMessageWithSender}
-            shouldShowHeader={shouldShowHeader}
-            typingUsers={typingUsers}
-            isTyping={isTyping}
-            isUserOnline={isUserOnline}
-            getLastSeenText={getLastSeenText}
-            draftMedia={draftMedia}
-            removeDraftMedia={removeDraftMedia}
-          />
-        ) : (
-          <BoardsTab
-            currentUserId={currentUserId}
-            selectedConversation={selectedConversation}
-            messages={messages}
-            newMessage={newMessage}
-            loading={loading}
-            uploading={uploading}
-            messagesEndRef={messagesEndRef}
-            filteredConversations={filteredConversations}
-            setSelectedConversation={setSelectedConversation}
-            setNewMessage={setNewMessage}
-            handleSend={handleSend}
-            handleFileUpload={handleFileUpload}
-            getConversationName={getConversationName}
-            getConversationAvatar={getConversationAvatar}
-            formatTime={formatTime}
-            getLastMessageWithSender={getLastMessageWithSender}
-            shouldShowHeader={shouldShowHeader}
-            activeBoards={activeBoards}
-            loadingBoards={loadingBoards}
-            typingUsers={typingUsers}
-            isTyping={isTyping}
-            draftMedia={draftMedia}
-            removeDraftMedia={removeDraftMedia}
-          />
-        )}
+        <ConnectionsTab
+          currentUserId={currentUserId}
+          selectedConversation={selectedConversation}
+          messages={messages}
+          newMessage={newMessage}
+          loading={loading}
+          uploading={uploading}
+          messagesEndRef={messagesEndRef}
+          filteredConversations={filteredConversations}
+          setSelectedConversation={setSelectedConversation}
+          setNewMessage={setNewMessage}
+          handleSend={handleSend}
+          handleFileUpload={handleFileUpload}
+          getConversationName={getConversationName}
+          getConversationAvatar={getConversationAvatar}
+          formatTime={formatTime}
+          getLastMessageWithSender={getLastMessageWithSender}
+          shouldShowHeader={shouldShowHeader}
+          typingUsers={typingUsers}
+          isTyping={isTyping}
+          isUserOnline={isUserOnline}
+          getLastSeenText={getLastSeenText}
+          draftMedia={draftMedia}
+          removeDraftMedia={removeDraftMedia}
+          selectedTab={selectedTab}
+          directConversations={directConversations}
+          groupConversations={groupConversations}
+          activeBoards={activeBoards}
+          loadingBoards={loadingBoards}
+          handleStartBoardConversation={handleStartBoardConversation}
+        />
       </div>
 
       <InviteChatModal

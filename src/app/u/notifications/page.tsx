@@ -1,6 +1,9 @@
-import TitleCard from '@/components/cards/TitleCard';
-import DashNavbar from '@/components/navbar/DashNavbar';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { Star } from 'lucide-react';
+import DashNavbar from '@/components/navbar/DashNavbar';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const data = [
   {
@@ -42,13 +45,20 @@ const data = [
 ]
 
 const Notifications = () => {
-  return (
-    <>
-      <DashNavbar hide={false} />
-      <div className='px-[7%] max-[768px]:px-6 pb-4'>
+  const router = useRouter();
 
-        <div className='flex items-center justify-between gap-3'>
-          <TitleCard title='Notifications' className='text-left' />
+  return (
+    <div className="text-black">
+      <DashNavbar />
+      <MobileHeader
+        title="Notifications"
+        showBack
+        onBackClick={() => router.push('/u/home')}
+      />
+
+      <div className="px-[5%] max-[768px]:px-4 py-5">
+        <div className="max-[769px]:hidden flex justify-between items-center mb-6">
+          <span className="text-3xl font-bold">Notifications</span>
         </div>
 
         {data.map(({ title, time }, i) => (
@@ -63,7 +73,7 @@ const Notifications = () => {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

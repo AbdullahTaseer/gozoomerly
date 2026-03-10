@@ -13,18 +13,19 @@ type Props = {
 };
 
 const ChatCard = ({ imgPath, name, message, time, isActive = false, isOnline = false, onClick }: Props) => {
+  const timeStr = time ? (time.startsWith('•') ? time : `• ${time}`) : '';
   return (
     <div
       onClick={onClick}
-      className={`flex items-center gap-4 p-3 cursor-pointer transition-colors duration-200 ${isActive ? 'bg-[#2A2D3A] text-white' : 'text-black'
-        }`}
+      className={`flex items-center gap-4 p-3 cursor-pointer transition-colors duration-200 rounded-lg
+        ${isActive ? 'bg-gray-100' : 'hover:bg-gray-50'} text-black`}
     >
-      <div className='relative h-[45px] w-[45px] shrink-0 rounded-full border border-[#48484A]'>
+      <div className='relative h-[45px] w-[45px] shrink-0 rounded-full overflow-hidden border border-gray-200'>
         <Image
           src={imgPath || ProfileAvatar}
           alt={name}
           fill
-          className='rounded-full object-cover p-[2px]'
+          className='rounded-full object-cover'
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
             target.src = ProfileAvatar.src || ProfileAvatar;
@@ -35,12 +36,12 @@ const ChatCard = ({ imgPath, name, message, time, isActive = false, isOnline = f
         )}
       </div>
 
-      <div className='flex-1'>
-        <div className='flex justify-between items-center'>
-          <p className='font-bold line-clamp-1 text-sm'>{name}</p>
-          <p className='text-xs'>{time}</p>
+      <div className='flex-1 min-w-0'>
+        <div className='flex justify-between items-start gap-2'>
+          <p className='font-semibold line-clamp-1 text-sm text-black'>{name}</p>
+          <p className='text-xs text-gray-500 shrink-0'>{timeStr}</p>
         </div>
-        <p className='text-xs line-clamp-1 overflow-clip text-ellipsis pr-4'>{message}</p>
+        <p className='text-xs line-clamp-1 text-gray-600 mt-0.5'>{message}</p>
       </div>
     </div>
   );

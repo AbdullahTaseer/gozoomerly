@@ -1,97 +1,90 @@
 "use client";
 
-import { Home, Layers, MessageCircle, Plus, UserPlus, Award } from "lucide-react";
-import { ReactNode } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { createOrShareModalState } from '@/lib/createOrShareModalState';
+import { Home, MessageCircle, Plus, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { createOrShareModalState } from "@/lib/createOrShareModalState";
 
-type TabItemProps = {
-  icon: ReactNode;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-};
-
-const TabItem = ({ icon, label, active, onClick }: TabItemProps) => {
+const TabItem = ({ icon, label, onClick }: any) => {
   return (
     <div
       onClick={onClick}
-      className="flex flex-col justify-center items-center gap-1 cursor-pointer select-none"
+      className="flex flex-col items-center text-white text-xs gap-1 cursor-pointer"
     >
-      <div className={active ? "text-white" : "text-white"}>
-        {icon}
-      </div>
-      <span className={`text-xs ${active ? "text-white" : "text-white"}`}>
-        {label}
-      </span>
+      {icon}
+      <span>{label}</span>
     </div>
   );
 };
 
-const BottomTabs = () => {
+export default function BottomTabs() {
   const router = useRouter();
-  const pathname = usePathname();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 max-[769px]:block hidden">
-      <div className="relative w-full">
+    <div className="fixed bottom-0 left-0 right-0 z-50 hidden max-[769px]:block">
 
-        <div className="h-[70px] bg-[#18171f] rounded-t-3xl flex items-center justify-between px-8 max-[380px]:px-4 shadow-xl">
+      {/* SVG NAVBAR */}
+      <div className="relative">
 
+        <svg
+          viewBox="0 0 400 80"
+          className="w-full h-[67px] sm:h-[80px]"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="
+            M0 20
+            Q0 0 20 0
+            L160 0
+            C175 0 175 40 200 40
+            C225 40 225 0 240 0
+            L380 0
+            Q400 0 400 20
+            L400 80
+            L0 80
+            Z"
+            fill="#18171f"
+          />
+        </svg>
+
+        {/* TAB ITEMS */}
+        <div className="absolute inset-0 flex items-center justify-between px-6">
           <TabItem
             icon={<Home size={22} />}
             label="Home"
-            active={pathname.startsWith("/u/home")}
             onClick={() => router.push("/u/home")}
           />
 
           <TabItem
-            icon={<Award size={22} />}
-            label="Pro"
-            active={pathname.startsWith("/u/proScreen")}
-            onClick={() => router.push("/u/proScreen")}
+            icon={<Users size={22} />}
+            label="Connections"
+            onClick={() => router.push("/u/connections")}
           />
 
-          <div className="w-12" />
+          <div className="w-16" />
 
           <TabItem
             icon={<MessageCircle size={22} />}
             label="Chats"
-            active={pathname.startsWith("/u/chat")}
             onClick={() => router.push("/u/chat")}
           />
 
-          <div
+          <TabItem
+            icon={<img src="https://i.pravatar.cc/100" className="w-7 h-7 rounded-full" />}
+            label="Profile"
             onClick={() => router.push("/u/profile")}
-            className="flex flex-col items-center gap-1 cursor-pointer"
-          >
-            <img
-              src="https://i.pravatar.cc/100"
-              alt="profile"
-              className="w-7 h-7 rounded-full"
-            />
-            <span
-              className={`text-xs ${pathname.startsWith("/u/profile")
-                ? "text-white"
-                : "text-gray-400"
-                }`}
-            >
-              Profile
-            </span>
-          </div>
+          />
         </div>
 
-        <div className="absolute left-1/2 -top-8 -translate-x-1/2">
+        {/* FLOATING BUTTON */}
+        <div className="absolute left-1/2 -top-4 sm:-top-7 -translate-x-1/2">
           <button
             onClick={() => createOrShareModalState.open()}
-            className="w-16 h-16 max-[380px]:h-14 max-[380px]:w-14 rounded-full border-5 max-[380px]:border-4 border-white bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg"
+            className="h-11 w-11 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center shadow-lg"
           >
-            <Plus color="white" />
+            <Plus size={28} color="white" />
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default BottomTabs;
+}

@@ -6,137 +6,91 @@ type props = {
   spotLightImg: string | StaticImport;
   name: string;
   participants: number;
-  wished: number;
-  supports?: number;
-  memories?: number;
-  chats?: number;
-  raised?: number;
-  target?: number;
   organizerName?: string;
   organizerAvatar?: string | StaticImport;
-  organizerHometown?: string;
   topContributors?: Array<string | StaticImport>;
-}
+  onClick?: () => void;
+};
 
 const SpotLightCard = ({
   description,
   spotLightImg,
   name,
   participants,
-  wished,
-  supports = 0,
-  memories = 0,
-  chats = 0,
-  raised = 0,
-  target = 0,
+  topContributors = [],
   organizerName = '',
   organizerAvatar,
-  organizerHometown = '',
-  topContributors = []
+  onClick,
 }: props) => {
-  const progress = target > 0 ? Math.min((raised / target) * 100, 100) : 0;
+  const displayAvatars = topContributors.slice(0, 3);
+  const extraCount = Math.max(0, participants - displayAvatars.length);
 
   return (
-    <div className='w-[400px] bg-[#18171F] text-white space-y-4 p-4 rounded-[12px]'>
-      <h2 className='text-[24px] line-clamp-1'>Campaign for {name}!</h2>
+    <div
+      onClick={onClick}
+      className="group relative w-full h-[230px] rounded-[12px] overflow-hidden cursor-pointer shrink-0 shadow-lg"
+    >
+      <div className="absolute inset-0">
+        <Image
+          src={spotLightImg}
+          alt={name}
+          fill
+          className="object-cover transition-transform group-hover:scale-105"
+        />
+        <div className="absolute inset-0 bg-black/55" />
+      </div>
 
-      <div className='bg-[#18171F] p-4 rounded-[12px] relative overflow-hidden'>
-        <div className='absolute inset-0 opacity-20 z-0'>
-          <Image
-            src={spotLightImg}
-            alt={name}
-            fill
-            className='object-cover'
-          />
+      <div className="relative z-10 h-full flex flex-col justify-between p-5">
+        <div>
+          <h2 className="text-white text-xl lg:text-2xl font-semibold text-ellipsis line-clamp-1 leading-tight mb-2">
+            {name}
+          </h2>
+          <p className="text-white/95 text-base font-normal leading-relaxed line-clamp-3">
+            {description}
+          </p>
         </div>
 
-        <div className='relative z-10 flex flex-col gap-4'>
-          {organizerName && (
-            <div className='flex items-center gap-3'>
-              {organizerAvatar && (
+        <div className="flex items-end justify-between gap-4 mt-4">
+          <div className="flex items-center gap-4 min-w-0">
+            {organizerAvatar && (
+              <div className="relative w-[32px] h-[32px] rounded-full overflow-hidden shrink-0 border-2 border-white/30">
                 <Image
                   src={organizerAvatar}
                   alt={organizerName}
-                  width={56}
-                  height={56}
-                  className='rounded-full border-3 border-white/50 object-cover shrink-0'
+                  width={32}
+                  height={32}
+                  className="object-cover w-full h-full"
                 />
-              )}
-              <div>
-                <p className='text-lg font-bold'>{organizerName}</p>
-                {organizerHometown && (
-                  <p className='text-sm text-gray-300'>Home Town : {organizerHometown}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          <p className='text-white line-clamp-4 text-sm font-medium leading-relaxed'>
-            {description}
-          </p>
-
-          {(raised > 0 || target > 0) && (
-            <div className='mt-2'>
-              <div className='flex justify-between text-sm mb-2'>
-                <span>Raised: ${raised.toLocaleString()}</span>
-                <span>Target: ${target.toLocaleString()}</span>
-              </div>
-              <div className='w-full bg-[#676f5e] h-3 rounded-full'>
-                <div
-                  className='h-3 rounded-full bg-[#c7f5c8]'
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className='flex items-center justify-around gap-4'>
-        <div className='flex flex-col items-center'>
-          <p className='text-lg font-semibold'>{participants}</p>
-          <p className='text-xs'>Participants</p>
-        </div>
-        <div className='flex flex-col items-center'>
-          <p className='text-lg font-semibold'>{wished}</p>
-          <p className='text-xs'>Wishes</p>
-        </div>
-        <div className='flex flex-col items-center'>
-          <p className='text-lg font-semibold'>{supports}</p>
-          <p className='text-xs'>Supports</p>
-        </div>
-        <div className='flex flex-col items-center'>
-          <p className='text-lg font-semibold'>{memories}</p>
-          <p className='text-xs'>Memories</p>
-        </div>
-        <div className='flex flex-col items-center'>
-          <p className='text-lg font-semibold'>{chats}</p>
-          <p className='text-xs'>Chats</p>
-        </div>
-      </div>
-
-      {topContributors.length > 0 && (
-        <div className='space-y-3'>
-          <p className='text-lg font-bold'>Top Contributors</p>
-          <div className='flex items-center ml-5'>
-            {topContributors.slice(0, 12).map((contributor, index) => (
-              <div key={index} className='relative border rounded-full -ml-4 h-10 w-10 shrink-0 hover:scale-120 hover:z-20 duration-300'>
-                <Image
-                  src={contributor}
-                  alt={`Contributor ${index + 1}`}
-                  fill
-                  className='rounded-full object-cover'
-                />
-              </div>
-            ))}
-            {topContributors.length > 12 && (
-              <div className='w-10 -ml-4 h-10 shrink-0 rounded-full bg-pink-400 flex items-center justify-center relative z-10'>
-                <span className='text-white text-xs font-semibold'>+{topContributors.length - 12}</span>
               </div>
             )}
+            <p className="text-white font-semibold text-lg truncate">{organizerName || 'Organizer'}</p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex -space-x-3">
+              {displayAvatars.map((avatar, i) => (
+                <div
+                  key={i}
+                  className="relative w-[24px] h-[24px] rounded-full border-2 border-white overflow-hidden bg-gray-300 shrink-0"
+                >
+                  <Image
+                    src={avatar}
+                    alt=""
+                    width={56}
+                    height={56}
+                    className="object-cover w-full h-full"
+                  />
+                </div>
+              ))}
+              {participants > 3 && extraCount > 0 && (
+                <span className="bg-[#F9F5FF] border-2 text-pink-400 text-[10px] font-semibold w-[24px] h-[24px] px-2 rounded-full flex items-center justify-center">
+                  +{extraCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

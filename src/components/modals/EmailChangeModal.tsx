@@ -1,7 +1,7 @@
 'use client';
 
-import {  useState  } from 'react';
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { Mail } from 'lucide-react';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { authService } from '@/lib/supabase/auth';
@@ -52,9 +52,11 @@ interface EmailChangeModalProps {
   };
 
   return (
-    <div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="flex flex-col items-center">
+      <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mb-4 shrink-0">
+        <Mail size={28} className="text-black" strokeWidth={2} />
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4 w-full">
         <div className="bg-gray-100 p-3 rounded-lg">
           <p className="text-sm text-gray-600">Current email</p>
           <p className="font-medium">{currentEmail}</p>

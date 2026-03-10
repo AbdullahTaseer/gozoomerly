@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
+import { Search, UserMinus } from "lucide-react";
 import GlobalInput from "../inputs/GlobalInput";
 import FollowCard from "../cards/FollowCard";
 import Avatar from "@/assets/svgs/boy-avatar.svg";
 import { getFollowing, type UserConnection } from '@/lib/supabase/followUtils';
+import ConfirmationModal from './ConfirmationModal';
 import { unfollowUser } from '@/lib/supabase/followUtils';
 import { authService } from '@/lib/supabase/auth';
 
@@ -18,6 +19,7 @@ const FollowingModalContent = ({ userId }: Props) => {
   const [following, setFollowing] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unfollowConfirm, setUnfollowConfirm] = useState<{ name: string; userId: string } | null>(null);
 
   useEffect(() => {
     if (userId) {
@@ -40,15 +42,14 @@ const FollowingModalContent = ({ userId }: Props) => {
     }
   };
 
-  const handleToggleFollow = async (followingUserId: string) => {
+  const doUnfollow = async (followingUserId: string) => {
     try {
-      const currentUser = await authService.getUser();
-      if (!currentUser || !userId) return;
-
+      if (!userId) return;
       await unfollowUser(userId, followingUserId);
-
       setFollowing(prev => prev.filter(user => user.user_id !== followingUserId));
     } catch (err: any) {
+    } finally {
+      setUnfollowConfirm(null);
     }
   };
 
@@ -87,7 +88,7 @@ const FollowingModalContent = ({ userId }: Props) => {
               data={user.notes || `Followed on ${new Date(user.followed_at).toLocaleDateString()}`}
               imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
               btnTitle="Following"
-              onClickBtn={() => handleToggleFollow(user.user_id)}
+              onClickBtn={() => setUnfollowConfirm({ name: user.name || 'Unknown', userId: user.user_id })}
             />
           ))
         ) : (
@@ -97,6 +98,15 @@ const FollowingModalContent = ({ userId }: Props) => {
         )}
       </div>
 
+      <ConfirmationModal
+        isOpen={!!unfollowConfirm}
+        onClose={() => setUnfollowConfirm(null)}
+        title="Unfollow"
+        icon={UserMinus}
+        message={unfollowConfirm ? `Are you sure you want to unfollow ${unfollowConfirm.name}?` : ''}
+        primaryLabel="Yes, Unfollow"
+        onPrimaryClick={() => unfollowConfirm && doUnfollow(unfollowConfirm.userId)}
+      />
     </div>
   );
 };

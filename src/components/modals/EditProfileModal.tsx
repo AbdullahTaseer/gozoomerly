@@ -1,7 +1,7 @@
 "use client";
 
 import {  useEffect, useState  } from 'react';
-import GlobalModal from './GlobalModal';
+import ModalOrBottomSlider from './ModalOrBottomSlider';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { createClient } from '@/lib/supabase/client';
@@ -105,10 +105,8 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <GlobalModal className='w-[500px] max-[540px]:w-[95vw] max-h-[90vh]' isOpen={isOpen} onClose={onClose} title="Edit Profile">
+    <ModalOrBottomSlider desktopClassName='w-[500px]' isOpen={isOpen} onClose={onClose} title="Edit Profile">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FloatingInput
           id="edit-name"
@@ -181,7 +179,7 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
           <GlobalButton height='46px' width='150px' title={loading ? 'Saving...' : 'Save Changes'} onClick={handleSubmit} disabled={loading} />
         </div>
       </form>
-    </GlobalModal>
+    </ModalOrBottomSlider>
   );
 };
 
