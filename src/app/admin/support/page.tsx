@@ -1,6 +1,6 @@
 'use client';
 
-import {  useState  } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, MoreVertical } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
@@ -10,25 +10,132 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { mockSupportTickets } from '@/lib/TablesMockData';
+import {
+  adminListSupportTickets,
+  type SupportTicketRow,
+} from '@/lib/supabase/support';
+
+const PAGE_SIZE = 20;
+
+function field(row: SupportTicketRow, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = row[k];
+    if (v !== null && v !== undefined && v !== '') return String(v);
+  }
+  return '';
+}
 
 const AdminSupport = () => {
+  const [tickets, setTickets] = useState<SupportTicketRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
-  const supportTickets = mockSupportTickets;
+  const fetchTickets = useCallback(
+    async (newOffset: number, status?: string) => {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await adminListSupportTickets({
+        p_status: status ?? statusFilter,
+        p_limit: PAGE_SIZE,
+        p_offset: newOffset,
+      });
+
+      setLoading(false);
+
+      if (fetchError) {
+        setError(fetchError.message);
+        setTickets([]);
+        return;
+      }
+
+      const rows = data ?? [];
+      setTickets(rows);
+      setHasMore(rows.length >= PAGE_SIZE);
+      setOffset(newOffset);
+    },
+    [statusFilter]
+  );
+
+  useEffect(() => {
+    fetchTickets(0);
+  }, [fetchTickets]);
+
+  const handleStatusFilter = (status: string) => {
+    setStatusFilter(status);
+    fetchTickets(0, status);
+  };
+
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return tickets;
+    return tickets.filter((t) => {
+      const searchable = [
+        field(t, 'ticket_id', 'ticketId', 'id'),
+        field(t, 'user_name', 'userName', 'user', 'full_name', 'fullName', 'name', 'user_email', 'email'),
+        field(t, 'message_preview', 'messagePreview', 'message', 'subject', 'title', 'description', 'content', 'body', 'text'),
+        field(t, 'category', 'type'),
+      ].join(' ').toLowerCase();
+      return searchable.includes(q);
+    });
+  }, [tickets, searchQuery]);
 
   const getStatusColor = (status: string) => {
-    const colorMap: { [key: string]: { bg: string; text: string } } = {
-      'Resolved': { bg: 'bg-green-100', text: 'text-green-800' },
-      'Open': { bg: 'bg-orange-100', text: 'text-orange-800' },
+    const normalized = status.toLowerCase();
+    const colorMap: Record<string, { bg: string; text: string }> = {
+      resolved: { bg: 'bg-green-100', text: 'text-green-800' },
+      open: { bg: 'bg-orange-100', text: 'text-orange-800' },
+      closed: { bg: 'bg-gray-100', text: 'text-gray-600' },
     };
-    return colorMap[status] || { bg: 'bg-gray-100', text: 'text-gray-800' };
+    return colorMap[normalized] || { bg: 'bg-gray-100', text: 'text-gray-800' };
+  };
+
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      return new Date(dateStr).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
   };
 
   return (
     <div>
+      {error && (
+        <div
+          className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          Could not load support tickets: {error}
+        </div>
+      )}
+
       <div className="max-[500px]:grid grid-cols-2 flex justify-end gap-4 my-6">
+        <div className="flex items-center gap-2">
+          {['', 'open', 'resolved', 'closed'].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                statusFilter === s
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-[#DBDADE] hover:bg-gray-50'
+              }`}
+            >
+              {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
+            </button>
+          ))}
+        </div>
         <MoreFilters
           selectedFilters={selectedFilters}
           onFiltersChange={setSelectedFilters}
@@ -53,7 +160,7 @@ const AdminSupport = () => {
 
       <div className="w-full h-[calc(100vh-190px)] max-h-[100vh]">
         <div className="relative rounded-[10px] w-full border border-[#DBDADE] bg-white overflow-hidden">
-          <div className="h-[calc(100vh-170px)] md:h-[calc(100vh-190px)] max-h-[100vh] w-full overflow-x-auto overflow-y-auto">
+          <div className="h-[calc(100vh-230px)] md:h-[calc(100vh-250px)] max-h-[100vh] w-full overflow-x-auto overflow-y-auto">
             <table className="min-w-full">
               <thead className="bg-black text-white border-b border-[#E9E9E9] text-lg sticky top-[0px] z-30">
                 <tr>
@@ -67,49 +174,109 @@ const AdminSupport = () => {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {supportTickets.map((ticket, index) => {
-                  const statusColors = getStatusColor(ticket.status);
-                  return (
-                    <tr
-                      key={ticket.id}
-                      className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
-                    >
-                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{ticket.ticketId}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{ticket.user}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 min-w-[200px]">{ticket.messagePreview}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{ticket.category}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">{ticket.date}</td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text}`}
-                        >
-                          {ticket.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="p-1 hover:bg-gray-100 rounded-md transition-colors">
-                              <MoreVertical size={18} className="text-gray-600" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Reply to Ticket</DropdownMenuItem>
-                            <DropdownMenuItem>
-                              {ticket.status === 'Open' ? 'Mark as Resolved' : 'Reopen Ticket'}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive">Delete Ticket</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      Loading…
+                    </td>
+                  </tr>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 text-sm">
+                      {error
+                        ? 'Fix the error above, then refresh the page.'
+                        : 'No support tickets found.'}
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((ticket, index) => {
+                    const ticketId = field(ticket, 'ticket_id', 'ticketId', 'id');
+                    const userName = field(ticket, 'user_name', 'userName', 'user', 'full_name', 'fullName', 'name', 'user_email', 'email');
+                    const message = field(ticket, 'message_preview', 'messagePreview', 'message', 'subject', 'title', 'description', 'content', 'body', 'text');
+                    const category = field(ticket, 'category', 'type');
+                    const date = field(ticket, 'created_at', 'createdAt', 'date', 'updated_at');
+                    const status = field(ticket, 'status', 'ticket_status');
+                    const statusColors = getStatusColor(status);
+                    return (
+                      <tr
+                        key={ticketId || index}
+                        className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        }`}
+                      >
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {ticketId}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {userName}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 min-w-[200px]">
+                          {message}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {category}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
+                          {formatDate(date)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors.bg} ${statusColors.text}`}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="p-1 hover:bg-gray-100 rounded-md transition-colors">
+                                <MoreVertical size={18} className="text-gray-600" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>View Details</DropdownMenuItem>
+                              <DropdownMenuItem>Reply to Ticket</DropdownMenuItem>
+                              <DropdownMenuItem>
+                                {status.toLowerCase() === 'open'
+                                  ? 'Mark as Resolved'
+                                  : 'Reopen Ticket'}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem variant="destructive">
+                                Delete Ticket
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
+          </div>
+
+          <div className="flex items-center justify-between px-6 py-3 border-t border-[#E9E9E9] bg-white">
+            <span className="text-sm text-gray-500">
+              Showing {offset + 1}–{offset + filtered.length} results
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={offset === 0 || loading}
+                onClick={() => fetchTickets(Math.max(0, offset - PAGE_SIZE))}
+                className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={!hasMore || loading}
+                onClick={() => fetchTickets(offset + PAGE_SIZE)}
+                className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>
