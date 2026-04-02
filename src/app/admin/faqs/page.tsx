@@ -1,12 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Pencil, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
 import { Switch } from '@/components/ui/switch';
 import type { FaqItem } from '@/lib/faqsStore';
-import { adminUpsertFaq, listFaqs } from '@/lib/supabase/faqs';
+import { adminUpsertFaq, adminDeleteFaq, listFaqs } from '@/lib/supabase/faqs';
 
 const preview = (text: string, max = 80) => {
   const t = text.replace(/\s+/g, ' ').trim();
@@ -29,6 +29,10 @@ const AdminFaqs = () => {
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [deleteTarget, setDeleteTarget] = useState<FaqItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const refreshList = useCallback(async () => {
     setListLoading(true);
@@ -117,6 +121,23 @@ const AdminFaqs = () => {
 
     await refreshList();
     closeModal();
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+
+    const { error } = await adminDeleteFaq(deleteTarget.id);
+
+    setDeleting(false);
+    if (error) {
+      setDeleteError(error.message);
+      return;
+    }
+
+    setDeleteTarget(null);
+    await refreshList();
   };
 
   const getStatusStyle = (active: boolean) =>
@@ -232,14 +253,24 @@ const AdminFaqs = () => {
                           {preview(item.answer)}
                         </td>
                         <td className="px-6 py-4 align-top text-center">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(item)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-800 border border-[#DBDADE] bg-white hover:bg-gray-100 transition-colors"
-                          >
-                            <Pencil size={16} className="text-gray-600" />
-                            Edit
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEdit(item)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-gray-800 border border-[#DBDADE] bg-white hover:bg-gray-100 transition-colors"
+                            >
+                              <Pencil size={16} className="text-gray-600" />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setDeleteError(''); setDeleteTarget(item); }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-red-700 border border-red-200 bg-white hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 size={16} className="text-red-500" />
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -250,6 +281,55 @@ const AdminFaqs = () => {
           </div>
         </div>
       </div>
+
+      {deleteTarget ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40"
+          role="presentation"
+          onClick={() => { if (!deleting) setDeleteTarget(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-modal-title"
+            className="bg-white rounded-xl shadow-xl max-w-sm w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="delete-modal-title" className="text-lg font-bold text-gray-900 mb-2">
+              Delete FAQ
+            </h2>
+            <p className="text-sm text-gray-600 mb-1">
+              Are you sure you want to delete this FAQ?
+            </p>
+            <p className="text-sm text-gray-800 font-medium mb-4 line-clamp-2">
+              &ldquo;{deleteTarget.question}&rdquo;
+            </p>
+            {deleteError ? (
+              <p className="text-sm text-red-600 mb-3" role="alert">
+                {deleteError}
+              </p>
+            ) : null}
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 border border-[#DBDADE] hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {modalOpen ? (
         <div

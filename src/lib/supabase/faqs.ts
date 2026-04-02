@@ -141,3 +141,40 @@ export async function adminUpsertFaq(
   const data = await response.json().catch(() => null);
   return { data, error: null };
 }
+
+export async function adminDeleteFaq(
+  faqId: string
+): Promise<{ data: unknown; error: Error | null }> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    return { data: null, error: new Error('Missing Supabase configuration') };
+  }
+
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+
+  if (!token) {
+    return { data: null, error: new Error('Not authenticated') };
+  }
+
+  const response = await fetch(`${url}/rest/v1/rpc/admin_delete_faq`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: key,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ p_faq_id: faqId }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => null);
+    const message = err?.message || err?.error || `Request failed (${response.status})`;
+    return { data: null, error: new Error(message) };
+  }
+
+  const data = await response.json().catch(() => null);
+  return { data, error: null };
+}
