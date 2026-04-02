@@ -34,6 +34,7 @@ const LikesCommentsGiftsCard = ({
   giftsArray = [],
 
 }: props) => {
+  console.log("🚀 ~ LikesCommentsGiftsCard ~ comment:", comment)
 
   return (
     <div className={`rounded-[5px] ${whoCommentsAvatar || whoGiftsAvatar ? "bg-[#F7F7F7]" : "bg-white"}`}>

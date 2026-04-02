@@ -1,107 +1,58 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { Search } from 'lucide-react';
 import TitleCard from '@/components/cards/TitleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
-import { getUserBoards, type Board } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
-import { createClient } from '@/lib/supabase/client';
-import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { BoardsList } from '@/components/boards/BoardsList';
 import MobileHeader from '@/components/navbar/MobileHeader';
+import { useGetFollowingBoards } from '@/hooks/useGetFollowingBoards';
+
+const PAGE_SIZE = 12;
 
 const FollowingBoards = () => {
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  const {
+    boards,
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    fetchBoards,
+    loadMore,
+  } = useGetFollowingBoards();
 
   useEffect(() => {
-    loadBoards();
-  }, []);
-
-  const loadBoards = async () => {
-    try {
-      setLoading(true);
+    const init = async () => {
       const user = await authService.getUser();
-
-      if (!user) {
-        setLoading(false);
-        return;
+      if (user) {
+        setUserId(user.id);
+        await fetchBoards(user.id, PAGE_SIZE);
       }
+    };
+    init();
+  }, [fetchBoards]);
 
-      const { data: userBoards, error: boardsError } = await getUserBoards(user.id);
+  const sentinelCallback = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) observerRef.current.disconnect();
 
-      if (boardsError) {
-        setBoards([]);
-        return;
-      }
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
+          loadMore();
+        }
+      });
 
-      const supabase = createClient();
-      const boardsWithContributors = await Promise.all(
-        (userBoards || []).map(async (board) => {
-          try {
-            const { data: participants } = await supabase
-              .from('board_participants')
-              .select('user_id')
-              .eq('board_id', board.id)
-              .limit(10);
-
-            const contributorAvatars: (string | typeof ProfileAvatar)[] = [];
-
-            if (participants && participants.length > 0) {
-              const userIds = participants.map(p => p.user_id);
-              const { data: profiles } = await supabase
-                .from('profiles')
-                .select('profile_pic_url')
-                .in('id', userIds);
-
-              if (profiles) {
-                profiles.forEach((profile) => {
-                  if (profile.profile_pic_url) {
-                    contributorAvatars.push(profile.profile_pic_url);
-                  } else {
-                    contributorAvatars.push(ProfileAvatar);
-                  }
-                });
-              } else {
-                participants.forEach(() => {
-                  contributorAvatars.push(ProfileAvatar);
-                });
-              }
-            }
-
-            return {
-              ...board,
-              topContributors: contributorAvatars,
-              participants_count: (board as any).participants_count ?? 0,
-              wishes_count: (board as any).wishes_count ?? 0,
-              gifters_count: (board as any).gifters_count ?? 0,
-              contributors_count: (board as any).contributors_count ?? 0,
-              media_count: (board as any).media_count ?? 0,
-            };
-          } catch (err) {
-            return {
-              ...board,
-              topContributors: [],
-              participants_count: (board as any).participants_count ?? 0,
-              wishes_count: (board as any).wishes_count ?? 0,
-              gifters_count: (board as any).gifters_count ?? 0,
-              contributors_count: (board as any).contributors_count ?? 0,
-              media_count: (board as any).media_count ?? 0,
-            };
-          }
-        })
-      );
-
-      setBoards(boardsWithContributors);
-    } catch (err) {
-      setBoards([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (node) observerRef.current.observe(node);
+      sentinelRef.current = node;
+    },
+    [hasMore, isLoadingMore, loadMore]
+  );
 
   return (
     <>
@@ -119,7 +70,23 @@ const FollowingBoards = () => {
             </div>
           </div>
 
-          <BoardsList boards={boards} loading={loading} />
+          <BoardsList boards={boards} loading={isLoading} />
+
+          {isLoadingMore && (
+            <div className="flex justify-center py-6">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-[#18171f]" />
+            </div>
+          )}
+
+          {hasMore && !isLoading && (
+            <div ref={sentinelCallback} className="h-1" />
+          )}
+
+          {!hasMore && boards.length > 0 && !isLoading && (
+            <p className="text-center text-gray-400 text-sm py-6">
+              You&apos;ve reached the end
+            </p>
+          )}
         </div>
       </div>
     </>
@@ -127,4 +94,3 @@ const FollowingBoards = () => {
 };
 
 export default FollowingBoards;
-

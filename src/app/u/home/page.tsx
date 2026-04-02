@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SpotLightCard from '@/components/cards/SpotLightCard';
-import { fetchUserBoards, getUserBoards, type Board } from '@/lib/supabase/boards';
 import { useGetSpotlightBoards } from '@/hooks/useGetSpotlightBoards';
 import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 import { useGetUserInvitations } from '@/hooks/useGetUserInvitations';
 import { useGetUserBoardsWishes } from '@/hooks/useGetUserBoardsWishes';
-import { createClient } from '@/lib/supabase/client';
+import { useGetFollowingBoards } from '@/hooks/useGetFollowingBoards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-3.svg";
 import { authService } from '@/lib/supabase/auth';
 import DashNavbar from '@/components/navbar/DashNavbar';
@@ -23,7 +22,6 @@ import { Search } from 'lucide-react';
 import { exploreCards, explorePlaceholderAvatars, type ExploreCardData } from '@/lib/MockData';
 const Home = () => {
   const router = useRouter();
-  const [followingBoards, setFollowingBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [declineModal, setDeclineModal] = useState<{ invitationId: string; onConfirm: () => Promise<void> } | null>(null);
@@ -56,6 +54,15 @@ const Home = () => {
     fetchSpotlightBoards
   } = useGetSpotlightBoards();
 
+  const {
+    boards: followingBoards,
+    isLoading: followingLoading,
+    isLoadingMore: followingLoadingMore,
+    hasMore: followingHasMore,
+    fetchBoards: fetchFollowingBoards,
+    loadMore: loadMoreFollowing,
+  } = useGetFollowingBoards();
+
   useEffect(() => {
     loadBoards();
   }, []);
@@ -71,93 +78,29 @@ const Home = () => {
       }
 
       setCurrentUserId(user.id);
-      const supabase = createClient();
 
-      await fetchUserBoardsRPC({
-        p_user_id: user.id,
-        p_status: null,
-        p_limit: 10,
-        p_offset: 0
-      });
-
-      await fetchUserInvitations({
-        p_user_id: user.id,
-        p_limit: 10,
-        p_offset: 0
-      });
-
-      await fetchWishes({
-        p_board_ids: null,
-        p_limit: 10
-      });
-
-      await fetchSpotlightBoards({
-        p_limit: 10,
-        p_offset: 0
-      });
-
-      const { boards: userBoardsData } = await fetchUserBoards(user.id);
-
-      const fetchContributors = async (boards: Board[]) => {
-        if (!boards || boards.length === 0) return [];
-
-        const boardIds = boards.map(b => b.id);
-
-        const { data: allParticipants } = await supabase
-          .from('board_participants')
-          .select('board_id, user_id')
-          .in('board_id', boardIds);
-
-        if (!allParticipants || allParticipants.length === 0) {
-          return boards.map(board => ({ ...board, topContributors: [] }));
-        }
-
-        const allUserIds = [...new Set(allParticipants.map(p => p.user_id))];
-
-        const { data: allProfiles } = await supabase
-          .from('profiles')
-          .select('id, profile_pic_url')
-          .in('id', allUserIds);
-
-        const profileMap = (allProfiles || []).reduce((acc, profile) => {
-          acc[profile.id] = profile.profile_pic_url || ProfileAvatar;
-          return acc;
-        }, {} as Record<string, string | typeof ProfileAvatar>);
-
-        const participantsByBoard = allParticipants.reduce((acc, p) => {
-          if (!acc[p.board_id]) acc[p.board_id] = [];
-          acc[p.board_id].push(p.user_id);
-          return acc;
-        }, {} as Record<string, string[]>);
-
-        return boards.map(board => {
-          const boardParticipants = participantsByBoard[board.id] || [];
-          const contributorAvatars = boardParticipants
-            .slice(0, 10)
-            .map(userId => profileMap[userId] || ProfileAvatar);
-
-          return {
-            ...board,
-            topContributors: contributorAvatars,
-
-            participants_count: (board as any).participants_count ?? 0,
-            wishes_count: (board as any).wishes_count ?? 0,
-            gifters_count: (board as any).gifters_count ?? 0,
-            contributors_count: (board as any).contributors_count ?? 0,
-            media_count: (board as any).media_count ?? 0,
-          };
-        });
-      };
-
-      const { data: userOwnBoards, error: userOwnBoardsError } = await getUserBoards(user.id);
-      if (!userOwnBoardsError && userOwnBoards) {
-        const followingWithContributors = await fetchContributors(userOwnBoards);
-        setFollowingBoards(followingWithContributors.slice(0, 5));
-      } else {
-        const followingWithContributors = await fetchContributors(userBoardsData || []);
-        setFollowingBoards(followingWithContributors.slice(0, 5));
-      }
-
+      await Promise.all([
+        fetchUserBoardsRPC({
+          p_user_id: user.id,
+          p_status: null,
+          p_limit: 10,
+          p_offset: 0,
+        }),
+        fetchUserInvitations({
+          p_user_id: user.id,
+          p_limit: 10,
+          p_offset: 0,
+        }),
+        fetchWishes({
+          p_board_ids: null,
+          p_limit: 10,
+        }),
+        fetchSpotlightBoards({
+          p_limit: 10,
+          p_offset: 0,
+        }),
+        fetchFollowingBoards(user.id, 10),
+      ]);
     } catch (err) {
     } finally {
       setLoading(false);
@@ -270,7 +213,20 @@ const Home = () => {
           )}
 
           {activeTab === 'following' && (
-            <FollowingTabCards boards={followingBoards} loading={loading} />
+            <div>
+              <FollowingTabCards boards={followingBoards} loading={followingLoading} />
+              {followingHasMore && !followingLoading && (
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={loadMoreFollowing}
+                    disabled={followingLoadingMore}
+                    className="px-6 py-2.5 rounded-full bg-[#18171f] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {followingLoadingMore ? 'Loading...' : 'Load More'}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
 
           {activeTab === 'explore' && (

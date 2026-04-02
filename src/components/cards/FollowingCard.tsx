@@ -75,8 +75,9 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
 
   const currentMedia = mediaItems?.[carouselIndex];
   const hasCarousel = mediaItems.length > 1;
-  const mediaSrc = isVideo
-    ? videoThumbnail || coverImage
+  const currentIsVideo = currentMedia?.type === 'video';
+  const mediaSrc = currentIsVideo
+    ? currentMedia?.thumbnail || currentMedia?.url || videoThumbnail || coverImage
     : currentMedia?.url || currentMedia?.thumbnail || coverImage;
 
   const goPrev = () => setCarouselIndex((prev) => Math.max(prev - 1, 0));
@@ -140,7 +141,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
             unoptimized
           />
         ) : null}
-        {isVideo && (
+        {currentIsVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
             <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center">
               <Play size={24} className="text-gray-800 ml-1" fill="currentColor" />
@@ -148,11 +149,15 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
           </div>
         )}
         {hasCarousel && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
+          <div
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10"
+            onClick={(e) => e.stopPropagation()}
+          >
             {mediaItems.map((_, idx) => (
-              <div
+              <button
                 key={idx}
-                className={`w-1.5 h-1.5 rounded-full ${idx === carouselIndex ? 'bg-pink-500' : 'bg-white'
+                onClick={() => setCarouselIndex(idx)}
+                className={`w-2 h-2 rounded-full transition-colors ${idx === carouselIndex ? 'bg-pink-500' : 'bg-white/80 hover:bg-white'
                   }`}
               />
             ))}

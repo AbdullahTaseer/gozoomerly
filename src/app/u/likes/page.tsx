@@ -24,15 +24,17 @@ type UiLikeItem = {
   whoLikeAvatar: string | StaticImport;
   name: string;
   time: string;
+  creator:any;
   wishMessage: string;
 };
 
 const fallbackWishImages = [Likes_1, Likes_2, Likes_3, Likes_4, Likes_5, Likes_6];
 const fallbackAvatars = [LikeAvatar, LikeAvatar2];
 
-const pickFirstString = (item: UserWishLikeRpcItem, keys: (keyof UserWishLikeRpcItem)[]): string | null => {
+const pickString = (obj: any, keys: string[]): string | null => {
+  if (!obj || typeof obj !== 'object') return null;
   for (const key of keys) {
-    const value = item[key];
+    const value = obj[key];
     if (typeof value === 'string' && value.trim()) {
       return value.trim();
     }
@@ -54,17 +56,67 @@ const formatRelativeTime = (dateString: string | null): string => {
 };
 
 const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem => {
-  const id = pickFirstString(item, ['wish_id', 'id']) ?? `wish-like-${index}`;
-  const imgSrc = pickFirstString(item, ['wish_image_url', 'image_url', 'wish_media_url']) ?? fallbackWishImages[index % fallbackWishImages.length];
-  const whoLikeAvatar = pickFirstString(item, ['liker_avatar_url', 'wish_avatar_url', 'profile_pic_url']) ?? fallbackAvatars[index % fallbackAvatars.length];
-  const name = pickFirstString(item, ['liker_name', 'full_name']) ?? 'Unknown';
-  const wishMessage = pickFirstString(item, ['wish_message', 'content']) ?? 'No wish message available.';
-  const time = formatRelativeTime(pickFirstString(item, ['liked_at', 'created_at']));
+  const board = item.board ?? {};
+  const like = item.like ?? {};
+  const wish = item.wish ?? {};
+  const liker = like.user ?? like.liker ?? item.liker ?? item.creator ?? item.profiles ?? {};
+
+  const id =
+    pickString(like, ['id']) ??
+    pickString(item, ['wish_id', 'id', 'like_id']) ??
+    `wish-like-${index}`;
+
+  const imgSrc =
+    pickString(board, ['cover_image_url', 'image_url', 'cover_image']) ??
+    pickString((board as any).honoree_details, ['profile_photo_url']) ??
+    pickString(wish, ['image_url', 'media_url', 'cover_image_url']) ??
+    pickString(item, ['wish_image_url', 'image_url', 'wish_media_url', 'media_url', 'cover_image_url']) ??
+    fallbackWishImages[index % fallbackWishImages.length];
+
+  const whoLikeAvatar =
+    pickString(liker, ['profile_pic_url', 'avatar_url', 'profile_photo_url']) ??
+    pickString(like, ['profile_pic_url', 'avatar_url']) ??
+    pickString(item, ['liker_avatar_url', 'liker_profile_pic_url', 'avatar_url', 'profile_pic_url']) ??
+    fallbackAvatars[index % fallbackAvatars.length];
+
+  const boardCreator = (board as any).creator ?? (board as any).profiles ?? {};
+  const boardHonoree = (board as any).honoree_details ?? {};
+
+  const name =
+    pickString(liker, ['name', 'full_name', 'display_name']) ??
+    pickString(boardCreator, ['name', 'full_name']) ??
+    pickString(like, ['name', 'liker_name']) ??
+    pickString(item, ['liker_name', 'sender_name', 'creator_name', 'name', 'full_name']) ??
+    'Unknown';
+
+  const boardTitle =
+    pickString(board, ['title']) ?? '';
+
+  const wishMessage =
+    pickString(wish, ['content', 'message', 'wish_message']) ??
+    pickString(item, ['wish_message', 'wish_content', 'message', 'content']) ??
+    pickString(board, ['description', 'title']) ??
+    'No wish message available.';
+
+  const time = formatRelativeTime(
+    pickString(like, ['created_at', 'liked_at']) ??
+    pickString(item, ['liked_at', 'created_at', 'updated_at'])
+  );
 
   return {
     id,
     imgSrc,
     whoLikeAvatar,
+    creator: {
+      name,
+      title: boardTitle,
+      profile_pic_url: whoLikeAvatar,
+      board,
+      like,
+      wish,
+      honoree_details: boardHonoree,
+      boardCreator,
+    },
     name,
     time,
     wishMessage,
@@ -88,6 +140,7 @@ const LikesPage = () => {
     setError(null);
 
     const { data, error: likesError } = await getUserWishLikes(userId, PAGE_SIZE, nextOffset);
+    console.log("🚀 ~ LikesPage ~ data:", data)
 
     if (likesError) {
       setError(likesError.message || 'Failed to fetch likes.');
@@ -150,7 +203,7 @@ const LikesPage = () => {
               key={like.id}
               imgSrc={like.imgSrc}
               whoLikeAvatar={like.whoLikeAvatar}
-              name={like.name}
+              name={like.creator?.name || like.name}
               time={like.time}
               wishMessage={like.wishMessage}
             />

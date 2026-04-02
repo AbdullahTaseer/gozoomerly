@@ -28,14 +28,16 @@ type UiCommentItem = {
   whoCommentsAvatar: string | StaticImport;
   whoCommentsName: string;
   comment: string;
+  creator: any;
 };
 
 const fallbackWishImages = [Likes_1, Likes_2, Likes_3, Likes_4, Likes_5, Likes_6];
 const fallbackAvatars = [LikeAvatar, LikeAvatar2];
 
-const pickFirstString = (item: UserWishCommentRpcItem, keys: (keyof UserWishCommentRpcItem)[]): string | null => {
+const pickString = (obj: any, keys: string[]): string | null => {
+  if (!obj || typeof obj !== 'object') return null;
   for (const key of keys) {
-    const value = item[key];
+    const value = obj[key];
     if (typeof value === 'string' && value.trim()) {
       return value.trim();
     }
@@ -57,15 +59,75 @@ const formatRelativeTime = (dateString: string | null): string => {
 };
 
 const mapRpcItemToUi = (item: UserWishCommentRpcItem, index: number): UiCommentItem => {
-  const id = pickFirstString(item, ['comment_id', 'wish_id', 'id']) ?? `wish-comment-${index}`;
-  const imgSrc = pickFirstString(item, ['wish_image_url', 'image_url', 'wish_media_url']) ?? fallbackWishImages[index % fallbackWishImages.length];
-  const wishAvatar = pickFirstString(item, ['wish_avatar_url', 'profile_pic_url']) ?? fallbackAvatars[index % fallbackAvatars.length];
-  const commentAvatar = pickFirstString(item, ['commenter_avatar_url', 'profile_pic_url']) ?? fallbackAvatars[(index + 1) % fallbackAvatars.length];
-  const name = pickFirstString(item, ['full_name']) ?? 'Unknown';
-  const whoCommentsName = pickFirstString(item, ['commenter_name', 'commenter_full_name', 'full_name']) ?? 'Unknown';
-  const wishMessage = pickFirstString(item, ['wish_message', 'content']) ?? 'No wish message available.';
-  const comment = pickFirstString(item, ['comment', 'comment_text']) ?? '';
-  const time = formatRelativeTime(pickFirstString(item, ['commented_at', 'created_at']));
+  const board = item.board ?? {};
+  const commentObj = (typeof item.comment === 'object' && item.comment !== null) ? item.comment : {};
+  const wish = item.wish ?? {};
+  const commentAuthor = (commentObj as any).author ?? {};
+  const commentProfiles = (commentObj as any).profiles ?? {};
+  const commentUser = (commentObj as any).user ?? {};
+  const commenter = commentAuthor ?? (commentObj as any).commenter ?? commentProfiles ?? commentUser ?? item.commenter ?? item.creator ?? item.user ?? item.profiles ?? {};
+  const boardCreator = (board as any).creator ?? (board as any).profiles ?? {};
+  const boardHonoree = (board as any).honoree_details ?? {};
+  const wishProfiles = (wish as any).profiles ?? (wish as any).user ?? {};
+
+  const id =
+    pickString(commentObj, ['id']) ??
+    pickString(item, ['comment_id', 'wish_id', 'id']) ??
+    `wish-comment-${index}`;
+
+  const imgSrc =
+    pickString(board, ['cover_image_url', 'image_url', 'cover_image']) ??
+    pickString(boardHonoree, ['profile_photo_url']) ??
+    pickString(wish, ['image_url', 'media_url', 'cover_image_url']) ??
+    pickString(item, ['wish_image_url', 'image_url', 'wish_media_url', 'media_url', 'cover_image_url']) ??
+    fallbackWishImages[index % fallbackWishImages.length];
+
+  const wishAvatar =
+    pickString(boardHonoree, ['profile_photo_url']) ??
+    pickString(boardCreator, ['profile_pic_url', 'avatar_url']) ??
+    pickString(item, ['wish_avatar_url', 'profile_pic_url']) ??
+    fallbackAvatars[index % fallbackAvatars.length];
+
+  const commentAvatar =
+    pickString(commentAuthor, ['profile_pic_url', 'avatar_url', 'profile_photo_url']) ??
+    pickString(commenter, ['profile_pic_url', 'avatar_url', 'profile_photo_url']) ??
+    pickString(commentProfiles, ['profile_pic_url', 'avatar_url', 'profile_photo_url']) ??
+    pickString(commentObj, ['profile_pic_url', 'avatar_url', 'commenter_avatar_url']) ??
+    pickString(item, ['commenter_avatar_url', 'profile_pic_url']) ??
+    fallbackAvatars[(index + 1) % fallbackAvatars.length];
+
+  const name =
+    pickString(boardCreator, ['name', 'full_name']) ??
+    pickString(boardHonoree, ['full_name', 'name']) ??
+    pickString(wishProfiles, ['full_name', 'name']) ??
+    pickString(board, ['title']) ??
+    pickString(item, ['commenter_name', 'commenter_full_name', 'full_name', 'name']) ??
+    'Unknown';
+
+  const whoCommentsName =
+    pickString(commentAuthor, ['name', 'full_name', 'display_name']) ??
+    pickString(commenter, ['name', 'full_name', 'display_name']) ??
+    pickString(commentProfiles, ['full_name', 'name', 'display_name']) ??
+    pickString(commentObj, ['commenter_name', 'user_name', 'full_name', 'name', 'author_name']) ??
+    pickString(item, ['commenter_name', 'commenter_full_name', 'full_name']) ??
+    'Unknown';
+
+  const wishMessage =
+    pickString(wish, ['content', 'message', 'wish_message']) ??
+    pickString(item, ['wish_message', 'wish_content']) ??
+    pickString(board, ['description', 'title']) ??
+    'No wish message available.';
+
+  const comment =
+    pickString(commentObj, ['content', 'text', 'comment', 'comment_text', 'message']) ??
+    (typeof item.comment === 'string' ? item.comment : null) ??
+    pickString(item, ['comment_text']) ??
+    '';
+
+  const time = formatRelativeTime(
+    pickString(commentObj, ['created_at', 'commented_at']) ??
+    pickString(item, ['commented_at', 'created_at'])
+  );
 
   return {
     id,
@@ -77,6 +139,17 @@ const mapRpcItemToUi = (item: UserWishCommentRpcItem, index: number): UiCommentI
     whoCommentsAvatar: commentAvatar,
     whoCommentsName,
     comment,
+    creator: {
+      name,
+      title: pickString(board, ['title']) ?? '',
+      profile_pic_url: wishAvatar,
+      board,
+      wish,
+      comment: commentObj,
+      commenter,
+      honoree_details: boardHonoree,
+      boardCreator,
+    },
   };
 };
 
@@ -98,6 +171,15 @@ const CommentsPage = () => {
 
     const { data, error: commentsError } = await getUserWishComments(userId, PAGE_SIZE, nextOffset);
 
+    console.log('[Comments] raw data length:', data?.length, 'data:', data);
+    if (data && data.length > 0) {
+      const first = data[0];
+      console.log('[Comments] first item keys:', Object.keys(first));
+      console.log('[Comments] first item.comment (full):', JSON.stringify(first.comment, null, 2));
+      console.log('[Comments] first item.board (full):', JSON.stringify(first.board, null, 2));
+      console.log('[Comments] first item.wish (full):', JSON.stringify(first.wish, null, 2));
+    }
+
     if (commentsError) {
       setError(commentsError.message || 'Failed to fetch comments.');
       setIsLoading(false);
@@ -105,6 +187,10 @@ const CommentsPage = () => {
     }
 
     const mappedComments = (data ?? []).map((item, index) => mapRpcItemToUi(item, nextOffset + index));
+    console.log('[Comments] mapped comments count:', mappedComments.length);
+    if (mappedComments.length > 0) {
+      console.log('[Comments] first mapped item:', mappedComments[0]);
+    }
     setComments((prev) => (append ? [...prev, ...mappedComments] : mappedComments));
     setHasMore(mappedComments.length === PAGE_SIZE);
     setOffset(nextOffset + mappedComments.length);
@@ -159,7 +245,7 @@ const CommentsPage = () => {
               key={commentItem.id}
               imgSrc={commentItem.imgSrc}
               whoLikeAvatar={commentItem.whoLikeAvatar}
-              name={commentItem.name}
+              name={commentItem.creator?.name || commentItem.name}
               time={commentItem.time}
               wishMessage={commentItem.wishMessage}
               whoCommentsAvatar={commentItem.whoCommentsAvatar}
