@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       "cdn.pixabay.com",
       "lh3.googleusercontent.com",
       "iyjakrnzufohfkctyzbt.supabase.co",
+      "example.com",
     ],
   },
 };

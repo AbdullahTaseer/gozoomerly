@@ -19,13 +19,13 @@ import ExploreCardModal from '@/components/modals/ExploreCardModal';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { Search } from 'lucide-react';
-import { exploreCards, explorePlaceholderAvatars, type ExploreCardData } from '@/lib/MockData';
+import { useGetPublicBoards, type PublicBoard } from '@/hooks/useGetPublicBoards';
 const Home = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [declineModal, setDeclineModal] = useState<{ invitationId: string; onConfirm: () => Promise<void> } | null>(null);
-  const [exploreModalCard, setExploreModalCard] = useState<ExploreCardData | null>(null);
+  const [exploreModalCard, setExploreModalCard] = useState<PublicBoard | null>(null);
 
   const {
     boards: userBoards,
@@ -62,6 +62,15 @@ const Home = () => {
     fetchBoards: fetchFollowingBoards,
     loadMore: loadMoreFollowing,
   } = useGetFollowingBoards();
+
+  const {
+    boards: exploreBoards,
+    isLoading: exploreLoading,
+    isLoadingMore: exploreLoadingMore,
+    hasMore: exploreHasMore,
+    fetchBoards: fetchPublicBoards,
+    loadMore: loadMoreExplore,
+  } = useGetPublicBoards();
 
   useEffect(() => {
     loadBoards();
@@ -100,6 +109,7 @@ const Home = () => {
           p_offset: 0,
         }),
         fetchFollowingBoards(user.id, 10),
+        fetchPublicBoards(10, 4),
       ]);
     } catch (err) {
     } finally {
@@ -118,9 +128,9 @@ const Home = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('newInvites');
   const [exploreSearch, setExploreSearch] = useState('');
 
-  const filteredExploreCards = exploreSearch.trim()
-    ? exploreCards.filter(c => c.title.toLowerCase().includes(exploreSearch.toLowerCase()))
-    : exploreCards;
+  const filteredExploreBoards = exploreSearch.trim()
+    ? exploreBoards.filter(b => b.title.toLowerCase().includes(exploreSearch.toLowerCase()))
+    : exploreBoards;
 
   return (
     <div>
@@ -243,26 +253,61 @@ const Home = () => {
                   onChange={(e) => setExploreSearch(e.target.value)}
                 />
               </div>
-              <div
-                className="columns-3 lg:columns-4 xl:columns-8"
-                style={{ columnGap: '8px' }}
-              >
-                {filteredExploreCards.map((card) => (
-                  <ExploreCard
-                    key={card.id}
-                    title={card.title}
-                    image={card.image}
-                    avatars={explorePlaceholderAvatars}
-                    extraCount={card.extraCount}
-                    heightVariant={card.heightVariant}
-                    onClick={() => setExploreModalCard(card)}
-                  />
-                ))}
-              </div>
-              {filteredExploreCards.length === 0 && (
-                <div className="text-center py-12 col-span-full">
-                  <p className="text-gray-500">No results found</p>
+              {exploreLoading ? (
+                <div
+                  className="columns-3 lg:columns-4 xl:columns-8"
+                  style={{ columnGap: '8px' }}
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <div
+                      key={i}
+                      className="break-inside-avoid mb-2 rounded-lg bg-gray-100 animate-pulse"
+                      style={{ height: [240, 190, 160][i % 3] }}
+                    />
+                  ))}
                 </div>
+              ) : (
+                <>
+                  <div
+                    className="columns-3 lg:columns-4 xl:columns-8"
+                    style={{ columnGap: '8px' }}
+                  >
+                    {filteredExploreBoards.map((board) => {
+                      const avatarUrls = board.member_previews
+                        .map((m) => m.profile_pic_url)
+                        .filter(Boolean) as string[];
+                      const remaining = Math.max(0, board.total_members - board.member_previews.length);
+
+                      return (
+                        <ExploreCard
+                          key={board.id}
+                          title={board.title}
+                          image={board.cover_image_url || board.honoree_details?.profile_photo_url || ''}
+                          avatars={avatarUrls}
+                          extraCount={remaining}
+                          heightVariant={board.heightVariant}
+                          onClick={() => setExploreModalCard(board)}
+                        />
+                      );
+                    })}
+                  </div>
+                  {filteredExploreBoards.length === 0 && (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">No boards found</p>
+                    </div>
+                  )}
+                  {exploreHasMore && !exploreSearch.trim() && (
+                    <div className="flex justify-center mt-6">
+                      <button
+                        onClick={loadMoreExplore}
+                        disabled={exploreLoadingMore}
+                        className="px-6 py-2.5 rounded-full bg-[#18171f] text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {exploreLoadingMore ? 'Loading...' : 'Load More'}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -278,9 +323,19 @@ const Home = () => {
         isOpen={!!exploreModalCard}
         onClose={() => setExploreModalCard(null)}
         title={exploreModalCard?.title ?? ''}
-        image={exploreModalCard?.image ?? ''}
-        avatars={explorePlaceholderAvatars}
-        extraCount={exploreModalCard?.extraCount ?? 0}
+        image={exploreModalCard?.cover_image_url || exploreModalCard?.honoree_details?.profile_photo_url || ''}
+        avatars={
+          exploreModalCard?.member_previews
+            ?.map((m) => m.profile_pic_url)
+            .filter(Boolean) as string[] ?? []
+        }
+        extraCount={Math.max(0, (exploreModalCard?.total_members ?? 0) - (exploreModalCard?.member_previews?.length ?? 0))}
+        creatorName={exploreModalCard?.creator?.name || ''}
+        creatorAvatar={exploreModalCard?.creator?.profile_pic_url || undefined}
+        likesCount={exploreModalCard?.wishes_count ?? 0}
+        commentsCount={exploreModalCard?.contributors_count ?? 0}
+        sharesCount={exploreModalCard?.shares_count ?? 0}
+        savesCount={exploreModalCard?.views_count ?? 0}
       />
     </div>
   );

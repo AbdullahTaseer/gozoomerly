@@ -26,7 +26,7 @@ const ExploreCard = ({
   heightVariant = 'medium',
   onClick,
 }: ExploreCardProps) => {
-  const displayAvatars = avatars.slice(0, 3);
+  const displayAvatars = avatars.slice(0, 4);
   const showExtra = extraCount > 0;
 
   return (

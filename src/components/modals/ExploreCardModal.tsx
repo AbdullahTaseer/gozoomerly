@@ -55,7 +55,7 @@ const ExploreCardModal = ({
 
   if (!isOpen) return null;
 
-  const displayAvatars = avatars.slice(0, 6);
+  const displayAvatars = avatars.slice(0, 4);
   const slideOpen = isOpen && isAnimating;
 
   const ModalContent = () => (
