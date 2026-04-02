@@ -29,7 +29,8 @@ const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
       '/admin/wishes': 'Wishes Management',
       '/admin/gifts': 'Gifts Management',
       '/admin/reported': 'Reported Content',
-      '/admin/support': 'Support Tickets'
+      '/admin/support': 'Support Tickets',
+      '/admin/faqs': 'FAQs Management',
     };
 
     return titleMap[pathname] || 'Admin Dashboard';

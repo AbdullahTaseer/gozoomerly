@@ -1,61 +1,63 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
+} from '@/components/ui/accordion';
 import TitleCard from '../cards/TitleCard';
+import { type FaqItem, getDisplayFaqs } from '@/lib/faqsStore';
+import { listFaqs } from '@/lib/supabase/faqs';
 
 const Faqs = () => {
-  return (
-    <div className='px-[5%] max-[769px]:px-4 py-10'>
+  const [items, setItems] = useState<FaqItem[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await listFaqs({ includeInactive: false });
+      if (cancelled) return;
+      if (error) {
+        setLoadError(true);
+        setItems(getDisplayFaqs());
+        return;
+      }
+      setLoadError(false);
+      setItems(data ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <div className="px-[5%] max-[769px]:px-4 py-10">
       <TitleCard title="Frequently asked questions" />
 
-      <div className='mt-6 space-y-6 max-w-2xl mx-auto'>
-        <Accordion className='space-y-6' type="single" collapsible>
+      {loadError ? (
+        <p className="text-center text-amber-700 text-sm mt-4 max-w-2xl mx-auto">
+          Showing default FAQs — live content could not be loaded.
+        </p>
+      ) : null}
 
-          <AccordionItem value="item-1">
-            <AccordionTrigger>Do guests need the app?</AccordionTrigger>
-            <AccordionContent>
-              No — guests can join, view boards, and share memories directly from any browser.
-              The app just makes it easier for frequent users.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-2">
-            <AccordionTrigger>How do gifts work?</AccordionTrigger>
-            <AccordionContent>
-              Guests can contribute money, messages, or group gifts.
-              Everything is tracked and organized in one place, making it personal and meaningful rather than transactional.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-3">
-            <AccordionTrigger>Are boards private?</AccordionTrigger>
-            <AccordionContent>
-              Yes — only the people you invite can see or post on a board.
-              You stay in full control of your event’s privacy and access.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-4">
-            <AccordionTrigger>Do boards last forever?</AccordionTrigger>
-            <AccordionContent>
-              Absolutely. Boards don’t disappear after the event —
-              they remain as digital keepsakes that can be revisited anytime.
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="item-5">
-            <AccordionTrigger>Is it only for birthdays?</AccordionTrigger>
-            <AccordionContent>
-              Not at all. Zoomerly can be used for weddings, baby showers,
-              graduations, retirements, or any celebration where memories matter.
-            </AccordionContent>
-          </AccordionItem>
-
-        </Accordion>
+      <div className="mt-6 space-y-6 max-w-2xl mx-auto">
+        {items === null ? (
+          <p className="text-center text-gray-500 text-sm py-8">Loading…</p>
+        ) : items.length === 0 ? (
+          <p className="text-center text-gray-500 text-sm py-8">No questions yet.</p>
+        ) : (
+          <Accordion className="space-y-6" type="single" collapsible>
+            {items.map((faq) => (
+              <AccordionItem key={faq.id} value={faq.id} className="mb-3">
+                <AccordionTrigger>{faq.question}</AccordionTrigger>
+                <AccordionContent>{faq.answer}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
       </div>
     </div>
   );

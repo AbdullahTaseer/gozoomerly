@@ -5,12 +5,41 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
+import { authService } from '@/lib/supabase/auth';
 
 const AdminLogin = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAdminSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    const response = await authService.signInWithEmail({
+      email: trimmedEmail,
+      password: trimmedPassword,
+    });
+    setLoading(false);
+
+    if (response.success) {
+      router.push('/admin/home');
+      return;
+    }
+
+    setError(response.error || 'Sign in failed');
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
@@ -32,7 +61,13 @@ const AdminLogin = () => {
               Sign in to access the admin dashboard
             </p>
 
-            <form className="space-y-6">
+            <form onSubmit={handleAdminSignIn} className="space-y-6">
+              {error && (
+                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-2">
                   Email

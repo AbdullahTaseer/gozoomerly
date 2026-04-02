@@ -12,6 +12,7 @@ import {
   Flag,
   MessageSquare,
   LayoutDashboard,
+  CircleHelp,
 } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 
@@ -37,7 +38,8 @@ const AdminSidebar = ({ isOpen = false, onClose }: AdminSidebarProps) => {
     { label: 'Wishes Management', icon: Heart, path: '/admin/wishes' },
     { label: 'Gifts Management', icon: Gift, path: '/admin/gifts' },
     { label: 'Reported Content', icon: Flag, path: '/admin/reported' },
-    { label: 'Support Tickets', icon: MessageSquare, path: '/admin/support' }
+    { label: 'Support Tickets', icon: MessageSquare, path: '/admin/support' },
+    { label: 'FAQs', icon: CircleHelp, path: '/admin/faqs' },
   ];
 
   const isActive = (path: string) => {
