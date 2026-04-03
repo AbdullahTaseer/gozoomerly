@@ -1,8 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Home, MessageCircle, Plus, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createOrShareModalState } from "@/lib/createOrShareModalState";
+import { authService } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/client";
+import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
+
+const defaultTabAvatarSrc =
+  typeof ProfileAvatar === "string"
+    ? ProfileAvatar
+    : (ProfileAvatar as { src?: string }).src || "";
 
 const TabItem = ({ icon, label, onClick }: any) => {
   return (
@@ -18,6 +27,35 @@ const TabItem = ({ icon, label, onClick }: any) => {
 
 export default function BottomTabs() {
   const router = useRouter();
+  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const user = await authService.getUser();
+        if (!user || cancelled) return;
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("profiles")
+          .select("profile_pic_url")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const url = data?.profile_pic_url?.trim();
+        if (url && url !== "null" && url !== "undefined") {
+          setProfilePicUrl(url);
+        }
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const tabProfileSrc = profilePicUrl || defaultTabAvatarSrc;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 hidden max-[769px]:block">
@@ -69,7 +107,13 @@ export default function BottomTabs() {
           />
 
           <TabItem
-            icon={<img src="https://i.pravatar.cc/100" className="w-7 h-7 rounded-full" />}
+            icon={
+              <img
+                src={tabProfileSrc}
+                alt=""
+                className="w-7 h-7 rounded-full object-cover bg-gray-600"
+              />
+            }
             label="Profile"
             onClick={() => router.push("/u/profile")}
           />

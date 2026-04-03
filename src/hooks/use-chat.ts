@@ -36,6 +36,17 @@ import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 
 const authService = new AuthService();
 
+/** Group chats for boards may store `board_<uuid>` as the conversation `name` instead of the title. */
+const BOARD_GROUP_NAME_PREFIX = 'board_';
+const BOARD_ID_IN_NAME_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function parseBoardIdFromGroupConversationName(name: string): string | null {
+  if (!name.startsWith(BOARD_GROUP_NAME_PREFIX)) return null;
+  const id = name.slice(BOARD_GROUP_NAME_PREFIX.length);
+  return BOARD_ID_IN_NAME_RE.test(id) ? id : null;
+}
+
 export const useChat = () => {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -332,7 +343,11 @@ export const useChat = () => {
   }, [selectedTab, selectedConversation]);
 
   useEffect(() => {
-    if ((selectedTab === 'Board Chats' || selectedTab === 'All') && currentUserId && fetchUserBoardsRef.current) {
+    if (
+      (selectedTab === 'Board Chats' || selectedTab === 'Group Chats' || selectedTab === 'All') &&
+      currentUserId &&
+      fetchUserBoardsRef.current
+    ) {
       const loadActiveBoards = async () => {
         const fn = fetchUserBoardsRef.current;
         if (fn) {
@@ -355,6 +370,58 @@ export const useChat = () => {
     );
   });
 
+  const boardTitleById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const b of boards as { id?: string; title?: string }[]) {
+      if (b?.id && b.title != null && String(b.title).trim() !== '') {
+        m.set(String(b.id), String(b.title).trim());
+      }
+    }
+    return m;
+  }, [boards]);
+
+  const [resolvedBoardTitles, setResolvedBoardTitles] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const missing = new Set<string>();
+    for (const conv of conversations) {
+      if (conv.type !== 'group' || !conv.name) continue;
+      const bid = parseBoardIdFromGroupConversationName(conv.name);
+      if (!bid) continue;
+      if (boardTitleById.has(bid) || resolvedBoardTitles[bid]) continue;
+      missing.add(bid);
+    }
+    if (missing.size === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { createClient } = await import('@/lib/supabase/client');
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('boards')
+          .select('id, title')
+          .in('id', [...missing]);
+        if (cancelled || error || !data?.length) return;
+        setResolvedBoardTitles((prev) => {
+          const next = { ...prev };
+          for (const row of data) {
+            const id = (row as { id?: string }).id;
+            const title = (row as { title?: string }).title;
+            if (id && title != null && String(title).trim() !== '') {
+              next[id] = String(title).trim();
+            }
+          }
+          return next;
+        });
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [conversations, currentUserId, boardTitleById, resolvedBoardTitles]);
 
   const handleMessageReceived = useCallback((message: ChatMessage) => {
 
@@ -975,40 +1042,54 @@ export const useChat = () => {
     }
   }, [selectedConversation, currentUserId, draftMedia]);
 
-  const getConversationName = useCallback((conv: Conversation): string => {
-    if (conv.type === 'direct') {
-      if (conv.other_user) {
-        if (conv.other_user.name) {
-          return conv.other_user.name;
+  const getConversationName = useCallback(
+    (conv: Conversation): string => {
+      if (conv.type === 'direct') {
+        if (conv.other_user) {
+          if (conv.other_user.name) {
+            return conv.other_user.name;
+          }
+          const userId = conv.other_user.user_id || conv.other_user.id;
+          if (userId) {
+            return `User ${userId.substring(0, 8)}`;
+          }
         }
-        const userId = conv.other_user.user_id || conv.other_user.id;
-        if (userId) {
-          return `User ${userId.substring(0, 8)}`;
-        }
-      }
-      
-      if (conv.participants && conv.participants.length > 0) {
-        const otherParticipant = conv.participants.find(
-          (p: any) => p.user_id !== currentUserId
-        );
 
-        if (otherParticipant) {
-          if (otherParticipant.user?.name) {
-            return otherParticipant.user.name;
-          }
-          if (otherParticipant.user_id) {
-            return `User ${otherParticipant.user_id.substring(0, 8)}`;
+        if (conv.participants && conv.participants.length > 0) {
+          const otherParticipant = conv.participants.find(
+            (p: any) => p.user_id !== currentUserId
+          );
+
+          if (otherParticipant) {
+            if (otherParticipant.user?.name) {
+              return otherParticipant.user.name;
+            }
+            if (otherParticipant.user_id) {
+              return `User ${otherParticipant.user_id.substring(0, 8)}`;
+            }
           }
         }
+
+        return 'Unknown User';
       }
-      
-      return 'Unknown User';
-    }
-    
-    if (conv.name) return conv.name;
-    
-    return 'Conversation';
-  }, [currentUserId]);
+
+      if (conv.type === 'group' && conv.name) {
+        const boardId = parseBoardIdFromGroupConversationName(conv.name);
+        if (boardId) {
+          const fromUserBoards = boardTitleById.get(boardId);
+          if (fromUserBoards) return fromUserBoards;
+          const fetched = resolvedBoardTitles[boardId];
+          if (fetched) return fetched;
+          return 'Board chat';
+        }
+      }
+
+      if (conv.name) return conv.name;
+
+      return 'Conversation';
+    },
+    [currentUserId, boardTitleById, resolvedBoardTitles]
+  );
 
   const getConversationAvatar = useCallback((conv: Conversation): string | StaticImport => {
     if (conv.type === 'direct' && conv.other_user?.profile_pic_url) {
