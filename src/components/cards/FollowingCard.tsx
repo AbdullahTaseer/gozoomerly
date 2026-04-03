@@ -97,7 +97,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   return (
     <div
       onClick={() => onCardClick?.()}
-      className={`bg-[#F3F3F3] rounded-xl overflow-hidden h-fit shadow-md transition-shadow ${onCardClick ? 'cursor-pointer' : ''
+      className={`bg-[#F3F3F3] rounded-xl flex flex-col justify-between overflow-hidden shadow-md transition-shadow ${onCardClick ? 'cursor-pointer' : ''
         }`}
     >
       <div className="p-4 pb-0 flex flex-wrap items-center justify-between gap-4">
@@ -129,7 +129,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
       </div>
 
       <div
-        className="relative aspect-[4/3] mt-4 bg-gray-200"
+        className="relative aspect-[4/3] flex-1 mt-4 bg-gray-200"
         onClick={handleMediaClick}
       >
         {mediaSrc ? (

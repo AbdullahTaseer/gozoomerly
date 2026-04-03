@@ -12,6 +12,30 @@ export type AdminUpsertFaqParams = {
 
 type FaqRow = Record<string, unknown>;
 
+/** Matches mobile `faqsSlice` / `get_faqs` nested payloads. */
+function extractFaqRows(data: unknown): FaqRow[] {
+  let rows: unknown[] = [];
+  if (Array.isArray(data)) {
+    rows = data;
+  } else if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    if (Array.isArray(d.items)) {
+      rows = d.items as unknown[];
+    } else if (
+      d.data &&
+      typeof d.data === 'object' &&
+      Array.isArray((d.data as Record<string, unknown>).items)
+    ) {
+      rows = (d.data as Record<string, unknown>).items as unknown[];
+    } else if (Array.isArray(d.rows)) {
+      rows = d.rows as unknown[];
+    } else if (Array.isArray(d.results)) {
+      rows = d.results as unknown[];
+    }
+  }
+  return rows as FaqRow[];
+}
+
 function rowSortKey(row: FaqRow): number {
   if (typeof row.sort_order === 'number' && Number.isFinite(row.sort_order)) {
     return row.sort_order;
@@ -29,11 +53,18 @@ function rowSortKey(row: FaqRow): number {
 
 function mapRowToFaq(row: FaqRow, index: number): FaqItem | null {
   const rawId = row.id ?? row.faq_id;
-  if (rawId === null || rawId === undefined) return null;
-  const id = typeof rawId === 'string' ? rawId : String(rawId);
-  const question = row.question;
-  const answer = row.answer;
-  if (typeof question !== 'string' || typeof answer !== 'string') return null;
+  const id =
+    rawId !== null && rawId !== undefined && String(rawId).length > 0
+      ? typeof rawId === 'string'
+        ? rawId
+        : String(rawId)
+      : `faq-${index}`;
+
+  const qRaw = row.question ?? row.title;
+  const aRaw = row.answer ?? row.body ?? row.content;
+  const question = typeof qRaw === 'string' ? qRaw : String(qRaw ?? '');
+  const answer = typeof aRaw === 'string' ? aRaw : String(aRaw ?? '');
+  if (!question.trim() || !answer.trim()) return null;
 
   const isActive =
     typeof row.is_active === 'boolean'
@@ -76,11 +107,7 @@ export async function listFaqs(options?: {
     return { data: null, error: new Error(error.message) };
   }
 
-  if (data !== null && data !== undefined && !Array.isArray(data)) {
-    return { data: null, error: new Error('get_faqs returned unexpected data shape') };
-  }
-
-  let rows = (Array.isArray(data) ? data : []) as FaqRow[];
+  let rows = extractFaqRows(data);
   if (!options?.includeInactive) {
     rows = rows.filter((r) => r.is_active !== false);
   }

@@ -61,7 +61,7 @@ const Profile = () => {
     { label: "Boards", icon: LayoutGrid, href: '/u/boards' },
     { label: "Memories", icon: Clock, href: '/u/memories' },
     { label: "Liked", icon: Heart, href: '/u/likes' },
-    { label: "Saved", icon: Bookmark, href: '#' },
+    { label: "Saved", icon: Bookmark, href: '/u/favBoards' },
     { label: "Shared", icon: Share2, href: '/u/share' },
     { label: "Support", icon: HelpCircle, href: '/u/support' },
     { label: "Settings", icon: Settings, href: '/u/settings' },

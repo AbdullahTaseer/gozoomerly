@@ -2,7 +2,7 @@
 import Image from 'next/image';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { ArrowLeft, Share2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getBoardByIdRPC } from '@/lib/supabase/boards';
 import PostsVideoCard from '@/components/cards/PostsVideoCard';
@@ -20,6 +20,7 @@ import BoardSlugGifts from '@/components/cards/BoardSlugGifts';
 import BoardSlugParticipants from '@/components/cards/BoardSlugParticipants';
 import BoardSlugWishes from '@/components/cards/BoardSlugWishes';
 import BoardSlugMemories from '@/components/cards/BoardSlugMemories';
+import BoardFavoriteButton from '@/components/boards/BoardFavoriteButton';
 
 async function getBoardById(boardId: string) {
   if (!boardId) {
@@ -456,7 +457,8 @@ export default async function BoardPage(props: any) {
           </Link>
           <p className='max-[450px]:text-[24px] max-[768px]:text-[32px] max-[1024px]:text-[42px] text-[52px]'>{honoreeName}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <BoardFavoriteButton boardId={board?.id || ''} />
           <InviteModalTrigger boardId={board?.id || ''} boardTitle={boardTitle} />
           <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
         </div>

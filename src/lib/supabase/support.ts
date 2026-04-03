@@ -1,23 +1,49 @@
-export type AdminListSupportTicketsParams = {
+import { createClient } from './client';
+
+/**
+ * Same contract as mobile `supportSlice` / `create_support_ticket` RPC.
+ */
+export async function createSupportTicket(params: {
+  name: string;
+  phone: string;
+  message: string;
+}): Promise<{ data: unknown; error: Error | null }> {
+  let supabase;
+  try {
+    supabase = createClient();
+  } catch (e) {
+    return {
+      data: null,
+      error: e instanceof Error ? e : new Error('Missing Supabase configuration'),
+    };
+  }
+
+  const { data, error } = await supabase.rpc('create_support_ticket', {
+    p_name: params.name.trim(),
+    p_phone: params.phone.trim(),
+    p_message: params.message.trim() || '—',
+  });
+
+  if (error) {
+    return {
+      data: null,
+      error: new Error(typeof error.message === 'string' ? error.message : String(error)),
+    };
+  }
+
+  return { data, error: null };
+}
+
+export type SupportTicketRow = Record<string, unknown>;
+
+/**
+ * Admin dashboard: list support tickets (authenticated `access_token` in localStorage).
+ */
+export async function adminListSupportTickets(params: {
   p_status?: string;
   p_limit: number;
   p_offset: number;
-};
-
-export type SupportTicketRow = {
-  id: string;
-  ticket_id: string;
-  user_name: string;
-  message_preview: string;
-  category: string;
-  created_at: string;
-  status: string;
-  [key: string]: unknown;
-};
-
-export async function adminListSupportTickets(
-  params: AdminListSupportTicketsParams
-): Promise<{ data: SupportTicketRow[] | null; error: Error | null }> {
+}): Promise<{ data: SupportTicketRow[] | null; error: Error | null }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -32,14 +58,10 @@ export async function adminListSupportTickets(
     return { data: null, error: new Error('Not authenticated') };
   }
 
-  const body: Record<string, unknown> = {
-    p_limit: params.p_limit,
-    p_offset: params.p_offset,
-  };
-
-  if (params.p_status !== undefined && params.p_status !== '') {
-    body.p_status = params.p_status;
-  }
+  const status =
+    params.p_status && String(params.p_status).trim().length > 0
+      ? String(params.p_status).trim()
+      : null;
 
   const response = await fetch(`${url}/rest/v1/rpc/admin_list_support_tickets`, {
     method: 'POST',
@@ -48,7 +70,11 @@ export async function adminListSupportTickets(
       apikey: key,
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({
+      p_status: status,
+      p_limit: params.p_limit,
+      p_offset: params.p_offset,
+    }),
   });
 
   if (!response.ok) {
@@ -58,12 +84,6 @@ export async function adminListSupportTickets(
   }
 
   const data = await response.json().catch(() => null);
-
-  console.log('[admin_list_support_tickets] raw response:', JSON.stringify(data, null, 2));
-
-  if (data !== null && data !== undefined && !Array.isArray(data)) {
-    return { data: null, error: new Error('admin_list_support_tickets returned unexpected data shape') };
-  }
-
-  return { data: (data as SupportTicketRow[]) ?? [], error: null };
+  const rows = Array.isArray(data) ? (data as SupportTicketRow[]) : [];
+  return { data: rows, error: null };
 }
