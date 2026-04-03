@@ -20,6 +20,13 @@ import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { Search } from 'lucide-react';
 import { useGetPublicBoards, type PublicBoard } from '@/hooks/useGetPublicBoards';
+import { useExploreColumnCount, splitIntoRoundRobinColumns } from '@/hooks/useExploreColumnCount';
+
+function exploreCardImageHeightPx(colIdx: number, rowIdx: number): 160 | 210 {
+  const isEvenNumberedColumn = colIdx % 2 === 1;
+  return rowIdx === 0 && isEvenNumberedColumn ? 160 : 210;
+}
+
 const Home = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -131,6 +138,13 @@ const Home = () => {
   const filteredExploreBoards = exploreSearch.trim()
     ? exploreBoards.filter(b => b.title.toLowerCase().includes(exploreSearch.toLowerCase()))
     : exploreBoards;
+
+  const exploreColumnCount = useExploreColumnCount();
+  const exploreColumns = splitIntoRoundRobinColumns(filteredExploreBoards, exploreColumnCount);
+  const exploreSkeletonColumns = splitIntoRoundRobinColumns(
+    Array.from({ length: 8 }, (_, i) => i),
+    exploreColumnCount
+  );
 
   return (
     <div>
@@ -254,42 +268,44 @@ const Home = () => {
                 />
               </div>
               {exploreLoading ? (
-                <div
-                  className="columns-3 lg:columns-4 xl:columns-8"
-                  style={{ columnGap: '8px' }}
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div
-                      key={i}
-                      className="break-inside-avoid mb-2 rounded-lg bg-gray-100 animate-pulse"
-                      style={{ height: [240, 190, 160][i % 3] }}
-                    />
+                <div className="flex gap-2">
+                  {exploreSkeletonColumns.map((col, colIdx) => (
+                    <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
+                      {col.map((slot, rowIdx) => (
+                        <div
+                          key={slot}
+                          className="shrink-0 rounded-lg bg-gray-100 animate-pulse"
+                          style={{ height: exploreCardImageHeightPx(colIdx, rowIdx) }}
+                        />
+                      ))}
+                    </div>
                   ))}
                 </div>
               ) : (
                 <>
-                  <div
-                    className="columns-3 lg:columns-4 xl:columns-8"
-                    style={{ columnGap: '8px' }}
-                  >
-                    {filteredExploreBoards.map((board) => {
-                      const avatarUrls = board.member_previews
-                        .map((m) => m.profile_pic_url)
-                        .filter(Boolean) as string[];
-                      const remaining = Math.max(0, board.total_members - board.member_previews.length);
+                  <div className="flex gap-2">
+                    {exploreColumns.map((colBoards, colIdx) => (
+                      <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
+                        {colBoards.map((board, rowIdx) => {
+                          const avatarUrls = board.member_previews
+                            .map((m) => m.profile_pic_url)
+                            .filter(Boolean) as string[];
+                          const remaining = Math.max(0, board.total_members - board.member_previews.length);
 
-                      return (
-                        <ExploreCard
-                          key={board.id}
-                          title={board.title}
-                          image={board.cover_image_url || board.honoree_details?.profile_photo_url || ''}
-                          avatars={avatarUrls}
-                          extraCount={remaining}
-                          heightVariant={board.heightVariant}
-                          onClick={() => setExploreModalCard(board)}
-                        />
-                      );
-                    })}
+                          return (
+                            <ExploreCard
+                              key={board.id}
+                              title={board.title}
+                              image={board.cover_image_url || board.honoree_details?.profile_photo_url || ''}
+                              avatars={avatarUrls}
+                              extraCount={remaining}
+                              imageHeightPx={exploreCardImageHeightPx(colIdx, rowIdx)}
+                              onClick={() => setExploreModalCard(board)}
+                            />
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                   {filteredExploreBoards.length === 0 && (
                     <div className="text-center py-12">

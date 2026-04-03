@@ -30,7 +30,7 @@ export interface PublicBoard {
   total_members: number;
   member_previews: PublicBoardMemberPreview[];
   created_at: string;
-  heightVariant: 'tall' | 'medium' | 'short';
+  heightVariant?: 'tall' | 'medium' | 'short';
 }
 
 interface UseGetPublicBoardsReturn {
@@ -43,8 +43,6 @@ interface UseGetPublicBoardsReturn {
   loadMore: () => Promise<void>;
   refetch: () => Promise<void>;
 }
-
-const HEIGHT_VARIANTS: Array<'tall' | 'medium' | 'short'> = ['tall', 'medium', 'short'];
 
 function coerceToArray(value: unknown): any[] {
   if (value == null) return [];
@@ -218,7 +216,7 @@ function extractBoardsArrayFromRpc(data: unknown): any[] {
 }
 
 function mapResponseToBoards(data: any[]): PublicBoard[] {
-  return data.map((raw: any, index: number) => {
+  return data.map((raw: any) => {
     const item = flattenBoardRpcRow(raw);
     const honoree = item.honoree_details || {};
     const profilePhotoUrl =
@@ -288,7 +286,6 @@ function mapResponseToBoards(data: any[]): PublicBoard[] {
       total_members: totalMembers,
       member_previews: memberPreviews,
       created_at: item.created_at || '',
-      heightVariant: HEIGHT_VARIANTS[index % HEIGHT_VARIANTS.length],
     };
   });
 }

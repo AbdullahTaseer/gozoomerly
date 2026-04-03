@@ -10,11 +10,12 @@ import Likes_5 from "@/assets/pngs/Likes-5.svg";
 import Likes_6 from "@/assets/pngs/Likes-6.svg";
 import LikeAvatar from "@/assets/svgs/likes-ava-1.svg";
 import LikeAvatar2 from "@/assets/svgs/avatar-list-icon-1.svg";
-import TitleCard from '@/components/cards/TitleCard';
+import { useRouter } from 'next/navigation';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { createClient } from '@/lib/supabase/client';
 import { getUserWishLikes, UserWishLikeRpcItem } from '@/lib/supabase/likes';
+import { ArrowLeft } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -24,7 +25,7 @@ type UiLikeItem = {
   whoLikeAvatar: string | StaticImport;
   name: string;
   time: string;
-  creator:any;
+  creator: any;
   wishMessage: string;
 };
 
@@ -183,21 +184,28 @@ const LikesPage = () => {
     await fetchLikes(offset, true);
   };
 
+  const router = useRouter();
+
   return (
     <>
       <DashNavbar hide={false} />
-      <div className="px-[7%] max-[768px]:px-6 pb-4">
-        <TitleCard title="Likes" className="text-left" />
+      <div className="px-[7%] max-[769px]:px-6 py-4">
+        <div className="flex justify-between items-center">
+          <button onClick={() => router.push('/u/profile')} className="flex items-center gap-2 text-black">
+            <ArrowLeft size={24} />
+            <span className="text-3xl font-bold">Likes</span>
+          </button>
+        </div>
 
         {error && (
           <p className="text-red-500 mt-4">{error}</p>
         )}
 
         {!error && !isLoading && likes.length === 0 && (
-          <p className="text-gray-500 mt-4">No likes found yet.</p>
+          <p className="text-gray-500 mt-4 text-center">No likes found yet.</p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
           {likes.map((like) => (
             <LikesCommentsGiftsCard
               key={like.id}
@@ -211,10 +219,11 @@ const LikesPage = () => {
         </div>
 
         {isLoading && (
-          <p className="text-gray-500 mt-4">Loading likes...</p>
+          <p className="text-gray-500 mt-4 text-center">Loading likes...</p>
         )}
 
-        {!isLoading && hasMore && likes.length > 0 && (
+      <div className='flex justify-center'>
+          {!isLoading && hasMore && likes.length > 0 && (
           <button
             type="button"
             onClick={handleLoadMore}
@@ -223,6 +232,7 @@ const LikesPage = () => {
             Load more
           </button>
         )}
+      </div>
       </div>
     </>
   );

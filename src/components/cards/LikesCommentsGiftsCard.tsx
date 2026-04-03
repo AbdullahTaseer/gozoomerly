@@ -41,9 +41,11 @@ const LikesCommentsGiftsCard = ({
       <Image src={imgSrc} alt='img' className='rounded-[5px] w-full' />
       <div className='flex justify-between mt-2 items-center p-2'>
         <div className='flex items-center gap-2'>
-          <Image src={whoLikeAvatar} alt='img' height={45} width={45} className='rounded-full' />
+          <div className='relative h-11 w-11 rounded-full shrink-0 overflow-hidden'>
+            <Image src={whoLikeAvatar} alt='img' fill className='object-cover' />
+          </div>
           <span className='flex items-center gap-1'>
-            <p className='font-semibold'>{name}</p>
+            <p className='font-semibold line-clamp-1 text-ellipsis'>{name}</p>
             <p>birthday</p>
             <p className='text-sm'>{time}</p>
           </span>
@@ -55,7 +57,9 @@ const LikesCommentsGiftsCard = ({
       {whoCommentsAvatar &&
         <div className='px-6 py-2'>
           <div className='flex gap-2 items-center'>
-            <Image src={whoCommentsAvatar} alt='img' height={30} width={30} className='rounded-full' />
+            <div className='relative h-8 w-8 rounded-full shrink-0 overflow-hidden'>
+              <Image src={whoCommentsAvatar} alt='img' fill className='object-cover' />
+            </div>
             <span className='flex items-center gap-4'>
               <p className='font-semibold text-sm'>{whoCommentsName}</p>
               <Trash2 className='cursor-pointer' size={15} />
@@ -68,7 +72,7 @@ const LikesCommentsGiftsCard = ({
       {whoGiftsAvatar &&
         <div className='px-6 py-2'>
           <div className='flex gap-2 items-center'>
-            <Image src={whoGiftsAvatar} alt='img' height={30} width={30} className='rounded-full' />
+            <Image src={whoGiftsAvatar} alt='img' height={30} width={30} className='rounded-full shrink-0 object-fill' />
             <p className='font-semibold text-sm'>{whoGiftsName}</p>
           </div>
           <div className='flex gap-2 flex-wrap mt-2'>

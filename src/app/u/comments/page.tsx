@@ -10,11 +10,12 @@ import Likes_5 from "@/assets/pngs/Likes-5.svg";
 import Likes_6 from "@/assets/pngs/Likes-6.svg";
 import LikeAvatar from "@/assets/svgs/likes-ava-1.svg";
 import LikeAvatar2 from "@/assets/svgs/avatar-list-icon-1.svg";
-import TitleCard from '@/components/cards/TitleCard';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { createClient } from '@/lib/supabase/client';
 import { getUserWishComments, UserWishCommentRpcItem } from '@/lib/supabase/likes';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const PAGE_SIZE = 10;
 
@@ -225,21 +226,28 @@ const CommentsPage = () => {
     await fetchComments(offset, true);
   };
 
+  const router = useRouter();
+
   return (
     <>
       <DashNavbar hide={false} />
-      <div className="px-[7%] max-[768px]:px-6 pb-4">
-        <TitleCard title="Comments" className="text-left" />
+      <div className="px-[7%] max-[769px]:px-6 py-4">
+        <div className="flex justify-between items-center">
+          <button onClick={() => router.push('/u/profile')} className="flex items-center gap-2 text-black">
+            <ArrowLeft size={24} />
+            <span className="text-3xl font-bold">Comments</span>
+          </button>
+        </div>
 
         {error && (
           <p className="text-red-500 mt-4">{error}</p>
         )}
 
         {!error && !isLoading && comments.length === 0 && (
-          <p className="text-gray-500 mt-4">No comments found yet.</p>
+          <p className="text-gray-500 mt-4 text-center">No comments found yet.</p>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
           {comments.map((commentItem) => (
             <LikesCommentsGiftsCard
               key={commentItem.id}
@@ -256,18 +264,19 @@ const CommentsPage = () => {
         </div>
 
         {isLoading && (
-          <p className="text-gray-500 mt-4">Loading comments...</p>
+          <p className="text-gray-500 mt-4 text-center">Loading comments...</p>
         )}
-
-        {!isLoading && hasMore && comments.length > 0 && (
-          <button
-            type="button"
-            onClick={handleLoadMore}
-            className="mt-6 px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
-          >
-            Load more
-          </button>
-        )}
+        <div className='flex justify-center'>
+          {!isLoading && hasMore && comments.length > 0 && (
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              className="mt-6 px-4 py-2 mx-auto rounded-md bg-black text-white hover:opacity-90"
+            >
+              Load more
+            </button>
+          )}
+        </div>
       </div>
     </>
   );

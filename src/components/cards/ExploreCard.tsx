@@ -9,6 +9,7 @@ type ExploreCardProps = {
   avatars?: Array<string | StaticImport>;
   extraCount?: number;
   heightVariant?: 'tall' | 'medium' | 'short';
+  imageHeightPx?: number;
   onClick?: () => void;
 };
 
@@ -24,17 +25,25 @@ const ExploreCard = ({
   avatars = [],
   extraCount = 0,
   heightVariant = 'medium',
+  imageHeightPx,
   onClick,
 }: ExploreCardProps) => {
   const displayAvatars = avatars.slice(0, 4);
   const showExtra = extraCount > 0;
+  const imageBoxClass =
+    imageHeightPx != null
+      ? 'relative w-full shrink-0 overflow-hidden'
+      : `relative ${aspectClasses[heightVariant]}`;
 
   return (
     <div
       onClick={onClick}
-      className="group relative rounded-lg overflow-hidden break-inside-avoid mb-2 cursor-pointer bg-gray-100"
+      className="group relative rounded-lg overflow-hidden break-inside-avoid cursor-pointer bg-gray-100"
     >
-      <div className={`relative ${aspectClasses[heightVariant]}`}>
+      <div
+        className={imageBoxClass}
+        style={imageHeightPx != null ? { height: imageHeightPx } : undefined}
+      >
         <Image
           src={image}
           alt={title}
