@@ -4,15 +4,23 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, MoreVertical } from 'lucide-react';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
+import toast from 'react-hot-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   adminListSupportTickets,
+  adminUpdateSupportTicketStatus,
+  SUPPORT_TICKET_STATUSES,
   type SupportTicketRow,
+  type SupportTicketStatus,
 } from '@/lib/supabase/support';
 
 const PAGE_SIZE = 20;
@@ -34,6 +42,36 @@ const AdminSupport = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [updatingTicketId, setUpdatingTicketId] = useState<string | null>(null);
+
+  const patchTicketStatus = useCallback((ticketId: string, newStatus: SupportTicketStatus) => {
+    setTickets((prev) =>
+      prev.map((t) => {
+        const id = field(t, 'ticket_id', 'ticketId', 'id');
+        if (id !== ticketId) return t;
+        return { ...t, status: newStatus, ticket_status: newStatus };
+      })
+    );
+  }, []);
+
+  const handleUpdateTicketStatus = useCallback(
+    async (ticketId: string, newStatus: SupportTicketStatus) => {
+      if (!ticketId) return;
+      setUpdatingTicketId(ticketId);
+      const { error: updateError } = await adminUpdateSupportTicketStatus({
+        p_ticket_id: ticketId,
+        p_status: newStatus,
+      });
+      setUpdatingTicketId(null);
+      if (updateError) {
+        toast.error(updateError.message);
+        return;
+      }
+      toast.success(`Ticket status updated to ${newStatus}`);
+      patchTicketStatus(ticketId, newStatus);
+    },
+    [patchTicketStatus]
+  );
 
   const fetchTickets = useCallback(
     async (newOffset: number, status?: string) => {
@@ -90,6 +128,7 @@ const AdminSupport = () => {
     const colorMap: Record<string, { bg: string; text: string }> = {
       resolved: { bg: 'bg-green-100', text: 'text-green-800' },
       open: { bg: 'bg-orange-100', text: 'text-orange-800' },
+      pending: { bg: 'bg-amber-100', text: 'text-amber-900' },
       closed: { bg: 'bg-gray-100', text: 'text-gray-600' },
     };
     return colorMap[normalized] || { bg: 'bg-gray-100', text: 'text-gray-800' };
@@ -121,7 +160,7 @@ const AdminSupport = () => {
 
       <div className="max-[500px]:grid grid-cols-2 flex justify-end gap-4 my-6">
         <div className="flex items-center gap-2">
-          {['', 'open', 'resolved', 'closed'].map((s) => (
+          {['', 'open', 'pending', 'resolved', 'closed'].map((s) => (
             <button
               key={s}
               type="button"
@@ -236,11 +275,36 @@ const AdminSupport = () => {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>View Details</DropdownMenuItem>
                               <DropdownMenuItem>Reply to Ticket</DropdownMenuItem>
-                              <DropdownMenuItem>
-                                {status.toLowerCase() === 'open'
-                                  ? 'Mark as Resolved'
-                                  : 'Reopen Ticket'}
-                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger
+                                  disabled={!ticketId || updatingTicketId === ticketId}
+                                >
+                                  Update status
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent>
+                                  {SUPPORT_TICKET_STATUSES.map((s) => {
+                                    const current = status.toLowerCase() === s;
+                                    return (
+                                      <DropdownMenuItem
+                                        key={s}
+                                        disabled={
+                                          !ticketId ||
+                                          updatingTicketId === ticketId ||
+                                          current
+                                        }
+                                        onClick={() =>
+                                          handleUpdateTicketStatus(ticketId, s)
+                                        }
+                                      >
+                                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                                        {current ? ' (current)' : ''}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                              <DropdownMenuSeparator />
                               <DropdownMenuItem variant="destructive">
                                 Delete Ticket
                               </DropdownMenuItem>

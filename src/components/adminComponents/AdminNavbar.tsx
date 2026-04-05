@@ -1,7 +1,8 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Bell, ChevronDown, User, Settings, LogOut, Menu } from 'lucide-react';
+import { ChevronDown, User, Settings, LogOut, Menu } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import BellIcon from "@/assets/svgs/bell.svg";
+import { authService } from '@/lib/supabase/auth';
+import { createClient } from '@/lib/supabase/client';
 
 type AdminNavbarProps = {
   onMenuClick?: () => void;
@@ -20,6 +23,44 @@ type AdminNavbarProps = {
 const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
   const pathname = usePathname();
   const router = useRouter();
+  const [adminDisplayName, setAdminDisplayName] = useState('Admin');
+  const [adminInitial, setAdminInitial] = useState('A');
+  const [adminAvatarUrl, setAdminAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const user = await authService.getUser();
+        if (!user || cancelled) return;
+        const supabase = createClient();
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, profile_pic_url')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const metaName =
+          typeof user.user_metadata?.full_name === 'string'
+            ? user.user_metadata.full_name.trim()
+            : '';
+        const profileName = profile?.name?.trim() || '';
+        const fromEmail = user.email?.split('@')[0]?.trim() || '';
+        const name = profileName || metaName || fromEmail || 'Admin';
+        setAdminDisplayName(name);
+        setAdminInitial(name.charAt(0).toUpperCase() || 'A');
+        const pic = profile?.profile_pic_url?.trim();
+        if (pic && pic !== 'null' && pic !== 'undefined') {
+          setAdminAvatarUrl(pic);
+        }
+      } catch {
+        /* keep defaults */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const getPageTitle = () => {
     const titleMap: { [key: string]: string } = {
@@ -56,14 +97,22 @@ const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="hidden md:flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity bg-white px-4 py-3 rounded-md">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center overflow-hidden shadow-sm">
-                <div className="w-full h-full bg-gradient-to-br from-orange-300 to-orange-400 flex items-center justify-center text-white font-semibold text-lg">
-                  J
-                </div>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shadow-sm shrink-0 bg-gradient-to-br from-orange-300 to-orange-400">
+                {adminAvatarUrl ? (
+                  <img
+                    src={adminAvatarUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-lg">{adminInitial}</span>
+                )}
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col min-w-0 text-left">
                 <span className="text-sm text-gray-700 leading-tight">Welcome back,</span>
-                <span className="text-sm font-bold text-gray-900 leading-tight">Joolie</span>
+                <span className="text-sm font-bold text-gray-900 leading-tight truncate max-w-[140px] sm:max-w-[200px]">
+                  {adminDisplayName}
+                </span>
               </div>
               <ChevronDown size={16} className="text-gray-600" />
             </div>

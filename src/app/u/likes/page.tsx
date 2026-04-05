@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 import LikesCommentsGiftsCard from '@/components/cards/LikesCommentsGiftsCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { createClient } from '@/lib/supabase/client';
+import { unlikeWish } from '@/lib/supabase/boards';
 import { getUserWishLikes, UserWishLikeRpcItem } from '@/lib/supabase/likes';
 import { ArrowLeft } from 'lucide-react';
 import MobileHeader from '@/components/navbar/MobileHeader';
@@ -22,6 +23,7 @@ const PAGE_SIZE = 10;
 
 type UiLikeItem = {
   id: string;
+  wishId: string | null;
   imgSrc: string | StaticImport;
   whoLikeAvatar: string | StaticImport;
   name: string;
@@ -63,9 +65,15 @@ const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem =>
   const wish = item.wish ?? {};
   const liker = like.user ?? like.liker ?? item.liker ?? item.creator ?? item.profiles ?? {};
 
+  const wishId =
+    pickString(wish, ['id']) ??
+    pickString(item, ['wish_id']) ??
+    null;
+
   const id =
+    wishId ??
     pickString(like, ['id']) ??
-    pickString(item, ['wish_id', 'id', 'like_id']) ??
+    pickString(item, ['id', 'like_id']) ??
     `wish-like-${index}`;
 
   const imgSrc =
@@ -107,6 +115,7 @@ const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem =>
 
   return {
     id,
+    wishId,
     imgSrc,
     whoLikeAvatar,
     creator: {
@@ -132,6 +141,7 @@ const LikesPage = () => {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [unlikingWishId, setUnlikingWishId] = useState<string | null>(null);
 
   const supabase = useMemo(() => createClient(), []);
 
@@ -142,7 +152,6 @@ const LikesPage = () => {
     setError(null);
 
     const { data, error: likesError } = await getUserWishLikes(userId, PAGE_SIZE, nextOffset);
-    console.log("🚀 ~ LikesPage ~ data:", data)
 
     if (likesError) {
       setError(likesError.message || 'Failed to fetch likes.');
@@ -185,6 +194,24 @@ const LikesPage = () => {
     await fetchLikes(offset, true);
   };
 
+  const handleUnlike = useCallback(async (wishId: string) => {
+    if (unlikingWishId) return;
+    setUnlikingWishId(wishId);
+    setError(null);
+    const { error: unlikeErr } = await unlikeWish(wishId);
+    if (unlikeErr) {
+      const msg =
+        typeof unlikeErr === 'object' && unlikeErr !== null && 'message' in unlikeErr
+          ? String((unlikeErr as { message?: string }).message)
+          : 'Could not remove like.';
+      setError(msg);
+      setUnlikingWishId(null);
+      return;
+    }
+    setLikes((prev) => prev.filter((l) => l.wishId !== wishId));
+    setUnlikingWishId(null);
+  }, [unlikingWishId]);
+
   const router = useRouter();
 
   return (
@@ -220,6 +247,10 @@ const LikesPage = () => {
               name={like.creator?.name || like.name}
               time={like.time}
               wishMessage={like.wishMessage}
+              onUnlike={
+                like.wishId ? () => void handleUnlike(like.wishId as string) : undefined
+              }
+              isUnliking={like.wishId != null && unlikingWishId === like.wishId}
             />
           ))}
         </div>

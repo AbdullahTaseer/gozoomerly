@@ -161,10 +161,21 @@ const ExploreCardModal = ({
 
     return (
     <>
-      <div className="relative flex items-center justify-center px-4 bg-white">
-        <h2 className="font-bold text-xl text-black capitalize">
-          {title}
-        </h2>
+      <div className="relative flex items-center justify-center px-4 bg-white min-h-[3rem]">
+        {boardId ? (
+          <button
+            type="button"
+            onClick={goToBoardComments}
+            className="font-bold text-xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+            aria-label={`Open board: ${title}`}
+          >
+            {title}
+          </button>
+        ) : (
+          <h2 className="font-bold text-xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
+            {title}
+          </h2>
+        )}
         <button
           onClick={onClose}
           className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full transition-colors cursor-pointer"

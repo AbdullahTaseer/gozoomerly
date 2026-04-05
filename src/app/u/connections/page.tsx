@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
@@ -15,11 +15,12 @@ import YourCirclesModal from '@/components/modals/YourCirclesModal';
 import AddCircleModal from '@/components/modals/AddCircleModal';
 import AddStatusModal from '@/components/modals/AddStatusModal';
 import StoryViewerModal from '@/components/modals/StoryViewerModal';
+import { useAddStatusSubmit } from '@/hooks/useAddStatusSubmit';
 import { inviteContacts } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import { getFollowers, getFollowing, followUser } from '@/lib/supabase/followUtils';
 import { getUserCircles, getCircleMembers, addCircleMember, CircleWithDetails } from '@/lib/supabase/circles';
-import { uploadStoryMedia, createStory, getStoriesGroupedByUser, Story } from '@/lib/supabase/stories';
+import { getStoriesGroupedByUser, Story } from '@/lib/supabase/stories';
 import toast from 'react-hot-toast';
 import GlobalButton from '@/components/buttons/GlobalButton';
 
@@ -52,6 +53,31 @@ const Connections = () => {
   const [storyViewerOpen, setStoryViewerOpen] = useState(false);
   const [selectedStoryGroupIndex, setSelectedStoryGroupIndex] = useState(0);
 
+  const fetchStories = useCallback(async () => {
+    if (!currentUser?.id) return;
+    setStoriesLoading(true);
+    try {
+      const { data, error } = await getStoriesGroupedByUser(currentUser.id);
+      if (error) {
+        setStories([]);
+      } else {
+        setStories(data || []);
+      }
+    } catch {
+      setStories([]);
+    } finally {
+      setStoriesLoading(false);
+    }
+  }, [currentUser?.id]);
+
+  const onStorySubmitSuccess = useCallback(() => {
+    void fetchStories();
+  }, [fetchStories]);
+
+  const { handleStatusImageSelect, handleStoryCreate, handleMultipleStoriesCreate } = useAddStatusSubmit({
+    onSuccess: onStorySubmitSuccess,
+  });
+
   useEffect(() => {
     fetchCurrentUser();
   }, []);
@@ -63,7 +89,7 @@ const Connections = () => {
       fetchFollowing();
       fetchStories();
     }
-  }, [currentUser?.id]);
+  }, [currentUser?.id, fetchStories]);
 
   useEffect(() => {
     if (selectedFilter !== 'All' && currentUser?.id) {
@@ -137,23 +163,6 @@ const Connections = () => {
       setFollowingList([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchStories = async () => {
-    if (!currentUser?.id) return;
-    setStoriesLoading(true);
-    try {
-      const { data, error } = await getStoriesGroupedByUser(currentUser.id);
-      if (error) {
-        setStories([]);
-      } else {
-        setStories(data || []);
-      }
-    } catch (error) {
-      setStories([]);
-    } finally {
-      setStoriesLoading(false);
     }
   };
 
@@ -349,84 +358,6 @@ const Connections = () => {
 
   const handleAddStatus = () => {
     setAddStatusModalVisible(true);
-  };
-
-  const handleStatusImageSelect = (imageUrl: string | any) => {
-  };
-
-  const handleStoryCreate = async (file: File, caption: string) => {
-    if (!currentUser?.id) {
-      toast.error('Please sign in to create a story');
-      return;
-    }
-
-    try {
-      const { mediaId, error: uploadError } = await uploadStoryMedia(currentUser.id, file);
-
-      if (uploadError || !mediaId) {
-        toast.error('Failed to upload story media');
-        return;
-      }
-
-      const contentType = file.type.startsWith('video/') ? 'video' : 'image';
-
-      const { data: story, error: createError } = await createStory(currentUser.id, {
-        content_type: contentType,
-        media_id: mediaId,
-        caption: caption || undefined,
-      });
-
-      if (createError || !story) {
-        toast.error('Failed to create story');
-        return;
-      }
-
-      toast.success('Story created successfully!');
-      fetchStories();
-    } catch (error) {
-      toast.error('Failed to create story');
-    }
-  };
-
-  const handleMultipleStoriesCreate = async (storiesData: { file: File; caption: string }[]) => {
-    if (!currentUser?.id) {
-      toast.error('Please sign in to create stories');
-      return;
-    }
-
-    if (storiesData.length === 0) {
-      return;
-    }
-
-    try {
-      const uploadPromises = storiesData.map(async ({ file, caption }) => {
-        const { mediaId, error: uploadError } = await uploadStoryMedia(currentUser.id, file);
-
-        if (uploadError || !mediaId) {
-          throw new Error(`Failed to upload story media: ${uploadError?.message || 'Unknown error'}`);
-        }
-
-        const contentType = file.type.startsWith('video/') ? 'video' : 'image';
-
-        const { data: story, error: createError } = await createStory(currentUser.id, {
-          content_type: contentType,
-          media_id: mediaId,
-          caption: caption || undefined,
-        });
-
-        if (createError || !story) {
-          throw new Error(`Failed to create story: ${createError?.message || 'Unknown error'}`);
-        }
-
-        return story;
-      });
-
-      await Promise.all(uploadPromises);
-      toast.success(`${storiesData.length} ${storiesData.length === 1 ? 'story' : 'stories'} created successfully!`);
-      fetchStories();
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to create stories');
-    }
   };
 
   const handleStatusClick = (name?: string, storyGroupIndex?: number, isUserStory?: boolean) => {

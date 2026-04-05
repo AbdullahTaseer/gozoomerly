@@ -7,9 +7,11 @@ import { useRouter } from 'next/navigation';
 interface CreateOrShareModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** When set, "Post status" opens Add Status instead of navigating away. */
+  onPostStatus?: () => void;
 }
 
-const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose }) => {
+const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose, onPostStatus }) => {
   const router = useRouter();
 
   useEffect(() => {
@@ -36,8 +38,12 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
       icon: Calendar,
       label: 'Post status',
       onClick: () => {
-        router.push('/u/connections');
         onClose();
+        if (onPostStatus) {
+          onPostStatus();
+        } else {
+          router.push('/u/connections');
+        }
       },
     },
     {

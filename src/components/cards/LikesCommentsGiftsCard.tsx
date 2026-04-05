@@ -8,6 +8,9 @@ type props = {
   name: string;
   time: string;
   wishMessage: string;
+  /** When set, the heart is clickable to remove your like from this wish. */
+  onUnlike?: () => void;
+  isUnliking?: boolean;
   comment?: string;
   whoCommentsAvatar?: string | StaticImport;
   whoCommentsName?: string;
@@ -26,6 +29,8 @@ const LikesCommentsGiftsCard = ({
   name,
   time,
   wishMessage,
+  onUnlike,
+  isUnliking = false,
   comment,
   whoCommentsAvatar,
   whoCommentsName,
@@ -34,8 +39,6 @@ const LikesCommentsGiftsCard = ({
   giftsArray = [],
 
 }: props) => {
-  console.log("🚀 ~ LikesCommentsGiftsCard ~ comment:", comment)
-
   return (
     <div className={`rounded-[5px] ${whoCommentsAvatar || whoGiftsAvatar ? "bg-[#F7F7F7]" : "bg-white"}`}>
       <Image src={imgSrc} alt='img' className='rounded-[5px] w-full' />
@@ -50,7 +53,19 @@ const LikesCommentsGiftsCard = ({
             <p className='text-sm'>{time}</p>
           </span>
         </div>
-        <Heart color='#F43C83' fill='#F43C83' />
+        {onUnlike ? (
+          <button
+            type="button"
+            onClick={onUnlike}
+            disabled={isUnliking}
+            aria-label={isUnliking ? 'Removing like' : 'Unlike'}
+            className="shrink-0 rounded-md p-1 text-[#F43C83] hover:opacity-80 disabled:opacity-50"
+          >
+            <Heart color="#F43C83" fill="#F43C83" className={isUnliking ? 'opacity-60' : ''} />
+          </button>
+        ) : (
+          <Heart color="#F43C83" fill="#F43C83" />
+        )}
       </div>
       <p className='pl-2'>{wishMessage}</p>
 
