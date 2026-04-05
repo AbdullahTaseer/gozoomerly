@@ -14,6 +14,7 @@ import {
 } from '@/lib/supabase/favoriteBoards';
 import FavoriteBoardRow from '@/components/boards/FavoriteBoardRow';
 import ConfirmationModal from '@/components/modals/ConfirmationModal';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const PAGE_SIZE = 20;
 
@@ -121,9 +122,14 @@ export default function FavBoardsPage() {
 
   return (
     <>
-      <DashNavbar hide={false} />
+      <DashNavbar />
+      <MobileHeader
+        title="Favorites"
+        showBack
+        onBackClick={() => router.push('/u/profile')}
+      />
       <div className="px-[7%] max-[769px]:px-6 py-4">
-        <div className="flex justify-between items-center mb-6">
+        <div className="max-[769px]:hidden flex justify-between items-center mb-6">
           <button
             type="button"
             onClick={() => router.push('/u/profile')}

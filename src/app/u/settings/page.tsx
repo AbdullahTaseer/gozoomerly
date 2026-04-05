@@ -60,9 +60,18 @@ const Settings = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500" />
-      </div>
+      <>
+        <DashNavbar />
+        <MobileHeader
+          title="Settings"
+          showBack={true}
+          onBackClick={() => router.push('/u/profile')}
+          profileRight={true}
+        />
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500" />
+        </div>
+      </>
     );
   }
 

@@ -16,6 +16,7 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import { createClient } from '@/lib/supabase/client';
 import { getUserWishLikes, UserWishLikeRpcItem } from '@/lib/supabase/likes';
 import { ArrowLeft } from 'lucide-react';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 const PAGE_SIZE = 10;
 
@@ -188,9 +189,14 @@ const LikesPage = () => {
 
   return (
     <>
-      <DashNavbar hide={false} />
+      <DashNavbar />
+      <MobileHeader
+        title="Likes"
+        showBack
+        onBackClick={() => router.push('/u/profile')}
+      />
       <div className="px-[7%] max-[769px]:px-6 py-4">
-        <div className="flex justify-between items-center">
+        <div className="max-[769px]:hidden flex justify-between items-center">
           <button onClick={() => router.push('/u/profile')} className="flex items-center gap-2 text-black">
             <ArrowLeft size={24} />
             <span className="text-3xl font-bold">Likes</span>
@@ -222,17 +228,17 @@ const LikesPage = () => {
           <p className="text-gray-500 mt-4 text-center">Loading likes...</p>
         )}
 
-      <div className='flex justify-center'>
+        <div className='flex justify-center'>
           {!isLoading && hasMore && likes.length > 0 && (
-          <button
-            type="button"
-            onClick={handleLoadMore}
-            className="mt-6 px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
-          >
-            Load more
-          </button>
-        )}
-      </div>
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              className="mt-6 px-4 py-2 rounded-md bg-black text-white hover:opacity-90"
+            >
+              Load more
+            </button>
+          )}
+        </div>
       </div>
     </>
   );
