@@ -161,7 +161,7 @@ const AdminFaqs = () => {
           type="button"
           onClick={openCreate}
           disabled={listLoading}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors order-first max-[500px]:order-none w-full sm:w-auto disabled:opacity-50"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-pink-500 text-white text-sm font-semibold hover:bg-pink-600 transition-colors order-first max-[500px]:order-none w-full sm:w-auto disabled:opacity-50"
         >
           <Plus size={18} />
           Add FAQ
@@ -178,11 +178,11 @@ const AdminFaqs = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             width="100%"
-            height="42px"
+            height="40px"
             className="relative"
             inputClassName="pr-10"
           />
-          <div className="absolute right-3 top-[13px] pointer-events-none">
+          <div className="absolute right-3 top-[11px] pointer-events-none">
             <Search size={18} className="text-gray-900" />
           </div>
         </div>

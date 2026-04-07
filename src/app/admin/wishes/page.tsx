@@ -3,12 +3,20 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { MoreVertical, Paperclip, Search } from 'lucide-react';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
+import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   buildAdminListWishesParams,
   fetchAdminListWishes,
@@ -33,7 +41,7 @@ const SORT_OPTIONS: { value: AdminListWishesSort; label: string }[] = [
 ];
 
 const controlClass =
-  'h-[42px] w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition-colors focus:border-gray-900 focus:ring-1 focus:ring-gray-900/20';
+  '!h-[43px] w-full rounded-[5px] border border-gray-900 bg-white px-3 text-sm text-gray-900 outline-none focus:ring-0';
 
 const labelClass = 'text-xs font-medium text-gray-700 whitespace-nowrap';
 
@@ -109,12 +117,12 @@ const AdminWishes = () => {
       <div className="my-6 space-y-4">
         <div className="rounded-lg border border-[#DBDADE] bg-white p-3 shadow-sm sm:p-4">
           <div
-            className="-mx-1 overflow-x-auto overflow-y-visible pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+            className="-mx-1 overflow-x-auto scrollbar-hide overflow-y-visible pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
             role="region"
             aria-label="Wish filters"
           >
             <div className="flex w-max max-w-none flex-nowrap items-end gap-3 px-1">
-              <div className="shrink-0 pb-0.5">
+              <div className="shrink-0">
                 <MoreFilters
                   options={[...WISH_FILTER_OPTIONS]}
                   selectedFilters={selectedFilters}
@@ -128,21 +136,24 @@ const AdminWishes = () => {
                 <label htmlFor="admin-wishes-sort" className={labelClass}>
                   Sort
                 </label>
-                <select
-                  id="admin-wishes-sort"
+                <Select
                   value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value as AdminListWishesSort);
+                  onValueChange={(v) => {
+                    setSort(v as AdminListWishesSort);
                     resetPage();
                   }}
-                  className={controlClass}
                 >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="admin-wishes-sort" className={`${controlClass} shadow-none`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className={`${scrollField} w-[13rem]`}>
                 <label htmlFor="admin-wishes-board" className={labelClass}>
@@ -283,9 +294,8 @@ const AdminWishes = () => {
                   rows.map((wish, index) => (
                     <tr
                       key={wish.id}
-                      className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
+                      className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        }`}
                     >
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                         {wish.wishId}
@@ -315,13 +325,12 @@ const AdminWishes = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            wish.accountStatusKey === 'reported'
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${wish.accountStatusKey === 'reported'
                               ? 'bg-red-100 text-red-800'
                               : wish.accountStatusKey === 'active'
                                 ? 'bg-green-100 text-green-800'
                                 : 'bg-gray-100 text-gray-800'
-                          }`}
+                            }`}
                         >
                           {wish.accountStatusLabel}
                         </span>

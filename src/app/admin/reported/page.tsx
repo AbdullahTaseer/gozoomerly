@@ -9,6 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
+import {
   buildAdminListModerationReportsParams,
   fetchAdminListModerationReports,
   type AdminListModerationReportsSort,
@@ -17,14 +25,16 @@ import {
 import { ADMIN_LIST_LIMIT, adminListOffset } from '@/lib/supabase/adminListPagination';
 
 const controlClass =
-  'h-[42px] w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-900 shadow-sm outline-none transition-colors focus:border-gray-900 focus:ring-1 focus:ring-gray-900/20';
+  '!h-[43px] w-full rounded-[5px] border border-gray-900 bg-white px-3 text-sm text-gray-900 outline-none focus:ring-0';
 
 const labelClass = 'text-xs font-medium text-gray-700 whitespace-nowrap';
 
 const scrollField = 'flex shrink-0 flex-col gap-1.5';
 
+const STATUS_ALL = '__all__';
+
 const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'All statuses' },
+  { value: STATUS_ALL, label: 'All statuses' },
   { value: 'pending', label: 'Pending' },
   { value: 'resolved', label: 'Resolved' },
 ];
@@ -119,7 +129,7 @@ const AdminReported = () => {
       <div className="my-6 space-y-4">
         <div className="rounded-lg border border-[#DBDADE] bg-white p-3 shadow-sm sm:p-4">
           <div
-            className="-mx-1 overflow-x-auto overflow-y-visible pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+            className="-mx-1 overflow-x-auto scrollbar-hide overflow-y-visible pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
             role="region"
             aria-label="Moderation report filters"
           >
@@ -128,41 +138,47 @@ const AdminReported = () => {
                 <label htmlFor="admin-reported-sort" className={labelClass}>
                   Sort
                 </label>
-                <select
-                  id="admin-reported-sort"
+                <Select
                   value={sort}
-                  onChange={(e) => {
-                    setSort(e.target.value as AdminListModerationReportsSort);
+                  onValueChange={(v) => {
+                    setSort(v as AdminListModerationReportsSort);
                     resetPage();
                   }}
-                  className={controlClass}
                 >
-                  {SORT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="admin-reported-sort" className={`${controlClass} shadow-none`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className={`${scrollField} w-[10rem]`}>
                 <label htmlFor="admin-reported-status" className={labelClass}>
                   Status
                 </label>
-                <select
-                  id="admin-reported-status"
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
+                <Select
+                  value={status === '' ? STATUS_ALL : status}
+                  onValueChange={(v) => {
+                    setStatus(v === STATUS_ALL ? '' : v);
                     resetPage();
                   }}
-                  className={controlClass}
                 >
-                  {STATUS_OPTIONS.map((o) => (
-                    <option key={o.value || 'all'} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger id="admin-reported-status" className={`${controlClass} shadow-none`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className={`${scrollField} w-[10rem]`}>
                 <label htmlFor="admin-reported-content-type" className={labelClass}>

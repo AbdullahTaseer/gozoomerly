@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Search, MoreVertical } from 'lucide-react';
-import GlobalInput from '@/components/inputs/GlobalInput';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
 import {
   DropdownMenu,
@@ -10,6 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   buildAdminListProfilesParams,
   fetchAdminListProfiles,
@@ -36,8 +43,12 @@ const SORT_OPTIONS: { value: AdminListProfilesSort; label: string }[] = [
   { value: 'name_asc', label: 'Name (A–Z)' },
 ];
 
-const inputBarClass =
-  'h-[42px] rounded-[5px] border border-gray-900 bg-white px-3 text-sm text-gray-900 outline-none focus:ring-1 focus:ring-gray-400';
+const controlClass =
+  '!h-[43px] w-full rounded-[5px] border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition-colors border-gray-900 focus:ring-0';
+
+const labelClass = 'text-xs font-medium text-gray-700 whitespace-nowrap';
+
+const scrollField = 'flex shrink-0 flex-col gap-1.5';
 
 const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,6 +71,8 @@ const AdminUsers = () => {
   useLayoutEffect(() => {
     setPage(0);
   }, [debouncedSearch]);
+
+  const resetPage = () => setPage(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -101,98 +114,117 @@ const AdminUsers = () => {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 my-6">
-        <div className="flex flex-col lg:flex-row lg:flex-wrap lg:items-end gap-3 lg:gap-4">
-          <MoreFilters
-            options={[...USER_FILTER_OPTIONS]}
-            selectedFilters={selectedFilters}
-            onFiltersChange={(filters) => {
-              setSelectedFilters(filters);
-              setPage(0);
-            }}
-          />
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="admin-users-sort" className="text-xs text-gray-600">
-              Sort
-            </label>
-            <select
-              id="admin-users-sort"
-              value={sort}
-              onChange={(e) => {
-                setSort(e.target.value as AdminListProfilesSort);
-                setPage(0);
-              }}
-              className={`${inputBarClass} min-w-[160px] lg:min-w-[180px]`}
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex flex-col gap-1 min-w-0 flex-1 max-w-[200px]">
-            <label htmlFor="admin-users-country" className="text-xs text-gray-600">
-              Country
-            </label>
-            <input
-              id="admin-users-country"
-              type="text"
-              placeholder="Filter by country"
-              value={country}
-              onChange={(e) => {
-                setCountry(e.target.value);
-                setPage(0);
-              }}
-              className={inputBarClass}
-            />
-          </div>
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="admin-users-after" className="text-xs text-gray-600">
-              Joined after
-            </label>
-            <input
-              id="admin-users-after"
-              type="date"
-              value={createdAfter}
-              onChange={(e) => {
-                setCreatedAfter(e.target.value);
-                setPage(0);
-              }}
-              className={inputBarClass}
-            />
-          </div>
-          <div className="flex flex-col gap-1 min-w-0">
-            <label htmlFor="admin-users-before" className="text-xs text-gray-600">
-              Joined before
-            </label>
-            <input
-              id="admin-users-before"
-              type="date"
-              value={createdBefore}
-              onChange={(e) => {
-                setCreatedBefore(e.target.value);
-                setPage(0);
-              }}
-              className={inputBarClass}
-            />
-          </div>
-          <div className="max-[500px]:w-full w-[180px] min-w-[160px] bg-white relative lg:ml-auto">
-            <GlobalInput
-              id="admin-users-search"
-              type="text"
-              placeholder="Search name or email"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              width="100%"
-              height="42px"
-              className="relative"
-              inputClassName="pr-10"
-            />
-            <div className="absolute right-3 top-[13px] pointer-events-none">
-              <Search size={18} className="text-gray-900" />
+      <div className="my-6 space-y-4">
+        <div className="rounded-lg border border-[#DBDADE] bg-white p-3 shadow-sm sm:p-4">
+          <div
+            className="-mx-1 overflow-x-auto scrollbar-hide overflow-y-visible pb-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:thin]"
+            role="region"
+            aria-label="User filters"
+          >
+            <div className="flex w-max max-w-none flex-nowrap items-end gap-3 px-1">
+              <div className="shrink-0">
+                <MoreFilters
+                  options={[...USER_FILTER_OPTIONS]}
+                  selectedFilters={selectedFilters}
+                  onFiltersChange={(filters) => {
+                    setSelectedFilters(filters);
+                    resetPage();
+                  }}
+                />
+              </div>
+              <div className={`${scrollField} w-[11rem]`}>
+                <label htmlFor="admin-users-sort" className={labelClass}>
+                  Sort
+                </label>
+                <Select
+                  value={sort}
+                  onValueChange={(v) => {
+                    setSort(v as AdminListProfilesSort);
+                    resetPage();
+                  }}
+                >
+                  <SelectTrigger id="admin-users-sort" className={`${controlClass} shadow-none`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className={`${scrollField} w-[13rem]`}>
+                <label htmlFor="admin-users-country" className={labelClass}>
+                  Country
+                </label>
+                <input
+                  id="admin-users-country"
+                  type="text"
+                  placeholder="Filter by country"
+                  value={country}
+                  onChange={(e) => {
+                    setCountry(e.target.value);
+                    resetPage();
+                  }}
+                  className={controlClass}
+                />
+              </div>
+              <div className={`${scrollField} w-[11rem]`}>
+                <label htmlFor="admin-users-after" className={labelClass}>
+                  Joined after
+                </label>
+                <input
+                  id="admin-users-after"
+                  type="date"
+                  value={createdAfter}
+                  onChange={(e) => {
+                    setCreatedAfter(e.target.value);
+                    resetPage();
+                  }}
+                  className={controlClass}
+                />
+              </div>
+              <div className={`${scrollField} w-[11rem]`}>
+                <label htmlFor="admin-users-before" className={labelClass}>
+                  Joined before
+                </label>
+                <input
+                  id="admin-users-before"
+                  type="date"
+                  value={createdBefore}
+                  onChange={(e) => {
+                    setCreatedBefore(e.target.value);
+                    resetPage();
+                  }}
+                  className={controlClass}
+                />
+              </div>
+              <div className={`${scrollField} w-[14rem]`}>
+                <label htmlFor="admin-users-search" className={labelClass}>
+                  Search users
+                </label>
+                <div className="relative w-full">
+                  <input
+                    id="admin-users-search"
+                    type="search"
+                    autoComplete="off"
+                    placeholder="Name or email"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`${controlClass} pr-10`}
+                  />
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                    <Search size={18} className="text-gray-600" aria-hidden />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+          <p className="mt-1 text-[11px] text-gray-500">
+            Scroll sideways for all filters. More filters sets account, phone, profile, and deleted.
+          </p>
         </div>
         {loadError && (
           <p className="text-sm text-red-600" role="alert">
@@ -239,9 +271,8 @@ const AdminUsers = () => {
                   rows.map((user, index) => (
                     <tr
                       key={user.id}
-                      className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      }`}
+                      className={`border-t text-center border-[#E9E9E9] hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                        }`}
                     >
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                         {user.name || '—'}
@@ -252,13 +283,12 @@ const AdminUsers = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            user.accountStatusKey === 'active'
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${user.accountStatusKey === 'active'
                               ? 'bg-green-100 text-green-800'
                               : user.accountStatusKey === 'suspended'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-gray-100 text-gray-800'
-                          }`}
+                            }`}
                         >
                           {user.accountStatusLabel}
                         </span>
