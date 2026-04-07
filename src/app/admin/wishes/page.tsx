@@ -3,20 +3,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { MoreVertical, Paperclip, Search } from 'lucide-react';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
-import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
+import AdminSelect from '@/components/adminComponents/AdminSelect';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   buildAdminListWishesParams,
   fetchAdminListWishes,
@@ -136,24 +129,24 @@ const AdminWishes = () => {
                 <label htmlFor="admin-wishes-sort" className={labelClass}>
                   Sort
                 </label>
-                <Select
+                <AdminSelect
                   value={sort}
                   onValueChange={(v) => {
                     setSort(v as AdminListWishesSort);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-wishes-sort" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-wishes-sort" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[13rem]`}>
                 <label htmlFor="admin-wishes-board" className={labelClass}>

@@ -3,20 +3,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Search, MoreVertical } from 'lucide-react';
 import MoreFilters from '@/components/adminComponents/MoreFilters';
-import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
+import AdminSelect from '@/components/adminComponents/AdminSelect';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   buildAdminListBoardsParams,
   fetchAdminListBoards,
@@ -53,7 +46,6 @@ const SORT_OPTIONS: { value: AdminListBoardsSort; label: string }[] = [
   { value: 'name_asc', label: 'Title (A–Z)' },
 ];
 
-/** Control fills its column; columns are fixed-width inside the horizontal scroller */
 const controlClass =
   '!h-[43px] w-full rounded-[5px] border border-gray-300 bg-white px-3 text-sm text-gray-900 outline-none transition-colors border-gray-900 focus:ring-0';
 
@@ -179,70 +171,70 @@ const AdminBoards = () => {
                 <label htmlFor="admin-boards-sort" className={labelClass}>
                   Sort
                 </label>
-                <Select
+                <AdminSelect
                   value={sort}
                   onValueChange={(v) => {
                     setSort(v as AdminListBoardsSort);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-boards-sort" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-boards-sort" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[9.5rem]`}>
                 <label htmlFor="admin-boards-status" className={labelClass}>
                   Status
                 </label>
-                <Select
+                <AdminSelect
                   value={status === '' ? FILTER_ALL : status}
                   onValueChange={(v) => {
                     setStatus(v === FILTER_ALL ? '' : v);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-boards-status" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-boards-status" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {STATUS_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[9.5rem]`}>
                 <label htmlFor="admin-boards-privacy" className={labelClass}>
                   Privacy
                 </label>
-                <Select
+                <AdminSelect
                   value={privacy === '' ? FILTER_ALL : privacy}
                   onValueChange={(v) => {
                     setPrivacy(v === FILTER_ALL ? '' : v);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-boards-privacy" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-boards-privacy" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {PRIVACY_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[11rem]`}>
                 <label htmlFor="admin-boards-after" className={labelClass}>

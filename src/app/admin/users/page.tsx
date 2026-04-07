@@ -9,14 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import AdminSelect from '@/components/adminComponents/AdminSelect';
 import {
   buildAdminListProfilesParams,
   fetchAdminListProfiles,
@@ -136,24 +129,24 @@ const AdminUsers = () => {
                 <label htmlFor="admin-users-sort" className={labelClass}>
                   Sort
                 </label>
-                <Select
+                <AdminSelect
                   value={sort}
                   onValueChange={(v) => {
                     setSort(v as AdminListProfilesSort);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-users-sort" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-users-sort" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[13rem]`}>
                 <label htmlFor="admin-users-country" className={labelClass}>

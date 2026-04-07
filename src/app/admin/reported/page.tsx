@@ -8,14 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { adminSelectItemClassName } from '@/components/adminComponents/adminSelectClasses';
+import AdminSelect from '@/components/adminComponents/AdminSelect';
 import {
   buildAdminListModerationReportsParams,
   fetchAdminListModerationReports,
@@ -138,47 +131,47 @@ const AdminReported = () => {
                 <label htmlFor="admin-reported-sort" className={labelClass}>
                   Sort
                 </label>
-                <Select
+                <AdminSelect
                   value={sort}
                   onValueChange={(v) => {
                     setSort(v as AdminListModerationReportsSort);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-reported-sort" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-reported-sort" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {SORT_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[10rem]`}>
                 <label htmlFor="admin-reported-status" className={labelClass}>
                   Status
                 </label>
-                <Select
+                <AdminSelect
                   value={status === '' ? STATUS_ALL : status}
                   onValueChange={(v) => {
                     setStatus(v === STATUS_ALL ? '' : v);
                     resetPage();
                   }}
                 >
-                  <SelectTrigger id="admin-reported-status" className={`${controlClass} shadow-none`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                  <AdminSelect.Trigger id="admin-reported-status" className={`${controlClass} shadow-none`}>
+                    <AdminSelect.Value />
+                  </AdminSelect.Trigger>
+                  <AdminSelect.Content>
                     {STATUS_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={o.value} className={adminSelectItemClassName}>
+                      <AdminSelect.Item key={o.value} value={o.value}>
                         {o.label}
-                      </SelectItem>
+                      </AdminSelect.Item>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </AdminSelect.Content>
+                </AdminSelect>
               </div>
               <div className={`${scrollField} w-[10rem]`}>
                 <label htmlFor="admin-reported-content-type" className={labelClass}>
