@@ -121,11 +121,11 @@ const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
+              <User className="mr-2 h-4 w-4 text-black" />
               <span>Profile</span>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
+              <Settings className="mr-2 h-4 w-4 text-black" />
               <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
