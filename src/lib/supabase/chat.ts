@@ -32,9 +32,12 @@ function extractOtherUser(
   };
 }
 
+export type ConversationType = 'direct' | 'group' | 'board';
+export type GroupInvitePolicy = 'admins_only' | 'all_members';
+
 export interface Conversation {
   id: string;
-  type: 'direct' | 'group';
+  type: ConversationType;
   name?: string;
   created_by: string;
   created_at: string;
@@ -45,6 +48,10 @@ export interface Conversation {
   last_message_sender_id?: string;
   participants?: ConversationParticipant[];
   unread_count?: number;
+  /** Present on group conversations from RPC when supported */
+  group_invite_policy?: GroupInvitePolicy;
+  /** Present on board-linked conversations when backend sends it */
+  board_id?: string | null;
   other_user?: {
     user_id?: string;
     id?: string;
@@ -54,6 +61,37 @@ export interface Conversation {
   };
 }
 
+const BOARD_GROUP_NAME_PREFIX = 'board_';
+const BOARD_ID_IN_NAME_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Legacy: group conv whose `name` is `board_<uuid>` (board chat before explicit `board` type). */
+export function parseBoardIdFromGroupConversationName(name: string): string | null {
+  if (!name?.startsWith(BOARD_GROUP_NAME_PREFIX)) return null;
+  const id = name.slice(BOARD_GROUP_NAME_PREFIX.length);
+  return BOARD_ID_IN_NAME_RE.test(id) ? id : null;
+}
+
+export function isBoardLinkedChatConversation(conv: Conversation): boolean {
+  if (conv.type === 'board') return true;
+  if (conv.board_id) return true;
+  if (conv.type === 'group' && conv.name) {
+    return parseBoardIdFromGroupConversationName(conv.name) !== null;
+  }
+  return false;
+}
+
+export function isStandaloneGroupConversation(conv: Conversation): boolean {
+  return conv.type === 'group' && !isBoardLinkedChatConversation(conv);
+}
+
+function normalizeConversationType(t: unknown): ConversationType {
+  const s = String(t || '').toLowerCase();
+  if (s === 'board') return 'board';
+  if (s === 'group') return 'group';
+  return 'direct';
+}
+
 export interface ConversationParticipant {
   id: string;
   conversation_id: string;
@@ -61,6 +99,8 @@ export interface ConversationParticipant {
   joined_at: string;
   last_read_at?: string;
   last_read_message_id?: string;
+  /** From `get_user_conversations` / `other_participants` when present */
+  role?: string;
   user?: {
     id: string;
     name: string;
@@ -295,7 +335,8 @@ async function createNewDirectConversation(
 export async function getUserConversationsWithPagination(
   userId: string,
   limit: number = 10,
-  offset: number = 0
+  offset: number = 0,
+  options?: { conversationType?: 'direct' | 'group' | 'board' | null }
 ): Promise<{
   conversations: Conversation[];
   pagination: { total: number; limit: number; offset: number; has_more: boolean };
@@ -304,11 +345,16 @@ export async function getUserConversationsWithPagination(
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase.rpc('get_user_conversations', {
+    const rpcParams: Record<string, unknown> = {
       p_user_id: userId,
       p_limit: limit,
-      p_offset: offset
-    });
+      p_offset: offset,
+    };
+    if (options?.conversationType != null && options.conversationType !== undefined) {
+      rpcParams.p_conversation_type = options.conversationType;
+    }
+
+    const { data, error } = await supabase.rpc('get_user_conversations', rpcParams);
 
     if (error) {
       return {
@@ -352,6 +398,7 @@ export async function getUserConversationsWithPagination(
           conversation_id: conv.id,
           user_id: p.user_id,
           joined_at: conv.created_at,
+          role: typeof p.role === 'string' ? p.role : undefined,
           user: {
             id: p.user_id,
             name: p.name || 'Unknown User',
@@ -381,7 +428,7 @@ export async function getUserConversationsWithPagination(
       
       return {
         id: conv.id,
-        type: conv.type,
+        type: normalizeConversationType(conv.type),
         name: conv.name || undefined,
         created_by: conv.created_by || '',
         created_at: conv.created_at,
@@ -392,6 +439,8 @@ export async function getUserConversationsWithPagination(
         last_message_sender_id: conv.last_message_sender_id || undefined,
         participants: participants,
         unread_count: conv.unread_count || 0,
+        group_invite_policy: conv.group_invite_policy,
+        board_id: conv.board_id ?? undefined,
         other_user: otherUser || undefined,
       };
     });
@@ -492,17 +541,23 @@ export function getLastMessageTimeAgo(conversation: Conversation): string {
 export async function getUserConversations(
   userId: string,
   limit: number = 100,
-  offset: number = 0
+  offset: number = 0,
+  options?: { conversationType?: 'direct' | 'group' | 'board' | null }
 ): Promise<{ conversations: Conversation[]; error: any }> {
   const supabase = createClient();
 
   try {
 
-    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_conversations', {
+    const rpcParams: Record<string, unknown> = {
       p_user_id: userId,
       p_limit: limit,
-      p_offset: offset
-    });
+      p_offset: offset,
+    };
+    if (options?.conversationType != null && options.conversationType !== undefined) {
+      rpcParams.p_conversation_type = options.conversationType;
+    }
+
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_conversations', rpcParams);
 
     const rpcConversations = rpcData?.data || rpcData || [];
     
@@ -530,6 +585,7 @@ export async function getUserConversations(
             conversation_id: conv.id,
             user_id: p.user_id,
             joined_at: conv.created_at,
+            role: typeof p.role === 'string' ? p.role : undefined,
             user: {
               id: p.user_id,
               name: p.name || 'Unknown User',
@@ -559,7 +615,7 @@ export async function getUserConversations(
         
         return {
           id: conv.id,
-          type: conv.type,
+          type: normalizeConversationType(conv.type),
           name: conv.name || undefined,
           created_by: conv.created_by || '',
           created_at: conv.created_at,
@@ -570,6 +626,8 @@ export async function getUserConversations(
           last_message_sender_id: conv.last_message_sender_id || undefined,
           participants: participants,
           unread_count: conv.unread_count || 0,
+          group_invite_policy: conv.group_invite_policy,
+          board_id: conv.board_id ?? undefined,
           other_user: otherUser || undefined,
         };
       });
@@ -683,9 +741,10 @@ export async function getUserConversations(
         const lastMessageAt = conv.last_message_at;
         const lastMessageSenderId = conv.last_message_sender_id;
 
+        const rawType = (conv as { type?: string }).type;
         return {
           id: conv.id,
-          type: conv.type,
+          type: normalizeConversationType(rawType),
           name: conv.name,
           created_by: conv.created_by,
           created_at: conv.created_at,
@@ -696,7 +755,9 @@ export async function getUserConversations(
           last_message_sender_id: lastMessageSenderId,
           participants,
           unread_count: 0,
-          other_user: conv.type === 'direct' ? extractOtherUser(participants, userId) : undefined,
+          group_invite_policy: (conv as { group_invite_policy?: GroupInvitePolicy }).group_invite_policy,
+          board_id: (conv as { board_id?: string | null }).board_id ?? undefined,
+          other_user: rawType === 'direct' ? extractOtherUser(participants, userId) : undefined,
         };
       })
     );
@@ -833,9 +894,10 @@ export async function getConversation(
   const lastMessageAt = convData.last_message_at;
   const lastMessageSenderId = convData.last_message_sender_id;
 
+  const normalizedType = normalizeConversationType(convData.type);
   const conversation: Conversation = {
     id: convData.id,
-    type: convData.type,
+    type: normalizedType,
     name: convData.name,
     created_by: convData.created_by,
     created_at: convData.created_at,
@@ -845,7 +907,9 @@ export async function getConversation(
     last_message_id: convData.last_message_id,
     last_message_sender_id: lastMessageSenderId,
     participants: participants,
-    other_user: convData.type === 'direct' ? extractOtherUser(participants, userId) : undefined,
+    group_invite_policy: (convData as { group_invite_policy?: GroupInvitePolicy }).group_invite_policy,
+    board_id: (convData as { board_id?: string | null }).board_id ?? undefined,
+    other_user: normalizedType === 'direct' ? extractOtherUser(participants, userId) : undefined,
   };
 
   return { conversation, error: null };
@@ -892,6 +956,32 @@ export async function getOrCreateBoardConversation(
       .eq('name', boardName)
       .limit(1);
 
+    const { data: existingBoardConv } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('type', 'board')
+      .eq('board_id', boardId)
+      .limit(1);
+
+    if (existingBoardConv && existingBoardConv.length > 0) {
+      const existingConv = existingBoardConv[0];
+      const { data: participant } = await supabase
+        .from('conversation_participants')
+        .select('*')
+        .eq('conversation_id', existingConv.id)
+        .eq('user_id', userId)
+        .single();
+
+      if (!participant) {
+        await supabase.from('conversation_participants').insert({
+          conversation_id: existingConv.id,
+          user_id: userId,
+        });
+      }
+
+      return { conversation: existingConv as Conversation, error: null };
+    }
+
     if (existingConversations && existingConversations.length > 0) {
       const existingConv = existingConversations[0];
 
@@ -915,8 +1005,9 @@ export async function getOrCreateBoardConversation(
     }
 
     const conversationData: any = {
-      type: 'group',
+      type: 'board',
       name: boardName,
+      board_id: boardId,
     };
 
     let { data: newConversation, error: createError } = await supabase
@@ -934,6 +1025,28 @@ export async function getOrCreateBoardConversation(
         .insert(conversationData)
         .select()
         .single());
+    }
+
+    if (createError) {
+      const legacyBoard: any = {
+        type: 'group',
+        name: `board_${boardId}`,
+      };
+      ({ data: newConversation, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          ...legacyBoard,
+          created_by: userId,
+        })
+        .select()
+        .single());
+      if (createError && (createError.message?.includes('created_by') || createError.message?.includes('column'))) {
+        ({ data: newConversation, error: createError } = await supabase
+          .from('conversations')
+          .insert(legacyBoard)
+          .select()
+          .single());
+      }
     }
 
     if (createError || !newConversation) {
@@ -962,13 +1075,14 @@ export async function getOrCreateBoardConversation(
 
     const conversation: Conversation = {
       id: newConversation.id,
-      type: 'group',
+      type: normalizeConversationType(newConversation.type),
       name: boardName,
       created_by: newConversation.created_by || userId,
       created_at: newConversation.created_at || new Date().toISOString(),
       updated_at: newConversation.updated_at || new Date().toISOString(),
       last_message_at: newConversation.last_message_at,
       last_message: safeLastMessage(newConversation.last_message),
+      board_id: (newConversation as { board_id?: string }).board_id ?? boardId,
       participants: [],
     };
 

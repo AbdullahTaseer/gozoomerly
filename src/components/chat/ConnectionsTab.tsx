@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { PlusCircle, Send, ArrowLeft, X } from 'lucide-react';
+import { PlusCircle, Send, ArrowLeft, X, Info } from 'lucide-react';
 import ChatCard from '@/components/cards/ChatCard';
 import BoardChatCard from '@/components/cards/BoardChatCard';
 import type { ChatTab } from '@/components/filters/ChatFilters';
@@ -9,6 +9,7 @@ import GlobalInput from '@/components/inputs/GlobalInput';
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import type { Conversation } from '@/lib/supabase/chat';
+import { isStandaloneGroupConversation } from '@/lib/supabase/chat';
 import type { ChatMessage } from '@/hooks/use-realtime-chat';
 import type { TypingUser } from '@/hooks/use-typing-indicator';
 import type { MediaType } from '@/lib/supabase/chat';
@@ -33,12 +34,18 @@ interface ConnectionsTabProps {
   messages: ChatMessage[];
   newMessage: string;
   loading: boolean;
+  /** Group Chats tab: `get_user_conversations` with conversation_type group */
+  groupListLoading?: boolean;
   uploading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   filteredConversations: Conversation[];
   selectedTab?: ChatTab;
   directConversations?: Conversation[];
   groupConversations?: Conversation[];
+  boardChatConversations?: Conversation[];
+  onOpenCreateGroup?: () => void;
+  /** Open group details (`get_group_conversation_details`) for this conversation */
+  onOpenGroupInfo?: (conversationId: string) => void;
   activeBoards?: { id: string; title: string; published_at?: string; cover_image?: { url?: string } }[];
   loadingBoards?: boolean;
   handleStartBoardConversation?: (boardId: string, boardTitle: string) => void;
@@ -65,6 +72,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   messages,
   newMessage,
   loading,
+  groupListLoading = false,
   uploading,
   messagesEndRef,
   filteredConversations,
@@ -86,6 +94,9 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   selectedTab = 'All',
   directConversations = [],
   groupConversations = [],
+  boardChatConversations = [],
+  onOpenCreateGroup,
+  onOpenGroupInfo,
   activeBoards = [],
   loadingBoards = false,
   handleStartBoardConversation,
@@ -208,9 +219,10 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
 
     const hasOneToOne = showOneToOne && directConversations.length > 0;
     const hasGroup = showGroupChats && groupConversations.length > 0;
+    const hasBoardConvs = showBoardChats && boardChatConversations.length > 0;
     const hasBoards = showBoardChats && activeBoards.length > 0;
 
-    if (!hasOneToOne && !hasGroup && !hasBoards) {
+    if (!hasOneToOne && !hasGroup && !hasBoardConvs && !hasBoards) {
       return (
         <div className="p-4 text-center text-gray-500">
           <p>No conversations found</p>
@@ -251,7 +263,26 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
 
         {showGroupChats && (
           <section>
-            <h3 className="font-bold text-black px-3 mb-2 text-2xl">Group Chats</h3>
+            <div className="flex items-center justify-between gap-2 px-3 mb-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <h3 className="font-bold text-black text-2xl">Group Chats</h3>
+                {groupListLoading ? (
+                  <div
+                    className="h-5 w-5 border-2 border-gray-200 border-t-pink-500 rounded-full animate-spin shrink-0"
+                    aria-hidden
+                  />
+                ) : null}
+              </div>
+              {onOpenCreateGroup && (
+                <button
+                  type="button"
+                  onClick={onOpenCreateGroup}
+                  className="text-sm font-medium text-pink-600 hover:text-pink-700 shrink-0"
+                >
+                  New group
+                </button>
+              )}
+            </div>
             <div className="space-y-1">
               {groupConversations.map((conv) => {
                 let lastMessageTime = conv.last_message_at;
@@ -267,6 +298,22 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     time={formatTime(lastMessageTime)}
                     isActive={selectedConversation?.id === conv.id}
                     onClick={() => setSelectedConversation(conv)}
+                    trailing={
+                      onOpenGroupInfo ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenGroupInfo(conv.id);
+                          }}
+                          className="p-2 rounded-full text-gray-500 hover:bg-gray-200 hover:text-gray-800 transition-colors"
+                          aria-label="Group info and members"
+                          title="Group info"
+                        >
+                          <Info size={18} strokeWidth={2} />
+                        </button>
+                      ) : undefined
+                    }
                   />
                 );
               })}
@@ -277,6 +324,31 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
         {showBoardChats && (
           <section>
             <h3 className="font-bold text-black px-3 mb-2 text-2xl">Board Chats</h3>
+            {boardChatConversations.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 mb-1">Conversations</p>
+                <div className="space-y-1">
+                  {boardChatConversations.map((conv) => {
+                    let lastMessageTime = conv.last_message_at;
+                    if (selectedConversation?.id === conv.id && messages.length > 0) {
+                      lastMessageTime = messages[messages.length - 1].createdAt;
+                    }
+                    return (
+                      <ChatCard
+                        key={conv.id}
+                        imgPath={getConversationAvatar(conv)}
+                        name={getConversationName(conv)}
+                        message={getLastMessageWithSender(conv)}
+                        time={formatTime(lastMessageTime)}
+                        isActive={selectedConversation?.id === conv.id}
+                        onClick={() => setSelectedConversation(conv)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 mb-1">Your boards</p>
             {loadingBoards ? (
               <div className="p-4 text-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
@@ -349,6 +421,15 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     );
                   })()}
                 </div>
+                {isStandaloneGroupConversation(selectedConversation) && onOpenGroupInfo ? (
+                  <button
+                    type="button"
+                    onClick={() => onOpenGroupInfo(selectedConversation.id)}
+                    className="text-sm font-medium text-pink-600 hover:text-pink-700 shrink-0"
+                  >
+                    Group info
+                  </button>
+                ) : null}
               </div>
 
               <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>

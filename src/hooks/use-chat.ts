@@ -6,6 +6,7 @@ import { useTypingIndicator } from '@/hooks/use-typing-indicator';
 import { useGlobalOnlineStatus } from '@/components/providers/OnlineStatusProvider';
 import { useLastSeen } from '@/hooks/use-last-seen';
 import type { ChatTab } from '@/components/filters/ChatFilters';
+import { searchBoardsGlobal, type GlobalBoardSearchResult } from '@/lib/supabase/boards';
 import {
   getUserConversations,
   getOrCreateBoardConversation,
@@ -24,9 +25,13 @@ import {
   validateMediaSize,
   getMediaPublicUrl,
   MEDIA_LIMITS,
+  parseBoardIdFromGroupConversationName,
+  isBoardLinkedChatConversation,
+  isStandaloneGroupConversation,
   type Conversation,
   type MediaType,
 } from '@/lib/supabase/chat';
+import { rpcCreateGroupConversation } from '@/lib/supabase/groupChat';
 import type { ChatMessageMedia } from '@/hooks/use-realtime-chat';
 import { AuthService } from '@/lib/supabase/auth';
 import { checkChatTablesSetup } from '@/lib/supabase/chat-diagnostics';
@@ -35,17 +40,6 @@ import toast from 'react-hot-toast';
 import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 
 const authService = new AuthService();
-
-/** Group chats for boards may store `board_<uuid>` as the conversation `name` instead of the title. */
-const BOARD_GROUP_NAME_PREFIX = 'board_';
-const BOARD_ID_IN_NAME_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function parseBoardIdFromGroupConversationName(name: string): string | null {
-  if (!name.startsWith(BOARD_GROUP_NAME_PREFIX)) return null;
-  const id = name.slice(BOARD_GROUP_NAME_PREFIX.length);
-  return BOARD_ID_IN_NAME_RE.test(id) ? id : null;
-}
 
 export const useChat = () => {
   const router = useRouter();
@@ -56,6 +50,8 @@ export const useChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  /** True while loading `get_user_conversations` with `p_conversation_type: group` for the Group Chats tab */
+  const [groupListLoading, setGroupListLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   
   interface DraftMedia {
@@ -71,6 +67,7 @@ export const useChat = () => {
   const [draftMedia, setDraftMedia] = useState<DraftMedia[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [boardSearchResults, setBoardSearchResults] = useState<GlobalBoardSearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searching, setSearching] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ChatTab>('All');
@@ -189,6 +186,37 @@ export const useChat = () => {
       setLoading(false);
     }
   }, [currentUserId]);
+
+  /** Group Chats tab: dedicated RPC list (p_conversation_type: group, limit 20). Merges into `conversations`. */
+  const loadGroupChatsFromApi = useCallback(async () => {
+    if (!currentUserId) return;
+    setGroupListLoading(true);
+    try {
+      const { conversations: groupRows, error } = await getUserConversations(currentUserId, 20, 0, {
+        conversationType: 'group',
+      });
+      if (error) return;
+      const incoming = (groupRows || []).filter((c) => isStandaloneGroupConversation(c));
+      setConversations((prev) => {
+        const rest = prev.filter((c) => !isStandaloneGroupConversation(c));
+        const byId = new Map<string, Conversation>();
+        rest.forEach((c) => byId.set(c.id, c));
+        incoming.forEach((c) => byId.set(c.id, c));
+        return Array.from(byId.values()).sort((a, b) => {
+          const ta = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const tb = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          return tb - ta;
+        });
+      });
+    } finally {
+      setGroupListLoading(false);
+    }
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (selectedTab !== 'Group Chats' || !currentUserId) return;
+    loadGroupChatsFromApi();
+  }, [selectedTab, currentUserId, loadGroupChatsFromApi]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!currentUserId) return;
@@ -334,17 +362,30 @@ export const useChat = () => {
 
   useEffect(() => {
     if (!selectedConversation) return;
+    const isDirect = selectedConversation.type === 'direct';
+    const isGroupOnly = isStandaloneGroupConversation(selectedConversation);
+    const isBoard = isBoardLinkedChatConversation(selectedConversation);
+
     const keepSelected =
-      (selectedTab === 'One-to-One' || selectedTab === 'All') && selectedConversation.type === 'direct' ||
-      (selectedTab === 'Board Chats' || selectedTab === 'Group Chats' || selectedTab === 'All') && selectedConversation.type === 'group';
+      selectedTab === 'All'
+        ? isDirect || isGroupOnly || isBoard
+        : selectedTab === 'One-to-One'
+          ? isDirect
+          : selectedTab === 'Group Chats'
+            ? isGroupOnly
+            : selectedTab === 'Board Chats'
+              ? isBoard
+              : false;
+
     if (!keepSelected) {
       setSelectedConversation(null);
     }
   }, [selectedTab, selectedConversation]);
 
+  // Only load boards for tabs that show "Your boards" (not Group Chats — that uses chat RPCs only).
   useEffect(() => {
     if (
-      (selectedTab === 'Board Chats' || selectedTab === 'Group Chats' || selectedTab === 'All') &&
+      (selectedTab === 'Board Chats' || selectedTab === 'All') &&
       currentUserId &&
       fetchUserBoardsRef.current
     ) {
@@ -386,8 +427,14 @@ export const useChat = () => {
     if (!currentUserId) return;
     const missing = new Set<string>();
     for (const conv of conversations) {
-      if (conv.type !== 'group' || !conv.name) continue;
-      const bid = parseBoardIdFromGroupConversationName(conv.name);
+      let bid: string | null = null;
+      if (conv.type === 'board') {
+        bid =
+          conv.board_id ||
+          (conv.name ? parseBoardIdFromGroupConversationName(conv.name) : null);
+      } else if (conv.type === 'group' && conv.name) {
+        bid = parseBoardIdFromGroupConversationName(conv.name);
+      }
       if (!bid) continue;
       if (boardTitleById.has(bid) || resolvedBoardTitles[bid]) continue;
       missing.add(bid);
@@ -583,17 +630,29 @@ export const useChat = () => {
 
     if (!searchQuery.trim() || !currentUserId) {
       setSearchResults([]);
+      setBoardSearchResults([]);
       setShowSearchResults(false);
       return;
     }
 
     setSearching(true);
     searchTimeoutRef.current = setTimeout(async () => {
-      const { users, error } = await searchUsers(searchQuery, currentUserId);
-      if (!error) {
+      const q = searchQuery.trim();
+      const [{ users, error: userErr }, { boards, error: boardErr }] = await Promise.all([
+        searchUsers(q, currentUserId),
+        searchBoardsGlobal(q, { limit: 20, offset: 0 }),
+      ]);
+      if (!userErr) {
         setSearchResults(users || []);
-        setShowSearchResults(true);
+      } else {
+        setSearchResults([]);
       }
+      if (!boardErr) {
+        setBoardSearchResults(boards || []);
+      } else {
+        setBoardSearchResults([]);
+      }
+      setShowSearchResults(true);
       setSearching(false);
     }, 300);
 
@@ -703,6 +762,30 @@ export const useChat = () => {
       toast.error('Failed to open board chat');
     }
   }, [currentUserId]);
+
+  const handleCreateGroupConversation = useCallback(
+    async (name: string, participantIds: string[], policy: 'admins_only' | 'all_members') => {
+      if (!currentUserId) return;
+      const { data, error } = await rpcCreateGroupConversation({
+        creatorId: currentUserId,
+        name,
+        participantIds,
+        groupInvitePolicy: policy,
+      });
+      if (error || !data?.conversation_id) {
+        const msg = error?.message || 'Could not create group';
+        toast.error(msg);
+        throw new Error(msg);
+      }
+      await loadConversations(currentUserId);
+      const { conversation, error: fetchError } = await getConversation(data.conversation_id, currentUserId);
+      if (!fetchError && conversation) {
+        setSelectedConversation(conversation);
+        toast.success('Group created');
+      }
+    },
+    [currentUserId, loadConversations]
+  );
 
   const handleSend = useCallback(async () => {
     if ((!newMessage.trim() && draftMedia.length === 0) || !selectedConversation || !currentUserId) return;
@@ -1073,6 +1156,19 @@ export const useChat = () => {
         return 'Unknown User';
       }
 
+      if (conv.type === 'board') {
+        const bid =
+          conv.board_id ||
+          (conv.name ? parseBoardIdFromGroupConversationName(conv.name) : null);
+        if (bid) {
+          const fromUserBoards = boardTitleById.get(bid);
+          if (fromUserBoards) return fromUserBoards;
+          const fetched = resolvedBoardTitles[bid];
+          if (fetched) return fetched;
+        }
+        return conv.name?.trim() || 'Board chat';
+      }
+
       if (conv.type === 'group' && conv.name) {
         const boardId = parseBoardIdFromGroupConversationName(conv.name);
         if (boardId) {
@@ -1211,25 +1307,46 @@ export const useChat = () => {
     return messageContent;
   }, [currentUserId, selectedConversation, messages]);
 
-  const directConversations = conversations.filter(conv =>
-    conv.type === 'direct' &&
-    (conv.last_message_at || conv.last_message) &&
-    (!searchQuery ||
+  const matchesSearch = useCallback(
+    (conv: Conversation) =>
+      !searchQuery ||
       getConversationName(conv).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (conv.last_message || 'Media').toLowerCase().includes(searchQuery.toLowerCase()))
+      (conv.last_message || 'Media').toLowerCase().includes(searchQuery.toLowerCase()),
+    [searchQuery, getConversationName]
   );
-  const groupConversations = conversations.filter(conv =>
-    conv.type === 'group' &&
-    (conv.last_message_at || conv.last_message) &&
-    (!searchQuery ||
-      getConversationName(conv).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (conv.last_message || 'Media').toLowerCase().includes(searchQuery.toLowerCase()))
+
+  const directConversations = conversations.filter(
+    (conv) =>
+      conv.type === 'direct' &&
+      (conv.last_message_at || conv.last_message) &&
+      matchesSearch(conv)
   );
-  const filteredConversations = conversations.filter(conv => {
+
+  const groupConversations = conversations.filter((conv) => {
+    if (!isStandaloneGroupConversation(conv) || !matchesSearch(conv)) return false;
+    if (selectedTab === 'Group Chats') return true;
+    return !!(conv.last_message_at || conv.last_message);
+  });
+
+  const boardChatConversations = conversations.filter(
+    (conv) =>
+      isBoardLinkedChatConversation(conv) &&
+      (conv.last_message_at || conv.last_message) &&
+      matchesSearch(conv)
+  );
+
+  const filteredConversations = conversations.filter((conv) => {
     if (selectedConversation && conv.id === selectedConversation.id) return true;
-    if (selectedTab === 'All') return directConversations.includes(conv) || groupConversations.includes(conv);
+    if (selectedTab === 'All') {
+      return (
+        directConversations.includes(conv) ||
+        groupConversations.includes(conv) ||
+        boardChatConversations.includes(conv)
+      );
+    }
     if (selectedTab === 'One-to-One') return directConversations.includes(conv);
-    if (selectedTab === 'Group Chats' || selectedTab === 'Board Chats') return groupConversations.includes(conv);
+    if (selectedTab === 'Group Chats') return groupConversations.includes(conv);
+    if (selectedTab === 'Board Chats') return boardChatConversations.includes(conv);
     return false;
   });
 
@@ -1242,6 +1359,7 @@ export const useChat = () => {
 
   return {
     loading,
+    groupListLoading,
     messages,
     isTyping,
     searching,
@@ -1259,6 +1377,7 @@ export const useChat = () => {
     activeBoards,
     isUserOnline,
     searchResults,
+    boardSearchResults,
     realtimeError,
     conversations,
     currentUserId,
@@ -1278,8 +1397,11 @@ export const useChat = () => {
     filteredConversations,
     directConversations,
     groupConversations,
+    boardChatConversations,
+    refetchConversations: loadConversations,
     handleStartConversation,
     handleStartBoardConversation,
+    handleCreateGroupConversation,
     setSelectedConversation,
     getLastMessageWithSender,
     setNewMessage: handleNewMessageChange,

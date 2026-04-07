@@ -307,6 +307,77 @@ export async function getBoardByIdRPC(boardId: string) {
   return { data: null, error: new Error('Invalid RPC response') };
 }
 
+/** Normalized row from `search_boards_global` for list UIs */
+export type GlobalBoardSearchResult = {
+  id: string;
+  title: string;
+  cover_image_url?: string | null;
+};
+
+function normalizeGlobalBoardSearchRow(row: Record<string, unknown>): GlobalBoardSearchResult | null {
+  const id = String(row.id ?? row.board_id ?? '').trim();
+  if (!id) return null;
+  const title = String(row.title ?? row.name ?? 'Untitled board');
+  const cover_image_url =
+    (typeof row.cover_image_url === 'string' && row.cover_image_url) ||
+    (typeof row.cover_media_url === 'string' && row.cover_media_url) ||
+    (typeof row.thumbnail_url === 'string' && row.thumbnail_url) ||
+    (typeof row.cover_url === 'string' && row.cover_url) ||
+    undefined;
+  return { id, title, cover_image_url };
+}
+
+function unwrapSearchBoardsPayload(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    if (o.success === true && o.data != null) {
+      const inner = o.data;
+      if (Array.isArray(inner)) return inner;
+      if (inner && typeof inner === 'object' && Array.isArray((inner as { boards?: unknown[] }).boards)) {
+        return (inner as { boards: unknown[] }).boards;
+      }
+      if (inner && typeof inner === 'object' && Array.isArray((inner as { data?: unknown[] }).data)) {
+        return (inner as { data: unknown[] }).data;
+      }
+    }
+    if (Array.isArray(o.data)) return o.data as unknown[];
+    if (Array.isArray(o.boards)) return o.boards as unknown[];
+  }
+  return [];
+}
+
+export async function searchBoardsGlobal(
+  query: string,
+  options?: { limit?: number; offset?: number }
+): Promise<{ boards: GlobalBoardSearchResult[]; error: unknown }> {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return { boards: [], error: null };
+  }
+
+  const supabase = createClient();
+  const limit = options?.limit ?? 20;
+  const offset = options?.offset ?? 0;
+
+  const { data, error } = await supabase.rpc('search_boards_global', {
+    p_query: trimmed,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    return { boards: [], error };
+  }
+
+  const rows = unwrapSearchBoardsPayload(data);
+  const boards = rows
+    .map((r) => (r && typeof r === 'object' ? normalizeGlobalBoardSearchRow(r as Record<string, unknown>) : null))
+    .filter((b): b is GlobalBoardSearchResult => b != null);
+
+  return { boards, error: null };
+}
+
 export async function getBoardBySlug(slug: string) {
   const supabase = createClient();
 

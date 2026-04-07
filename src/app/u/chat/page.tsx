@@ -11,14 +11,21 @@ import MobileHeader from '@/components/navbar/MobileHeader';
 import { useChat } from '@/hooks/use-chat';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import ConnectionsTab from '@/components/chat/ConnectionsTab';
+import CreateGroupChatModal from '@/components/chat/CreateGroupChatModal';
+import GroupChatManageModal from '@/components/chat/GroupChatManageModal';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import InviteChatModal from '@/components/chat/InviteChatModal';
+import BoardChatCard from '@/components/cards/BoardChatCard';
 import { getConversation, getUserConversations } from '@/lib/supabase/chat';
 import { chatOpenState } from '@/lib/chatOpenState';
 
 const ChatPageContent = () => {
   const searchParams = useSearchParams();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [createGroupOpen, setCreateGroupOpen] = useState(false);
+  const [groupManageOpen, setGroupManageOpen] = useState(false);
+  /** When set, group details modal loads this thread (e.g. from Group Chats list info button). */
+  const [groupInfoConversationId, setGroupInfoConversationId] = useState<string | null>(null);
   const [loadedFromUrl, setLoadedFromUrl] = useState<string | null>(null);
 
   const {
@@ -27,9 +34,11 @@ const ChatPageContent = () => {
     messages,
     newMessage,
     loading,
+    groupListLoading,
     uploading,
     searchQuery,
     searchResults,
+    boardSearchResults,
     showSearchResults,
     searching,
     selectedTab,
@@ -43,6 +52,9 @@ const ChatPageContent = () => {
     handleStartBoardConversation,
     directConversations,
     groupConversations,
+    boardChatConversations,
+    handleCreateGroupConversation,
+    refetchConversations,
     handleSend,
     handleFileUpload,
     getConversationName,
@@ -181,37 +193,60 @@ const ChatPageContent = () => {
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
                     <p className="mt-2 text-sm">Searching...</p>
                   </div>
-                ) : searchResults.length > 0 ? (
+                ) : searchResults.length > 0 || boardSearchResults.length > 0 ? (
                   <div className="py-2">
-                    <p className="px-4 py-2 text-xs text-gray-500 font-semibold">Users</p>
-                    {searchResults.map((user) => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleStartConversation(user.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-black"
-                      >
-                        <Image
-                          src={user.profile_pic_url || ProfileAvatar}
-                          alt={user.name}
-                          width={40}
-                          height={40}
-                          className="rounded-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
-                          }}
-                        />
-                        <div className="flex-1 text-left">
-                          <p className="font-medium text-sm">{user.name}</p>
-                          {user.email && (
-                            <p className="text-xs text-gray-400">{user.email}</p>
-                          )}
-                        </div>
-                      </button>
-                    ))}
+                    {searchResults.length > 0 ? (
+                      <>
+                        <p className="px-4 py-2 text-xs text-gray-500 font-semibold">People</p>
+                        {searchResults.map((user) => (
+                          <button
+                            key={user.id}
+                            onClick={() => handleStartConversation(user.id)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-black"
+                          >
+                            <Image
+                              src={user.profile_pic_url || ProfileAvatar}
+                              alt={user.name}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
+                              }}
+                            />
+                            <div className="flex-1 text-left">
+                              <p className="font-medium text-sm">{user.name}</p>
+                              {user.email && (
+                                <p className="text-xs text-gray-400">{user.email}</p>
+                              )}
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    ) : null}
+                    {boardSearchResults.length > 0 ? (
+                      <div className={searchResults.length > 0 ? 'border-t border-gray-100 pt-1 mt-1' : ''}>
+                        <p className="px-4 py-2 text-xs text-gray-500 font-semibold">Boards</p>
+                        {boardSearchResults.map((board) => (
+                          <div key={board.id} className="px-2 pb-2">
+                            <BoardChatCard
+                              title={board.title}
+                              timeAgo="Board chat"
+                              imgSrc={board.cover_image_url}
+                              onClick={() => {
+                                setSearchQuery('');
+                                setShowSearchResults(false);
+                                handleStartBoardConversation(board.id, board.title);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <div className="p-4 text-center text-gray-400">
-                    <p className="text-sm">No users found</p>
+                    <p className="text-sm">No results found</p>
                   </div>
                 )}
               </div>
@@ -226,6 +261,7 @@ const ChatPageContent = () => {
           messages={messages}
           newMessage={newMessage}
           loading={loading}
+          groupListLoading={groupListLoading}
           uploading={uploading}
           messagesEndRef={messagesEndRef}
           filteredConversations={filteredConversations}
@@ -247,11 +283,43 @@ const ChatPageContent = () => {
           selectedTab={selectedTab}
           directConversations={directConversations}
           groupConversations={groupConversations}
+          boardChatConversations={boardChatConversations}
+          onOpenCreateGroup={() => setCreateGroupOpen(true)}
+          onOpenGroupInfo={(conversationId) => {
+            setGroupInfoConversationId(conversationId);
+            setGroupManageOpen(true);
+          }}
           activeBoards={activeBoards}
           loadingBoards={loadingBoards}
           handleStartBoardConversation={handleStartBoardConversation}
         />
       </div>
+
+      {currentUserId && (
+        <>
+          <CreateGroupChatModal
+            isOpen={createGroupOpen}
+            onClose={() => setCreateGroupOpen(false)}
+            currentUserId={currentUserId}
+            onCreate={handleCreateGroupConversation}
+          />
+          <GroupChatManageModal
+            isOpen={groupManageOpen}
+            onClose={() => {
+              setGroupManageOpen(false);
+              setGroupInfoConversationId(null);
+            }}
+            conversationId={groupInfoConversationId ?? selectedConversation?.id ?? null}
+            currentUserId={currentUserId}
+            onAfterLeave={() => {
+              setSelectedConversation(null);
+              setGroupInfoConversationId(null);
+              refetchConversations(currentUserId);
+            }}
+            onUpdated={() => refetchConversations(currentUserId)}
+          />
+        </>
+      )}
 
       <InviteChatModal
         isOpen={isInviteModalOpen}

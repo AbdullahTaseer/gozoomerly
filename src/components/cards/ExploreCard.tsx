@@ -49,9 +49,10 @@ const ExploreCard = ({
       : `relative ${aspectClasses[heightVariant]}`;
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
-      className="group relative rounded-lg overflow-hidden break-inside-avoid cursor-pointer bg-gray-100"
+      className="group relative w-full rounded-lg overflow-hidden break-inside-avoid cursor-pointer bg-gray-100 p-0 border-0 text-left font-inherit appearance-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
     >
       <div
         className={imageBoxClass}
@@ -91,7 +92,7 @@ const ExploreCard = ({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 };
 
