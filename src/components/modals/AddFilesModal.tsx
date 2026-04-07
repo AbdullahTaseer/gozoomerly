@@ -43,10 +43,17 @@ type props = {
   doneOnclick: () => void;
   onClose: () => void;
   boardId?: string;
-  onMediaUploaded?: (mediaIds: string[], selectedMusicId?: number, mediaUrls?: MediaUrlItem[]) => void;
+  /** Required when uploading files — storage path is `{boardId}/{wishId}/…` */
+  wishId?: string;
+  onMediaUploaded?: (
+    mediaIds: string[],
+    selectedMusicId?: number,
+    mediaUrls?: MediaUrlItem[],
+    wishId?: string
+  ) => void;
 }
 
-const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props) => {
+const AddFilesModal = ({ doneOnclick, onClose, boardId, wishId, onMediaUploaded }: props) => {
   const [step, setStep] = useState<"files" | "music">("files");
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -133,6 +140,11 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
       return;
     }
 
+    if (!wishId) {
+      alert('Wish session not ready. Please close and try opening the upload again.');
+      return;
+    }
+
     setUploading(true);
     try {
       const user = await authService.getUser();
@@ -153,7 +165,8 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
           boardId,
           user.id,
           fileItem.file,
-          mediaType
+          mediaType,
+          wishId
         );
 
         if (error) {
@@ -180,7 +193,7 @@ const AddFilesModal = ({ doneOnclick, onClose, boardId, onMediaUploaded }: props
       }));
 
       if (onMediaUploaded) {
-        onMediaUploaded(mediaIds, selectedMusic || undefined, mediaUrls);
+        onMediaUploaded(mediaIds, selectedMusic || undefined, mediaUrls, wishId);
       }
 
       doneOnclick();

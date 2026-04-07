@@ -45,20 +45,27 @@ export async function adminListSupportTickets(params: {
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !key) {
-    return { data: null, error: new Error('Missing Supabase configuration') };
+    const err = new Error('Missing Supabase configuration');
+    console.error(err.message);
+    return { data: null, error: err };
   }
 
   const token =
     typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
 
   if (!token) {
-    return { data: null, error: new Error('Not authenticated') };
+    const err = new Error('Not authenticated');
+    console.error(err.message);
+    return { data: null, error: err };
   }
 
-  const status =
+  const raw =
     params.p_status && String(params.p_status).trim().length > 0
       ? String(params.p_status).trim()
       : null;
+
+  /** UI filter "pending" maps to backend status used by admin_list_support_tickets */
+  const status = raw === 'pending' ? 'in_progress' : raw;
 
   const response = await fetch(`${url}/rest/v1/rpc/admin_list_support_tickets`, {
     method: 'POST',
@@ -77,6 +84,7 @@ export async function adminListSupportTickets(params: {
   if (!response.ok) {
     const err = await response.json().catch(() => null);
     const message = err?.message || err?.error || `Request failed (${response.status})`;
+    console.error(message);
     return { data: null, error: new Error(message) };
   }
 

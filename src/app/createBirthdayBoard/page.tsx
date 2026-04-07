@@ -25,12 +25,15 @@ import {
   BoardTypeField,
   addBoardGiftOptions,
   publishBoard,
-  Board
+  Board,
+  wishIdFromCreateWishResponse,
+  resolveWishIdAfterCreate,
 } from '@/lib/supabase/boards';
 import { useCreateBirthdayBoard } from '@/hooks/useCreateBirthdayBoard';
 import { CreateBirthdayBoardInput } from '@/types/board';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
 import * as Switch from '@radix-ui/react-switch';
 import toast from 'react-hot-toast';
 
@@ -54,6 +57,9 @@ const CreateBirthdayBoard = () => {
   const [creatorName, setCreatorName] = useState<string>('');
   const [creatorProfilePic, setCreatorProfilePic] = useState<string>('');
   const [uploadedMediaUrls, setUploadedMediaUrls] = useState<Array<{ id: string; url: string; type: 'image' | 'video' }>>([]);
+  /** Draft wish for step 3 uploads — storage path is `{boardId}/{wishId}/…` */
+  const [draftWishId, setDraftWishId] = useState<string | null>(null);
+  const [openingWishModal, setOpeningWishModal] = useState(false);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -210,7 +216,7 @@ const CreateBirthdayBoard = () => {
       const uint8Array = new Uint8Array(arrayBuffer);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKETS.WISH_MEDIA}/${fileName}`,
         {
           method: 'POST',
           headers: {
@@ -227,7 +233,7 @@ const CreateBirthdayBoard = () => {
         throw new Error(`Failed to upload image: ${error}`);
       }
 
-      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKETS.WISH_MEDIA}/${fileName}`;
 
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -422,28 +428,38 @@ const CreateBirthdayBoard = () => {
         const wishContent = `Happy Birthday, ${firstName}! Here's to an amazing year ahead! 🎉`;
 
         const supabase = createClient();
-        const { data: wishData, error: wishError } = await supabase.rpc('create_wish', {
-          p_sender_id: userId,
-          p_board_id: boardId,
-          p_content: wishContent,
-          p_media_ids: uploadedMediaIds,
-          p_audio_url: null,
-          p_max_media_count: 10,
-          p_max_content_length: 1000,
-        });
 
-        if (wishError) {
-
-          const { error: directError } = await supabase
+        if (draftWishId) {
+          const { error: updErr } = await supabase
             .from('wishes')
-            .insert({
-              sender_id: userId,
-              board_id: boardId,
-              content: wishContent,
-              media_ids: uploadedMediaIds,
-            });
+            .update({ content: wishContent, media_ids: uploadedMediaIds })
+            .eq('id', draftWishId);
+          if (updErr) {
+            toast.error(updErr.message || 'Failed to finalize wish');
+          }
+        } else {
+          const { error: wishError } = await supabase.rpc('create_wish', {
+            p_sender_id: userId,
+            p_board_id: boardId,
+            p_content: wishContent,
+            p_media_ids: uploadedMediaIds,
+            p_audio_url: null,
+            p_max_media_count: 10,
+            p_max_content_length: 1000,
+          });
 
-          if (directError) {
+          if (wishError) {
+            const { error: directError } = await supabase
+              .from('wishes')
+              .insert({
+                sender_id: userId,
+                board_id: boardId,
+                content: wishContent,
+                media_ids: uploadedMediaIds,
+              });
+
+            if (directError) {
+            }
           }
         }
       }
@@ -474,7 +490,13 @@ const CreateBirthdayBoard = () => {
     setCreating(true);
 
     try {
-      const { data, error } = await publishBoard(boardId);
+      const coverMediaId =
+        uploadedMediaUrls.find((m) => m.type === 'image')?.id ?? uploadedMediaIds[0] ?? null;
+
+      const { data, error } = await publishBoard(
+        boardId,
+        coverMediaId ? { coverMediaId } : undefined,
+      );
 
       if (error || !data) {
         const errorMessage = error?.message || 'Failed to publish board';
@@ -498,7 +520,71 @@ const CreateBirthdayBoard = () => {
     }
   };
 
-  const handleMediaUploaded = (mediaIds: string[], musicId?: number, mediaUrls?: Array<{ id: string; url: string; type: 'image' | 'video' }>) => {
+  const ensureDraftWish = async (): Promise<string | null> => {
+    if (draftWishId) return draftWishId;
+    if (!boardId || !userId) {
+      toast.error('Board or user not ready.');
+      return null;
+    }
+    const supabase = createClient();
+    const placeholder = `Happy Birthday, ${customFieldValues.first_name || 'friend'}!`;
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', {
+      p_sender_id: userId,
+      p_board_id: boardId,
+      p_content: placeholder,
+      p_media_ids: [],
+      p_audio_url: null,
+      p_max_media_count: 10,
+      p_max_content_length: 1000,
+    });
+    let id: string | null = !rpcErr ? wishIdFromCreateWishResponse(rpcData) : null;
+    if (rpcErr) {
+      const { data: directData, error: directError } = await supabase
+        .from('wishes')
+        .insert({
+          sender_id: userId,
+          board_id: boardId,
+          content: placeholder,
+          media_ids: [],
+        })
+        .select()
+        .single();
+      if (directError || !directData?.id) {
+        toast.error(directError?.message || 'Failed to prepare wish');
+        return null;
+      }
+      id = directData.id;
+      const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
+      if (countError) {
+        const { data: boardData } = await supabase
+          .from('boards')
+          .select('wishes_count')
+          .eq('id', boardId)
+          .single();
+        if (boardData) {
+          await supabase
+            .from('boards')
+            .update({ wishes_count: (boardData.wishes_count || 0) + 1 })
+            .eq('id', boardId);
+        }
+      }
+    } else if (!id) {
+      id = await resolveWishIdAfterCreate(supabase, boardId, userId);
+    }
+    if (!id) {
+      toast.error('Could not read wish id from server.');
+      return null;
+    }
+    setDraftWishId(id);
+    return id;
+  };
+
+  const handleMediaUploaded = async (
+    mediaIds: string[],
+    musicId?: number,
+    mediaUrls?: Array<{ id: string; url: string; type: 'image' | 'video' }>,
+    linkedWishId?: string,
+  ) => {
     setUploadedMediaIds(mediaIds);
     if (mediaUrls) {
       setUploadedMediaUrls(mediaUrls);
@@ -506,6 +592,28 @@ const CreateBirthdayBoard = () => {
     if (musicId) {
       setSelectedMusicId(musicId);
       handleFieldChange('music_track_id', musicId);
+    }
+
+    const wishIdForRow = linkedWishId ?? draftWishId;
+    if (wishIdForRow && mediaIds.length > 0) {
+      const supabase = createClient();
+      const { error: wErr } = await supabase
+        .from('wishes')
+        .update({ media_ids: mediaIds })
+        .eq('id', wishIdForRow);
+      if (wErr) {
+        toast.error(wErr.message || 'Failed to link media to wish');
+      }
+    }
+
+    const board = boardId ?? localStorage.getItem('currentBoardId');
+    if (board && mediaIds.length > 0) {
+      const coverMediaId =
+        mediaUrls?.find((m) => m.type === 'image')?.id ?? mediaIds[0];
+      const { error: coverError } = await updateBoard(board, {}, { coverMediaId });
+      if (coverError) {
+        toast.error(coverError.message || 'Failed to set board cover');
+      }
     }
   };
 
@@ -997,11 +1105,26 @@ const CreateBirthdayBoard = () => {
 
                     <div className="my-6">
                       <div
-                        onClick={() => setModalOpen(true)}
+                        onClick={async () => {
+                          if (!boardId || !userId) {
+                            toast.error('Please sign in and complete previous steps.');
+                            return;
+                          }
+                          setOpeningWishModal(true);
+                          try {
+                            const id = await ensureDraftWish();
+                            if (!id) return;
+                            setModalOpen(true);
+                          } finally {
+                            setOpeningWishModal(false);
+                          }
+                        }}
                         className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-[#F43C83] transition-all duration-300"
                       >
                         <Image src={AddWishImg} alt='' className='mx-auto' />
-                        <p className="text-gray-700 mt-2 font-medium">Click to upload photos, videos & select music</p>
+                        <p className="text-gray-700 mt-2 font-medium">
+                          {openingWishModal ? 'Preparing…' : 'Click to upload photos, videos & select music'}
+                        </p>
                         {uploadedMediaIds.length > 0 && (
                           <p className="text-sm text-green-600 mt-1">
                             ✓ {uploadedMediaIds.length} media file{uploadedMediaIds.length > 1 ? 's' : ''} uploaded
@@ -1202,6 +1325,7 @@ const CreateBirthdayBoard = () => {
           }}
           onClose={() => setModalOpen(false)}
           boardId={boardId || undefined}
+          wishId={draftWishId ?? undefined}
           onMediaUploaded={handleMediaUploaded}
         />
       </GlobalModal>

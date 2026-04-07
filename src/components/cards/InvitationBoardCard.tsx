@@ -1,10 +1,59 @@
 import Image from 'next/image';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 
+const FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80';
+
+/**
+ * Next/Image calls `new URL()` on string sources; relative paths and some API strings
+ * must not be passed through blindly. Invalid strings fall back to a known-good URL.
+ */
+function safeUrlStringForNextImage(raw: string): string {
+  const t = raw.trim();
+  if (!t || t === 'undefined' || t === 'null') return FALLBACK_IMAGE;
+  if (t.startsWith('/') || t.startsWith('data:') || t.startsWith('blob:')) return t;
+  if (t.startsWith('//')) {
+    try {
+      return new URL(`https:${t}`).href;
+    } catch {
+      return FALLBACK_IMAGE;
+    }
+  }
+  try {
+    new URL(t);
+    return t;
+  } catch {
+    return FALLBACK_IMAGE;
+  }
+}
+
+/** API may pass a URL string, `{ url: string }`, or a bad/empty value — Next/Image requires a valid URL or StaticImport. */
+function normalizeImageSrc(src: string | StaticImport | unknown): string | StaticImport {
+  if (typeof src === 'string') {
+    return safeUrlStringForNextImage(src);
+  }
+  if (src != null && typeof src === 'object') {
+    const o = src as Record<string, unknown>;
+    const nested = o.url ?? o.cdn_url ?? o.href;
+    if (typeof nested === 'string' && nested.trim()) {
+      return safeUrlStringForNextImage(nested.trim());
+    }
+    if ('src' in o && typeof o.src === 'string') {
+      const inner = o.src.trim();
+      const safeInner = safeUrlStringForNextImage(inner);
+      if (safeInner === FALLBACK_IMAGE) {
+        return FALLBACK_IMAGE;
+      }
+      return src as StaticImport;
+    }
+  }
+  return FALLBACK_IMAGE;
+}
+
 type InvitationBoardCardProps = {
   title: string;
-  backgroundImage: string | StaticImport;
-  profileImage: string | StaticImport;
+  backgroundImage: string | StaticImport | unknown;
+  profileImage: string | StaticImport | unknown;
   inviterName: string;
   onAccept?: () => void;
   onDecline?: () => void;
@@ -20,16 +69,22 @@ const InvitationBoardCard = ({
   onDecline,
   gradientClass = 'bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/80'
 }: InvitationBoardCardProps) => {
+  const bgSrc = normalizeImageSrc(backgroundImage);
+  const avatarSrc = normalizeImageSrc(profileImage);
 
   return (
     <div className='relative rounded-[13px] overflow-hidden flex flex-col justify-between'>
       <div className='absolute inset-0'>
-        <Image
-          src={backgroundImage}
-          alt={title}
-          fill
-          className='object-cover'
-        />
+        {typeof bgSrc === 'string' ? (
+          <img
+            src={bgSrc}
+            alt=""
+            className='absolute inset-0 h-full w-full object-cover'
+            draggable={false}
+          />
+        ) : (
+          <Image src={bgSrc} alt={title} fill className='object-cover' />
+        )}
         <div className={`absolute inset-0 ${gradientClass}`} />
       </div>
 
@@ -39,13 +94,24 @@ const InvitationBoardCard = ({
         <div className='flex items-center gap-4 mt-4'>
           <div className='relative shrink-0'>
             <div className='w-13 h-13 rounded-full border-2 border-pink-300 p-0.5'>
-              <Image
-                src={profileImage}
-                alt={inviterName}
-                width={52}
-                height={52}
-                className='rounded-full object-cover w-full h-full'
-              />
+              {typeof avatarSrc === 'string' ? (
+                <img
+                  src={avatarSrc}
+                  alt={inviterName}
+                  width={52}
+                  height={52}
+                  className='rounded-full object-cover w-full h-full'
+                  draggable={false}
+                />
+              ) : (
+                <Image
+                  src={avatarSrc}
+                  alt={inviterName}
+                  width={52}
+                  height={52}
+                  className='rounded-full object-cover w-full h-full'
+                />
+              )}
             </div>
           </div>
 

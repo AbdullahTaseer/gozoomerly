@@ -20,7 +20,8 @@ export interface CreateBirthdayBoardInput {
   p_privacy?: 'public' | 'private';
   p_allow_invites?: boolean;
   p_invites_can_invite?: boolean;
-  p_cover_media_id?: number;
+  /** References `media.id` — integer or UUID depending on your schema */
+  p_cover_media_id?: number | string;
   p_seo_meta_tags?: Record<string, any>;
 }
 

@@ -113,6 +113,7 @@ export const FollowingTabCards: React.FC<FollowingTabCardsProps> = ({ boards, lo
             userName={getCreatorName(board)}
             userAvatar={getCreatorAvatar(board)}
             title={displayTitle}
+            honoreeName={honoreeName || displayTitle}
             coverImage={getCoverImage(board)}
             mediaItems={mediaItems}
             isVideo={hasVideo(board)}
@@ -122,6 +123,7 @@ export const FollowingTabCards: React.FC<FollowingTabCardsProps> = ({ boards, lo
             saves={board.views_count || 0}
             boardId={board.id}
             boardSlug={board.slug}
+            supportsWishes={board.board_types?.supports_wishes !== false}
             onUserClick={() => router.push(`/u/visitProfile/${board.creator_id}`)}
             onCardClick={() => router.push(`/u/boards/${board.id}`)}
           />

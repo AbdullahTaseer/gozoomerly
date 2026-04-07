@@ -19,6 +19,15 @@ const aspectClasses = {
   short: 'aspect-[4/3] min-h-[160px]',
 };
 
+const FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80';
+
+function safeImageSrc(src: string | StaticImport): string | StaticImport {
+  if (src != null && typeof src === 'object') return src;
+  if (typeof src === 'string' && src.trim()) return src;
+  return FALLBACK_IMAGE;
+}
+
 const ExploreCard = ({
   title,
   image,
@@ -28,7 +37,11 @@ const ExploreCard = ({
   imageHeightPx,
   onClick,
 }: ExploreCardProps) => {
-  const displayAvatars = avatars.slice(0, 4);
+  const coverSrc = safeImageSrc(image);
+  const displayAvatars = avatars
+    .filter((a) => (typeof a === 'object' && a != null) || (typeof a === 'string' && a.trim() !== ''))
+    .slice(0, 4)
+    .map((a) => safeImageSrc(a));
   const showExtra = extraCount > 0;
   const imageBoxClass =
     imageHeightPx != null
@@ -45,7 +58,7 @@ const ExploreCard = ({
         style={imageHeightPx != null ? { height: imageHeightPx } : undefined}
       >
         <Image
-          src={image}
+          src={coverSrc}
           alt={title}
           fill
           className="object-cover transition-transform group-hover:scale-105"

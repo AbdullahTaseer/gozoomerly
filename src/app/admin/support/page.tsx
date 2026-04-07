@@ -22,8 +22,7 @@ import {
   type SupportTicketRow,
   type SupportTicketStatus,
 } from '@/lib/supabase/support';
-
-const PAGE_SIZE = 20;
+import { ADMIN_LIST_LIMIT } from '@/lib/supabase/adminListPagination';
 
 function field(row: SupportTicketRow, ...keys: string[]): string {
   for (const k of keys) {
@@ -80,7 +79,7 @@ const AdminSupport = () => {
 
       const { data, error: fetchError } = await adminListSupportTickets({
         p_status: status ?? statusFilter,
-        p_limit: PAGE_SIZE,
+        p_limit: ADMIN_LIST_LIMIT,
         p_offset: newOffset,
       });
 
@@ -94,7 +93,7 @@ const AdminSupport = () => {
 
       const rows = data ?? [];
       setTickets(rows);
-      setHasMore(rows.length >= PAGE_SIZE);
+      setHasMore(rows.length >= ADMIN_LIST_LIMIT);
       setOffset(newOffset);
     },
     [statusFilter]
@@ -129,6 +128,7 @@ const AdminSupport = () => {
       resolved: { bg: 'bg-green-100', text: 'text-green-800' },
       open: { bg: 'bg-orange-100', text: 'text-orange-800' },
       pending: { bg: 'bg-amber-100', text: 'text-amber-900' },
+      in_progress: { bg: 'bg-amber-100', text: 'text-amber-900' },
       closed: { bg: 'bg-gray-100', text: 'text-gray-600' },
     };
     return colorMap[normalized] || { bg: 'bg-gray-100', text: 'text-gray-800' };
@@ -327,7 +327,7 @@ const AdminSupport = () => {
               <button
                 type="button"
                 disabled={offset === 0 || loading}
-                onClick={() => fetchTickets(Math.max(0, offset - PAGE_SIZE))}
+                onClick={() => fetchTickets(Math.max(0, offset - ADMIN_LIST_LIMIT))}
                 className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Previous
@@ -335,7 +335,7 @@ const AdminSupport = () => {
               <button
                 type="button"
                 disabled={!hasMore || loading}
-                onClick={() => fetchTickets(offset + PAGE_SIZE)}
+                onClick={() => fetchTickets(offset + ADMIN_LIST_LIMIT)}
                 className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next

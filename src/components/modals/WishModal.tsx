@@ -5,7 +5,11 @@ import Image from 'next/image';
 import { X, ArrowLeft, Upload, Image as ImageIcon, Play, Music, Type, Mic, Plus, Trash2, Search, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { authService } from '@/lib/supabase/auth';
-import { uploadBoardMedia } from '@/lib/supabase/boards';
+import {
+  uploadBoardMedia,
+  wishIdFromCreateWishResponse,
+  resolveWishIdAfterCreate,
+} from '@/lib/supabase/boards';
 
 interface WishModalProps {
   isOpen: boolean;
@@ -116,7 +120,7 @@ const WishModal: React.FC<WishModalProps> = ({
     }
   };
 
-  const uploadMedia = async (): Promise<{ mediaIds: string[]; errors: string[] }> => {
+  const uploadMedia = async (wishId: string): Promise<{ mediaIds: string[]; errors: string[] }> => {
     const user = await authService.getUser();
     if (!user) throw new Error('User not authenticated');
 
@@ -133,7 +137,8 @@ const WishModal: React.FC<WishModalProps> = ({
           boardId,
           user.id,
           item.file,
-          mediaType
+          mediaType,
+          wishId
         );
 
         if (error) {
@@ -142,7 +147,7 @@ const WishModal: React.FC<WishModalProps> = ({
           if (errorMsg.includes('Bucket not found') || errorMsg.includes('does not exist')) {
             errors.push(
               `Failed to upload ${item.file.name}: Storage bucket not found. ` +
-              `Please create a 'profile-images' bucket in Supabase Dashboard → Storage → Create Bucket (make it public).`
+              `Please create a 'wish-media' bucket in Supabase Dashboard → Storage → Create Bucket (make it public).`
             );
           } else if (errorMsg.includes('403') || errorMsg.includes('Permission')) {
             errors.push(
@@ -181,78 +186,128 @@ const WishModal: React.FC<WishModalProps> = ({
         return;
       }
 
-      let mediaIds: string[] = [];
-      let uploadErrors: string[] = [];
+      const baseContent = text || `Happy Birthday, ${honoreeName}!`;
+      const audioUrl = selectedMusic?.id !== 'none' ? selectedMusic?.url : null;
 
-      if (media.length > 0) {
-        const uploadResult = await uploadMedia();
-        mediaIds = uploadResult.mediaIds;
-        uploadErrors = uploadResult.errors;
-
-        if (uploadErrors.length > 0 && mediaIds.length === 0) {
-
-          setError(`Failed to upload media: ${uploadErrors.join(', ')}. Please try again or submit without media.`);
-          return;
-        } else if (uploadErrors.length > 0) {
-        }
-      }
-
-      const mediaIdsArray = mediaIds;
-
-      const rpcParams = {
+      const rpcBase = {
         p_sender_id: user.id,
         p_board_id: boardId,
-        p_content: text || `Happy Birthday, ${honoreeName}!`,
-        p_media_ids: mediaIdsArray,
-        p_audio_url: selectedMusic?.id !== 'none' ? selectedMusic?.url : null,
+        p_content: baseContent,
+        p_audio_url: audioUrl,
         p_max_media_count: 10,
         p_max_content_length: 1000,
       };
 
-      let wishData;
-      let rpcError;
+      if (media.length === 0) {
+        const rpcParams = {
+          ...rpcBase,
+          p_media_ids: [] as string[],
+        };
 
-      const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', rpcParams);
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', rpcParams);
 
-      if (rpcErr) {
-        rpcError = rpcErr;
-
-        const { data: directData, error: directError } = await supabase
-          .from('wishes')
-          .insert({
-            sender_id: user.id,
-            board_id: boardId,
-            content: text || `Happy Birthday, ${honoreeName}!`,
-            media_ids: mediaIdsArray,
-          })
-          .select()
-          .single();
-
-        if (directError) {
-          setError(directError.message || 'Failed to create wish');
-        return;
-      }
-
-        wishData = directData;
-
-        const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
-        if (countError) {
-
-          const { data: boardData } = await supabase
-            .from('boards')
-            .select('wishes_count')
-            .eq('id', boardId)
+        if (rpcErr) {
+          const { data: directData, error: directError } = await supabase
+            .from('wishes')
+            .insert({
+              sender_id: user.id,
+              board_id: boardId,
+              content: baseContent,
+              media_ids: [],
+            })
+            .select()
             .single();
 
-          if (boardData) {
-            await supabase
+          if (directError) {
+            setError(directError.message || 'Failed to create wish');
+            return;
+          }
+
+          const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
+          if (countError) {
+            const { data: boardData } = await supabase
               .from('boards')
-              .update({ wishes_count: (boardData.wishes_count || 0) + 1 })
-              .eq('id', boardId);
+              .select('wishes_count')
+              .eq('id', boardId)
+              .single();
+
+            if (boardData) {
+              await supabase
+                .from('boards')
+                .update({ wishes_count: (boardData.wishes_count || 0) + 1 })
+                .eq('id', boardId);
+            }
           }
         }
       } else {
-        wishData = rpcData;
+        const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', {
+          ...rpcBase,
+          p_media_ids: [],
+        });
+
+        let wishId: string | null = !rpcErr ? wishIdFromCreateWishResponse(rpcData) : null;
+
+        if (rpcErr) {
+          const { data: directData, error: directError } = await supabase
+            .from('wishes')
+            .insert({
+              sender_id: user.id,
+              board_id: boardId,
+              content: baseContent,
+              media_ids: [],
+            })
+            .select()
+            .single();
+
+          if (directError || !directData?.id) {
+            setError(directError?.message || rpcErr.message || 'Failed to create wish');
+            return;
+          }
+
+          wishId = directData.id;
+
+          const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
+          if (countError) {
+            const { data: boardData } = await supabase
+              .from('boards')
+              .select('wishes_count')
+              .eq('id', boardId)
+              .single();
+
+            if (boardData) {
+              await supabase
+                .from('boards')
+                .update({ wishes_count: (boardData.wishes_count || 0) + 1 })
+                .eq('id', boardId);
+            }
+          }
+        } else if (!wishId) {
+          wishId = await resolveWishIdAfterCreate(supabase, boardId, user.id);
+        }
+
+        if (!wishId) {
+          setError('Could not read wish id from server. Please try again.');
+          return;
+        }
+
+        const uploadResult = await uploadMedia(wishId);
+        const mediaIds = uploadResult.mediaIds;
+        const uploadErrors = uploadResult.errors;
+
+        if (uploadErrors.length > 0 && mediaIds.length === 0) {
+          setError(`Failed to upload media: ${uploadErrors.join(', ')}. Please try again or submit without media.`);
+          return;
+        }
+
+        const { error: updateErr } = await supabase
+          .from('wishes')
+          .update({ media_ids: mediaIds })
+          .eq('id', wishId);
+
+        if (updateErr) {
+          setError(updateErr.message || 'Failed to attach media to wish');
+          return;
+        }
       }
 
       onSubmit?.({

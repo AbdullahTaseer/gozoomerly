@@ -1,4 +1,5 @@
 import { createClient } from './client';
+import { STORAGE_BUCKETS } from './storageBuckets';
 
 export interface BoardType {
   id: string;
@@ -375,7 +376,60 @@ export async function getBoardById(boardId: string) {
   return { data, error: null };
 }
 
-export async function updateBoard(boardId: string, updates: Partial<Board>) {
+export type UpdateBoardDetailsInput = {
+  boardId: string;
+  /** Publish: set board status to live */
+  status?: 'live';
+  /** Media table row id — sent as `p_cover_media_id` */
+  coverMediaId?: string | null;
+  /** With cover: set `p_apply_cover_media` (default true when `coverMediaId` is set) */
+  applyCoverMedia?: boolean;
+};
+
+/**
+ * Calls `update_board_details` RPC — publish-only, cover-only (draft), or both.
+ * When `coverMediaId` is set, it is sent as `p_cover_media_id`.
+ */
+export async function updateBoardDetails(input: UpdateBoardDetailsInput) {
+  const supabase = createClient();
+  const payload: Record<string, unknown> = {
+    p_board_id: input.boardId,
+  };
+  if (input.status !== undefined) {
+    payload.p_status = input.status;
+  }
+
+  const coverId =
+    input.coverMediaId != null && String(input.coverMediaId).trim() !== ''
+      ? String(input.coverMediaId).trim()
+      : null;
+  if (coverId) {
+    payload.p_cover_media_id = coverId;
+    payload.p_apply_cover_media = input.applyCoverMedia !== false;
+  }
+
+  const { data, error } = await supabase.rpc('update_board_details', payload);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data, error: null };
+}
+
+export type UpdateBoardOptions = {
+  /**
+   * Media row id from `media.id` — passed to `update_board_details` as `p_cover_media_id`
+   * whenever you update the board (e.g. after upload).
+   */
+  coverMediaId?: string | null;
+};
+
+export async function updateBoard(
+  boardId: string,
+  updates: Partial<Board>,
+  options?: UpdateBoardOptions,
+) {
   const supabase = createClient();
 
   const cleanedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
@@ -385,21 +439,53 @@ export async function updateBoard(boardId: string, updates: Partial<Board>) {
     return acc;
   }, {} as Record<string, any>);
 
-  const { data, error } = await supabase
-    .from('boards')
-    .update(cleanedUpdates)
-    .eq('id', boardId)
-    .select()
-    .single();
+  let data: Board | null = null;
 
-  if (error) {
-    return { data: null, error };
+  if (Object.keys(cleanedUpdates).length > 0) {
+    const { data: updated, error } = await supabase
+      .from('boards')
+      .update(cleanedUpdates)
+      .eq('id', boardId)
+      .select()
+      .single();
+
+    if (error) {
+      return { data: null, error };
+    }
+    data = updated as Board;
+  }
+
+  const coverId =
+    options?.coverMediaId != null && String(options.coverMediaId).trim() !== ''
+      ? String(options.coverMediaId).trim()
+      : null;
+
+  if (coverId) {
+    const { error: rpcError } = await updateBoardDetails({
+      boardId,
+      coverMediaId: coverId,
+      applyCoverMedia: true,
+    });
+    if (rpcError) {
+      return { data: null, error: rpcError };
+    }
+  }
+
+  if (!data) {
+    const { data: board, error: fetchError } = await getBoardById(boardId);
+    if (fetchError) {
+      return { data: null, error: fetchError };
+    }
+    return { data: board, error: null };
   }
 
   return { data, error: null };
 }
 
-export async function publishBoard(boardId: string) {
+export async function publishBoard(
+  boardId: string,
+  options?: { coverMediaId?: string | null },
+) {
   const supabase = createClient();
 
   const { data: existingBoard, error: fetchError } = await supabase
@@ -413,15 +499,15 @@ export async function publishBoard(boardId: string) {
       data: null,
       error: {
         ...fetchError,
-        message: `Failed to find board: ${fetchError.message}`
-      }
+        message: `Failed to find board: ${fetchError.message}`,
+      },
     };
   }
 
   if (!existingBoard) {
     return {
       data: null,
-      error: { message: 'Board not found. Please try creating the board again.' }
+      error: { message: 'Board not found. Please try creating the board again.' },
     };
   }
 
@@ -429,23 +515,36 @@ export async function publishBoard(boardId: string) {
     return { data: existingBoard, error: null };
   }
 
-  const { data, error } = await supabase
-    .from('boards')
-    .update({
-      status: 'live',
-      published_at: new Date().toISOString()
-    })
-    .eq('id', boardId)
-    .select()
-    .single();
+  const detailInput: UpdateBoardDetailsInput = {
+    boardId,
+    status: 'live',
+  };
+  if (options?.coverMediaId) {
+    detailInput.applyCoverMedia = true;
+    detailInput.coverMediaId = options.coverMediaId;
+  }
+
+  const { error: rpcError } = await updateBoardDetails(detailInput);
+
+  if (rpcError) {
+    return {
+      data: null,
+      error: {
+        ...rpcError,
+        message: `Failed to publish board: ${rpcError.message}${rpcError.hint ? ` (Hint: ${rpcError.hint})` : ''}`,
+      },
+    };
+  }
+
+  const { data, error } = await supabase.from('boards').select('*').eq('id', boardId).single();
 
   if (error) {
     return {
       data: null,
       error: {
         ...error,
-        message: `Failed to publish board: ${error.message}${error.hint ? ` (Hint: ${error.hint})` : ''}`
-      }
+        message: `Failed to load board after publish: ${error.message}`,
+      },
     };
   }
 
@@ -1146,17 +1245,105 @@ export async function getBoardWishes(
   }
 }
 
+/**
+ * Parse wish id from `create_wish` RPC payload. Handles composite/SETOF rows as arrays,
+ * nested `{ data }` / `{ wish }` wrappers, and common key names from Postgres/PostgREST.
+ */
+export function wishIdFromCreateWishResponse(data: unknown): string | null {
+  const tryRecord = (o: Record<string, unknown>): string | null => {
+    for (const key of [
+      'wish_id',
+      'id',
+      'wishId',
+      'public_id',
+      'p_wish_id',
+      'out_wish_id',
+      'new_wish_id',
+    ] as const) {
+      const v = o[key];
+      if (typeof v === 'string' && v.length > 0) return v;
+    }
+    return null;
+  };
+
+  if (data == null) return null;
+  if (typeof data === 'string') {
+    const trimmed = data.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try {
+        return wishIdFromCreateWishResponse(JSON.parse(trimmed));
+      } catch {
+        return null;
+      }
+    }
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Array.isArray(data) && data.length > 0) {
+    return wishIdFromCreateWishResponse(data[0]);
+  }
+  if (typeof data !== 'object') return null;
+  const o = data as Record<string, unknown>;
+  const direct = tryRecord(o);
+  if (direct) return direct;
+  for (const wrap of ['data', 'wish', 'result', 'create_wish', 'row']) {
+    const inner = o[wrap];
+    if (inner != null && typeof inner === 'object') {
+      const id = wishIdFromCreateWishResponse(inner);
+      if (id) return id;
+    }
+  }
+  return null;
+}
+
+/** When the RPC succeeds but returns no parseable id, load the row we just created. */
+export async function resolveWishIdAfterCreate(
+  supabase: ReturnType<typeof createClient>,
+  boardId: string,
+  senderId: string
+): Promise<string | null> {
+  const tryOrder = async (orderCol?: 'created_at' | 'id') => {
+    let q = supabase
+      .from('wishes')
+      .select('id, wish_id')
+      .eq('board_id', boardId)
+      .eq('sender_id', senderId)
+      .limit(1);
+    if (orderCol) {
+      q = q.order(orderCol, { ascending: false });
+    }
+    return q.maybeSingle();
+  };
+
+  const pickId = (data: { id?: string; wish_id?: string } | null) => {
+    if (!data) return null;
+    if (typeof data.id === 'string' && data.id.length > 0) return data.id;
+    if (typeof data.wish_id === 'string' && data.wish_id.length > 0) return data.wish_id;
+    return null;
+  };
+
+  for (const col of ['created_at', 'id'] as const) {
+    const { data, error } = await tryOrder(col);
+    if (!error && data) {
+      const id = pickId(data as { id?: string; wish_id?: string });
+      if (id) return id;
+    }
+  }
+
+  return null;
+}
+
 export async function uploadBoardMedia(
   boardId: string,
   userId: string,
   file: File,
-  mediaType: 'image' | 'video' | 'audio'
+  mediaType: 'image' | 'video' | 'audio',
+  wishId: string
 ) {
   const supabase = createClient();
 
   const fileExt = file.name.split('.').pop();
-  const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const bucketName = 'profile-images';
+  const fileName = `${boardId}/${wishId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+  const bucketName = STORAGE_BUCKETS.WISH_MEDIA;
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
@@ -1197,16 +1384,17 @@ export async function uploadBoardMedia(
 export async function uploadMultipleBoardMedia(
   boardId: string,
   userId: string,
-  files: File[]
+  files: File[],
+  wishId: string
 ) {
   const supabase = createClient();
-  const bucketName = 'profile-images';
+  const bucketName = STORAGE_BUCKETS.WISH_MEDIA;
   const results: { success: string[], failed: string[] } = { success: [], failed: [] };
 
   for (const file of files) {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `boards/${boardId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${boardId}/${wishId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)

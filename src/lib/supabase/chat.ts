@@ -1,4 +1,5 @@
 import { createClient } from './client';
+import { STORAGE_BUCKETS } from './storageBuckets';
 
 function safeLastMessage(lastMessage: any): string | undefined {
   if (!lastMessage) return undefined;
@@ -1333,7 +1334,7 @@ export async function uploadMessageFile(
 
   try {
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('chat-files')
+      .from(STORAGE_BUCKETS.CHAT_MEDIA)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false,
@@ -1350,8 +1351,8 @@ export async function uploadMessageFile(
         return {
           fileUrl: null,
           error: new Error(
-            'Storage bucket "chat-files" not found. Please create it in Supabase Dashboard → Storage → Create Bucket. ' +
-            'Name: chat-files, Public: true'
+            `Storage bucket "${STORAGE_BUCKETS.CHAT_MEDIA}" not found. Please create it in Supabase Dashboard → Storage → Create Bucket. ` +
+            `Name: ${STORAGE_BUCKETS.CHAT_MEDIA}, Public: true`
           )
         };
       }
@@ -1362,7 +1363,7 @@ export async function uploadMessageFile(
           fileUrl: null,
           error: new Error(
             'Permission denied. Please check:\n' +
-            '1. The "chat-files" bucket exists and is public\n' +
+            `1. The "${STORAGE_BUCKETS.CHAT_MEDIA}" bucket exists and is public\n` +
             '2. Storage policies allow authenticated users to upload\n' +
             '3. Your user is properly authenticated'
           )
@@ -1377,7 +1378,7 @@ export async function uploadMessageFile(
     }
 
     const { data: { publicUrl } } = supabase.storage
-      .from('chat-files')
+      .from(STORAGE_BUCKETS.CHAT_MEDIA)
       .getPublicUrl(fileName);
 
     return {

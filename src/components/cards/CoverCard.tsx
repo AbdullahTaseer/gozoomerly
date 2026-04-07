@@ -39,30 +39,32 @@ const CoverCard = ({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-lg p-1 overflow-hidden bg-[#F4F4F4] transition-colors"
+      className="w-full text-left rounded-xl p-1.5 overflow-hidden bg-[#F4F4F4] transition-colors hover:bg-[#ececec]"
     >
-      <div className="relative h-[60px] rounded overflow-clip">
+      <div className="relative h-[148px] sm:h-[168px] min-h-[120px] rounded-lg overflow-clip">
         <Image
           src={coverImage}
           alt={title}
           fill
           className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-        <p className="absolute top-4 left-4 text-white font-semibold text-xl">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <p className="absolute bottom-3 left-4 right-4 text-white font-semibold text-lg sm:text-xl leading-snug line-clamp-2 text-left drop-shadow-sm">
           {title}
         </p>
       </div>
-      <div className="flex items-center justify-between gap-3 p-3">
+      <div className="flex items-center justify-between gap-3 px-3 py-4 sm:px-4">
         {(isShareVariant || isInviteSentVariant) && personInfo ? (
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-sm text-gray-600 shrink-0">{personLabel}</span>
-            <div className="relative h-9 w-9 shrink-0 rounded-full overflow-hidden">
+            <div className="relative h-11 w-11 shrink-0 rounded-full overflow-hidden">
               <Image
                 src={personInfo.avatar}
                 alt={personInfo.name}
                 fill
                 className="object-cover"
+                sizes="44px"
               />
             </div>
             <p className="font-medium text-black truncate">{personInfo.name}</p>
@@ -71,27 +73,30 @@ const CoverCard = ({
           <>
             <div className="flex items-center gap-3 min-w-0">
               {creatorAvatar && (
-                <div className="relative h-9 w-9 shrink-0 rounded-full overflow-hidden">
+                <div className="relative h-11 w-11 shrink-0 rounded-full overflow-hidden ring-2 ring-white shadow-sm">
                   <Image
                     src={creatorAvatar}
                     alt={creatorName || ''}
                     fill
                     className="object-cover"
+                    sizes="44px"
                   />
                 </div>
               )}
               <div className="min-w-0">
-                {creatorName && <p className="font-medium text-black truncate">{creatorName}</p>}
-                {timestamp && <p className="text-sm truncate font-light">{timestamp}</p>}
+                {creatorName && (
+                  <p className="font-semibold text-base text-black truncate">{creatorName}</p>
+                )}
+                {timestamp && <p className="text-sm truncate font-light text-gray-600 mt-0.5">{timestamp}</p>}
               </div>
             </div>
-            <div className="flex items-center gap-4 shrink-0">
-              <span className="flex items-center gap-1.5 text-sm">
-                <Images size={16} strokeWidth={2} />
+            <div className="flex items-center gap-5 shrink-0 text-gray-800">
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <Images size={18} strokeWidth={2} />
                 {photosCount}
               </span>
-              <span className="flex items-center gap-1.5 text-sm">
-                <Eye size={16} strokeWidth={2} />
+              <span className="flex items-center gap-1.5 text-sm font-medium">
+                <Eye size={18} strokeWidth={2} />
                 {viewsCount}
               </span>
             </div>

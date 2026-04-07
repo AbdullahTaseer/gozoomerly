@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Camera } from 'lucide-react';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import { createClient } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
 import { authService } from '@/lib/supabase/auth';
 
 interface ProfilePictureUploadProps {
@@ -49,7 +50,7 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
         const uint8Array = new Uint8Array(arrayBuffer);
 
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKETS.PROFILE_IMAGES}/${fileName}`,
           {
             method: 'POST',
             headers: {
@@ -66,7 +67,7 @@ export default function ProfilePictureUpload({ profile, onUpdate, userId }: Prof
           throw new Error(`Failed to upload image: ${error}`);
         }
 
-        const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
+        const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKETS.PROFILE_IMAGES}/${fileName}`;
 
         await updateProfilePicture(publicUrl);
       };

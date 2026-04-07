@@ -1,4 +1,5 @@
 import { createClient } from './client';
+import { STORAGE_BUCKETS } from './storageBuckets';
 
 export interface Story {
   id: string;
@@ -45,7 +46,7 @@ export async function uploadStoryMedia(
 
   const fileExt = file.name.split('.').pop();
   const fileName = `stories/${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-  const bucketName = 'profile-images';
+  const bucketName = STORAGE_BUCKETS.STORY_MEDIA;
 
   const { error: uploadError } = await supabase.storage
     .from(bucketName)

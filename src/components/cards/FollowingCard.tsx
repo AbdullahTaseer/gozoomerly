@@ -1,11 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { MoreHorizontal, Heart, MessageCircle, Share, Bookmark, Play } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import ShareBoardModal from '@/components/modals/ShareBoardModal';
 import InviteToBoardModal from '@/components/modals/InviteToBoardModal';
+import WishModal from '@/components/modals/WishModal';
+import { createClient } from '@/lib/supabase/client';
+import { authService } from '@/lib/supabase/auth';
+import {
+  isBoardFavorited,
+  rpcFavoriteBoard,
+  rpcUnfavoriteBoard,
+} from '@/lib/supabase/favoriteBoards';
+import toast from 'react-hot-toast';
 
 export interface MediaItem {
   type: 'image' | 'video';
@@ -37,6 +47,10 @@ export interface FollowingCardProps {
   shareUrl?: string;
   boardSlug?: string;
   boardId?: string;
+  /** Honoree name for the wish / “like” flow */
+  honoreeName?: string;
+  /** When false, heart opens a toast instead of the wish composer */
+  supportsWishes?: boolean;
 }
 
 const FollowingCard: React.FC<FollowingCardProps> = ({
@@ -55,22 +69,95 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   isLiked = false,
   comments = 80,
   shares = 23,
-  saves = 12,
+  saves: _unusedSaves = 12,
   onLikeClick,
   onCommentClick,
 
   shareUrl,
   boardSlug,
   boardId,
+  honoreeName,
+  supportsWishes = true,
 }) => {
+  const router = useRouter();
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [wishModalOpen, setWishModalOpen] = useState(false);
+  const [localLikes, setLocalLikes] = useState(likes);
+  const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(!!boardId);
+  const [favoriteToggling, setFavoriteToggling] = useState(false);
+
+  useEffect(() => {
+    setLocalLikes(likes);
+  }, [likes]);
+
+  useEffect(() => {
+    if (!boardId) {
+      setFavoriteLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const user = await authService.getUser();
+      if (cancelled) return;
+      if (!user?.id) {
+        setFavoriteUserId(null);
+        setIsFavorite(false);
+        setFavoriteLoading(false);
+        return;
+      }
+      setFavoriteUserId(user.id);
+      const supabase = createClient();
+      const fav = await isBoardFavorited(supabase, user.id, boardId);
+      if (!cancelled) {
+        setIsFavorite(fav);
+        setFavoriteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId]);
+
+  const toggleFavorite = useCallback(async () => {
+    if (!favoriteUserId || !boardId || favoriteToggling || favoriteLoading) return;
+    setFavoriteToggling(true);
+    const supabase = createClient();
+    const add = !isFavorite;
+    try {
+      if (add) {
+        const { error } = await rpcFavoriteBoard(supabase, favoriteUserId, boardId);
+        if (error) throw error;
+        setIsFavorite(true);
+        toast.success('Saved to favorites');
+      } else {
+        const { error } = await rpcUnfavoriteBoard(supabase, favoriteUserId, boardId);
+        if (error) throw error;
+        setIsFavorite(false);
+        toast.success('Removed from favorites');
+      }
+    } catch (e: unknown) {
+      const msg =
+        typeof e === 'object' && e !== null && 'message' in e
+          ? String((e as { message: string }).message)
+          : 'Could not update favorites';
+      toast.error(msg);
+    } finally {
+      setFavoriteToggling(false);
+    }
+  }, [favoriteUserId, boardId, isFavorite, favoriteToggling, favoriteLoading]);
 
   const generatedShareUrl =
     shareUrl ||
-    (boardSlug
-      ? `${typeof window !== 'undefined' ? window.location.origin : ''}/u/boards/${boardSlug}`
+    (typeof window !== 'undefined'
+      ? boardSlug
+        ? `${window.location.origin}/u/boards/${boardSlug}`
+        : boardId
+          ? `${window.location.origin}/u/boards/${boardId}`
+          : ''
       : '');
 
   const currentMedia = mediaItems?.[carouselIndex];
@@ -85,16 +172,45 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
     setCarouselIndex((prev) => Math.min(prev + 1, mediaItems.length - 1));
 
   const handleMediaClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (hasCarousel) {
-      e.stopPropagation();
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      if (x < rect.width / 3) goPrev();
-      else if (x > (2 * rect.width) / 3) goNext();
+    e.stopPropagation();
+    if (!hasCarousel) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x < rect.width / 3) goPrev();
+    else if (x > (2 * rect.width) / 3) goNext();
+  };
+
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onLikeClick) {
+      onLikeClick();
+      return;
+    }
+    if (!boardId) return;
+    if (!supportsWishes) {
+      toast.error('Wishes are not enabled for this board');
+      return;
+    }
+    setWishModalOpen(true);
+  };
+
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onCommentClick) {
+      onCommentClick();
+    } else if (boardId) {
+      router.push(`/u/boards/${boardId}`);
     }
   };
 
+  const handleBookmarkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!boardId || !favoriteUserId || favoriteLoading) return;
+    void toggleFavorite();
+  };
+
   return (
+    <>
     <div
       onClick={() => onCardClick?.()}
       className={`bg-[#F3F3F3] rounded-xl flex flex-col justify-between overflow-hidden shadow-md transition-shadow ${onCardClick ? 'cursor-pointer' : ''
@@ -171,7 +287,8 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
       >
         <div className="flex items-center gap-4">
           <button
-            onClick={onLikeClick}
+            type="button"
+            onClick={handleLikeClick}
             className={`flex items-center gap-1 text-sm transition-colors ${isLiked ? 'text-pink-500' : 'hover:text-pink-500'
               }`}
           >
@@ -180,21 +297,38 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
               strokeWidth={2}
               className={isLiked ? 'fill-pink-500 stroke-pink-500' : ''}
             />
-            <span>{likes}</span>
+            <span>{localLikes}</span>
           </button>
           <button
-            onClick={onCommentClick}
+            type="button"
+            onClick={handleCommentClick}
             className="flex items-center gap-1 text-sm hover:text-blue-500 transition-colors"
           >
             <MessageCircle size={18} strokeWidth={2} />
             <span>{comments}</span>
           </button>
-          <span className="flex items-center gap-1 text-sm">
-            <Bookmark size={18} strokeWidth={2} />
-            <span>{saves}</span>
-          </span>
           <button
-            onClick={() => setIsShareModalOpen(true)}
+            type="button"
+            onClick={handleBookmarkClick}
+            disabled={!boardId || !favoriteUserId || favoriteLoading || favoriteToggling}
+            className={`flex items-center gap-1 text-sm transition-colors disabled:opacity-40 ${
+              isFavorite ? 'text-red-500' : 'hover:text-amber-600'
+            }`}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Save board'}
+            title={isFavorite ? 'Remove from saved' : 'Save board'}
+          >
+            <Bookmark
+              size={18}
+              strokeWidth={isFavorite ? 0 : 2}
+              className={isFavorite ? 'fill-red-500 text-red-500' : ''}
+            />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsShareModalOpen(true);
+            }}
             className="flex items-center gap-1 text-sm hover:text-green-500 transition-colors"
           >
             <Share size={18} strokeWidth={2} />
@@ -211,6 +345,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
           <MoreHorizontal size={20} />
         </button>
       </div>
+    </div>
 
       <ShareBoardModal
         isOpen={isShareModalOpen}
@@ -226,7 +361,17 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
           boardTitle={title}
         />
       )}
-    </div>
+
+      {boardId && (
+        <WishModal
+          isOpen={wishModalOpen}
+          onClose={() => setWishModalOpen(false)}
+          boardId={boardId}
+          honoreeName={honoreeName || title}
+          onSubmit={() => setLocalLikes((c) => c + 1)}
+        />
+      )}
+    </>
   );
 };
 

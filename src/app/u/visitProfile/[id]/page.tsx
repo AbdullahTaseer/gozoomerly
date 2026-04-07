@@ -1,15 +1,23 @@
 'use client';
 
-import {  useState, useEffect  } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { authService } from '@/lib/supabase/auth';
-import TitleCard from '@/components/cards/TitleCard';
-import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
+import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
-import { Camera, Video } from "lucide-react";
+import { Camera, Video } from 'lucide-react';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import {
+  getProfileMemories,
+  expandProfileMemoriesToGridItems,
+  getProfileMemoryBoardId,
+  type ProfileMemoryItem,
+  type ProfileMemoryStatusFilter,
+} from '@/lib/supabase/profileMemories';
+
+const MEMORY_PAGE_SIZE = 30;
 
 interface UserProfile {
   id: string;
@@ -39,33 +47,51 @@ const VisitProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"photos" | "videos">("photos");
+  const [activeTab, setActiveTab] = useState<'photos' | 'videos'>('photos');
 
-  const [photos] = useState([
-    "https://images.unsplash.com/photo-1605460375648-278bcbd579a6?w=400&q=80",
-    "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
-    "https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?w=400&q=80",
-    "https://images.unsplash.com/photo-1552058544-f2b08422138a?w=400&q=80",
-    "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&q=80",
-    "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&q=80",
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80",
-    "https://images.unsplash.com/photo-1473187983305-f615310e7daa?w=400&q=80",
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&q=80",
-  ]);
+  const [memoryStatusFilter, setMemoryStatusFilter] = useState<ProfileMemoryStatusFilter>(null);
+  const [memories, setMemories] = useState<ProfileMemoryItem[]>([]);
+  const [memoriesLoading, setMemoriesLoading] = useState(false);
+  const [memoriesError, setMemoriesError] = useState<string | null>(null);
+  const [memoriesOffset, setMemoriesOffset] = useState(0);
+  const [memoriesHasMore, setMemoriesHasMore] = useState(false);
 
-  const [videos] = useState([
-    "https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4",
-    "https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4",
-    "https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4",
-    "https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4",
-    "https://videos.pexels.com/video-files/855337/855337-hd_1920_1080_25fps.mp4",
-  ]);
+  const gridItems = useMemo(() => expandProfileMemoriesToGridItems(memories), [memories]);
+  const photoItems = useMemo(() => gridItems.filter((g) => !g.isVideo), [gridItems]);
+  const videoItems = useMemo(() => gridItems.filter((g) => g.isVideo), [gridItems]);
 
   useEffect(() => {
     if (profileId) {
       fetchProfileData();
     }
   }, [profileId]);
+
+  useEffect(() => {
+    if (loading || !profileId || !currentUserId) return;
+    void (async () => {
+      setMemoriesLoading(true);
+      setMemoriesError(null);
+      const { data, error: memErr } = await getProfileMemories({
+        profileUserId: profileId,
+        viewerId: currentUserId,
+        status: memoryStatusFilter,
+        limit: MEMORY_PAGE_SIZE,
+        offset: 0,
+      });
+      if (memErr) {
+        setMemoriesError(memErr.message);
+        setMemories([]);
+        setMemoriesOffset(0);
+        setMemoriesHasMore(false);
+        setMemoriesLoading(false);
+        return;
+      }
+      setMemories(data);
+      setMemoriesOffset(data.length);
+      setMemoriesHasMore(data.length === MEMORY_PAGE_SIZE);
+      setMemoriesLoading(false);
+    })();
+  }, [loading, profileId, currentUserId, memoryStatusFilter]);
 
   const fetchProfileData = async () => {
     try {
@@ -114,6 +140,28 @@ const VisitProfilePage = () => {
     }
   };
 
+  const handleLoadMoreMemories = async () => {
+    if (!profileId || !currentUserId || memoriesLoading || !memoriesHasMore) return;
+    setMemoriesLoading(true);
+    setMemoriesError(null);
+    const { data, error: memErr } = await getProfileMemories({
+      profileUserId: profileId,
+      viewerId: currentUserId,
+      status: memoryStatusFilter,
+      limit: MEMORY_PAGE_SIZE,
+      offset: memoriesOffset,
+    });
+    if (memErr) {
+      setMemoriesError(memErr.message);
+      setMemoriesLoading(false);
+      return;
+    }
+    setMemories((prev) => [...prev, ...data]);
+    setMemoriesOffset((prev) => prev + data.length);
+    setMemoriesHasMore(data.length === MEMORY_PAGE_SIZE);
+    setMemoriesLoading(false);
+  };
+
   const handleFollow = async () => {
     if (!currentUserId || !profile) return;
 
@@ -144,36 +192,75 @@ const VisitProfilePage = () => {
     }
   };
 
+  const openBoard = (boardId: string | null) => {
+    if (boardId) router.push(`/u/boards/${boardId}`);
+  };
+
   const RenderPosts = () => {
-    const posts = activeTab === "photos" ? photos : videos;
+    const posts = activeTab === 'photos' ? photoItems : videoItems;
+
+    if (memoriesLoading && memories.length === 0) {
+      return (
+        <div className="flex justify-center py-16 mt-6">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
+        </div>
+      );
+    }
+    if (memoriesError) {
+      return <p className="text-red-500 mt-6 text-center">{memoriesError}</p>;
+    }
+
+    if (posts.length === 0) {
+      return (
+        <p className="text-center text-gray-500 py-12 mt-6">
+          {activeTab === 'photos' ? 'No photos yet.' : 'No videos yet.'}
+        </p>
+      );
+    }
 
     return (
-      <div className="grid grid-cols-3 gap-1 max-[700px]:grid-cols-2 max-[420px]:grid-cols-1 mt-6">
-        {posts.map((item, index) => (
-          <div
-            key={index}
-            className="relative aspect-square cursor-pointer overflow-hidden hover:opacity-90"
-          >
-            {activeTab === "photos" ? (
-              <Image
-                src={item}
-                alt={`Post ${index + 1}`}
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <video
-                src={item}
-                className="w-full h-full object-cover"
-                muted
-                loop
-                playsInline
-                autoPlay
-              />
-            )}
+      <>
+        <div className="grid grid-cols-3 gap-1 max-[700px]:grid-cols-2 max-[420px]:grid-cols-1 mt-6">
+          {posts.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => openBoard(item.boardId)}
+              className="relative aspect-square cursor-pointer overflow-hidden hover:opacity-90 bg-gray-100"
+            >
+              {activeTab === 'photos' ? (
+                <img
+                  src={item.url}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                  draggable={false}
+                />
+              ) : (
+                <video
+                  src={item.url}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+        {memoriesHasMore && (
+          <div className="flex justify-center mt-6">
+            <button
+              type="button"
+              onClick={() => void handleLoadMoreMemories()}
+              disabled={memoriesLoading}
+              className="px-4 py-2 rounded-lg bg-black text-white text-sm hover:opacity-90 disabled:opacity-50"
+            >
+              {memoriesLoading ? 'Loading…' : 'Load more'}
+            </button>
           </div>
-        ))}
-      </div>
+        )}
+      </>
     );
   };
 
@@ -256,28 +343,53 @@ const VisitProfilePage = () => {
         </div>
       </div>
 
-      <div className="flex justify-center gap-10 mt-10 border-t pt-4 text-sm font-medium">
+      <div className="flex justify-center gap-6 sm:gap-10 mt-10 border-t pt-4 text-sm font-medium flex-wrap">
         <button
-          onClick={() => setActiveTab("photos")}
+          type="button"
+          onClick={() => setActiveTab('photos')}
           className={`border-b-2 pb-2 flex items-center gap-2 cursor-pointer ${
-            activeTab === "photos"
-              ? "border-pink-500 text-pink-600"
-              : "border-transparent text-gray-500"
+            activeTab === 'photos'
+              ? 'border-pink-500 text-pink-600'
+              : 'border-transparent text-gray-500'
           }`}
         >
           <Camera className="w-4 h-4" /> Photos
         </button>
 
         <button
-          onClick={() => setActiveTab("videos")}
+          type="button"
+          onClick={() => setActiveTab('videos')}
           className={`border-b-2 pb-2 flex items-center gap-2 cursor-pointer ${
-            activeTab === "videos"
-              ? "border-pink-500 text-pink-600"
-              : "border-transparent text-gray-500"
+            activeTab === 'videos'
+              ? 'border-pink-500 text-pink-600'
+              : 'border-transparent text-gray-500'
           }`}
         >
           <Video className="w-4 h-4" /> Videos
         </button>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
+        {(
+          [
+            { key: 'all' as const, label: 'All', value: null as ProfileMemoryStatusFilter },
+            { key: 'live' as const, label: 'Live', value: 'live' as const },
+            { key: 'past' as const, label: 'Past', value: 'past' as const },
+          ] as const
+        ).map(({ key, label, value }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMemoryStatusFilter(value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              memoryStatusFilter === value
+                ? 'bg-[#1B1D26] text-white border-[#1B1D26]'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
             <RenderPosts />

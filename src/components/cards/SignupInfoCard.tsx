@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { SelectItem } from "@/components/ui/select";
 import { Country, State, City } from "country-state-city";
 import { createClient } from '@/lib/supabase/client';
+import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
 import { authService } from '@/lib/supabase/auth';
 
 import FloatingInput from "../inputs/FloatingInput";
@@ -93,7 +94,7 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
       const uint8Array = new Uint8Array(arrayBuffer);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/profile-images/${fileName}`,
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/${STORAGE_BUCKETS.PROFILE_IMAGES}/${fileName}`,
         {
           method: 'POST',
           headers: {
@@ -110,7 +111,7 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
         throw new Error(`Failed to upload image: ${error}`);
       }
 
-      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/profile-images/${fileName}`;
+      const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKETS.PROFILE_IMAGES}/${fileName}`;
 
       return publicUrl;
     } catch (err) {
