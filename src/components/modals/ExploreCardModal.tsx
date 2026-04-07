@@ -4,22 +4,21 @@ import { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { X, Heart, MessageCircle, Share2, MapPin, Users } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PublicBoardMemberPreview } from '@/hooks/useGetPublicBoards';
 import WishModal from '@/components/modals/WishModal';
 import ShareButtons from '@/components/buttons/ShareButtons';
+import { authService } from '@/lib/supabase/auth';
+import { getBoardMedia } from '@/lib/supabase/boards';
 
 type ExploreCardModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  /** Public board id — required for like (wish), comment navigation, and share link. */
   boardId?: string | null;
-  /** Honoree display name for the wish flow. */
   honoreeName?: string;
   title: string;
   image: string;
   avatars?: string[];
-  /** Full participant rows for the list sheet (ids enable profile links). */
   participants?: PublicBoardMemberPreview[];
   extraCount?: number;
   creatorId?: string | null;
@@ -31,6 +30,49 @@ type ExploreCardModalProps = {
   commentsCount?: number;
   sharesCount?: number;
 };
+
+type ExploreModalMediaItem = {
+  id: string;
+  mediaType: 'image' | 'video' | 'audio' | 'document';
+  url: string;
+  thumbnailUrl?: string;
+  filename?: string;
+};
+
+const FALLBACK_MODAL_IMAGE =
+  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&q=80';
+
+function normalizeMediaType(value: unknown): ExploreModalMediaItem['mediaType'] {
+  const t = String(value || '').toLowerCase();
+  if (t.includes('video')) return 'video';
+  if (t.includes('audio')) return 'audio';
+  if (t.includes('document') || t.includes('pdf') || t.includes('doc')) return 'document';
+  return 'image';
+}
+
+function readString(row: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function readNestedString(row: Record<string, unknown>, containers: string[], keys: string[]): string {
+  for (const containerKey of containers) {
+    const container = row[containerKey];
+    if (!container || typeof container !== 'object') continue;
+    const value = readString(container as Record<string, unknown>, keys);
+    if (value) return value;
+  }
+  return '';
+}
+
+function getSafeModalImageSrc(src: string): string {
+  return typeof src === 'string' && src.trim() ? src : FALLBACK_MODAL_IMAGE;
+}
 
 const ExploreCardModal = ({
   isOpen,
@@ -57,10 +99,136 @@ const ExploreCardModal = ({
   const [wishModalOpen, setWishModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [mediaItems, setMediaItems] = useState<ExploreModalMediaItem[]>([]);
+  const [mediaIndex, setMediaIndex] = useState(0);
+  const [isMediaLoading, setIsMediaLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen) setLocalLikesCount(likesCount);
   }, [isOpen, likesCount]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMediaItems([]);
+      setMediaIndex(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadMedia = async () => {
+      if (!boardId) {
+        setMediaItems([]);
+        setMediaIndex(0);
+        return;
+      }
+
+      setIsMediaLoading(true);
+      const user = await authService.getUser();
+      const viewerId = user?.id;
+      if (!viewerId) {
+        setMediaItems([]);
+        setMediaIndex(0);
+        setIsMediaLoading(false);
+        return;
+      }
+
+      const { data, error } = await getBoardMedia({
+        boardId,
+        viewerId,
+        limit: 20,
+        offset: 0,
+        scope: 'all',
+        orderBy: 'created_at',
+        orderDir: 'desc',
+      });
+
+      if (cancelled || error) {
+        setIsMediaLoading(false);
+        return;
+      }
+
+      const parsed = data
+        .map((item, idx) => {
+          const row = item as Record<string, unknown>;
+          const directUrl = readString(row, [
+            'cdn_url',
+            'cdnUrl',
+            'url',
+            'file_url',
+            'fileUrl',
+            'public_url',
+            'publicUrl',
+            'media_url',
+            'mediaUrl',
+            'source_url',
+            'sourceUrl',
+            'signed_url',
+            'signedUrl',
+            'download_url',
+            'downloadUrl',
+          ]);
+          const nestedUrl = readNestedString(
+            row,
+            ['media', 'asset', 'file', 'attachment'],
+            [
+              'cdn_url',
+              'cdnUrl',
+              'url',
+              'file_url',
+              'fileUrl',
+              'public_url',
+              'publicUrl',
+              'media_url',
+              'mediaUrl',
+              'source_url',
+              'sourceUrl',
+              'signed_url',
+              'signedUrl',
+              'download_url',
+              'downloadUrl',
+            ]
+          );
+          const thumbnailUrl = readString(row, [
+            'thumbnail_url',
+            'thumbnailUrl',
+            'thumbnail',
+            'thumb_url',
+            'thumbUrl',
+            'preview_url',
+            'previewUrl',
+          ]) || readNestedString(row, ['media', 'asset', 'file', 'attachment'], [
+            'thumbnail_url',
+            'thumbnailUrl',
+            'thumbnail',
+            'thumb_url',
+            'thumbUrl',
+            'preview_url',
+            'previewUrl',
+          ]);
+          const filename = readString(row, ['filename', 'file_name', 'name', 'title']);
+          const id = readString(row, ['id', 'media_id']) || `${idx}`;
+          const mediaType = normalizeMediaType(
+            row.media_type ?? row.mime_type ?? row.content_type ?? row.media_kind ?? row.file_type
+          );
+          const url = directUrl || nestedUrl || thumbnailUrl;
+
+          if (!url) return null;
+          return { id, mediaType, url, thumbnailUrl, filename } as ExploreModalMediaItem;
+        })
+        .filter(Boolean) as ExploreModalMediaItem[];
+
+      setMediaItems(parsed);
+      setMediaIndex(0);
+      setIsMediaLoading(false);
+    };
+
+    loadMedia();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, boardId]);
 
   useEffect(() => {
     if (!isOpen) setParticipantsListOpen(false);
@@ -110,13 +278,33 @@ const ExploreCardModal = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
-
   const displayAvatars = avatars.slice(0, 4);
   const slideOpen = isOpen && isAnimating;
   const participantCount = participants.length + extraCount;
   const canOpenParticipantsList = participantCount > 0;
   const canEngage = !!boardId;
+  const currentMedia = mediaItems[mediaIndex];
+  const hasCarousel = mediaItems.length > 1;
+  const fallbackImageSrc = getSafeModalImageSrc(image);
+  const goPrevMedia = useCallback(() => {
+    if (!mediaItems.length) return;
+    setMediaIndex((prev) => (prev === 0 ? mediaItems.length - 1 : prev - 1));
+  }, [mediaItems.length]);
+
+  const goNextMedia = useCallback(() => {
+    if (!mediaItems.length) return;
+    setMediaIndex((prev) => (prev === mediaItems.length - 1 ? 0 : prev + 1));
+  }, [mediaItems.length]);
+
+  useEffect(() => {
+    if (!isOpen || !hasCarousel) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowLeft') goPrevMedia();
+      if (event.key === 'ArrowRight') goNextMedia();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, hasCarousel, goPrevMedia, goNextMedia]);
 
   const ModalContent = () => {
     const creatorRow = (
@@ -186,15 +374,101 @@ const ExploreCardModal = ({
       </div>
 
       <div className="relative flex bg-[#1a1a1a] mt-5 h-[550px] min-[769px]:rounded-2xl overflow-hidden">
+        {isMediaLoading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30">
+            <div className="h-8 w-8 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+          </div>
+        )}
+        {currentMedia ? (
+          <>
+            {currentMedia.mediaType === 'image' && (
+              <img src={currentMedia.url} alt={currentMedia.filename || title} className="h-full w-full object-contain" />
+            )}
+            {currentMedia.mediaType === 'video' && (
+              <video
+                src={currentMedia.url}
+                className="h-full w-full object-contain"
+                controls
+                playsInline
+                preload="metadata"
+              />
+            )}
+            {currentMedia.mediaType === 'audio' && (
+              <div className="h-full w-full flex flex-col items-center justify-center gap-4 text-white px-6 text-center">
+                <p className="text-sm text-white/80">{currentMedia.filename || 'Audio file'}</p>
+                <audio src={currentMedia.url} controls className="w-full max-w-md" preload="metadata" />
+              </div>
+            )}
+            {currentMedia.mediaType === 'document' && (
+              <div className="h-full w-full flex flex-col items-center justify-center gap-4 text-white px-6 text-center">
+                {currentMedia.thumbnailUrl ? (
+                  <img src={currentMedia.thumbnailUrl} alt={currentMedia.filename || 'Document preview'} className="max-h-[60%] rounded-lg object-contain" />
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-white/15 flex items-center justify-center text-3xl">DOC</div>
+                )}
+                <p className="text-sm text-white/80">{currentMedia.filename || 'Document file'}</p>
+                <a
+                  href={currentMedia.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 rounded-md bg-white text-black text-sm font-medium hover:bg-white/90"
+                >
+                  Open document
+                </a>
+              </div>
+            )}
+          </>
+        ) : (
+          <Image
+            src={fallbackImageSrc}
+            alt={title}
+            unoptimized
+            priority
+            fill
+            className='h-full object-contain'
+          />
+        )}
 
-        <Image
-          src={image}
-          alt={title}
-          unoptimized
-          priority
-          fill
-          className='h-full object-contain'
-        />
+        {hasCarousel && (
+          <>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goPrevMedia();
+              }}
+              className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/60 bg-black/55 text-white flex items-center justify-center hover:bg-black/70 pointer-events-auto"
+              aria-label="Previous media"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goNextMedia();
+              }}
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full border border-white/60 bg-black/55 text-white flex items-center justify-center hover:bg-black/70 pointer-events-auto"
+              aria-label="Next media"
+            >
+              <ChevronRight size={20} />
+            </button>
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-black/45 rounded-full px-2 py-1">
+              {mediaItems.map((item, idx) => (
+                <button
+                  key={`${item.id}-${idx}`}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMediaIndex(idx);
+                  }}
+                  className={`h-1.5 w-1.5 rounded-full ${idx === mediaIndex ? 'bg-white' : 'bg-white/50'}`}
+                  aria-label={`Go to media ${idx + 1}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
 
         <div className="absolute top-4 left-4 right-4 flex items-start gap-4 pointer-events-none z-10">

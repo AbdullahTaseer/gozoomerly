@@ -77,8 +77,9 @@ const AdminNavbar = ({ onMenuClick }: AdminNavbarProps) => {
     return titleMap[pathname] || 'Admin Dashboard';
   };
 
-  const handleLogout = () => {
-    router.push('/admin');
+  const handleLogout = async () => {
+    await authService.signOut();
+    router.replace('/admin');
   };
 
   return (

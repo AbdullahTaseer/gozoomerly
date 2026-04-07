@@ -1102,6 +1102,94 @@ export interface GetBoardMemoriesResponse {
   };
 }
 
+export type BoardMediaScope = 'all' | 'board_direct' | 'wish_attached';
+export type BoardMediaOrderDir = 'asc' | 'desc';
+export type BoardMediaType = 'image' | 'video' | 'audio' | 'document';
+
+export interface GetBoardMediaParams {
+  boardId: string;
+  viewerId: string;
+  limit?: number;
+  offset?: number;
+  scope?: BoardMediaScope;
+  orderBy?: string;
+  orderDir?: BoardMediaOrderDir;
+  mediaType?: BoardMediaType;
+  processingStatus?: string;
+  minSizeBytes?: number;
+}
+
+export type BoardMediaItem = Record<string, unknown>;
+
+function normalizeBoardMediaPayload(data: unknown): BoardMediaItem[] {
+  if (data == null) return [];
+  if (typeof data === 'string') {
+    try {
+      return normalizeBoardMediaPayload(JSON.parse(data));
+    } catch {
+      return [];
+    }
+  }
+  if (Array.isArray(data)) {
+    return data.filter((row) => row != null && typeof row === 'object') as BoardMediaItem[];
+  }
+  if (typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    const directNested = d.media ?? d.items ?? d.rows ?? d.results;
+    if (Array.isArray(directNested)) {
+      return directNested.filter((row) => row != null && typeof row === 'object') as BoardMediaItem[];
+    }
+
+    if (d.data !== undefined) {
+      const fromData = normalizeBoardMediaPayload(d.data);
+      if (fromData.length > 0) return fromData;
+    }
+
+    return [d];
+  }
+  return [];
+}
+
+export async function getBoardMedia(
+  params: GetBoardMediaParams
+): Promise<{ data: BoardMediaItem[]; error: Error | null }> {
+  const supabase = createClient();
+  const {
+    boardId,
+    viewerId,
+    limit = 20,
+    offset = 0,
+    scope = 'all',
+    orderBy = 'created_at',
+    orderDir = 'desc',
+    mediaType,
+    processingStatus,
+    minSizeBytes,
+  } = params;
+
+  const rpcParams: Record<string, unknown> = {
+    p_board_id: boardId,
+    p_viewer_id: viewerId,
+    p_limit: limit,
+    p_offset: offset,
+    p_scope: scope,
+    p_order_by: orderBy,
+    p_order_dir: orderDir,
+  };
+
+  if (mediaType) rpcParams.p_media_type = mediaType;
+  if (processingStatus) rpcParams.p_processing_status = processingStatus;
+  if (typeof minSizeBytes === 'number') rpcParams.p_min_size_bytes = minSizeBytes;
+
+  const { data, error } = await supabase.rpc('get_board_media', rpcParams);
+
+  if (error) {
+    return { data: [], error: new Error(error.message) };
+  }
+
+  return { data: normalizeBoardMediaPayload(data), error: null };
+}
+
 export async function getBoardMemories(
   boardId: string,
   options?: {
