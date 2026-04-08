@@ -11,6 +11,7 @@ type ExploreCardProps = {
   heightVariant?: 'tall' | 'medium' | 'short';
   imageHeightPx?: number;
   onClick?: () => void;
+  onAvatarsClick?: () => void;
 };
 
 const aspectClasses = {
@@ -36,6 +37,7 @@ const ExploreCard = ({
   heightVariant = 'medium',
   imageHeightPx,
   onClick,
+  onAvatarsClick,
 }: ExploreCardProps) => {
   const coverSrc = safeImageSrc(image);
   const displayAvatars = avatars
@@ -52,7 +54,7 @@ const ExploreCard = ({
     <button
       type="button"
       onClick={onClick}
-      className="group relative w-full rounded-lg overflow-hidden break-inside-avoid cursor-pointer bg-gray-100 p-0 border-0 text-left font-inherit appearance-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
+      className="group relative w-full rounded-lg overflow-hidden break-inside-avoid cursor-pointer bg-gray-100 p-0 border-0 text-left font-inherit appearance-none focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-pink-500"
     >
       <div
         className={imageBoxClass}
@@ -69,7 +71,24 @@ const ExploreCard = ({
           {title}
         </p>
         <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2">
-          <div className="flex -space-x-2">
+          <div
+            role={onAvatarsClick ? 'button' : undefined}
+            tabIndex={onAvatarsClick ? 0 : -1}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAvatarsClick?.();
+            }}
+            onKeyDown={(e) => {
+              if (!onAvatarsClick) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                onAvatarsClick();
+              }
+            }}
+            className={`flex -space-x-2 ${onAvatarsClick ? 'cursor-pointer' : 'cursor-default'}`}
+            aria-label={onAvatarsClick ? 'View participants' : 'Participants'}
+          >
             {displayAvatars.map((avatar, i) => (
               <div
                 key={i}

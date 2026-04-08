@@ -16,6 +16,7 @@ import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import ExploreCard from '@/components/cards/ExploreCard';
 import InviteDeclinedModal from '@/components/modals/InviteDeclinedModal';
 import ExploreCardModal from '@/components/modals/ExploreCardModal';
+import HomeExploreParticipantsModal from '@/components/modals/HomeExploreParticipantsModal';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { Search } from 'lucide-react';
@@ -33,6 +34,7 @@ const Home = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [declineModal, setDeclineModal] = useState<{ invitationId: string; onConfirm: () => Promise<void> } | null>(null);
   const [exploreModalCard, setExploreModalCard] = useState<PublicBoard | null>(null);
+  const [participantsModalCard, setParticipantsModalCard] = useState<PublicBoard | null>(null);
 
   const {
     boards: userBoards,
@@ -301,6 +303,7 @@ const Home = () => {
                               extraCount={remaining}
                               imageHeightPx={exploreCardImageHeightPx(colIdx, rowIdx)}
                               onClick={() => setExploreModalCard(board)}
+                              onAvatarsClick={() => setParticipantsModalCard(board)}
                             />
                           );
                         })}
@@ -363,6 +366,14 @@ const Home = () => {
           likesCount={exploreModalCard.wishes_count ?? 0}
           commentsCount={exploreModalCard.contributors_count ?? 0}
           sharesCount={exploreModalCard.shares_count ?? 0}
+        />
+      ) : null}
+      {participantsModalCard ? (
+        <HomeExploreParticipantsModal
+          isOpen={true}
+          onClose={() => setParticipantsModalCard(null)}
+          participants={participantsModalCard.member_previews ?? []}
+          totalMembers={participantsModalCard.total_members ?? 0}
         />
       ) : null}
     </div>
