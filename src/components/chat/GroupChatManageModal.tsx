@@ -158,10 +158,10 @@ const GroupChatManageModal: React.FC<GroupChatManageModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/50" aria-label="Close" onClick={onClose} />
+      <button type="button" className="absolute inset-0 z-0 bg-black/50" aria-label="Close" onClick={onClose} />
       <div
         role="dialog"
-        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl border border-gray-100 p-5"
+        className="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl border border-gray-100 p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between gap-2 mb-3">

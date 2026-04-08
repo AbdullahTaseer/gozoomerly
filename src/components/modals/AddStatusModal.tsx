@@ -356,8 +356,9 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
       {}
       <div
         className={`hidden max-[769px]:flex flex-col fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] ${isOpen ? 'translate-y-0' : 'translate-y-full'
-          }`}
+          } ${!isOpen ? 'pointer-events-none' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        aria-hidden={!isOpen}
       >
         <div className="flex justify-center pt-3 flex-shrink-0">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />

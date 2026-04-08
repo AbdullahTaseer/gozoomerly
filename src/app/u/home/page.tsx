@@ -330,37 +330,41 @@ const Home = () => {
         </div>
 
       </div>
-      <InviteDeclinedModal
-        isOpen={!!declineModal}
-        onClose={() => setDeclineModal(null)}
-        onConfirm={declineModal?.onConfirm ?? (() => {})}
-      />
-      <ExploreCardModal
-        isOpen={!!exploreModalCard}
-        onClose={() => setExploreModalCard(null)}
-        boardId={exploreModalCard?.id ?? null}
-        honoreeName={(() => {
-          const h = exploreModalCard?.honoree_details;
-          if (!h) return exploreModalCard?.title ?? '';
-          const full = `${h.first_name || ''} ${h.last_name || ''}`.trim();
-          return full || exploreModalCard?.title || '';
-        })()}
-        title={exploreModalCard?.title ?? ''}
-        image={exploreModalCard?.cover_image_url || exploreModalCard?.honoree_details?.profile_photo_url || ''}
-        avatars={
-          exploreModalCard?.member_previews
-            ?.map((m) => m.profile_pic_url)
-            .filter(Boolean) as string[] ?? []
-        }
-        participants={exploreModalCard?.member_previews ?? []}
-        extraCount={Math.max(0, (exploreModalCard?.total_members ?? 0) - (exploreModalCard?.member_previews?.length ?? 0))}
-        creatorId={exploreModalCard?.creator?.id ?? exploreModalCard?.creator_id ?? null}
-        creatorName={exploreModalCard?.creator?.name || ''}
-        creatorAvatar={exploreModalCard?.creator?.profile_pic_url || undefined}
-        likesCount={exploreModalCard?.wishes_count ?? 0}
-        commentsCount={exploreModalCard?.contributors_count ?? 0}
-        sharesCount={exploreModalCard?.shares_count ?? 0}
-      />
+      {declineModal ? (
+        <InviteDeclinedModal
+          isOpen={true}
+          onClose={() => setDeclineModal(null)}
+          onConfirm={declineModal.onConfirm}
+        />
+      ) : null}
+      {exploreModalCard ? (
+        <ExploreCardModal
+          isOpen={true}
+          onClose={() => setExploreModalCard(null)}
+          boardId={exploreModalCard.id}
+          honoreeName={(() => {
+            const h = exploreModalCard.honoree_details;
+            if (!h) return exploreModalCard.title ?? '';
+            const full = `${h.first_name || ''} ${h.last_name || ''}`.trim();
+            return full || exploreModalCard.title || '';
+          })()}
+          title={exploreModalCard.title ?? ''}
+          image={exploreModalCard.cover_image_url || exploreModalCard.honoree_details?.profile_photo_url || ''}
+          avatars={
+            exploreModalCard.member_previews
+              ?.map((m) => m.profile_pic_url)
+              .filter(Boolean) as string[] ?? []
+          }
+          participants={exploreModalCard.member_previews ?? []}
+          extraCount={Math.max(0, (exploreModalCard.total_members ?? 0) - (exploreModalCard.member_previews?.length ?? 0))}
+          creatorId={exploreModalCard.creator?.id ?? exploreModalCard.creator_id ?? null}
+          creatorName={exploreModalCard.creator?.name || ''}
+          creatorAvatar={exploreModalCard.creator?.profile_pic_url || undefined}
+          likesCount={exploreModalCard.wishes_count ?? 0}
+          commentsCount={exploreModalCard.contributors_count ?? 0}
+          sharesCount={exploreModalCard.shares_count ?? 0}
+        />
+      ) : null}
     </div>
   );
 };

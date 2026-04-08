@@ -41,18 +41,22 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
         </main>
         {!hideNavbarForBoardDetail && <DashFooter />}
         {!shouldHideBottomTabs && <BottomTabs />}
-        <CreateOrShareModal
-          isOpen={isCreateOrShareModalOpen}
-          onClose={() => createOrShareModalState.close()}
-          onPostStatus={() => setIsAddStatusOpen(true)}
-        />
-        <AddStatusModal
-          isOpen={isAddStatusOpen}
-          onClose={() => setIsAddStatusOpen(false)}
-          onImageSelect={handleStatusImageSelect}
-          onStoryCreate={handleStoryCreate}
-          onMultipleStoriesCreate={handleMultipleStoriesCreate}
-        />
+        {isCreateOrShareModalOpen ? (
+          <CreateOrShareModal
+            isOpen={isCreateOrShareModalOpen}
+            onClose={() => createOrShareModalState.close()}
+            onPostStatus={() => setIsAddStatusOpen(true)}
+          />
+        ) : null}
+        {isAddStatusOpen ? (
+          <AddStatusModal
+            isOpen={isAddStatusOpen}
+            onClose={() => setIsAddStatusOpen(false)}
+            onImageSelect={handleStatusImageSelect}
+            onStoryCreate={handleStoryCreate}
+            onMultipleStoriesCreate={handleMultipleStoriesCreate}
+          />
+        ) : null}
       </div>
     </OnlineStatusProvider>
   );

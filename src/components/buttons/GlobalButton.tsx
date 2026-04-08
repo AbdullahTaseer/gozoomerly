@@ -46,21 +46,23 @@ const GlobalButton = ({
   const defaultGradient = "linear-gradient(90deg, #FF4E94 0%, #8B5CF6 100%)";
   const hoverBgColor = hover?.bgColor || defaultGradient;
 
+  const resolvedBg = disabled ? '#e5e7eb' : (bgColor || defaultGradient);
+  const resolvedColor = disabled ? '#374151' : color;
+
   return (
     <div
       style={{
         width,
-        color,
+        color: resolvedColor,
         height,
         borderRadius,
         fontWeight: font,
-        background: disabled ? '#e5e5e5' : (bgColor || defaultGradient),
+        background: resolvedBg,
         border: `${borderWidth || "0px"} solid ${borderColor || "transparent"}`,
         userSelect: 'none',
-        opacity: disabled ? 0.6 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer'
       }}
-      className={`gap-2 ${className} flex justify-center items-center text-[15px] max-[540px]:text-[13px] tracking-[0.1px]`}
+      className={`gap-2 ${className} flex justify-center items-center text-[15px] max-[540px]:text-[13px] tracking-[0.1px] px-4 min-w-fit ${disabled ? 'opacity-60' : ''}`}
       onMouseEnter={(e) => {
         if (!disabled) {
           e.currentTarget.style.background = hoverBgColor;

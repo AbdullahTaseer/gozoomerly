@@ -108,8 +108,9 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
 
       <div
         className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'
-          }`}
+          } ${!isOpen ? 'pointer-events-none' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        aria-hidden={!isOpen}
       >
         <div className="flex justify-center pt-3">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
