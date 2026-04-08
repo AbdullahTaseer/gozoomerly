@@ -241,27 +241,41 @@ const Connections = () => {
       isAdd: boolean;
       avatar: string;
       backgroundImage?: string;
+      backgroundVideo?: string;
       hasUnviewed: boolean;
       stories: Story[];
       storyGroupIndex?: number;
     };
 
-    const otherStoryItems: StoryDisplayItem[] = otherStories.map((storyGroup) => ({
-      id: `story-${storyGroup.user?.id}`,
-      name: storyGroup.user?.name || 'Friend',
-      avatar: storyGroup.user?.profile_pic_url || ProfileAvatar,
-      backgroundImage: storyGroup.stories[0]?.media?.cdn_url || storyGroup.user?.profile_pic_url || ProfileAvatar,
-      isAdd: false,
-      hasUnviewed: storyGroup.hasUnviewed,
-      stories: storyGroup.stories,
-      storyGroupIndex: stories.findIndex(s => s.user?.id === storyGroup.user?.id),
-    }));
+    const otherStoryItems: StoryDisplayItem[] = otherStories.map((storyGroup) => {
+      const latestStory = storyGroup.stories[0];
+      const isVideoStory = latestStory?.content_type === 'video';
+      return {
+        id: `story-${storyGroup.user?.id}`,
+        name: storyGroup.user?.name || 'Friend',
+        avatar: storyGroup.user?.profile_pic_url || ProfileAvatar,
+        backgroundImage: !isVideoStory
+          ? latestStory?.media?.cdn_url || storyGroup.user?.profile_pic_url || ProfileAvatar
+          : storyGroup.user?.profile_pic_url || ProfileAvatar,
+        backgroundVideo: isVideoStory ? latestStory?.media?.cdn_url : undefined,
+        isAdd: false,
+        hasUnviewed: storyGroup.hasUnviewed,
+        stories: storyGroup.stories,
+        storyGroupIndex: stories.findIndex(s => s.user?.id === storyGroup.user?.id),
+      };
+    });
 
     const displayItems: StoryDisplayItem[] = [];
 
     // Add "Add status" button with user's status as background (like Instagram/WhatsApp)
+    const latestUserStory = userStories?.stories?.[0];
     const userStatusBackground = userStories && userStories.stories.length > 0
-      ? userStories.stories[0]?.media?.cdn_url || userStories.user?.profile_pic_url || ProfileAvatar
+      ? latestUserStory?.content_type === 'video'
+        ? userStories.user?.profile_pic_url || ProfileAvatar
+        : latestUserStory?.media?.cdn_url || userStories.user?.profile_pic_url || ProfileAvatar
+      : undefined;
+    const userStatusBackgroundVideo = latestUserStory?.content_type === 'video'
+      ? latestUserStory?.media?.cdn_url
       : undefined;
 
     displayItems.push({
@@ -270,6 +284,7 @@ const Connections = () => {
       isAdd: true,
       avatar: currentUser?.user_metadata?.avatar_url || ProfileAvatar,
       backgroundImage: userStatusBackground,
+      backgroundVideo: userStatusBackgroundVideo,
       hasUnviewed: false,
       stories: userStories?.stories || [],
       storyGroupIndex: userStoriesIndex >= 0 ? userStoriesIndex : undefined,
@@ -424,6 +439,7 @@ const Connections = () => {
                 type={status.isAdd ? 'add' : 'user'}
                 profileImage={status.avatar}
                 backgroundImage={status.backgroundImage}
+                backgroundVideo={status.backgroundVideo}
                 name={status.isAdd ? undefined : status.name}
                 onClick={() => {
                   if (status.isAdd) {

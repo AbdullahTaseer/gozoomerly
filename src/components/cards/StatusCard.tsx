@@ -7,6 +7,7 @@ interface StatusCardProps {
   type: 'add' | 'user';
   profileImage?: string;
   backgroundImage?: string;
+  backgroundVideo?: string;
   name?: string;
   onClick?: () => void;
   onAddClick?: () => void;
@@ -16,6 +17,7 @@ export default function StatusCard({
   type,
   profileImage,
   backgroundImage,
+  backgroundVideo,
   name,
   onClick,
   onAddClick,
@@ -26,7 +28,19 @@ export default function StatusCard({
         onClick={onClick}
         className="relative shrink-0 w-[100px] h-[160px] rounded-[8px] overflow-hidden cursor-pointer bg-[#11131A]"
       >
-        {backgroundImage && (
+        {backgroundVideo ? (
+          <>
+            <video
+              src={backgroundVideo}
+              className="absolute inset-0 w-full h-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          </>
+        ) : backgroundImage ? (
           <>
             <Image
               src={backgroundImage}
@@ -37,7 +51,7 @@ export default function StatusCard({
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           </>
-        )}
+        ) : null}
 
         {profileImage && (
           <div className="absolute top-[34px] left-[24px] w-[44px] h-[44px] rounded-full border-2 border-white overflow-hidden">
@@ -61,7 +75,7 @@ export default function StatusCard({
         </div>
 
         <p className="absolute bottom-[16px] left-0 right-0 text-center text-white text-[14px] font-semibold">
-          {backgroundImage ? 'My Status' : 'Add status'}
+          {backgroundImage || backgroundVideo ? 'My Status' : 'Add status'}
         </p>
       </div>
     );
@@ -72,14 +86,23 @@ export default function StatusCard({
       onClick={onClick}
       className="relative shrink-0 w-[100px] h-[160px] rounded-[8px] overflow-hidden cursor-pointer"
     >
-      {backgroundImage && (
+      {backgroundVideo ? (
+        <video
+          src={backgroundVideo}
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+        />
+      ) : backgroundImage ? (
         <Image
           src={backgroundImage}
           alt={name || ''}
           fill
           className="object-cover"
         />
-      )}
+      ) : null}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
