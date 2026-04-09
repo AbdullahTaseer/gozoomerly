@@ -68,18 +68,30 @@ export function normalizeProfileMemoriesPayload(data: unknown): ProfileMemoryIte
   }
   if (typeof data === 'object') {
     const d = data as Record<string, unknown>;
+   
+    const dataObj =
+      typeof d.data === 'object' && d.data !== null
+        ? (d.data as Record<string, unknown>)
+        : null;
     const nested =
       d.memories ??
       d.items ??
       d.rows ??
-      d.data ??
-      (typeof d.data === 'object' && d.data !== null
-        ? (d.data as Record<string, unknown>).memories ??
-          (d.data as Record<string, unknown>).items
-        : undefined);
+      dataObj?.memories ??
+      dataObj?.items ??
+      (Array.isArray(d.data) ? d.data : undefined);
     if (Array.isArray(nested)) {
       return nested.map(unwrapRow).filter(Boolean) as ProfileMemoryItem[];
     }
+
+    // Common single-row wrappers.
+    if (d.memory && typeof d.memory === 'object') {
+      return [unwrapRow(d)].filter(Boolean) as ProfileMemoryItem[];
+    }
+    if (dataObj?.memory && typeof dataObj.memory === 'object') {
+      return [{ ...(dataObj.memory as object), board: dataObj.board, board_id: dataObj.board_id } as ProfileMemoryItem];
+    }
+
     const one = unwrapRow(data);
     return one ? [one] : [];
   }
