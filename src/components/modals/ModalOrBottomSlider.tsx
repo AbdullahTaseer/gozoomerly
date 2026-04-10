@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 type Props = {
@@ -24,7 +25,11 @@ const ModalOrBottomSlider = ({
   desktopClassName = '',
   modalHeader = true,
 }: Props) => {
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
 
+  useLayoutEffect(() => {
+    setPortalTarget(document.body);
+  }, []);
 
   const header = modalHeader && (
     <div className="px-3 py-2 flex items-center justify-between gap-4">
@@ -51,21 +56,22 @@ const ModalOrBottomSlider = ({
     </>
   );
 
-  return (
+  const modalUi = (
     <>
-      {/* Overlay */}
       <div
-        className={`fixed inset-0 z-[1010] bg-black/60 backdrop-blur-sm transition-opacity duration-300
+        className={`fixed inset-0 z-[60000] bg-black/60 backdrop-blur-sm transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
 
       <div
-        className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[1011] bg-white rounded-t-2xl shadow-2xl
-        transition-transform duration-300 ease-out
-        ${isOpen ? 'translate-y-0' : 'translate-y-full'}
+        className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[60001] bg-white rounded-t-2xl shadow-2xl
+        pb-[env(safe-area-inset-bottom,0px)]
+        transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-y-0 pointer-events-auto' : 'translate-y-[100dvh] pointer-events-none'}
         ${className}`}
         onClick={(e) => e.stopPropagation()}
+        aria-hidden={!isOpen}
       >
         <div className="flex justify-center pt-2">
           <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
@@ -77,7 +83,7 @@ const ModalOrBottomSlider = ({
       </div>
 
       <div
-        className={`min-[770px]:flex hidden fixed inset-0 z-[1011] items-center justify-center p-4
+        className={`min-[770px]:flex hidden fixed inset-0 z-[60001] items-center justify-center p-4
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
@@ -95,6 +101,12 @@ const ModalOrBottomSlider = ({
       </div>
     </>
   );
+
+  if (!portalTarget) {
+    return null;
+  }
+
+  return createPortal(modalUi, portalTarget);
 };
 
 export default ModalOrBottomSlider;

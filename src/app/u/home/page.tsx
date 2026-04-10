@@ -357,7 +357,7 @@ const Home = () => {
       >
         {exploreModalCard ? (
           <ExploreCardModal
-            isOpen={true}
+            isOpen={!!exploreModalCard}
             onClose={() => setExploreModalCard(null)}
             boardId={exploreModalCard.id}
             honoreeName={(() => {

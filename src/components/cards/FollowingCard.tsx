@@ -361,7 +361,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
           title={title}
         />
       </ModalOrBottomSlider>
-      {boardId && (
+      {boardId ? (
         <ModalOrBottomSlider
           isOpen={isInviteModalOpen}
           onClose={() => setIsInviteModalOpen(false)}
@@ -376,9 +376,9 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
             boardTitle={title}
           />
         </ModalOrBottomSlider>
-      )}
+      ) : null}
 
-      {boardId && (
+      {boardId ? (
         <ModalOrBottomSlider
           isOpen={wishModalOpen}
           onClose={() => setWishModalOpen(false)}
@@ -394,7 +394,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
             onSubmit={() => setLocalLikes((c) => c + 1)}
           />
         </ModalOrBottomSlider>
-      )}
+      ) : null}
     </>
   );
 };

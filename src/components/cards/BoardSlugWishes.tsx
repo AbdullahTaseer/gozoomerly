@@ -3,7 +3,8 @@
 import {  useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import FeedCard from '@/components/cards/FeedCard';
-import WishCommentsModal from '@/components/cards/WishCommentsModal';
+import WishCommentsModalContent from '@/components/cards/WishCommentsModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import { getBoardWishes, likeWish, unlikeWish, getWishComments } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 
@@ -259,19 +260,26 @@ const BoardSlugWishes: React.FC<BoardSlugWishesProps> = ({
       })}
 
       {}
-      {selectedWishId && selectedWish && (
-        <WishCommentsModal
-          isOpen={commentsModalOpen}
-          onClose={handleCommentsModalClose}
-          wishId={selectedWishId}
-          wishContent={selectedWish.content}
-          wishAuthor={{
-            id: selectedWish.sender.id,
-            name: selectedWish.sender.name,
-            avatar: selectedWish.sender.profile_pic_url || undefined,
-          }}
-        />
-      )}
+      <ModalOrBottomSlider
+        isOpen={commentsModalOpen && !!selectedWishId && !!selectedWish}
+        onClose={handleCommentsModalClose}
+        title="Comments"
+        desktopClassName="max-w-2xl"
+        contentClassName="!p-0 flex flex-col min-h-0"
+      >
+        {selectedWishId && selectedWish ? (
+          <WishCommentsModalContent
+            key={selectedWishId}
+            wishId={selectedWishId}
+            wishContent={selectedWish.content}
+            wishAuthor={{
+              id: selectedWish.sender.id,
+              name: selectedWish.sender.name,
+              avatar: selectedWish.sender.profile_pic_url || undefined,
+            }}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
     </div>
   );
 };

@@ -339,13 +339,13 @@ const ExploreCardModal = ({
           <button
             type="button"
             onClick={goToBoardComments}
-            className="font-bold text-3xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+            className="font-bold text-2xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-gray-400"
             aria-label={`Open board: ${title}`}
           >
             {title}
           </button>
         ) : (
-          <h2 className="font-bold text-3xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
+          <h2 className="font-bold text-2xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
             {title}
           </h2>
         )}
@@ -681,7 +681,7 @@ const ExploreCardModal = ({
         </>
       )}
 
-      {wishModalOpen && boardId && (
+      {boardId ? (
         <ModalOrBottomSlider
           isOpen={wishModalOpen}
           onClose={() => setWishModalOpen(false)}
@@ -697,7 +697,7 @@ const ExploreCardModal = ({
             onSubmit={handleWishSuccess}
           />
         </ModalOrBottomSlider>
-      )}
+      ) : null}
 
       {shareModalOpen && boardId && shareUrl && (
         <>

@@ -384,7 +384,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
         />
       </ModalOrBottomSlider>
 
-      {boardId && (
+      {boardId ? (
         <ModalOrBottomSlider
           isOpen={isInviteModalOpen}
           onClose={() => setIsInviteModalOpen(false)}
@@ -399,7 +399,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
             boardTitle={title}
           />
         </ModalOrBottomSlider>
-      )}
+      ) : null}
     </div>
   );
 };

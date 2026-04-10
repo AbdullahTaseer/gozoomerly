@@ -3,7 +3,8 @@
 import {  useState, useEffect  } from 'react';
 import { useRouter } from 'next/navigation';
 import FeedCard from '@/components/cards/FeedCard';
-import WishCommentsModal from '@/components/cards/WishCommentsModal';
+import WishCommentsModalContent from '@/components/cards/WishCommentsModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import { getBoardMemories, likeWish, unlikeWish, type BoardMemory } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 
@@ -285,19 +286,26 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
       )}
 
       {}
-      {selectedWishId && selectedMemory && (
-        <WishCommentsModal
-          isOpen={commentsModalOpen}
-          onClose={handleCommentsModalClose}
-          wishId={selectedWishId}
-          wishContent={selectedMemory.content}
-          wishAuthor={{
-            id: selectedMemory.wisher.id,
-            name: selectedMemory.wisher.name,
-            avatar: selectedMemory.wisher.profile_pic_url || undefined,
-          }}
-        />
-      )}
+      <ModalOrBottomSlider
+        isOpen={commentsModalOpen && !!selectedWishId && !!selectedMemory}
+        onClose={handleCommentsModalClose}
+        title="Comments"
+        desktopClassName="max-w-2xl"
+        contentClassName="!p-0 flex flex-col min-h-0"
+      >
+        {selectedWishId && selectedMemory ? (
+          <WishCommentsModalContent
+            key={selectedWishId}
+            wishId={selectedWishId}
+            wishContent={selectedMemory.content}
+            wishAuthor={{
+              id: selectedMemory.wisher.id,
+              name: selectedMemory.wisher.name,
+              avatar: selectedMemory.wisher.profile_pic_url || undefined,
+            }}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
     </div>
   );
 };

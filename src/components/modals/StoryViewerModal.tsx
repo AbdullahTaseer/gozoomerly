@@ -1,6 +1,6 @@
 'use client';
 
-import {  useState, useEffect, useRef  } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { X, ChevronLeft, ChevronRight, Trash2, Pause, Play } from 'lucide-react';
 import { Story } from '@/lib/supabase/stories';
@@ -13,7 +13,7 @@ interface StoryViewerModalProps {
   storyGroups: { user: Story['user']; stories: Story[]; hasUnviewed: boolean }[];
   initialGroupIndex?: number;
   currentUserId?: string;
-  onStoryDeleted?: () => void; // Callback to refresh stories after deletion
+  onStoryDeleted?: () => void;
 }
 
 const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
@@ -50,7 +50,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   useEffect(() => {
     if (isOpen && currentStory && !isPaused) {
       if (currentUserId && currentStory.id) {
-        viewStory(currentStory.id, currentUserId).catch(() => {});
+        viewStory(currentStory.id, currentUserId).catch(() => { });
       }
 
       const duration = 5000;
@@ -107,7 +107,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   useEffect(() => {
     if (videoRef.current && currentStory?.content_type === 'video') {
       if (!isPaused) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch(() => { });
       } else {
         videoRef.current.pause();
       }
@@ -167,11 +167,11 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   const handleTogglePause = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsPaused(!isPaused);
-    
+
     // Pause/resume video if it's a video story
     if (videoRef.current) {
       if (isPaused) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch(() => { });
       } else {
         videoRef.current.pause();
       }
@@ -187,7 +187,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
     setIsDeleting(true);
     try {
       const { error } = await deleteStory(currentStory.id, currentUserId);
-      
+
       if (error) {
         console.error('Delete story error:', error);
         toast.error(`Failed to delete status: ${error.message || 'Unknown error'}`);
@@ -196,30 +196,24 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
       }
 
       toast.success('Status deleted successfully');
-      
-      // Check if this was the last story
+
       const remainingStories = currentGroup.stories.filter(s => s.id !== currentStory.id);
-      
-      // If no stories left in the group, close the modal
+
       if (remainingStories.length === 0) {
         onClose();
-        // Call the callback to refresh stories in parent
         if (onStoryDeleted) {
           onStoryDeleted();
         }
         return;
       }
 
-      // Call the callback to refresh stories in parent
       if (onStoryDeleted) {
         onStoryDeleted();
       }
 
-      // Adjust story index - if we're at the end, go to previous, otherwise stay at same index
       if (currentStoryIndex >= remainingStories.length) {
         setCurrentStoryIndex(remainingStories.length - 1);
       }
-      // If not at the end, the same index will now show the next story after parent refreshes
     } catch (error) {
       toast.error('Failed to delete status');
     } finally {
@@ -230,9 +224,9 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   if (!isOpen || !currentGroup || !currentStory) return null;
 
   return (
-      <div className="relative bg-black h-[85vh] min-[770px]:h-[80vh]">
-      {}
-      <div className="absolute top-0 left-0 right-0 z-10 p-2 flex gap-1">
+    <div className="relative bg-black h-[85vh] min-[770px]:h-[80vh]">
+
+      <div className="absolute top-20 left-0 right-0 z-10 p-2 flex gap-1">
         {currentGroup.stories.map((_, index) => (
           <div
             key={index}
@@ -243,13 +237,12 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
             }}
           >
             <div
-              className={`h-full bg-white transition-all duration-100 ${
-                index < currentStoryIndex
+              className={`h-full bg-white transition-all duration-100 ${index < currentStoryIndex
                   ? 'w-full'
                   : index === currentStoryIndex
-                  ? 'w-full'
-                  : 'w-0'
-              }`}
+                    ? 'w-full'
+                    : 'w-0'
+                }`}
               style={{
                 width: index === currentStoryIndex ? `${progress}%` : index < currentStoryIndex ? '100%' : '0%',
               }}
@@ -258,8 +251,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
         ))}
       </div>
 
-      {}
-      <div className="absolute top-12 left-0 right-0 z-10 px-4 flex items-center gap-3">
+      <div className="absolute top-6 left-0 right-0 z-10 px-4 flex items-center gap-3">
         <div className="flex items-center gap-3 flex-1">
           {currentGroup.user?.profile_pic_url ? (
             <Image
@@ -318,7 +310,6 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
         </div>
       </div>
 
-      {}
       <div className="absolute inset-0 flex items-center justify-center">
         {currentStory.content_type === 'image' && currentStory.media?.cdn_url && (
           <Image
@@ -334,7 +325,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
           <video
             ref={videoRef}
             src={currentStory.media.cdn_url}
-            className="max-w-full max-h-full object-contain"
+            className="w-full h-full object-contain"
             controls={false}
             autoPlay
             loop={false}
@@ -355,7 +346,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
           </div>
         )}
 
-        {}
+
         {currentStory.caption && (
           <div className="absolute bottom-20 left-0 right-0 px-4">
             <p className="text-white text-center bg-black/50 rounded-lg px-4 py-2">
@@ -365,7 +356,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
         )}
       </div>
 
-      {}
+
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -387,7 +378,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
         <ChevronRight size={32} />
       </button>
 
-      {}
+
       <div
         className="absolute left-0 top-0 bottom-0 w-1/2 cursor-pointer"
         onClick={(e) => {
@@ -402,7 +393,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
           handleNextStory();
         }}
       />
-      </div>
+    </div>
   );
 };
 
