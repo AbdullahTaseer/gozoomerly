@@ -328,11 +328,12 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
       const result = await submitAndProcessForm(submissionPayload);
 
       if (result?.submitResult) {
-        if (result.submitResult.stripe_client_secret) {
-          router.push('/payment');
-        } else {
-          router.push('/thankYou');
-        }
+        const needsPayment =
+          Boolean(result.submitResult.stripe_client_secret) ||
+          Boolean(result.processResult?.stripe_client_secret);
+         
+          router.push('/signin');
+
       }
     } catch {
     }
