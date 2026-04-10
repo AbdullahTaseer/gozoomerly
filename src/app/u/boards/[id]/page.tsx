@@ -323,9 +323,6 @@ export default async function BoardPage(props: any) {
   let giftOptions: any[] = [];
   let topContributors: any[] = [];
 
-  const invitedCount = (board as any)?.invited_count ?? 0;
-  const participantsCount = board?.participants_count ?? 0;
-  const mediaCount = board?.media_count ?? 0;
   let boardImages: any[] = [];
   let boardVideos: any[] = [];
 
@@ -372,8 +369,6 @@ export default async function BoardPage(props: any) {
 
   const raised = board?.total_raised || 0;
   const target = board?.goal_amount || 0;
-  const wishes = board?.wishes_count || 0;
-  const gifters = board?.gifters_count ?? 0;
 
   const honoreeFirstName = board?.honoree_details?.first_name || '';
   const honoreeLastName = board?.honoree_details?.last_name || '';
@@ -462,28 +457,6 @@ export default async function BoardPage(props: any) {
           <InviteModalTrigger boardId={board?.id || ''} boardTitle={boardTitle} />
           <ShareModalTrigger shareUrl={shareUrl} title={boardTitle} />
         </div>
-      </div>
-      <div className='bg-[#18171F] text-white flex flex-wrap justify-center gap-8 px-4 py-6'>
-        <p>
-          <span className='mr-1'>{invitedCount || 0}</span>
-          <span>Invited</span>
-        </p>
-        <p>
-          <span className='mr-1'>{participantsCount || 0}</span>
-          <span>Participants</span>
-        </p>
-        <p>
-          <span className='mr-1'>{wishes || 0}</span>
-          <span>Wishes</span>
-        </p>
-        <p>
-          <span className='mr-1'>{gifters || 0}</span>
-          <span>Gifts</span>
-        </p>
-        <p>
-          <span className='mr-1'>{mediaCount >= 500 ? `${mediaCount}+` : mediaCount}</span>
-          <span>Media</span>
-        </p>
       </div>
       <div className="relative w-full overflow-hidden mb-4 min-h-[420px] bg-gradient-to-br from-[#622774] via-[#94406d] to-[#b84c67]">
         <Image
