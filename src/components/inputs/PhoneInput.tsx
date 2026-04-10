@@ -9,7 +9,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { COUNTRY_PHONE_CODES } from "@/lib/MockData";
-import { Search } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 
 interface PhoneInputProps {
   id?: string;
@@ -49,6 +49,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [countrySearchQuery, setCountrySearchQuery] = useState<string>("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const lastSentValueRef = useRef<string>("");
   const isInitializedRef = useRef<boolean>(false);
@@ -132,6 +133,16 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
       onChange(fullPhone);
     }
   }, [selectedCountryCode, phoneNumber, onChange]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 599px)");
+    const updateScreenType = () => {
+      setIsMobile(mediaQuery.matches);
+    };
+    updateScreenType();
+    mediaQuery.addEventListener("change", updateScreenType);
+    return () => mediaQuery.removeEventListener("change", updateScreenType);
+  }, []);
 
   useEffect(() => {
     if (validateOnMount) {
@@ -245,73 +256,149 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
     <div className={`w-full ${className}`} style={{ width }}>
       <div className="flex gap-2">
         <div className="relative" style={{ width: "120px", flexShrink: 0 }}>
-          <Select
-            value={selectedCountryCode}
-            onValueChange={handleCountryChange}
-            required={required}
-            open={isOpen}
-            onOpenChange={setIsOpen}
-          >
-            <SelectTrigger
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              className="w-full border bg-white border-[#2E2C39]"
-              style={{ height }}
-            >
-              <SelectValue placeholder="Code" className="text-black">
-                {getDisplayValue() || "Code"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent className="max-h-[400px]">
-              <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    value={countrySearchQuery}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      setCountrySearchQuery(e.target.value);
-                    }}
-                    onKeyDown={(e) => {
-                      e.stopPropagation();
-                      if (e.key === "Escape") {
-                        setIsOpen(false);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder="Search country..."
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  />
+          {isMobile ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="w-full border bg-white flex items-center justify-center gap-6 border-[#2E2C39] rounded-md px-3 text-left text-sm text-black"
+                style={{ height }}
+              >
+                {getDisplayValue() || "Code"} <ChevronDown size={16}/>
+              </button>
+
+              <div
+                className={`fixed inset-0 z-50 transition-opacity duration-300 ${
+                  isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                }`}
+                role="dialog"
+                aria-modal="true"
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="absolute inset-0 bg-black/40" />
+                <div
+                  className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl h-[75vh] flex flex-col transition-transform duration-300 ease-out ${
+                    isOpen ? "translate-y-0" : "translate-y-full"
+                  }`}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mt-3 mb-2" />
+                  <div className="px-4 pb-3 border-b border-gray-200">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                      <input
+                        ref={searchInputRef}
+                        type="text"
+                        value={countrySearchQuery}
+                        onChange={(e) => setCountrySearchQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            setIsOpen(false);
+                          }
+                        }}
+                        placeholder="Search country..."
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div className="overflow-y-auto">
+                    {filteredCountries.length > 0 ? (
+                      filteredCountries.map((country) => (
+                        <button
+                          type="button"
+                          key={country.isoCode}
+                          onClick={() => handleCountryChange(country.isoCode)}
+                          className="w-full px-4 py-3 flex items-center gap-2 border-b border-gray-100 text-left hover:bg-gray-50"
+                        >
+                          <span>{country.flag}</span>
+                          <span className="flex-1 text-sm text-black">
+                            {country.name}
+                          </span>
+                          <span className="text-gray-500 text-xs">
+                            {COUNTRY_PHONE_CODES[country.isoCode]}
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-center text-sm text-gray-500">
+                        No countries found
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              <div className="overflow-y-auto max-h-[280px]">
-                {filteredCountries.length > 0 ? (
-                  filteredCountries.map((country) => (
-                    <SelectItem
-                      key={country.isoCode}
-                      value={country.isoCode}
-                      className="cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2 w-full">
-                        <span>{country.flag}</span>
-                        <span className="flex-1">{country.name}</span>
-                        <span className="text-gray-500 text-xs">
-                          {COUNTRY_PHONE_CODES[country.isoCode]}
-                        </span>
-                      </span>
-                    </SelectItem>
-                  ))
-                ) : (
-                  <div className="px-3 py-4 text-center text-sm text-gray-500">
-                    No countries found
+            </>
+          ) : (
+            <Select
+              value={selectedCountryCode}
+              onValueChange={handleCountryChange}
+              required={required}
+              open={isOpen}
+              onOpenChange={setIsOpen}
+            >
+              <SelectTrigger
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="w-full border bg-white border-[#2E2C39]"
+                style={{ height }}
+              >
+                <SelectValue placeholder="Code" className="text-black">
+                  {getDisplayValue() || "Code"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="max-h-[400px]">
+                <div className="p-2 border-b border-gray-200 sticky top-0 bg-white z-10">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-4 text-gray-400" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={countrySearchQuery}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setCountrySearchQuery(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        e.stopPropagation();
+                        if (e.key === "Escape") {
+                          setIsOpen(false);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Search country..."
+                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    />
                   </div>
-                )}
-              </div>
-            </SelectContent>
-          </Select>
+                </div>
+
+                <div className="overflow-y-auto max-h-[280px]">
+                  {filteredCountries.length > 0 ? (
+                    filteredCountries.map((country) => (
+                      <SelectItem
+                        key={country.isoCode}
+                        value={country.isoCode}
+                        className="cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2 w-full">
+                          <span>{country.flag}</span>
+                          <span className="flex-1">{country.name}</span>
+                          <span className="text-gray-500 text-xs">
+                            {COUNTRY_PHONE_CODES[country.isoCode]}
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="px-3 py-4 text-center text-sm text-gray-500">
+                      No countries found
+                    </div>
+                  )}
+                </div>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         <div className="relative flex-1">

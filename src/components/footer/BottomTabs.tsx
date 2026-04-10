@@ -58,7 +58,7 @@ export default function BottomTabs() {
   const tabProfileSrc = profilePicUrl || defaultTabAvatarSrc;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 hidden max-[769px]:block">
+    <div className="fixed bottom-0 bg-white left-0 right-0 z-50 hidden max-[769px]:block">
 
       {/* SVG NAVBAR */}
       <div className="relative">
