@@ -179,11 +179,3 @@ body {
 .sparkle3 {
   animation: pulseStar 1.5s infinite 0.6s;
 }
-
-/* Prevent invisible fixed overlays from blocking clicks app-wide. */
-.fixed.opacity-0,
-.fixed.translate-y-full,
-.fixed.-translate-y-full,
-.fixed.-translate-x-full {
-  pointer-events: none !important;
-}
