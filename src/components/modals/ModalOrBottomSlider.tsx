@@ -1,8 +1,28 @@
 'use client';
 
-import { useState, useLayoutEffect } from 'react';
+import { useState, useLayoutEffect, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+
+let bodyScrollLockCount = 0;
+
+function lockBodyScroll() {
+  bodyScrollLockCount += 1;
+  if (bodyScrollLockCount !== 1) return;
+  const html = document.documentElement;
+  const body = document.body;
+  html.style.overflow = 'hidden';
+  body.style.overflow = 'hidden';
+}
+
+function unlockBodyScroll() {
+  bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
+  if (bodyScrollLockCount !== 0) return;
+  const html = document.documentElement;
+  const body = document.body;
+  html.style.overflow = '';
+  body.style.overflow = '';
+}
 
 type Props = {
   isOpen: boolean;
@@ -30,6 +50,14 @@ const ModalOrBottomSlider = ({
   useLayoutEffect(() => {
     setPortalTarget(document.body);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    lockBodyScroll();
+    return () => {
+      unlockBodyScroll();
+    };
+  }, [isOpen]);
 
   const header = modalHeader && (
     <div className="px-3 py-2 flex items-center justify-between gap-4">
