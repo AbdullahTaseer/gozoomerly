@@ -8,7 +8,7 @@ import OtpInput from '@/components/inputs/OtpInput';
 import AuthLayout from '@/components/authLayout/AuthLayout';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import FloatingInput from '@/components/inputs/FloatingInput';
-import SignupInfoCard, { type UserInfo } from '@/components/cards/SignupInfoCard';
+import type { UserInfo } from '@/components/cards/SignupInfoCard';
 import { authService } from '@/lib/supabase/auth';
 import { createClient } from '@/lib/supabase/client';
 import { PartnerRegistrationForm } from '@/components/PartnerRegistrationForm';

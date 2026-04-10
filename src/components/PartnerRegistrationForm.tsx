@@ -1,16 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFormHandlers } from '@/hooks/use-form-handlers';
 import { useFormSubmission } from '@/hooks/use-form-submission';
 import { FormField, FieldValue, FormDataRecord } from '@/types/formHandler';
 import { Eye, EyeOff } from 'lucide-react';
 import FloatingInput from '@/components/inputs/FloatingInput';
-import FloatingSelect from '@/components/inputs/FloatingSelect';
+import FloatingSearchSelect from '@/components/inputs/FloatingSearchSelect';
 import PhoneInput from '@/components/inputs/PhoneInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
-import { SelectItem } from '@/components/ui/select';
 import { Country, State, City } from 'country-state-city';
 
 interface PartnerRegistrationFormProps {
@@ -170,6 +169,41 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
       });
     }
   };
+
+  const applyCountryFromPhoneIso = useCallback(
+    (iso: string) => {
+      if (!iso) return;
+      setCountryCode(iso);
+      setStateCode('');
+      const selectedCountry = countries.find((c) => c.isoCode === iso);
+      const countryField = parsedFields.find((f) =>
+        (f.name || f.label || '').toLowerCase().includes('country')
+      );
+      const stateField = parsedFields.find((f) =>
+        (f.name || f.label || '').toLowerCase().includes('state')
+      );
+      const cityField = parsedFields.find((f) =>
+        (f.name || f.label || '').toLowerCase().includes('city')
+      );
+
+      setFormData((prev) => {
+        const next = { ...prev };
+        if (stateField) next[stateField.id] = '';
+        if (cityField) next[cityField.id] = '';
+        if (countryField && selectedCountry) next[countryField.id] = selectedCountry.name;
+        return next;
+      });
+
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        [countryField, stateField, cityField].forEach((f) => {
+          if (f?.id && next[f.id]) delete next[f.id];
+        });
+        return next;
+      });
+    },
+    [parsedFields, countries]
+  );
 
   const togglePasswordVisibility = (fieldId: string) => {
     setShowPasswords(prev => ({
@@ -583,61 +617,60 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
     if (fieldType === 'select') {
       if (fieldName.includes('country')) {
         return (
-          <FloatingSelect
+          <FloatingSearchSelect
             key={field.id}
             label={fieldLabel}
             value={countryCode}
             onChange={(val) => {
               setCountryCode(val);
               setStateCode('');
-              const selectedCountry = countries.find(c => c.isoCode === val);
+              const selectedCountry = countries.find((c) => c.isoCode === val);
               handleInputChange(fieldId, selectedCountry?.name || val);
             }}
-          >
-            {countries.map((c) => (
-              <SelectItem key={c.isoCode} value={c.isoCode}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </FloatingSelect>
+            options={countries.map((c) => ({
+              value: c.isoCode,
+              label: c.name,
+              keywords: [c.isoCode],
+            }))}
+            searchPlaceholder="Search country..."
+          />
         );
       }
       if (fieldName.includes('state')) {
         return (
-          <FloatingSelect
+          <FloatingSearchSelect
             key={field.id}
             label={fieldLabel}
             value={stateCode}
             onChange={(val) => {
               setStateCode(val);
-              const selectedState = states.find(s => s.isoCode === val);
+              const selectedState = states.find((s) => s.isoCode === val);
               handleInputChange(fieldId, selectedState?.name || val);
             }}
             disabled={!countryCode}
-          >
-            {states.map((s) => (
-              <SelectItem key={s.isoCode} value={s.isoCode}>
-                {s.name}
-              </SelectItem>
-            ))}
-          </FloatingSelect>
+            options={states.map((s) => ({
+              value: s.isoCode,
+              label: s.name,
+              keywords: [s.isoCode],
+            }))}
+            searchPlaceholder="Search state..."
+          />
         );
       }
       if (fieldName.includes('city')) {
         return (
-          <FloatingSelect
+          <FloatingSearchSelect
             key={field.id}
             label={fieldLabel}
             value={fieldValue}
             onChange={(val) => handleInputChange(fieldId, val)}
             disabled={!stateCode}
-          >
-            {cities.map((cityObj) => (
-              <SelectItem key={cityObj.name} value={cityObj.name}>
-                {cityObj.name}
-              </SelectItem>
-            ))}
-          </FloatingSelect>
+            options={cities.map((cityObj) => ({
+              value: cityObj.name,
+              label: cityObj.name,
+            }))}
+            searchPlaceholder="Search city..."
+          />
         );
       }
     }
@@ -651,6 +684,7 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
           title={fieldLabel}
           value={fieldValue}
           onChange={(value) => handleInputChange(fieldId, value)}
+          onCountryCodeChange={applyCountryFromPhoneIso}
           width="100%"
           required={field.required}
           placeholder={fieldPlaceholder}

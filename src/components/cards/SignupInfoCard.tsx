@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Plus } from "lucide-react";
-import { SelectItem } from "@/components/ui/select";
 import { Country, State, City } from "country-state-city";
 import { createClient } from '@/lib/supabase/client';
 import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
@@ -10,7 +9,7 @@ import { authService } from '@/lib/supabase/auth';
 
 import FloatingInput from "../inputs/FloatingInput";
 import GlobalButton from "../buttons/GlobalButton";
-import FloatingSelect from "../inputs/FloatingSelect";
+import FloatingSearchSelect from "../inputs/FloatingSearchSelect";
 
 import dummyAvatar from "@/assets/svgs/boy-avatar.svg";
 
@@ -181,46 +180,49 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
           onChange={(e) => setBirthDate(e.target.value)}
         />
 
-        <FloatingSelect
+        <FloatingSearchSelect
           label="Country"
           value={countryCode}
           onChange={(val) => {
             setCountryCode(val);
             setStateCode("");
+            setCity("");
           }}
-        >
-          {countries.map((c) => (
-            <SelectItem key={c.isoCode} value={c.isoCode}>
-              {c.name}
-            </SelectItem>
-          ))}
-        </FloatingSelect>
+          options={countries.map((c) => ({
+            value: c.isoCode,
+            label: c.name,
+            keywords: [c.isoCode],
+          }))}
+          searchPlaceholder="Search country..."
+        />
 
-        <FloatingSelect
+        <FloatingSearchSelect
           label="State"
           value={stateCode}
-          onChange={(val) => setStateCode(val)}
+          onChange={(val) => {
+            setStateCode(val);
+            setCity("");
+          }}
           disabled={!countryCode}
-        >
-          {states.map((s) => (
-            <SelectItem key={s.isoCode} value={s.isoCode}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </FloatingSelect>
+          options={states.map((s) => ({
+            value: s.isoCode,
+            label: s.name,
+            keywords: [s.isoCode],
+          }))}
+          searchPlaceholder="Search state..."
+        />
 
-        <FloatingSelect
+        <FloatingSearchSelect
           label="City"
           value={city}
           onChange={(val) => setCity(val)}
           disabled={!stateCode}
-        >
-          {cities.map((cityObj) => (
-            <SelectItem key={cityObj.name} value={cityObj.name}>
-              {cityObj.name}
-            </SelectItem>
-          ))}
-        </FloatingSelect>
+          options={cities.map((cityObj) => ({
+            value: cityObj.name,
+            label: cityObj.name,
+          }))}
+          searchPlaceholder="Search city..."
+        />
 
         {uploadError && (
           <div className='p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm'>

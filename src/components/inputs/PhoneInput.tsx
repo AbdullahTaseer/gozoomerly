@@ -16,6 +16,8 @@ interface PhoneInputProps {
   title?: string;
   value?: string;
   onChange?: (value: string) => void;
+  /** Called when the user picks a dial-code country (ISO 3166-1 alpha-2). */
+  onCountryCodeChange?: (isoCode: string) => void;
   onValidationError?: (message: string) => void;
   error?: string;
   className?: string;
@@ -31,6 +33,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
   title = "Phone Number",
   value = "",
   onChange,
+  onCountryCodeChange,
   onValidationError,
   error,
   className = "",
@@ -202,6 +205,7 @@ const PhoneInput: React.FC<PhoneInputProps> = ({
 
   const handleCountryChange = (countryIso: string) => {
     setSelectedCountryCode(countryIso);
+    onCountryCodeChange?.(countryIso);
     if (shouldShowValidation) {
       setLocalError(null);
     }
