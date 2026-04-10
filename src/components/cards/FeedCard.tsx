@@ -4,8 +4,9 @@ import {  useState, useRef, useEffect  } from 'react';
 import Image from 'next/image';
 import { MoreVertical, Heart, MessageCircle, Share, Clock, Play, UserPlus } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
-import ShareBoardModal from '@/components/modals/ShareBoardModal';
-import InviteToBoardModal from '@/components/modals/InviteToBoardModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import ShareBoardModalContent from '@/components/modals/ShareBoardModal';
+import InviteToBoardModalContent from '@/components/modals/InviteToBoardModal';
 
 export type FeedCardLayout = 'horizontal' | 'carousel';
 
@@ -369,20 +370,35 @@ const FeedCard: React.FC<FeedCardProps> = ({
         )}
       </div>
 
-      <ShareBoardModal
+      <ModalOrBottomSlider
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        shareUrl={generatedShareUrl}
-        title={title}
-      />
+        modalHeader={false}
+        desktopClassName="!w-[400px] max-w-[90vw]"
+        contentClassName="!p-6"
+      >
+        <ShareBoardModalContent
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={generatedShareUrl}
+          title={title}
+        />
+      </ModalOrBottomSlider>
 
       {boardId && (
-        <InviteToBoardModal
+        <ModalOrBottomSlider
           isOpen={isInviteModalOpen}
           onClose={() => setIsInviteModalOpen(false)}
-          boardId={boardId}
-          boardTitle={title}
-        />
+          modalHeader={false}
+          desktopClassName="!w-[450px] max-w-[90vw]"
+          contentClassName="!p-0"
+        >
+          <InviteToBoardModalContent
+            isOpen={isInviteModalOpen}
+            onClose={() => setIsInviteModalOpen(false)}
+            boardId={boardId}
+            boardTitle={title}
+          />
+        </ModalOrBottomSlider>
       )}
     </div>
   );

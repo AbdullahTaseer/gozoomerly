@@ -1,7 +1,6 @@
 "use client";
 
 import {  useEffect, useState  } from 'react';
-import ModalOrBottomSlider from './ModalOrBottomSlider';
 import FloatingInput from '@/components/inputs/FloatingInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { createClient } from '@/lib/supabase/client';
@@ -25,7 +24,7 @@ interface Props {
   onSuccess?: (updatedProfile: any) => void;
 }
 
-const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess }) => {
+const EditProfileModalContent: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess }) => {
   const [form, setForm] = useState<Partial<UserProfile>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +105,6 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
   };
 
   return (
-    <ModalOrBottomSlider desktopClassName='w-[500px]' isOpen={isOpen} onClose={onClose} title="Edit Profile">
       <form onSubmit={handleSubmit} className="space-y-4">
         <FloatingInput
           id="edit-name"
@@ -179,8 +177,7 @@ const EditProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, onSuccess
           <GlobalButton height='46px' width='150px' title={loading ? 'Saving...' : 'Save Changes'} onClick={handleSubmit} disabled={loading} />
         </div>
       </form>
-    </ModalOrBottomSlider>
   );
 };
 
-export default EditProfileModal;
+export default EditProfileModalContent;

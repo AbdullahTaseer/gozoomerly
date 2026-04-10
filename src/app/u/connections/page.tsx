@@ -13,8 +13,9 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import GlobalModal from '@/components/modals/GlobalModal';
 import YourCirclesModal from '@/components/modals/YourCirclesModal';
 import AddCircleModal from '@/components/modals/AddCircleModal';
-import AddStatusModal from '@/components/modals/AddStatusModal';
-import StoryViewerModal from '@/components/modals/StoryViewerModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import AddStatusModalContent from '@/components/modals/AddStatusModal';
+import StoryViewerModalContent from '@/components/modals/StoryViewerModal';
 import { useAddStatusSubmit } from '@/hooks/useAddStatusSubmit';
 import { inviteContacts } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
@@ -584,27 +585,43 @@ const Connections = () => {
         />
       </GlobalModal>
 
-      <AddStatusModal
+      <ModalOrBottomSlider
         isOpen={addStatusModalVisible}
         onClose={() => setAddStatusModalVisible(false)}
-        onImageSelect={handleStatusImageSelect}
-        onStoryCreate={handleStoryCreate}
-        onMultipleStoriesCreate={handleMultipleStoriesCreate}
-      />
+        modalHeader={false}
+        desktopClassName="max-w-md"
+        contentClassName="px-4 pb-6"
+      >
+        <AddStatusModalContent
+          isOpen={addStatusModalVisible}
+          onClose={() => setAddStatusModalVisible(false)}
+          onImageSelect={handleStatusImageSelect}
+          onStoryCreate={handleStoryCreate}
+          onMultipleStoriesCreate={handleMultipleStoriesCreate}
+        />
+      </ModalOrBottomSlider>
 
-      <StoryViewerModal
+      <ModalOrBottomSlider
         isOpen={storyViewerOpen}
         onClose={() => setStoryViewerOpen(false)}
-        storyGroups={stories}
-        initialGroupIndex={selectedStoryGroupIndex}
-        currentUserId={currentUser?.id}
-        onStoryDeleted={() => {
-          // Refresh stories after deletion
-          if (currentUser?.id) {
-            fetchStories();
-          }
-        }}
-      />
+        modalHeader={false}
+        className="!rounded-t-2xl"
+        desktopClassName="!w-[min(1000px,96vw)]"
+        contentClassName="!p-0"
+      >
+        <StoryViewerModalContent
+          isOpen={storyViewerOpen}
+          onClose={() => setStoryViewerOpen(false)}
+          storyGroups={stories}
+          initialGroupIndex={selectedStoryGroupIndex}
+          currentUserId={currentUser?.id}
+          onStoryDeleted={() => {
+            if (currentUser?.id) {
+              fetchStories();
+            }
+          }}
+        />
+      </ModalOrBottomSlider>
     </>
   );
 };

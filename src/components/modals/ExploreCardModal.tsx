@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { X, Heart, MessageCircle, Share2, MapPin, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PublicBoardMemberPreview } from '@/hooks/useGetPublicBoards';
-import WishModal from '@/components/modals/WishModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import WishModalContent from '@/components/modals/WishModal';
 import ShareButtons from '@/components/buttons/ShareButtons';
 import { authService } from '@/lib/supabase/auth';
 import { getBoardMedia } from '@/lib/supabase/boards';
@@ -94,7 +95,6 @@ const ExploreCardModal = ({
   sharesCount = 12,
 }: ExploreCardModalProps) => {
   const router = useRouter();
-  const [isAnimating, setIsAnimating] = useState(false);
   const [participantsListOpen, setParticipantsListOpen] = useState(false);
   const [wishModalOpen, setWishModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
@@ -264,22 +264,7 @@ const ExploreCardModal = ({
     router.push(`/u/boards/${boardId}`);
   }, [boardId, onClose, router]);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      setIsAnimating(false);
-      const id = requestAnimationFrame(() => {
-        requestAnimationFrame(() => setIsAnimating(true));
-      });
-      return () => cancelAnimationFrame(id);
-    } else {
-      document.body.style.overflow = '';
-      setIsAnimating(false);
-    }
-  }, [isOpen]);
-
   const displayAvatars = avatars.slice(0, 4);
-  const slideOpen = isOpen && isAnimating;
   const participantCount = participants.length + extraCount;
   const canOpenParticipantsList = participantCount > 0;
   const canEngage = !!boardId;
@@ -337,7 +322,7 @@ const ExploreCardModal = ({
       <Link
         href={`/u/visitProfile/${creatorId}`}
         onClick={onClose}
-        className="absolute bottom-5 left-4 z-10 flex items-end gap-3 rounded-xl py-1 pr-3 -ml-1 pl-1 pointer-events-auto text-left transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className="absolute bottom-5 left-4 z-10 flex items-end gap-3 rounded-xl py-1 pr-3 -ml-1 pl-1 pointer-events-auto text-left transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-white"
       >
         {creatorRow}
       </Link>
@@ -354,13 +339,13 @@ const ExploreCardModal = ({
           <button
             type="button"
             onClick={goToBoardComments}
-            className="font-bold text-xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400"
+            className="font-bold text-3xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-gray-400"
             aria-label={`Open board: ${title}`}
           >
             {title}
           </button>
         ) : (
-          <h2 className="font-bold text-xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
+          <h2 className="font-bold text-3xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
             {title}
           </h2>
         )}
@@ -482,7 +467,7 @@ const ExploreCardModal = ({
               }}
               className={`pointer-events-auto flex items-center rounded-full pr-1 py-0.5 -ml-0.5 pl-0.5 transition-opacity ${
                 canOpenParticipantsList
-                  ? 'cursor-pointer hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+                  ? 'cursor-pointer hover:opacity-90 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-white'
                   : 'cursor-default opacity-60'
               }`}
               aria-label={canOpenParticipantsList ? 'View participants' : 'No participants'}
@@ -609,36 +594,7 @@ const ExploreCardModal = ({
 
   return (
     <>
-      <div
-        className={`fixed inset-0 z-[1010] bg-black/50 backdrop-blur-md transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-        aria-hidden
-      />
-
-      <div
-        className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[1011] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${slideOpen ? 'translate-y-0' : 'translate-y-full'} ${!isOpen ? 'pointer-events-none' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-        aria-hidden={!isOpen}
-      >
-        <div className="flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-        </div>
-        <div className="max-h-[90vh] overflow-y-auto overscroll-contain">
-          <ModalContent />
-        </div>
-      </div>
-
-      <div
-        className={`min-[769px]:flex hidden fixed inset-0 z-[1011] items-center justify-center p-4 sm:p-6 pointer-events-none transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-        onClick={onClose}
-      >
-        <div
-          className={`bg-white rounded-2xl shadow-2xl p-4 border max-h-[650px] w-[650px] border-gray-200 overflow-hidden pointer-events-auto transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <ModalContent />
-        </div>
-      </div>
+      <ModalContent />
 
       {participantsListOpen && (
         <>
@@ -726,13 +682,21 @@ const ExploreCardModal = ({
       )}
 
       {wishModalOpen && boardId && (
-        <WishModal
+        <ModalOrBottomSlider
           isOpen={wishModalOpen}
           onClose={() => setWishModalOpen(false)}
-          boardId={boardId}
-          honoreeName={honoreeName || title}
-          onSubmit={handleWishSuccess}
-        />
+          modalHeader={false}
+          desktopClassName="!w-[450px] max-w-[95vw]"
+          contentClassName="!p-0"
+        >
+          <WishModalContent
+            isOpen={wishModalOpen}
+            onClose={() => setWishModalOpen(false)}
+            boardId={boardId}
+            honoreeName={honoreeName || title}
+            onSubmit={handleWishSuccess}
+          />
+        </ModalOrBottomSlider>
       )}
 
       {shareModalOpen && boardId && shareUrl && (

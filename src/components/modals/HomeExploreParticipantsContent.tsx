@@ -2,33 +2,25 @@
 
 import Link from 'next/link';
 import { Users } from 'lucide-react';
-import ModalOrBottomSlider from './ModalOrBottomSlider';
 import type { PublicBoardMemberPreview } from '@/hooks/useGetPublicBoards';
 
 type Props = {
-  isOpen: boolean;
-  onClose: () => void;
   participants?: PublicBoardMemberPreview[];
   totalMembers?: number;
+  onClose: () => void;
 };
 
-const HomeExploreParticipantsModal = ({
-  isOpen,
-  onClose,
+const HomeExploreParticipantsContent = ({
   participants = [],
   totalMembers = 0,
+  onClose,
 }: Props) => {
   const previewCount = participants.length;
   const remainingCount = Math.max(0, totalMembers - previewCount);
   const participantCount = previewCount + remainingCount;
 
   return (
-    <ModalOrBottomSlider
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Participants"
-      desktopClassName="sm:max-w-md"
-    >
+    <>
       <div className="flex items-center gap-2 min-w-0 mb-2 px-1">
         <Users size={20} className="text-black shrink-0" strokeWidth={2} />
         <span className="text-sm text-black shrink-0">({participantCount})</span>
@@ -68,8 +60,8 @@ const HomeExploreParticipantsModal = ({
           </li>
         ) : null}
       </ul>
-    </ModalOrBottomSlider>
+    </>
   );
 };
 
-export default HomeExploreParticipantsModal;
+export default HomeExploreParticipantsContent;

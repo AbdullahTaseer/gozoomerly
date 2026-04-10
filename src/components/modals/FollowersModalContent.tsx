@@ -6,7 +6,8 @@ import GlobalInput from '../inputs/GlobalInput';
 import FollowCard from '../cards/FollowCard';
 import Avatar from "@/assets/svgs/boy-avatar.svg";
 import { getFollowers, type UserConnection } from '@/lib/supabase/followUtils';
-import ConfirmationModal from './ConfirmationModal';
+import ModalOrBottomSlider from './ModalOrBottomSlider';
+import ConfirmationModalContent from './ConfirmationModalContent';
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
 import { authService } from '@/lib/supabase/auth';
 
@@ -143,15 +144,23 @@ const FollowersModalContent = ({ userId }: Props) => {
         )}
       </div>
 
-      <ConfirmationModal
+      <ModalOrBottomSlider
         isOpen={!!unfollowConfirm}
         onClose={() => setUnfollowConfirm(null)}
         title="Unfollow"
-        icon={UserMinus}
-        message={unfollowConfirm ? `Are you sure you want to unfollow ${unfollowConfirm.name}?` : ''}
-        primaryLabel="Yes, Unfollow"
-        onPrimaryClick={doUnfollow}
-      />
+        desktopClassName="max-w-sm"
+        contentClassName="!p-6"
+      >
+        {unfollowConfirm ? (
+          <ConfirmationModalContent
+            onClose={() => setUnfollowConfirm(null)}
+            icon={UserMinus}
+            message={`Are you sure you want to unfollow ${unfollowConfirm.name}?`}
+            primaryLabel="Yes, Unfollow"
+            onPrimaryClick={doUnfollow}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
     </div>
   );
 };

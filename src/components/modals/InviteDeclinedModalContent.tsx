@@ -2,27 +2,20 @@
 
 import { X } from 'lucide-react';
 import GlobalButton from '@/components/buttons/GlobalButton';
-import ModalOrBottomSlider from './ModalOrBottomSlider';
 
 type Props = {
-  isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void | Promise<void>;
 };
 
-const InviteDeclinedModal = ({ isOpen, onClose, onConfirm }: Props) => {
+const InviteDeclinedModalContent = ({ onClose, onConfirm }: Props) => {
   const handleConfirm = async () => {
     await onConfirm();
     onClose();
   };
 
   return (
-    <ModalOrBottomSlider
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Decline board"
-      desktopClassName="max-w-sm"
-    >
+    <>
       <div className="flex flex-col items-center py-4">
         <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
           <X size={32} className="text-black" strokeWidth={2} />
@@ -53,8 +46,8 @@ const InviteDeclinedModal = ({ isOpen, onClose, onConfirm }: Props) => {
           hover={{ bgColor: '#f5f5f5' }}
         />
       </div>
-    </ModalOrBottomSlider>
+    </>
   );
 };
 
-export default InviteDeclinedModal;
+export default InviteDeclinedModalContent;

@@ -1,29 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
 import { MessageCircleMore, Layers, Share2, X, Calendar } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-interface CreateOrShareModalProps {
-  isOpen: boolean;
+interface CreateOrShareModalContentProps {
   onClose: () => void;
   /** When set, "Post status" opens Add Status instead of navigating away. */
   onPostStatus?: () => void;
 }
 
-const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose, onPostStatus }) => {
+const CreateOrShareModalContent: React.FC<CreateOrShareModalContentProps> = ({ onClose, onPostStatus }) => {
   const router = useRouter();
-
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
 
   const actions = [
     {
@@ -98,47 +85,8 @@ const CreateOrShareModal: React.FC<CreateOrShareModalProps> = ({ isOpen, onClose
     </>
   );
 
-  return (
-    <>
-      <div
-        className={`fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        onClick={onClose}
-      />
-
-      <div
-        className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'
-          } ${!isOpen ? 'pointer-events-none' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-        aria-hidden={!isOpen}
-      >
-        <div className="flex justify-center pt-3">
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-        </div>
-
-        <div className="px-4 pb-6 max-h-[85vh] overflow-y-auto">
-          {content}
-        </div>
-      </div>
-
-      <div
-        className={`min-[770px]:flex hidden fixed inset-0 z-[1001] items-center justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        onClick={onClose}
-      >
-        <div
-          className={`bg-white rounded-xl shadow-2xl w-[90%] max-w-md transition-all duration-300 ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6">
-            {content}
-          </div>
-        </div>
-      </div>
-    </>
-  );
+  return <>{content}</>;
 };
 
-export default CreateOrShareModal;
+export default CreateOrShareModalContent;
 

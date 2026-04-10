@@ -20,7 +20,7 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import BellIconIndicator from '@/components/cards/BellIconIndicator';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
-import ConfirmationModal from '@/components/modals/ConfirmationModal';
+import ConfirmationModalContent from '@/components/modals/ConfirmationModalContent';
 import EmailChangeForm from '@/components/modals/EmailChangeModal';
 import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
 
@@ -197,28 +197,40 @@ const Settings = () => {
         <PasswordChangeForm onClose={() => setShowPasswordModal(false)} onSuccess={() => { }} />
       </ModalOrBottomSlider>
 
-      <ConfirmationModal
+      <ModalOrBottomSlider
         isOpen={logoutModal}
         onClose={() => setLogoutModal(false)}
         title="Log out"
-        icon={UserLock}
-        message="Are you sure you want to log out? You’ll need to sign in again to access your nutrition plan."
-        primaryLabel="Yes"
-        onPrimaryClick={handleLogout}
-      />
+        desktopClassName="max-w-sm"
+        contentClassName="!p-6"
+      >
+        <ConfirmationModalContent
+          onClose={() => setLogoutModal(false)}
+          icon={UserLock}
+          message="Are you sure you want to log out? You’ll need to sign in again to access your nutrition plan."
+          primaryLabel="Yes"
+          onPrimaryClick={handleLogout}
+        />
+      </ModalOrBottomSlider>
 
-      <ConfirmationModal
+      <ModalOrBottomSlider
         isOpen={deleteAccountModal}
         onClose={() => setDeleteAccountModal(false)}
         title="Delete Account"
-        icon={Trash2}
-        message="This action is permanent and cannot be undone. All your data and plans will be deleted. Are you sure you want to continue?"
-        primaryLabel="Yes, Delete My Account"
-        onPrimaryClick={() => {
-          setDeleteAccountModal(false);
-          // TODO: Implement delete account
-        }}
-      />
+        desktopClassName="max-w-md"
+        contentClassName="!p-6"
+      >
+        <ConfirmationModalContent
+          onClose={() => setDeleteAccountModal(false)}
+          icon={Trash2}
+          message="This action is permanent and cannot be undone. All your data and plans will be deleted. Are you sure you want to continue?"
+          primaryLabel="Yes, Delete My Account"
+          onPrimaryClick={() => {
+            setDeleteAccountModal(false);
+            // TODO: Implement delete account
+          }}
+        />
+      </ModalOrBottomSlider>
     </div>
   );
 };

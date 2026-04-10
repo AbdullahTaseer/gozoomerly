@@ -1,7 +1,8 @@
 'use client';
 
 import {  useState  } from 'react';
-import WishModal from '@/components/modals/WishModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import WishModalContent from '@/components/modals/WishModal';
 
 interface WishButtonProps {
   boardId: string;
@@ -31,13 +32,21 @@ const WishButton: React.FC<WishButtonProps> = ({
         {children || `Wish ${honoreeName || 'Sean'}`}
       </button>
 
-      <WishModal
+      <ModalOrBottomSlider
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        boardId={boardId}
-        honoreeName={honoreeName}
-        onSubmit={handleSubmit}
-      />
+        modalHeader={false}
+        desktopClassName="!w-[450px] max-w-[95vw]"
+        contentClassName="!p-0"
+      >
+        <WishModalContent
+          isOpen={isOpen}
+          onClose={() => setIsOpen(false)}
+          boardId={boardId}
+          honoreeName={honoreeName}
+          onSubmit={handleSubmit}
+        />
+      </ModalOrBottomSlider>
     </>
   );
 };

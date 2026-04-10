@@ -5,22 +5,18 @@ import { X, Share2, Facebook, Copy, Check, Users } from 'lucide-react';
 import Image from 'next/image';
 import WhatsappIcon from "@/assets/svgs/whatsapp.png";
 
-interface ShareBoardModalProps {
-  isOpen: boolean;
+interface ShareBoardModalContentProps {
   onClose: () => void;
   shareUrl: string;
   title?: string;
 }
 
-const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
-  isOpen,
+const ShareBoardModalContent: React.FC<ShareBoardModalContentProps> = ({
   onClose,
   shareUrl,
   title
 }) => {
   const [copied, setCopied] = useState(false);
-
-  if (!isOpen) return null;
 
   const handleCopyLink = async () => {
     try {
@@ -56,13 +52,7 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
-
-      <div className="relative bg-white rounded-[24px] w-[400px] max-w-[90vw] p-6">
+    <>
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-black">Share</h2>
           <button
@@ -132,9 +122,8 @@ const ShareBoardModal: React.FC<ShareBoardModalProps> = ({
         >
           Done
         </button>
-      </div>
-    </div>
+    </>
   );
 };
 
-export default ShareBoardModal;
+export default ShareBoardModalContent;

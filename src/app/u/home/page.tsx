@@ -14,9 +14,10 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import { FollowingTabCards } from '@/components/boards/FollowingTabCards';
 import InvitationBoardCard from '@/components/cards/InvitationBoardCard';
 import ExploreCard from '@/components/cards/ExploreCard';
-import InviteDeclinedModal from '@/components/modals/InviteDeclinedModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import InviteDeclinedModalContent from '@/components/modals/InviteDeclinedModalContent';
 import ExploreCardModal from '@/components/modals/ExploreCardModal';
-import HomeExploreParticipantsModal from '@/components/modals/HomeExploreParticipantsModal';
+import HomeExploreParticipantsContent from '@/components/modals/HomeExploreParticipantsContent';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import { Search } from 'lucide-react';
@@ -333,49 +334,72 @@ const Home = () => {
         </div>
 
       </div>
-      {declineModal ? (
-        <InviteDeclinedModal
-          isOpen={true}
-          onClose={() => setDeclineModal(null)}
-          onConfirm={declineModal.onConfirm}
-        />
-      ) : null}
-      {exploreModalCard ? (
-        <ExploreCardModal
-          isOpen={true}
-          onClose={() => setExploreModalCard(null)}
-          boardId={exploreModalCard.id}
-          honoreeName={(() => {
-            const h = exploreModalCard.honoree_details;
-            if (!h) return exploreModalCard.title ?? '';
-            const full = `${h.first_name || ''} ${h.last_name || ''}`.trim();
-            return full || exploreModalCard.title || '';
-          })()}
-          title={exploreModalCard.title ?? ''}
-          image={exploreModalCard.cover_image_url || exploreModalCard.honoree_details?.profile_photo_url || ''}
-          avatars={
-            exploreModalCard.member_previews
-              ?.map((m) => m.profile_pic_url)
-              .filter(Boolean) as string[] ?? []
-          }
-          participants={exploreModalCard.member_previews ?? []}
-          extraCount={Math.max(0, (exploreModalCard.total_members ?? 0) - (exploreModalCard.member_previews?.length ?? 0))}
-          creatorId={exploreModalCard.creator?.id ?? exploreModalCard.creator_id ?? null}
-          creatorName={exploreModalCard.creator?.name || ''}
-          creatorAvatar={exploreModalCard.creator?.profile_pic_url || undefined}
-          likesCount={exploreModalCard.wishes_count ?? 0}
-          commentsCount={exploreModalCard.contributors_count ?? 0}
-          sharesCount={exploreModalCard.shares_count ?? 0}
-        />
-      ) : null}
-      {participantsModalCard ? (
-        <HomeExploreParticipantsModal
-          isOpen={true}
-          onClose={() => setParticipantsModalCard(null)}
-          participants={participantsModalCard.member_previews ?? []}
-          totalMembers={participantsModalCard.total_members ?? 0}
-        />
-      ) : null}
+      <ModalOrBottomSlider
+        title="Decline board"
+        isOpen={!!declineModal}
+        onClose={() => setDeclineModal(null)}
+        desktopClassName="max-w-sm"
+      >
+        {declineModal ? (
+          <InviteDeclinedModalContent
+            onClose={() => setDeclineModal(null)}
+            onConfirm={declineModal.onConfirm}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
+
+      <ModalOrBottomSlider
+        isOpen={!!exploreModalCard}
+        onClose={() => setExploreModalCard(null)}
+        modalHeader={false}
+        desktopClassName="!w-[650px] !max-h-[650px]"
+        contentClassName="!p-4"
+      >
+        {exploreModalCard ? (
+          <ExploreCardModal
+            isOpen={true}
+            onClose={() => setExploreModalCard(null)}
+            boardId={exploreModalCard.id}
+            honoreeName={(() => {
+              const h = exploreModalCard.honoree_details;
+              if (!h) return exploreModalCard.title ?? '';
+              const full = `${h.first_name || ''} ${h.last_name || ''}`.trim();
+              return full || exploreModalCard.title || '';
+            })()}
+            title={exploreModalCard.title ?? ''}
+            image={exploreModalCard.cover_image_url || exploreModalCard.honoree_details?.profile_photo_url || ''}
+            avatars={
+              exploreModalCard.member_previews
+                ?.map((m) => m.profile_pic_url)
+                .filter(Boolean) as string[] ?? []
+            }
+            participants={exploreModalCard.member_previews ?? []}
+            extraCount={Math.max(0, (exploreModalCard.total_members ?? 0) - (exploreModalCard.member_previews?.length ?? 0))}
+            creatorId={exploreModalCard.creator?.id ?? exploreModalCard.creator_id ?? null}
+            creatorName={exploreModalCard.creator?.name || ''}
+            creatorAvatar={exploreModalCard.creator?.profile_pic_url || undefined}
+            likesCount={exploreModalCard.wishes_count ?? 0}
+            commentsCount={exploreModalCard.contributors_count ?? 0}
+            sharesCount={exploreModalCard.shares_count ?? 0}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
+
+      <ModalOrBottomSlider
+        title="Participants"
+        isOpen={!!participantsModalCard}
+        onClose={() => setParticipantsModalCard(null)}
+        desktopClassName="sm:max-w-md"
+        contentClassName="pb-0"
+      >
+        {participantsModalCard ? (
+          <HomeExploreParticipantsContent
+            participants={participantsModalCard.member_previews ?? []}
+            totalMembers={participantsModalCard.total_members ?? 0}
+            onClose={() => setParticipantsModalCard(null)}
+          />
+        ) : null}
+      </ModalOrBottomSlider>
     </div>
   );
 };

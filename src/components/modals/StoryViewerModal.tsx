@@ -16,7 +16,7 @@ interface StoryViewerModalProps {
   onStoryDeleted?: () => void; // Callback to refresh stories after deletion
 }
 
-const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
+const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   isOpen,
   onClose,
   storyGroups,
@@ -230,10 +230,7 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
   if (!isOpen || !currentGroup || !currentStory) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] bg-black"
-      onClick={onClose}
-    >
+      <div className="relative bg-black h-[85vh] min-[770px]:h-[80vh]">
       {}
       <div className="absolute top-0 left-0 right-0 z-10 p-2 flex gap-1">
         {currentGroup.stories.map((_, index) => (
@@ -405,8 +402,8 @@ const StoryViewerModal: React.FC<StoryViewerModalProps> = ({
           handleNextStory();
         }}
       />
-    </div>
+      </div>
   );
 };
 
-export default StoryViewerModal;
+export default StoryViewerModalContent;

@@ -5,9 +5,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { MoreHorizontal, Heart, MessageCircle, Share, Bookmark, Play } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
-import ShareBoardModal from '@/components/modals/ShareBoardModal';
-import InviteToBoardModal from '@/components/modals/InviteToBoardModal';
-import WishModal from '@/components/modals/WishModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import ShareBoardModalContent from '@/components/modals/ShareBoardModal';
+import InviteToBoardModalContent from '@/components/modals/InviteToBoardModal';
+import WishModalContent from '@/components/modals/WishModal';
 import { createClient } from '@/lib/supabase/client';
 import { authService } from '@/lib/supabase/auth';
 import {
@@ -347,29 +348,52 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
       </div>
     </div>
 
-      <ShareBoardModal
+      <ModalOrBottomSlider
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-        shareUrl={generatedShareUrl}
-        title={title}
-      />
+        modalHeader={false}
+        desktopClassName="!w-[400px] max-w-[90vw]"
+        contentClassName="!p-6"
+      >
+        <ShareBoardModalContent
+          onClose={() => setIsShareModalOpen(false)}
+          shareUrl={generatedShareUrl}
+          title={title}
+        />
+      </ModalOrBottomSlider>
       {boardId && (
-        <InviteToBoardModal
+        <ModalOrBottomSlider
           isOpen={isInviteModalOpen}
           onClose={() => setIsInviteModalOpen(false)}
-          boardId={boardId}
-          boardTitle={title}
-        />
+          modalHeader={false}
+          desktopClassName="!w-[450px] max-w-[90vw]"
+          contentClassName="!p-0"
+        >
+          <InviteToBoardModalContent
+            isOpen={isInviteModalOpen}
+            onClose={() => setIsInviteModalOpen(false)}
+            boardId={boardId}
+            boardTitle={title}
+          />
+        </ModalOrBottomSlider>
       )}
 
       {boardId && (
-        <WishModal
+        <ModalOrBottomSlider
           isOpen={wishModalOpen}
           onClose={() => setWishModalOpen(false)}
-          boardId={boardId}
-          honoreeName={honoreeName || title}
-          onSubmit={() => setLocalLikes((c) => c + 1)}
-        />
+          modalHeader={false}
+          desktopClassName="!w-[450px] max-w-[95vw]"
+          contentClassName="!p-0"
+        >
+          <WishModalContent
+            isOpen={wishModalOpen}
+            onClose={() => setWishModalOpen(false)}
+            boardId={boardId}
+            honoreeName={honoreeName || title}
+            onSubmit={() => setLocalLikes((c) => c + 1)}
+          />
+        </ModalOrBottomSlider>
       )}
     </>
   );

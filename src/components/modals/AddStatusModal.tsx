@@ -21,7 +21,7 @@ interface AddStatusModalProps {
   onMultipleStoriesCreate?: (stories: { file: File; caption: string }[]) => void;
 }
 
-const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImageSelect, onStoryCreate, onMultipleStoriesCreate }) => {
+const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImageSelect, onStoryCreate, onMultipleStoriesCreate }) => {
   const [selectedImage, setSelectedImage] = useState<string | StaticImageData | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [stories, setStories] = useState<StoryItem[]>([]);
@@ -50,16 +50,11 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
 
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
       resetState();
     } else {
-      document.body.style.overflow = '';
       resetState();
       setIsUploading(false);
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -346,50 +341,13 @@ const AddStatusModal: React.FC<AddStatusModalProps> = ({ isOpen, onClose, onImag
         onChange={handleFileChange}
       />
 
-      {}
-      <div
-        className={`fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        onClick={onClose}
-      />
-
-      {}
-      <div
-        className={`hidden max-[769px]:flex flex-col fixed bottom-0 left-0 right-0 z-[1001] bg-white rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out max-h-[85vh] ${isOpen ? 'translate-y-0' : 'translate-y-full'
-          } ${!isOpen ? 'pointer-events-none' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-        aria-hidden={!isOpen}
-      >
-        <div className="flex justify-center pt-3 flex-shrink-0">
-          <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
-        </div>
-
-        <div className="px-4 pb-6 overflow-y-auto flex-1 min-h-0">
-          {header}
-          {showPreview ? previewView : imageGrid}
-        </div>
-      </div>
-
-      {}
-      <div
-        className={`min-[770px]:flex hidden fixed inset-0 z-[1001] items-center justify-center transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-        onClick={onClose}
-      >
-        <div
-          className={`bg-white rounded-2xl shadow-2xl w-[90%] max-w-md transition-all duration-300 flex flex-col max-h-[75vh] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
-            }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="p-6 overflow-y-auto flex-1 min-h-0">
-            {header}
-            {showPreview ? previewView : imageGrid}
-          </div>
-        </div>
+      <div>
+        {header}
+        {showPreview ? previewView : imageGrid}
       </div>
     </>
   );
 };
 
-export default AddStatusModal;
+export default AddStatusModalContent;
 

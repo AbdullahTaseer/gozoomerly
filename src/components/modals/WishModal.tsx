@@ -51,7 +51,7 @@ const musicOptions: MusicOption[] = [
   { id: 'upbeat-3', title: 'Upbeat Celebration', description: 'Classic celebration tune', url: 'https://example.com/upbeat3.mp3' },
 ];
 
-const WishModal: React.FC<WishModalProps> = ({
+const WishModalContent: React.FC<WishModalProps> = ({
   isOpen,
   onClose,
   boardId,
@@ -352,12 +352,7 @@ const WishModal: React.FC<WishModalProps> = ({
   const progress = (step / totalSteps) * 100;
 
   return (
-    <div className="fixed inset-0 z-[1100] flex items-center justify-center">
-      {}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {}
-      <div className="relative bg-white rounded-[24px] w-[450px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white max-h-[90vh] flex flex-col overflow-hidden">
         {}
         <div className="p-4 flex items-center gap-4">
           <button onClick={handleBack} className="p-1 hover:bg-gray-100 rounded-full">
@@ -693,8 +688,7 @@ const WishModal: React.FC<WishModalProps> = ({
           </div>
         )}
       </div>
-    </div>
   );
 };
 
-export default WishModal;
+export default WishModalContent;

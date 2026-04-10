@@ -13,7 +13,8 @@ import {
   type FavoriteBoardItem,
 } from '@/lib/supabase/favoriteBoards';
 import FavoriteBoardRow from '@/components/boards/FavoriteBoardRow';
-import ConfirmationModal from '@/components/modals/ConfirmationModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import ConfirmationModalContent from '@/components/modals/ConfirmationModalContent';
 import MobileHeader from '@/components/navbar/MobileHeader';
 
 const PAGE_SIZE = 20;
@@ -177,18 +178,27 @@ export default function FavBoardsPage() {
         ) : null}
       </div>
 
-      <ConfirmationModal
+      <ModalOrBottomSlider
         isOpen={unfavoriteModalOpen}
         onClose={() => {
           setUnfavoriteModalOpen(false);
           setPendingUnfavoriteId(null);
         }}
         title="Remove from favorites?"
-        icon={Bookmark}
-        message="This board will be removed from your saved list."
-        primaryLabel="Remove"
-        onPrimaryClick={confirmUnfavorite}
-      />
+        desktopClassName="max-w-sm"
+        contentClassName="!p-6"
+      >
+        <ConfirmationModalContent
+          onClose={() => {
+            setUnfavoriteModalOpen(false);
+            setPendingUnfavoriteId(null);
+          }}
+          icon={Bookmark}
+          message="This board will be removed from your saved list."
+          primaryLabel="Remove"
+          onPrimaryClick={confirmUnfavorite}
+        />
+      </ModalOrBottomSlider>
     </>
   );
 }

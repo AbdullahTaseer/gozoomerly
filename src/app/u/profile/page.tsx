@@ -19,7 +19,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
-import EditProfileModal from '@/components/modals/EditProfileModal';
+import EditProfileModalContent from '@/components/modals/EditProfileModal';
 import FollowersModalContent from '@/components/modals/FollowersModalContent';
 import FollowingModalContent from '@/components/modals/FollowingModalContent';
 import { recalculateFollowingCount, recalculateFollowersCount } from '@/lib/supabase/followUtils';
@@ -269,15 +269,22 @@ const Profile = () => {
               </div>
             </div>
 
-            <EditProfileModal
+            <ModalOrBottomSlider
+              desktopClassName="w-[500px]"
               isOpen={showEditProfileModal}
               onClose={() => setShowEditProfileModal(false)}
-              profile={profile}
-              onSuccess={async (updatedProfile) => {
-                if (updatedProfile) setProfile(updatedProfile);
-                await fetchUserData();
-              }}
-            />
+              title="Edit Profile"
+            >
+              <EditProfileModalContent
+                isOpen={showEditProfileModal}
+                onClose={() => setShowEditProfileModal(false)}
+                profile={profile}
+                onSuccess={async (updatedProfile) => {
+                  if (updatedProfile) setProfile(updatedProfile);
+                  await fetchUserData();
+                }}
+              />
+            </ModalOrBottomSlider>
 
             <ModalOrBottomSlider
               title='Followers'

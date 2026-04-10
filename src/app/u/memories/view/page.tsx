@@ -9,7 +9,8 @@ import { authService } from '@/lib/supabase/auth';
 import { getBoardMedia, getBoardMemories, type BoardMediaItem } from '@/lib/supabase/boards';
 import { getProfileMemories } from '@/lib/supabase/profileMemories';
 import { useExploreColumnCount, splitIntoRoundRobinColumns } from '@/hooks/useExploreColumnCount';
-import MemoryDetailsCardModal from '@/components/modals/MemoryDetailsCardModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
+import MemoryDetailsCardContent from '@/components/modals/MemoryDetailsCardModal';
 
 type MemoryMedia = {
   id: string;
@@ -294,13 +295,23 @@ const MemoriesViewPage = () => {
         )}
       </div>
 
-      <MemoryDetailsCardModal
+      <ModalOrBottomSlider
         isOpen={viewerOpen}
         onClose={() => setViewerOpen(false)}
         title={title || 'Memories'}
-        items={items}
-        initialIndex={activeItem ? activeIndex : 0}
-      />
+        modalHeader={false}
+        className="!rounded-t-3xl"
+        desktopClassName="!w-[min(750px,96vw)]"
+        contentClassName="!p-0"
+      >
+        <MemoryDetailsCardContent
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          title={title || 'Memories'}
+          items={items}
+          initialIndex={activeItem ? activeIndex : 0}
+        />
+      </ModalOrBottomSlider>
     </div>
   );
 };
