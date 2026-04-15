@@ -1,10 +1,8 @@
 
-export function generateInviteLink(slug: string): string {
-  const baseUrl = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.host}`
-    : 'http://localhost:3000';
+import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
-  return `${baseUrl}/u/boards/${slug}`;
+export function generateInviteLink(slug: string): string {
+  return buildBoardUrl(slug);
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

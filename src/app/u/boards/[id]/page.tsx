@@ -21,6 +21,7 @@ import BoardSlugParticipants from '@/components/cards/BoardSlugParticipants';
 import BoardSlugWishes from '@/components/cards/BoardSlugWishes';
 import BoardSlugMemories from '@/components/cards/BoardSlugMemories';
 import BoardFavoriteButton from '@/components/boards/BoardFavoriteButton';
+import { getPublicSiteUrl } from '@/lib/utils/siteUrl';
 
 async function getBoardById(boardId: string) {
   if (!boardId) {
@@ -218,7 +219,7 @@ export async function generateMetadata(props: any): Promise<Metadata> {
   const params = await props.params;
   const boardId = params.id;
   const { data: board } = await getBoardById(boardId);
-  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+  const siteBase = getPublicSiteUrl();
   const shareUrl = `${siteBase}/u/boards/${boardId}`;
 
   let imageUrl = `${siteBase}/Zoomerly.svg`;
@@ -316,7 +317,7 @@ export default async function BoardPage(props: any) {
   const params = await props.params;
   const boardId = params.id;
   const { data: board } = await getBoardById(boardId);
-  const siteBase = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000/';
+  const siteBase = getPublicSiteUrl();
   const shareUrl = `${siteBase}/u/boards/${boardId}`;
 
   const supabase = await createClient();

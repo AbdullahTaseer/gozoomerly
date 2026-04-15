@@ -17,6 +17,7 @@ import {
   rpcUnfavoriteBoard,
 } from '@/lib/supabase/favoriteBoards';
 import toast from 'react-hot-toast';
+import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
 export interface MediaItem {
   type: 'image' | 'video';
@@ -155,9 +156,9 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
     shareUrl ||
     (typeof window !== 'undefined'
       ? boardSlug
-        ? `${window.location.origin}/u/boards/${boardSlug}`
+        ? buildBoardUrl(boardSlug)
         : boardId
-          ? `${window.location.origin}/u/boards/${boardId}`
+          ? buildBoardUrl(boardId)
           : ''
       : '');
 

@@ -12,6 +12,7 @@ import ExploreParticipantsModalContent from '@/components/modals/ExploreParticip
 import ShareButtons from '@/components/buttons/ShareButtons';
 import { authService } from '@/lib/supabase/auth';
 import { getBoardMedia } from '@/lib/supabase/boards';
+import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
 type ExploreCardModalProps = {
   isOpen: boolean;
@@ -244,7 +245,7 @@ const ExploreCardModal = ({
 
   const shareUrl =
     typeof window !== 'undefined' && boardId
-      ? `${window.location.origin}/u/boards/${boardId}`
+      ? buildBoardUrl(boardId)
       : '';
 
   const handleWishSuccess = useCallback(() => {

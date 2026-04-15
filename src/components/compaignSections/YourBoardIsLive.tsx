@@ -8,7 +8,6 @@ import Avatar from "@/assets/svgs/Sam.svg";
 import FarahImg from "@/assets/svgs/Farah.svg";
 import BoardBgImg from "@/assets/pngs/live-board-bg.png";
 import LiveBoardBoys from "@/assets/pngs/live-board-boys.png";
-import ShareNetwork from "@/assets/svgs/ShareNetwork.svg";
 
 type MediaItem = {
   id: string;
@@ -97,7 +96,6 @@ const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uplo
           <div className='flex gap-3 mt-4 items-center'>
             <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Post Media</p>
             <p className='bg-white text-sm rounded-full px-4 py-1 cursor-pointer'>Wish</p>
-            <Image src={ShareNetwork} alt='' height={30} width={30} className='ml-auto cursor-pointer' />
           </div>
         </div>
 

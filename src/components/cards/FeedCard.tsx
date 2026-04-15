@@ -7,6 +7,7 @@ import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import ShareBoardModalContent from '@/components/modals/ShareBoardModal';
 import InviteToBoardModalContent from '@/components/modals/InviteToBoardModal';
+import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
 export type FeedCardLayout = 'horizontal' | 'carousel';
 
@@ -98,7 +99,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const generatedShareUrl = shareUrl || (boardSlug ? `${typeof window !== 'undefined' ? window.location.origin : ''}/u/boards/${boardSlug}` : '');
+  const generatedShareUrl = shareUrl || (boardSlug ? buildBoardUrl(boardSlug) : '');
 
   const handleVideoClick = () => {
     if (onVideoClick) {
