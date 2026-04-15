@@ -65,10 +65,7 @@ export interface VerifyEmailOTPCodeCredentials {
 
 // Auth Service
 export class AuthService {
-  // Lazily create client to avoid build-time crashes during prerender/import.
-  private get supabase() {
-    return createClient();
-  }
+  private supabase = createClient();
 
   // Sign In Methods
   async signInWithEmail(credentials: SignInCredentials): Promise<AuthResponse> {
