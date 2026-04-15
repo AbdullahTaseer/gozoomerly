@@ -375,19 +375,19 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   };
 
   return (
-    <div className='max-w-[748px] mx-auto h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-110px)] my-6'>
-      {!selectedConversation ? (
-        <div className="w-full h-full py-3 border border-gray-200 rounded-xl bg-white overflow-y-auto scrollbar-hide">
+    <div className='max-w-[1180px] mx-auto h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-110px)] my-6'>
+      <div className="h-full md:flex md:gap-4">
+        <div className={`${selectedConversation ? 'hidden md:block' : 'block'} w-full h-full md:w-[360px] lg:w-[390px] md:shrink-0 py-3 border border-gray-200 rounded-xl bg-white overflow-y-auto scrollbar-hide`}>
           {renderChatList()}
         </div>
-      ) : (
-        <div className="w-full h-full flex flex-col border border-gray-200 rounded-xl bg-white overflow-hidden">
+
+        <div className={`${selectedConversation ? 'flex' : 'hidden md:flex'} w-full h-full flex-col border border-gray-200 rounded-xl bg-white overflow-hidden`}>
           {selectedConversation ? (
             <>
               <div className='flex items-center gap-4 bg-white p-3.5 border-b border-gray-200'>
                 <ArrowLeft
                   onClick={() => setSelectedConversation(null)}
-                  className='cursor-pointer shrink-0 text-black'
+                  className='cursor-pointer shrink-0 text-black md:hidden'
                 />
                 <div className='relative rounded-full h-10 w-10'>
                   <Image
@@ -581,9 +581,13 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                 </div>
               </div>
             </>
-          ) : null}
+          ) : (
+            <div className="hidden md:flex flex-1 items-center justify-center text-gray-500">
+              Select a conversation to start chatting
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

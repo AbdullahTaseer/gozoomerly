@@ -147,118 +147,114 @@ const ChatPageContent = () => {
       <DashNavbar />
       <MobileHeader title='Chat' />
       <div className='px-[5%] max-[900px]:px-4 text-black'>
-        <div className={`flex gap-4 ${selectedConversation ? 'justify-start' : 'justify-between max-[769px]:flex-wrap my-6'}`}>
-          {!selectedConversation && (
-            <p className='text-2xl min-[769px]:text-[28px] font-bold text-black shrink-0 hidden min-[769px]:block'>Chat</p>
-          )}
-          {!selectedConversation && (
-            <>
-              <div className='relative ml-auto w-[360px] max-[1050px]:w-[220px] max-[769px]:w-full'>
-                <div className="relative">
-                  <Search size={18} className='absolute top-3 left-3 text-gray-400' />
-                  <GlobalInput
-                    placeholder="Search"
-                    height='42px'
-                    width='100%'
-                    borderRadius='100px'
-                    inputClassName="pl-10 pr-10 border-[#EAEAEA]"
-                    value={searchQuery}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setSearchQuery(e.target.value);
-                      if (e.target.value.trim()) {
-                        setShowSearchResults(true);
-                      } else {
-                        setShowSearchResults(false);
-                      }
+        <div className={`flex gap-4 justify-between max-[769px]:flex-wrap my-6 ${selectedConversation ? 'max-[768px]:hidden' : ''}`}>
+          <p className='text-2xl min-[769px]:text-[28px] font-bold text-black shrink-0 hidden min-[769px]:block'>Chat</p>
+          <>
+            <div className='relative ml-auto w-[360px] max-[1050px]:w-[220px] max-[769px]:w-full'>
+              <div className="relative">
+                <Search size={18} className='absolute top-3 left-3 text-gray-400' />
+                <GlobalInput
+                  placeholder="Search"
+                  height='42px'
+                  width='100%'
+                  borderRadius='100px'
+                  inputClassName="pl-10 pr-10 border-[#EAEAEA]"
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearchQuery(e.target.value);
+                    if (e.target.value.trim()) {
+                      setShowSearchResults(true);
+                    } else {
+                      setShowSearchResults(false);
+                    }
+                  }}
+                  onFocus={() => {
+                    if (searchQuery.trim()) {
+                      setShowSearchResults(true);
+                    }
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setShowSearchResults(false);
                     }}
-                    onFocus={() => {
-                      if (searchQuery.trim()) {
-                        setShowSearchResults(true);
-                      }
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery("");
-                        setShowSearchResults(false);
-                      }}
-                      className="absolute top-2.5 right-3 text-gray-400 hover:text-black"
-                    >
-                      <X size={18} />
-                    </button>
-                  )}
-                </div>
-
-                {showSearchResults && searchQuery.trim() && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50">
-                    {searching ? (
-                      <div className="p-4 text-center text-gray-400">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
-                        <p className="mt-2 text-sm">Searching...</p>
-                      </div>
-                    ) : searchResults.length > 0 || boardSearchResults.length > 0 ? (
-                      <div className="py-2">
-                        {searchResults.length > 0 ? (
-                          <>
-                            <p className="px-4 py-2 text-xs text-gray-500 font-semibold">People</p>
-                            {searchResults.map((user) => (
-                              <button
-                                key={user.id}
-                                onClick={() => handleStartConversation(user.id)}
-                                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-black"
-                              >
-                                <Image
-                                  src={user.profile_pic_url || ProfileAvatar}
-                                  alt={user.name}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
-                                  }}
-                                />
-                                <div className="flex-1 text-left">
-                                  <p className="font-medium text-sm">{user.name}</p>
-                                  {user.email && (
-                                    <p className="text-xs text-gray-400">{user.email}</p>
-                                  )}
-                                </div>
-                              </button>
-                            ))}
-                          </>
-                        ) : null}
-                        {boardSearchResults.length > 0 ? (
-                          <div className={searchResults.length > 0 ? 'border-t border-gray-100 pt-1 mt-1' : ''}>
-                            <p className="px-4 py-2 text-xs text-gray-500 font-semibold">Boards</p>
-                            {boardSearchResults.map((board) => (
-                              <div key={board.id} className="px-2 pb-2">
-                                <BoardChatCard
-                                  title={board.title}
-                                  timeAgo="Board chat"
-                                  imgSrc={board.cover_image_url}
-                                  onClick={() => {
-                                    setSearchQuery('');
-                                    setShowSearchResults(false);
-                                    handleStartBoardConversation(board.id, board.title);
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-400">
-                        <p className="text-sm">No results found</p>
-                      </div>
-                    )}
-                  </div>
+                    className="absolute top-2.5 right-3 text-gray-400 hover:text-black"
+                  >
+                    <X size={18} />
+                  </button>
                 )}
               </div>
-              <ChatTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />
-            </>
-          )}
+
+              {showSearchResults && searchQuery.trim() && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50">
+                  {searching ? (
+                    <div className="p-4 text-center text-gray-400">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
+                      <p className="mt-2 text-sm">Searching...</p>
+                    </div>
+                  ) : searchResults.length > 0 || boardSearchResults.length > 0 ? (
+                    <div className="py-2">
+                      {searchResults.length > 0 ? (
+                        <>
+                          <p className="px-4 py-2 text-xs text-gray-500 font-semibold">People</p>
+                          {searchResults.map((user) => (
+                            <button
+                              key={user.id}
+                              onClick={() => handleStartConversation(user.id)}
+                              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-black"
+                            >
+                              <Image
+                                src={user.profile_pic_url || ProfileAvatar}
+                                alt={user.name}
+                                width={40}
+                                height={40}
+                                className="rounded-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = ProfileAvatar.src || ProfileAvatar;
+                                }}
+                              />
+                              <div className="flex-1 text-left">
+                                <p className="font-medium text-sm">{user.name}</p>
+                                {user.email && (
+                                  <p className="text-xs text-gray-400">{user.email}</p>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </>
+                      ) : null}
+                      {boardSearchResults.length > 0 ? (
+                        <div className={searchResults.length > 0 ? 'border-t border-gray-100 pt-1 mt-1' : ''}>
+                          <p className="px-4 py-2 text-xs text-gray-500 font-semibold">Boards</p>
+                          {boardSearchResults.map((board) => (
+                            <div key={board.id} className="px-2 pb-2">
+                              <BoardChatCard
+                                title={board.title}
+                                timeAgo="Board chat"
+                                imgSrc={board.cover_image_url}
+                                onClick={() => {
+                                  setSearchQuery('');
+                                  setShowSearchResults(false);
+                                  handleStartBoardConversation(board.id, board.title);
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-gray-400">
+                      <p className="text-sm">No results found</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <ChatTabs selectedTab={selectedTab} onTabChange={setSelectedTab} />
+          </>
         </div>
 
         <ConnectionsTab
