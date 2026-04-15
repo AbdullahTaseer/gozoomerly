@@ -137,8 +137,10 @@ export function OnlineStatusProvider({ children }: { children: React.ReactNode }
     const handleBeforeUnload = () => {
       channel.untrack();
       if (currentUserId && navigator.sendBeacon) {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+        const supabaseKey =
+          process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
         if (supabaseUrl && supabaseKey) {
           navigator.sendBeacon(
             `${supabaseUrl}/rest/v1/rpc/update_last_seen`,

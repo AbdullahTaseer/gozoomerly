@@ -41,8 +41,10 @@ export async function adminListSupportTickets(params: {
   p_limit: number;
   p_offset: number;
 }): Promise<{ data: SupportTicketRow[] | null; error: Error | null }> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !key) {
     const err = new Error('Missing Supabase configuration');
@@ -104,8 +106,10 @@ export async function adminUpdateSupportTicketStatus(params: {
   p_ticket_id: string;
   p_status: SupportTicketStatus;
 }): Promise<{ data: unknown; error: Error | null }> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !key) {
     return { data: null, error: new Error('Missing Supabase configuration') };

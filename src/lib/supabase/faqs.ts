@@ -129,8 +129,10 @@ export async function listFaqs(options?: {
 export async function adminUpsertFaq(
   params: AdminUpsertFaqParams
 ): Promise<{ data: unknown; error: Error | null }> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !key) {
     return { data: null, error: new Error('Missing Supabase configuration') };
@@ -172,8 +174,10 @@ export async function adminUpsertFaq(
 export async function adminDeleteFaq(
   faqId: string
 ): Promise<{ data: unknown; error: Error | null }> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (!url || !key) {
     return { data: null, error: new Error('Missing Supabase configuration') };

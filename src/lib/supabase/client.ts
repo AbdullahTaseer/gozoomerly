@@ -6,9 +6,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Next.js can still prerender client layouts. A hard throw here breaks `next build`.
  * We return a throwaway client so the bundle loads; API calls will fail until env is configured.
  */
-const FALLBACK_URL = "https://iyjakrnzufohfkctyzbt.supabase.co";
+const FALLBACK_URL = "https://example.supabase.co";
 const FALLBACK_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml5amFrcm56dWZvaGZrY3R5emJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3NzY3NzQsImV4cCI6MjA2ODM1Mjc3NH0.s9HuZtrehjMnIwuaNGaz-6xfptzd62jEeTD044PoUaw";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 
 let configuredClient: SupabaseClient | undefined;
 let fallbackClient: SupabaseClient | undefined;
@@ -16,7 +16,9 @@ let warnedMissingEnv = false;
 
 export function createClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
   if (url && key) {
     if (!configuredClient) {
@@ -28,9 +30,9 @@ export function createClient(): SupabaseClient {
   if (!warnedMissingEnv) {
     warnedMissingEnv = true;
     console.warn(
-      "[zoomerly] NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is not set. " +
+      "[zoomerly] NEXT_PUBLIC_SUPABASE_URL or anon/publishable key is not set. " +
         "Using a placeholder Supabase client so builds/prerender do not crash. " +
-        "Add both variables in Vercel → Project → Settings → Environment Variables (Production, Preview, Development)."
+        "Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) in .env.local or Vercel."
     );
   }
 
@@ -41,8 +43,9 @@ export function createClient(): SupabaseClient {
 }
 
 export function isSupabaseBrowserConfigured(): boolean {
-  return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() &&
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim()
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key =
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  return !!(url && key);
 }
