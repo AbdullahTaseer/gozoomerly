@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import InviteModal from '@/components/modals/InviteModal';
 import {
   Board,
@@ -15,6 +15,7 @@ import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
 import CoverCard from '@/components/cards/CoverCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
+import GlobalInput from '@/components/inputs/GlobalInput';
 
 type BoardsListTab = 'birthday' | 'inviteSent' | 'decline';
 
@@ -271,16 +272,20 @@ const Boards = () => {
         </div>
 
         {activeTab === 'birthday' && (
-          <div className="mb-4 max-w-md">
-            <input
-              type="search"
-              placeholder="Search boards by name..."
+          <div className="relative max-w-sm mx-auto mb-6">
+            <Search size={18} className='absolute top-3.5 left-3' />
+            <GlobalInput
+              placeholder="Search"
+              height='46px'
+              type='search'
+              width='100%'
+              borderRadius='100px'
+              inputClassName="pl-10"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
             />
             {birthdayRefreshing ? (
-              <p className="text-xs text-gray-500 mt-1">Searching…</p>
+              <p className="text-xs text-center text-gray-500 mt-1">Searching…</p>
             ) : null}
           </div>
         )}
