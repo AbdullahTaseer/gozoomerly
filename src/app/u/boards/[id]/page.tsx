@@ -22,6 +22,7 @@ import BoardSlugWishes from '@/components/cards/BoardSlugWishes';
 import BoardSlugMemories from '@/components/cards/BoardSlugMemories';
 import BoardFavoriteButton from '@/components/boards/BoardFavoriteButton';
 import { getPublicSiteUrl } from '@/lib/utils/siteUrl';
+import BoardSlugInvited from '@/components/cards/BoardSlugInvited';
 
 async function getBoardById(boardId: string) {
   if (!boardId) {
@@ -548,6 +549,12 @@ export default async function BoardPage(props: any) {
         memoriesChildren={<BoardSlugMemories boardId={board?.id || ''} boardTitle={boardTitle} boardSlug={boardId} />}
         chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />}
         participantsChildren={<BoardSlugParticipants boardId={board?.id || ''} />}
+        invitedChildren={
+          <BoardSlugInvited
+            boardId={board?.id || ''}
+            creatorId={creatorId}
+          />
+        }
         chatCount={chatCount}
       />
 

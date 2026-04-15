@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import InviteModal from '@/components/modals/InviteModal';
-import { Board, getUserBoards } from '@/lib/supabase/boards';
+import {
+  Board,
+  getUserBoardsYours,
+  getUserInvitationsForList,
+} from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 import DefaultAvatar from '@/assets/svgs/boy-avatar.svg';
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
@@ -12,55 +16,149 @@ import CoverCard from '@/components/cards/CoverCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 
-type FilterTab = 'birthday' | 'inviteSent' | 'newYear' | 'decline';
+type BoardsListTab = 'birthday' | 'inviteSent' | 'decline';
 
-const filterTabs: { id: FilterTab; label: string }[] = [
+const TAB_META: { id: BoardsListTab; label: string }[] = [
   { id: 'birthday', label: 'Birthday boards' },
   { id: 'inviteSent', label: 'Invite sent' },
-  { id: 'newYear', label: 'New year boards' },
   { id: 'decline', label: 'Decline Boards' },
 ];
 
-const placeholderCoverImage = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80';
-const inviteSentPlaceholders = [
-  { name: 'Jordan Mitchell', avatar: DefaultAvatar },
-  { name: 'Alex Thompson', avatar: DefaultAvatar },
-];
+const placeholderCoverImage =
+  'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80';
+
+function invitationCoverUrl(inv: Record<string, unknown>): string {
+  const board = inv?.board as Record<string, unknown> | undefined;
+  if (!board) return placeholderCoverImage;
+  const cover = board.cover_image as { url?: string } | undefined;
+  return (
+    cover?.url ||
+    (board.cover_image_url as string | undefined) ||
+    (board.honoree_details as { profile_photo_url?: string } | undefined)
+      ?.profile_photo_url ||
+    placeholderCoverImage
+  );
+}
+
+function invitationBoardTitle(inv: Record<string, unknown>): string {
+  const board = inv?.board as { title?: string } | undefined;
+  return board?.title || (inv.title as string | undefined) || 'Board';
+}
+
+function invitationInviteeRow(inv: Record<string, unknown>): {
+  name: string;
+  avatar: typeof DefaultAvatar;
+} {
+  const invitee = inv.invitee as
+    | { name?: string; profile_pic_url?: string }
+    | undefined;
+  const email = inv.invitee_email as string | undefined;
+  const phone = inv.invitee_phone as string | undefined;
+  const name =
+    invitee?.name ||
+    (email ? email.split('@')[0] : null) ||
+    phone ||
+    'Invitee';
+  const avatar = invitee?.profile_pic_url || DefaultAvatar;
+  return { name, avatar };
+}
 
 const Boards = () => {
   const router = useRouter();
   const [boards, setBoards] = useState<any[]>([]);
+  const [inviteSentItems, setInviteSentItems] = useState<any[]>([]);
+  const [declineItems, setDeclineItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [birthdayRefreshing, setBirthdayRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [selectedBoard, setSelectedBoard] = useState<{ slug: string; title: string } | null>(null);
-  const [activeFilter, setActiveFilter] = useState<FilterTab>('birthday');
+  const [selectedBoard, setSelectedBoard] = useState<{
+    slug: string;
+    title: string;
+  } | null>(null);
+  const [activeTab, setActiveTab] = useState<BoardsListTab>('birthday');
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const lastBirthdaySearchKey = useRef<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchUserBoards();
-  }, []);
+    const t = setTimeout(() => setDebouncedSearch(searchInput), 400);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const fetchUserBoards = async () => {
-    try {
-      const user = await authService.getUser();
-      if (!user) {
-        router.push('/signin');
-        return;
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const user = await authService.getUser();
+        if (!user) {
+          router.push('/signin');
+          return;
+        }
+        setUserId(user.id);
+        setLoading(true);
+        setError(null);
+
+        const [yours, sent, declined] = await Promise.all([
+          getUserBoardsYours(user.id, { search: null }),
+          getUserInvitationsForList({
+            p_direction: 'sent',
+            p_status: null,
+          }),
+          getUserInvitationsForList({
+            p_status: 'declined',
+            p_direction: null,
+          }),
+        ]);
+
+        if (yours.error) {
+          setError(yours.error.message || 'Failed to load boards');
+        }
+        setBoards(yours.boards);
+        lastBirthdaySearchKey.current = '';
+
+        if (!sent.error) {
+          setInviteSentItems(sent.invitations);
+        }
+        if (!declined.error) {
+          setDeclineItems(declined.invitations);
+        }
+      } catch {
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
       }
+    };
+    void init();
+  }, [router]);
 
-      const { data, error: fetchError } = await getUserBoards(user.id);
-      if (fetchError) {
-        setError('Failed to load boards');
-        return;
-      }
+  useEffect(() => {
+    if (!userId) return;
+    if (lastBirthdaySearchKey.current === null) return;
+    if (debouncedSearch === lastBirthdaySearchKey.current) return;
 
-      setBoards(data || []);
-    } catch {
-      setError('An unexpected error occurred');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const t = setTimeout(() => {
+      void (async () => {
+        try {
+          setBirthdayRefreshing(true);
+          const { boards: next, error: fetchError } = await getUserBoardsYours(
+            userId,
+            { search: debouncedSearch || null }
+          );
+          if (fetchError) {
+            setError(fetchError.message || 'Failed to load boards');
+            return;
+          }
+          setBoards(next);
+          lastBirthdaySearchKey.current = debouncedSearch;
+        } finally {
+          setBirthdayRefreshing(false);
+        }
+      })();
+    }, 400);
+
+    return () => clearTimeout(t);
+  }, [userId, debouncedSearch]);
 
   const handleInviteClick = (board: any) => {
     setSelectedBoard({ slug: board.slug, title: board.title });
@@ -76,36 +174,9 @@ const Boards = () => {
     router.push(`/u/boards/${board.id}`);
   };
 
-  const filterBoards = (filter: FilterTab) => {
-    const typeName = (board: any) =>
-      (board.board_types?.name || '').toLowerCase();
-    const title = (board: any) => (board.title || '').toLowerCase();
-
-    switch (filter) {
-      case 'birthday':
-        return boards.filter(
-          (b) =>
-            typeName(b).includes('birthday') ||
-            title(b).includes('birthday')
-        );
-      case 'inviteSent':
-        return boards.slice(0, Math.min(boards.length, 5));
-      case 'newYear':
-        return boards.filter(
-          (b) =>
-            title(b).includes('christmas') ||
-            title(b).includes('new year') ||
-            title(b).includes('newyear')
-        );
-      case 'decline':
-        return boards;
-      default:
-        return boards;
-    }
+  const handleViewBoardById = (id: string) => {
+    router.push(`/u/boards/${id}`);
   };
-
-  const filteredBoards = filterBoards(activeFilter);
-  const counts = filterTabs.map((t) => ({ ...t, count: filterBoards(t.id).length }));
 
   const getBoardCardData = (board: any) => {
     const honoreeFirstName = board.honoree_details?.first_name || '';
@@ -117,7 +188,9 @@ const Boards = () => {
     const honoreeProfilePhoto =
       board.honoree_details?.profile_photo_url || DefaultAvatar;
     const coverImage =
-      board.cover_image_url || board.honoree_details?.cover_url || placeholderCoverImage;
+      board.cover_image_url ||
+      board.honoree_details?.cover_url ||
+      placeholderCoverImage;
 
     return {
       honoreeName,
@@ -127,6 +200,40 @@ const Boards = () => {
       boardTypes: board.board_types,
     };
   };
+
+  const birthdayTotal =
+    (boards as { total?: number }).total ??
+    boards.length;
+  const tabCounts: Record<BoardsListTab, number> = {
+    birthday: birthdayTotal,
+    inviteSent: inviteSentItems.length,
+    decline: declineItems.length,
+  };
+
+  const renderInviteCards = (
+    items: any[],
+    personLabel: string
+  ) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.map((inv) => {
+        const row = invitationInviteeRow(inv);
+        const bid =
+          (inv.board_id as string) ||
+          (inv.board as { id?: string } | undefined)?.id;
+        return (
+          <CoverCard
+            key={inv.id}
+            coverImage={invitationCoverUrl(inv)}
+            title={invitationBoardTitle(inv)}
+            variant="inviteSent"
+            inviteSentTo={{ name: row.name, avatar: row.avatar }}
+            personLabel={personLabel}
+            onClick={() => bid && handleViewBoardById(bid)}
+          />
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="text-black">
@@ -148,54 +255,57 @@ const Boards = () => {
             <span className="text-3xl font-bold">Boards</span>
           </button>
           <div className="flex gap-2 min-w-max">
-            {counts.map((tab) => (
+            {TAB_META.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveFilter(tab.id)}
-                className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${activeFilter === tab.id
-                    ? 'bg-black text-white'
-                    : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
+                onClick={() => setActiveTab(tab.id)}
+                className={`shrink-0 px-4 py-2.5 rounded-full text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? 'bg-black text-white'
+                  : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
                   }`}
               >
-                {tab.label} ({tab.count})
+                {tab.label} ({tabCounts[tab.id]})
               </button>
             ))}
           </div>
         </div>
 
+        {activeTab === 'birthday' && (
+          <div className="mb-4 max-w-md">
+            <input
+              type="search"
+              placeholder="Search boards by name..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full rounded-full border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-pink-400"
+            />
+            {birthdayRefreshing ? (
+              <p className="text-xs text-gray-500 mt-1">Searching…</p>
+            ) : null}
+          </div>
+        )}
+
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading boards...</div>
+          <div className="text-center py-12 text-gray-500">
+            Loading boards...
+          </div>
         ) : error ? (
           <div className="text-center py-12 text-red-500">{error}</div>
-        ) : filteredBoards.length === 0 ? (
+        ) : activeTab === 'birthday' && boards.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-500 mb-4">No boards in this category</p>
           </div>
-        ) : activeFilter === 'inviteSent' ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBoards.map((board, idx) => {
-              const data = getBoardCardData(board);
-              const inviteTo =
-                inviteSentPlaceholders[idx % inviteSentPlaceholders.length];
-              return (
-                <CoverCard
-                  key={board.id}
-                  coverImage={data.coverImage}
-                  title={board.title}
-                  variant="inviteSent"
-                  inviteSentTo={{
-                    name: inviteTo.name,
-                    avatar: inviteTo.avatar,
-                  }}
-                  onClick={() => handleViewBoard(board)}
-                />
-              );
-            })}
+        ) : activeTab === 'inviteSent' && inviteSentItems.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">No invitations in this category</p>
           </div>
-        ) : (
-          /* Full board cards: grid */
+        ) : activeTab === 'decline' && declineItems.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 mb-4">No declined invitations</p>
+          </div>
+        ) : activeTab === 'birthday' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBoards.map((board) => {
+            {boards.map((board) => {
               const data = getBoardCardData(board);
               return (
                 <DynamicBoardCard
@@ -234,6 +344,10 @@ const Boards = () => {
               );
             })}
           </div>
+        ) : activeTab === 'inviteSent' ? (
+          renderInviteCards(inviteSentItems, 'Invite sent to')
+        ) : (
+          renderInviteCards(declineItems, 'Declined invite')
         )}
       </div>
 

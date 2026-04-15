@@ -15,6 +15,8 @@ type CoverCardProps = {
   variant?: 'default' | 'share' | 'inviteSent';
   sharedWith?: { name: string; avatar: string | StaticImport };
   inviteSentTo?: { name: string; avatar: string | StaticImport };
+  /** Overrides default "Invite sent to" / "Share with" when set. */
+  personLabel?: string;
   onClick?: () => void;
 };
 
@@ -29,19 +31,22 @@ const CoverCard = ({
   variant = 'default',
   sharedWith,
   inviteSentTo,
+  personLabel: personLabelProp,
   onClick,
 }: CoverCardProps) => {
   const isShareVariant = variant === 'share' || sharedWith;
   const isInviteSentVariant = variant === 'inviteSent' || inviteSentTo;
   const personInfo = sharedWith || inviteSentTo;
-  const personLabel = variant === 'inviteSent' || inviteSentTo ? 'Invite sent to' : 'Share with';
+  const personLabel =
+    personLabelProp ??
+    (variant === 'inviteSent' || inviteSentTo ? 'Invite sent to' : 'Share with');
   return (
     <button
       type="button"
       onClick={onClick}
       className="w-full text-left rounded-xl p-1.5 overflow-hidden bg-[#F4F4F4] transition-colors hover:bg-[#ececec]"
     >
-      <div className="relative h-[148px] sm:h-[168px] min-h-[120px] rounded-lg overflow-clip">
+      <div className="relative h-[90px] rounded-lg overflow-clip">
         <Image
           src={coverImage}
           alt={title}

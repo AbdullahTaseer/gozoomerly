@@ -66,16 +66,26 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
 
   const defaultPrimaryColor = '#F59E0B';
   const defaultGradient = ['#FCD34D', '#F59E0B'];
-  const gradientColors = gradient && gradient.length >= 2
-    ? gradient
-    : defaultGradient;
+
+  const safePrimaryColor =
+    typeof primaryColor === "string" && primaryColor.trim() !== ""
+      ? primaryColor
+      : defaultPrimaryColor;
+
+  const gradientColors =
+    Array.isArray(gradient) &&
+      gradient.length >= 2 &&
+      gradient[0] &&
+      gradient[1]
+      ? gradient
+      : defaultGradient;
 
   const topSectionStyle = {
-    backgroundColor: primaryColor || defaultPrimaryColor,
+    backgroundColor: safePrimaryColor,
   };
 
-  const progressBgColor = gradientColors[0] || defaultGradient[0];
-  const progressFillColor = gradientColors[1] || gradientColors[0] || defaultGradient[1];
+  const progressBgColor = gradientColors[0];
+  const progressFillColor = gradientColors[1];
 
   return (
     <div className={`${className} bg-white rounded-xl overflow-hidden shadow-lg shrink-0 flex flex-col`}>
@@ -163,11 +173,11 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
             <p className="text-lg font-semibold">{memories ?? media ?? 0}</p>
             <p className="text-xs text-gray-300 mt-1">Memories</p>
           </div>
-          {}
+          { }
         </div>
 
-        {}
-        {}
+        { }
+        { }
       </div>
     </div>
   );

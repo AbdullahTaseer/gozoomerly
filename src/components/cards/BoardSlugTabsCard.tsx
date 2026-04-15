@@ -7,6 +7,7 @@ interface BoardSlugTabsCardProps {
   memoriesChildren?: React.ReactNode;
   chatsChildren?: React.ReactNode;
   participantsChildren?: React.ReactNode;
+  invitedChildren?: React.ReactNode;
   chatCount?: number;
 }
 
@@ -16,6 +17,7 @@ const BoardSlugTabsCard = ({
   memoriesChildren,
   chatsChildren,
   participantsChildren,
+  invitedChildren,
   chatCount = 0,
 }: BoardSlugTabsCardProps) => {
   const [activeTab, setActiveTab] = useState("wishes");
@@ -26,6 +28,7 @@ const BoardSlugTabsCard = ({
     { id: "memories", label: "Memories" },
     { id: "chats", label: `Chats (${chatCount})` },
     { id: "participants", label: "Participants" },
+    { id: "invited", label: "Invited" },
   ];
 
   return (
@@ -54,6 +57,7 @@ const BoardSlugTabsCard = ({
         {activeTab === "memories" && <>{memoriesChildren}</>}
         {activeTab === "chats" && <>{chatsChildren}</>}
         {activeTab === "participants" && <>{participantsChildren}</>}
+        {activeTab === "invited" && <>{invitedChildren}</>}
       </div>
     </div>
   );

@@ -1956,3 +1956,85 @@ export async function inviteUserToBoard({
 
   return { success: true, data, error: null };
 }
+
+export interface BoardInvitationInvitee {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  profile_pic_url?: string | null;
+}
+
+export interface BoardInvitation {
+  id: string;
+  status: string;
+  invitee?: BoardInvitationInvitee | null;
+}
+
+export async function getBoardInvitations(boardId: string) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('get_board_invitations', {
+    p_board_id: boardId,
+  });
+
+  if (error) {
+    return { invitations: [] as BoardInvitation[], error };
+  }
+
+  const raw = data as { data?: { invitations?: BoardInvitation[] } } | null;
+  const list = raw?.data?.invitations ?? [];
+
+  return { invitations: list, error: null };
+}
+
+/** Profile → Boards → "Birthday boards" tab (mobile: get_user_boards, p_status: yours). */
+export async function getUserBoardsYours(
+  userId: string,
+  opts?: { limit?: number; offset?: number; search?: string | null }
+) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('get_user_boards', {
+    p_user_id: userId,
+    p_status: 'yours',
+    p_limit: opts?.limit ?? 50,
+    p_offset: opts?.offset ?? 0,
+    p_search: opts?.search ?? null,
+  });
+
+  if (error) {
+    return { boards: [] as any[], pagination: null as Record<string, unknown> | null, error };
+  }
+
+  const responseData = (data as { data?: { boards?: unknown[]; pagination?: Record<string, unknown> } })?.data ?? data;
+  const boards = (responseData as { boards?: unknown[] })?.boards ?? [];
+  const pagination = (responseData as { pagination?: Record<string, unknown> | null })?.pagination ?? null;
+
+  return { boards, pagination, error: null };
+}
+
+/** Profile → Boards → "Invite sent" / "Decline Boards" (mobile: get_user_invitations). */
+export async function getUserInvitationsForList(params: {
+  p_status?: string | null;
+  p_direction?: string | null;
+}) {
+  const supabase = createClient();
+
+  const { data, error } = await supabase.rpc('get_user_invitations', {
+    p_status: params.p_status ?? null,
+    p_direction: params.p_direction ?? null,
+  });
+
+  if (error) {
+    return { invitations: [] as any[], error };
+  }
+
+  if (Array.isArray(data)) {
+    return { invitations: data, error: null };
+  }
+
+  const wrapped = data as { invitations?: unknown[]; data?: unknown[] } | null;
+  const list = wrapped?.invitations ?? wrapped?.data ?? [];
+  return { invitations: Array.isArray(list) ? list : [], error: null };
+}
