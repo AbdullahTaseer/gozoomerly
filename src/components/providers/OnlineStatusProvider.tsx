@@ -92,8 +92,9 @@ export function OnlineStatusProvider({ children }: { children: React.ReactNode }
       const state = channel.presenceState();
       const userIds: string[] = [];
 
-      Object.values(state).forEach((presences) => {
-        const presence = presences[0] as unknown as OnlineUser | undefined;
+      Object.values(state).forEach((presences: unknown) => {
+        const list = presences as OnlineUser[];
+        const presence = list[0] as OnlineUser | undefined;
         if (presence?.user_id) {
           userIds.push(presence.user_id);
         }
@@ -102,7 +103,7 @@ export function OnlineStatusProvider({ children }: { children: React.ReactNode }
       setOnlineUsers(userIds);
     });
 
-    channel.on('presence', { event: 'join' }, ({ newPresences }) => {
+    channel.on('presence', { event: 'join' }, ({ newPresences }: { newPresences: unknown[] }) => {
       const presence = newPresences[0] as unknown as OnlineUser | undefined;
       if (presence?.user_id) {
         setOnlineUsers((prev) => {
@@ -114,14 +115,14 @@ export function OnlineStatusProvider({ children }: { children: React.ReactNode }
       }
     });
 
-    channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+    channel.on('presence', { event: 'leave' }, ({ leftPresences }: { leftPresences: unknown[] }) => {
       const presence = leftPresences[0] as unknown as OnlineUser | undefined;
       if (presence?.user_id) {
         setOnlineUsers((prev) => prev.filter((id) => id !== presence.user_id));
       }
     });
 
-    channel.subscribe(async (status) => {
+    channel.subscribe(async (status: string) => {
       if (status === 'SUBSCRIBED') {
         channelRef.current = channel;
         await channel.track({

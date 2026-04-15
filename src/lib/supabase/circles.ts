@@ -83,7 +83,10 @@ export async function getAllCircles() {
     return { data: [], error: null };
   }
 
-  const circlesWithDetails = circleData.map((circle) => {
+  const circlesWithDetails = circleData.map((circle: Record<string, unknown> & {
+    member_previews?: unknown;
+    member_count?: number;
+  }) => {
     let avatars: string[] = [];
     let memberCount = circle.member_count || 0;
 

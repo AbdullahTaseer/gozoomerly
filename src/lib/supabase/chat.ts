@@ -198,7 +198,7 @@ export async function getOrCreateDirectConversation(
       return await createNewDirectConversation(userId1, userId2);
     }
 
-    const conversationIds = user1Participations.map(p => p.conversation_id);
+    const conversationIds = user1Participations.map((p: { conversation_id: string }) => p.conversation_id);
 
     const { data: directConversations, error: conversationsError } = await supabase
       .from('conversations')
@@ -671,7 +671,7 @@ export async function getUserConversations(
       return { conversations: [], error: null };
     }
 
-    const conversationIds = participantData.map(p => p.conversation_id);
+    const conversationIds = participantData.map((p: { conversation_id: string }) => p.conversation_id);
 
     const { data: conversationsData, error: conversationsError } = await supabase
       .from('conversations')
@@ -687,7 +687,7 @@ export async function getUserConversations(
     }
 
     const conversationsWithParticipants = await Promise.all(
-      conversationsData.map(async (conv) => {
+      conversationsData.map(async (conv: Conversation) => {
         let participantsData: RawParticipantData[] | null;
         let participantsError: any;
 
@@ -762,8 +762,9 @@ export async function getUserConversations(
       })
     );
 
-    let uniqueConversations = conversationsWithParticipants.filter((conv, index, self) =>
-      index === self.findIndex(c => c.id === conv.id)
+    let uniqueConversations = conversationsWithParticipants.filter(
+      (conv: { id: string }, index: number, self: { id: string }[]) =>
+      index === self.findIndex((c: { id: string }) => c.id === conv.id)
     );
 
     const seenPairs = new Map<string, Conversation>();

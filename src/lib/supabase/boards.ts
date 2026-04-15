@@ -235,7 +235,7 @@ export async function getUserBoards(userId: string) {
 
   if (data) {
 
-    const boardsWithCounts = data.map(board => {
+    const boardsWithCounts = data.map((board: Board) => {
 
       const wishesCount = (board as any).wishes_count ?? 0;
       const participantsCount = (board as any).participants_count ?? 0;
@@ -1113,7 +1113,7 @@ export async function getWishCommentCount(wishId: string): Promise<{ count: numb
       })
     );
 
-    const totalReplies = replyCounts.reduce((sum, count) => sum + count, 0);
+    const totalReplies = replyCounts.reduce((sum: number, count: number) => sum + count, 0);
     return { count: totalCount + totalReplies, error: null };
   } catch (err) {
     return { count: 0, error: err };
@@ -1697,7 +1697,7 @@ export async function fetchLiveBoards(options?: {
 
     if (data) {
 
-      const boardIds = data.map(board => board.id);
+      const boardIds = data.map((board: { id: string }) => board.id);
 
       const { data: allParticipants } = await supabase
         .from('board_participants')
@@ -1714,22 +1714,25 @@ export async function fetchLiveBoards(options?: {
         .select('board_id')
         .in('board_id', boardIds);
 
-      const participantCounts = (allParticipants || []).reduce((acc, p) => {
+      const participantCounts = (allParticipants || []).reduce(
+        (acc: Record<string, number>, p: { board_id: string }) => {
         acc[p.board_id] = (acc[p.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const wishesCounts = (allWishes || []).reduce((acc, w) => {
+      const wishesCounts = (allWishes || []).reduce(
+        (acc: Record<string, number>, w: { board_id: string }) => {
         acc[w.board_id] = (acc[w.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const mediaCounts = (allMedia || []).reduce((acc, m) => {
+      const mediaCounts = (allMedia || []).reduce(
+        (acc: Record<string, number>, m: { board_id: string }) => {
         acc[m.board_id] = (acc[m.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const boardsWithCounts = data.map(board => ({
+      const boardsWithCounts = data.map((board: Board) => ({
         ...board,
         participants_count: participantCounts[board.id] || 0,
         wishes_count: wishesCounts[board.id] || 0,
@@ -1800,7 +1803,7 @@ export async function fetchActiveBoards(options?: {
 
     if (data) {
 
-      const boardIds = data.map(board => board.id);
+      const boardIds = data.map((board: { id: string }) => board.id);
 
       const { data: allInvitations } = await supabase
         .from('board_invitations')
@@ -1812,17 +1815,19 @@ export async function fetchActiveBoards(options?: {
         .select('board_id')
         .in('board_id', boardIds);
 
-      const invitationCounts = (allInvitations || []).reduce((acc, inv) => {
+      const invitationCounts = (allInvitations || []).reduce(
+        (acc: Record<string, number>, inv: { board_id: string }) => {
         acc[inv.board_id] = (acc[inv.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const mediaCounts = (allMedia || []).reduce((acc, media) => {
+      const mediaCounts = (allMedia || []).reduce(
+        (acc: Record<string, number>, media: { board_id: string }) => {
         acc[media.board_id] = (acc[media.board_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const boardsWithCounts = data.map(board => ({
+      const boardsWithCounts = data.map((board: Board) => ({
         ...board,
         invited_count: invitationCounts[board.id] || 0,
         media_count: mediaCounts[board.id] || 0

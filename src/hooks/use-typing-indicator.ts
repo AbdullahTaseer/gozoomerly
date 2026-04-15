@@ -64,7 +64,7 @@ export function useTypingIndicator({
     const channelName = `typing:${conversationId}`;
     const channel = supabase.channel(channelName);
 
-    channel.on('broadcast', { event: 'typing' }, (payload) => {
+    channel.on('broadcast', { event: 'typing' }, (payload: { payload: unknown }) => {
       const data = payload.payload as { user_id: string; user_name?: string };
 
       if (data.user_id !== currentUserId) {
@@ -82,7 +82,7 @@ export function useTypingIndicator({
       }
     });
 
-    channel.subscribe((status) => {
+    channel.subscribe((status: string) => {
       if (status === 'SUBSCRIBED') {
         channelRef.current = channel;
       }

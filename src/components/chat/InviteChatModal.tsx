@@ -62,7 +62,7 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
 
       if (!error) {
 
-        const usersWithStatus = (users || []).map(user => ({
+        const usersWithStatus = (users || []).map((user: User) => ({
           ...user,
           status: 'Have a nice day!',
         }));

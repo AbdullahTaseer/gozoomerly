@@ -299,7 +299,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
           }
         }
       )
-      .subscribe(async (status, err) => {
+      .subscribe(async (status: string, err?: Error) => {
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
           setError(null);

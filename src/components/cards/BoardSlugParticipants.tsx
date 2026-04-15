@@ -83,7 +83,7 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
       
       if (follows) {
         const followingMap: Record<string, boolean> = {};
-        follows.forEach(follow => {
+        follows.forEach((follow: { followee_id?: string }) => {
           if (follow.followee_id) {
             followingMap[follow.followee_id] = true;
           }

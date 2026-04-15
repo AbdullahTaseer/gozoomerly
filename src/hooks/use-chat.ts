@@ -295,8 +295,11 @@ export const useChat = () => {
             .in('id', uniqueSenderIds);
 
           if (profilesData) {
-            const profileMap = new Map(profilesData.map(p => [p.id, p]));
-            messagesNeedingProfiles.forEach(msg => {
+            type ProfileRow = { id: string; name: string | null; profile_pic_url: string | null };
+            const profileMap = new Map<string, ProfileRow>(
+              profilesData.map((p: ProfileRow) => [p.id, p])
+            );
+            messagesNeedingProfiles.forEach((msg: { id: string; senderId: string }) => {
               const profile = profileMap.get(msg.senderId);
               if (profile) {
                 const index = chatMessages.findIndex(m => m.id === msg.id);

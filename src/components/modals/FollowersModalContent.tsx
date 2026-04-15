@@ -42,7 +42,7 @@ const FollowersModalContent = ({ userId }: Props) => {
       if (data.length > 0) {
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
-        const followerIds = data.map(f => f.user_id);
+        const followerIds = data.map((f: { user_id: string }) => f.user_id);
         const { data: followData } = await supabase
           .from('follows')
           .select('followee_id')
@@ -50,8 +50,10 @@ const FollowersModalContent = ({ userId }: Props) => {
           .in('followee_id', followerIds);
 
         const statusMap: Record<string, boolean> = {};
-        const followingIds = new Set(followData?.map(f => f.followee_id) || []);
-        data.forEach(follower => {
+        const followingIds = new Set(
+          followData?.map((f: { followee_id: string }) => f.followee_id) || []
+        );
+        data.forEach((follower: { user_id: string }) => {
           statusMap[follower.user_id] = followingIds.has(follower.user_id);
         });
         setFollowingStatus(statusMap);

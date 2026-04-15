@@ -40,13 +40,13 @@ const PostBoards = () => {
         console.error('Error fetching post boards:', postError);
       }
 
-      let fetchedBoards = (postBoards || []).filter((board: any) =>
-        (board.media_count || 0) > 0
+      let fetchedBoards = (postBoards || []).filter(
+        (board: Board) => (board.media_count || 0) > 0
       );
 
       const supabase = createClient();
       const boardsWithContributors = await Promise.all(
-        fetchedBoards.map(async (board) => {
+        fetchedBoards.map(async (board: Board) => {
           try {
             const { data: participants } = await supabase
               .from('board_participants')
@@ -57,14 +57,14 @@ const PostBoards = () => {
             const contributorAvatars: (string | typeof ProfileAvatar)[] = [];
 
             if (participants && participants.length > 0) {
-              const userIds = participants.map(p => p.user_id);
+              const userIds = participants.map((p: { user_id: string }) => p.user_id);
               const { data: profiles } = await supabase
                 .from('profiles')
                 .select('profile_pic_url')
                 .in('id', userIds);
 
               if (profiles) {
-                profiles.forEach((profile) => {
+                profiles.forEach((profile: { profile_pic_url: string | null }) => {
                   if (profile.profile_pic_url) {
                     contributorAvatars.push(profile.profile_pic_url);
                   } else {
