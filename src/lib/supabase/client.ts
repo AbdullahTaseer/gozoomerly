@@ -6,5 +6,6 @@ export function createClient() {
   if (!url || !key) {
     throw new Error("Missing Supabase environment variables");
   }
+  
   return createBrowserClient(url, key);
 }
