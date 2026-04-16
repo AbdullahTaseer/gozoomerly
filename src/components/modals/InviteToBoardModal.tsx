@@ -6,7 +6,7 @@ import { authService } from '@/lib/supabase/auth';
 import { inviteUserToBoard } from '@/lib/supabase/boards';
 import { X, Search, Check, Loader2 } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
-import { getFollowers, getFollowing, UserConnection } from '@/lib/supabase/followUtils';
+import { getAllUserConnections, type UserConnection } from '@/lib/supabase/connections';
 
 interface InviteToBoardModalProps {
   isOpen: boolean;
@@ -21,7 +21,6 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
   boardId,
   boardTitle
 }) => {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
   const [users, setUsers] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,7 +31,7 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
     if (isOpen) {
       loadUsers();
     }
-  }, [isOpen, activeTab]);
+  }, [isOpen]);
 
   const loadUsers = async () => {
     try {
@@ -40,11 +39,22 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
       const user = await authService.getUser();
       if (!user) return;
 
-      const data = activeTab === 'followers'
-        ? await getFollowers(user.id)
-        : await getFollowing(user.id);
+      const { data, error } = await getAllUserConnections(user.id);
+      if (error) {
+        setUsers([]);
+        return;
+      }
 
-      setUsers(data);
+      const rows = (data || []) as UserConnection[];
+      const seen = new Set<string>();
+      const unique: UserConnection[] = [];
+      for (const row of rows) {
+        const uid = row.connected_user_id || row.user_id;
+        if (!uid || seen.has(uid)) continue;
+        seen.add(uid);
+        unique.push(row);
+      }
+      setUsers(unique);
     } catch (error) {
     } finally {
       setLoading(false);
@@ -70,9 +80,13 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(q) ||
+      user.email?.toLowerCase().includes(q)
+    );
+  });
 
   if (!isOpen) return null;
 
@@ -88,30 +102,6 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
             className="p-1 hover:bg-gray-100 border border-black rounded-full transition-colors"
           >
             <X size={16} className="text-gray-600" />
-          </button>
-        </div>
-
-        
-        <div className="flex border-b">
-          <button
-            onClick={() => setActiveTab('followers')}
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
-              activeTab === 'followers'
-                ? 'text-black border-b-2 border-black'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Followers
-          </button>
-          <button
-            onClick={() => setActiveTab('following')}
-            className={`flex-1 py-3 text-center font-medium transition-colors ${
-              activeTab === 'following'
-                ? 'text-black border-b-2 border-black'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Following
           </button>
         </div>
 
@@ -136,30 +126,31 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-3">
               {filteredUsers.map((user) => {
-                const isInvited = invitedUsers.has(user.user_id);
-                const isInviting = invitingUserId === user.user_id;
+                const peerId = user.connected_user_id || user.user_id;
+                const isInvited = invitedUsers.has(peerId);
+                const isInviting = invitingUserId === peerId;
 
                 return (
                   <div
-                    key={user.user_id}
+                    key={`${user.id}-${peerId}`}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-xl"
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-full overflow-hidden">
                         <Image
-                          src={user.profile_pic_url || user.profile_pic || ProfileAvatar}
+                          src={user.profile_pic_url || ProfileAvatar}
                           alt={user.name || 'User'}
                           fill
                           className="object-cover"
                         />
                       </div>
                       <div>
-                        <p className="font-medium text-black">{user.name || 'Unknown'}</p>
+                        <p className="font-medium text-black">{user.name || user.email || 'Unknown'}</p>
                       </div>
                     </div>
 
                     <button
-                      onClick={() => !isInvited && !isInviting && handleInvite(user.user_id)}
+                      onClick={() => !isInvited && !isInviting && handleInvite(peerId)}
                       disabled={isInvited || isInviting}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         isInvited
@@ -187,7 +178,7 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-500">
-                {searchQuery ? 'No users found' : `No ${activeTab} yet`}
+                {searchQuery ? 'No users found' : 'No connections yet'}
               </p>
             </div>
           )}

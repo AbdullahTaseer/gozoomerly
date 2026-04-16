@@ -11,13 +11,11 @@ export interface UserConnection {
   email?: string;
 }
 
-export async function getAllUserConnections(userId: string, limit: number = 50, offset: number = 0) {
+export async function getAllUserConnections(userId: string) {
   const supabase = createClient();
 
   const { data, error } = await supabase.rpc('get_all_user_connections', {
     p_user_id: userId,
-    p_limit: limit,
-    p_offset: offset,
   });
 
   if (error) {
