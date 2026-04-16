@@ -249,6 +249,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                   alt={getConversationName(selectedConversation)}
                   fill
                   className='rounded-full object-cover'
+                  sizes="40px"
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
                     target.src = ProfileAvatar.src || ProfileAvatar;
@@ -315,6 +316,7 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                             alt={draft.fileName}
                             fill
                             className='object-cover rounded'
+                            sizes="80px"
                             unoptimized
                           />
                         </div>

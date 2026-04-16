@@ -47,6 +47,7 @@ export default function StatusCard({
               alt="my-status"
               fill
               className="object-cover"
+              sizes="100px"
             />
 
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -60,6 +61,7 @@ export default function StatusCard({
               alt="profile"
               fill
               className="object-cover"
+              sizes="44px"
             />
           </div>
         )}
@@ -101,6 +103,7 @@ export default function StatusCard({
           alt={name || ''}
           fill
           className="object-cover"
+          sizes="100px"
         />
       ) : null}
 
@@ -114,6 +117,7 @@ export default function StatusCard({
               alt={name || ''}
               fill
               className="object-cover"
+              sizes="36px"
             />
           </div>
         </div>

@@ -10,6 +10,7 @@ type props = {
   organizerAvatar?: string | StaticImport;
   topContributors?: Array<string | StaticImport>;
   onClick?: () => void;
+  priority?: boolean;
 };
 
 const SpotLightCard = ({
@@ -21,6 +22,7 @@ const SpotLightCard = ({
   organizerName = '',
   organizerAvatar,
   onClick,
+  priority = false,
 }: props) => {
   const displayAvatars = topContributors.slice(0, 3);
   const extraCount = Math.max(0, participants - displayAvatars.length);
@@ -36,6 +38,8 @@ const SpotLightCard = ({
           alt={name}
           fill
           className="object-cover transition-transform group-hover:scale-105"
+          sizes="(max-width: 550px) 100vw, (max-width: 900px) 50vw, 33vw"
+          priority={priority}
         />
         <div className="absolute inset-0 bg-black/55" />
       </div>

@@ -142,6 +142,7 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
                           alt={user.name || 'User'}
                           fill
                           className="object-cover"
+                          sizes="40px"
                         />
                       </div>
                       <div>

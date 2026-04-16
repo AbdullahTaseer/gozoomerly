@@ -251,9 +251,10 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
             <div className="relative h-12 w-12 shrink-0">
             <Image
                 src={participant.user.profile_pic_url || ProfileAvatar}
-                className="h-12 w-12 rounded-full shrink-0 object-cover"
+                className="rounded-full object-cover"
                 alt={participant.user.name}
                 fill
+                sizes="48px"
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;
                   target.src = ProfileAvatar.src || ProfileAvatar;

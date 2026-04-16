@@ -53,6 +53,8 @@ export interface FollowingCardProps {
   honoreeName?: string;
   /** When false, heart opens a toast instead of the wish composer */
   supportsWishes?: boolean;
+  /** First card in a grid — improves LCP for the main cover image */
+  priority?: boolean;
 }
 
 const FollowingCard: React.FC<FollowingCardProps> = ({
@@ -80,6 +82,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   boardId,
   honoreeName,
   supportsWishes = true,
+  priority = false,
 }) => {
   const router = useRouter();
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -233,6 +236,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
               alt={userName}
               fill
               className="object-cover"
+              sizes="40px"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   typeof ProfileAvatar === 'string'
@@ -256,6 +260,8 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
             alt={title || ''}
             fill
             className="object-cover object-top"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            priority={priority}
             unoptimized
           />
         ) : null}

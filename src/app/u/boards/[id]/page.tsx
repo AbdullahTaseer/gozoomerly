@@ -509,6 +509,8 @@ export default async function BoardPage(props: any) {
                 alt={honoreeName}
                 fill
                 className="rounded-full object-cover"
+                sizes="64px"
+                priority
               />
             </div>
 

@@ -9,8 +9,8 @@ const HeroSection = () => {
   return (
     <div className='px-[5%] max-[769px]:px-4 max-[768px]:px-0 pt-2 max-[768px]:pt-1'>
       <div className='relative min-h-[calc(100vh-160px)] max-[1024px]:min-h-[400px] py-10 px-10 max-[768px]:px-6 flex justify-center items-center rounded-2xl max-[768px]:rounded-none overflow-clip'>
-        <Image src={LayerImg} alt='' fill className='object-cover z-1' />
-        <Image src={BgImg} alt='' fill className='object-cover' />
+        <Image src={LayerImg} alt='' fill className='object-cover z-1' sizes="100vw" priority />
+        <Image src={BgImg} alt='' fill className='object-cover' sizes="100vw" priority />
         <div className='text-center text-white max-w-[1050px] relative z-2'>
           <p className='text-[70px] max-[1024px]:text-[55px] max-[768px]:text-[44px] max-[600px]:text-[36px] font-semibold'>A Messenger Built for <br /> Real Life</p>
           <p className='text-[28px] max-[768px]:text-[20px] mt-4'>Start with simple, private conversations. Let everything else grow naturally from there.</p>

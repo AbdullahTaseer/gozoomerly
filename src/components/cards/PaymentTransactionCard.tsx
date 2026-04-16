@@ -65,6 +65,7 @@ const PaymentTransactionCard = ({
             alt={recipientName}
             fill
             className="object-cover"
+            sizes="(max-width: 768px) 100vw, 400px"
           />
         </div>
         <div className="relative z-10">
@@ -76,6 +77,7 @@ const PaymentTransactionCard = ({
                 alt={recipientName}
                 fill
                 className="object-cover"
+                sizes="48px"
               />
             </div>
             <div className="min-w-0 flex-1">

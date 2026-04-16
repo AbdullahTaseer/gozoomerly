@@ -151,6 +151,7 @@ const AddCircleModal = ({ onCircleCreated, editMode = false, circleData }: AddCi
               alt="uploaded image"
               fill
               className="rounded-xl object-cover"
+              sizes="(max-width: 768px) 100vw, 600px"
             />
           ) : (
             <div className="flex flex-col items-center">

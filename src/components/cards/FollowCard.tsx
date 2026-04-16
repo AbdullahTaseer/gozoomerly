@@ -38,6 +38,7 @@ const FollowCard = ({ imgSrc, name, data, btnTitle, onClickBtn }: props) => {
             alt={name}
             fill
             className='rounded-full object-cover'
+            sizes="50px"
             onError={handleImageError}
           />
         )}

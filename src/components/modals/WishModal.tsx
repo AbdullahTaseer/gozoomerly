@@ -463,6 +463,7 @@ const WishModalContent: React.FC<WishModalProps> = ({
                       alt="Preview"
                       fill
                       className="object-contain"
+                      sizes="100vw"
                     />
                   )}
 
@@ -535,6 +536,7 @@ const WishModalContent: React.FC<WishModalProps> = ({
                       alt=""
                       fill
                       className="object-cover"
+                      sizes="64px"
                     />
                   </button>
                 ))}

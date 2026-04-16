@@ -291,6 +291,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
             alt={comment.user?.name || 'User'}
             fill
             className="rounded-full object-cover"
+            sizes="32px"
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement;
               target.src = ProfileAvatar.src || ProfileAvatar;
@@ -358,6 +359,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   alt={reply.user?.name || 'User'}
                   fill
                   className="rounded-full object-cover"
+                  sizes="28px"
                   onError={(e) => {
                     const target = e.currentTarget as HTMLImageElement;
                     target.src = ProfileAvatar.src || ProfileAvatar;

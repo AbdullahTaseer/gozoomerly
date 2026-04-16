@@ -297,6 +297,8 @@ const VisitProfilePage = () => {
               alt={profile.name || 'Profile'}
               fill
               className="object-cover"
+              sizes="128px"
+              priority
             />
           ) : (
             <Image
@@ -304,6 +306,8 @@ const VisitProfilePage = () => {
               alt="Default Avatar"
               fill
               className="object-cover"
+              sizes="128px"
+              priority
             />
           )}
         </div>

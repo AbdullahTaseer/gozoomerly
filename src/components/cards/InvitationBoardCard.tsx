@@ -83,7 +83,13 @@ const InvitationBoardCard = ({
             draggable={false}
           />
         ) : (
-          <Image src={bgSrc} alt={title} fill className='object-cover' />
+          <Image
+            src={bgSrc}
+            alt={title}
+            fill
+            className='object-cover'
+            sizes="(max-width: 1024px) 100vw, 400px"
+          />
         )}
         <div className={`absolute inset-0 ${gradientClass}`} />
       </div>

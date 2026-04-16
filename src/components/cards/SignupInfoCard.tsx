@@ -142,7 +142,13 @@ const SignupInfoCard = ({ continueClick }: SignupInfoCardProps) => {
       <div className="flex justify-center py-6">
         <div className="relative inline-block">
           <div className="relative h-[130px] w-[130px]">
-            <Image src={avatarPreview || dummyAvatar} alt="avatar" fill className="rounded-full object-cover border" />
+            <Image
+              src={avatarPreview || dummyAvatar}
+              alt="avatar"
+              fill
+              className="rounded-full object-cover border"
+              sizes="130px"
+            />
           </div>
 
           <input

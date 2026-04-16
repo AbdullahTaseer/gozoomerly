@@ -12,6 +12,7 @@ type ExploreCardProps = {
   imageHeightPx?: number;
   onClick?: () => void;
   onAvatarsClick?: () => void;
+  priority?: boolean;
 };
 
 const aspectClasses = {
@@ -38,6 +39,7 @@ const ExploreCard = ({
   imageHeightPx,
   onClick,
   onAvatarsClick,
+  priority = false,
 }: ExploreCardProps) => {
   const coverSrc = safeImageSrc(image);
   const displayAvatars = avatars
@@ -65,6 +67,8 @@ const ExploreCard = ({
           alt={title}
           fill
           className="object-cover transition-transform group-hover:scale-105"
+          sizes="(max-width: 549px) 33vw, (max-width: 899px) 25vw, (max-width: 1023px) 20vw, (max-width: 1279px) 17vw, 13vw"
+          priority={priority}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <p className="absolute top-3 left-3 right-3 text-white text-sm font-semibold capitalize line-clamp-1 drop-shadow-md">
@@ -97,9 +101,9 @@ const ExploreCard = ({
                 <Image
                   src={avatar}
                   alt=""
-                  width={28}
-                  height={28}
-                  className="object-cover w-full h-full"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 24px, 28px"
                 />
               </div>
             ))}

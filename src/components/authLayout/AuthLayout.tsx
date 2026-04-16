@@ -11,7 +11,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className='flex h-screen'>
       <div className='w-[45%] max-[768px]:hidden relative flex justify-center items-center'>
-        <Image src={Background} alt='Background' fill className='object-cover' />
+        <Image src={Background} alt='Background' fill className='object-cover' sizes="100vw" priority />
         <div className='bg-black/50 absolute inset-0' />
         <Image onClick={() => router.push("/")} src={WhiteLogo} alt='' className='relative cursor-pointer' />
       </div>

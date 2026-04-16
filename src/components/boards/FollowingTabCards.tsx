@@ -102,7 +102,7 @@ export const FollowingTabCards: React.FC<FollowingTabCardsProps> = ({ boards, lo
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-      {boards.map((board) => {
+      {boards.map((board, index) => {
         const honoreeName = getHonoreeName(board.honoree_details);
         const displayTitle = board.title || honoreeName || 'Untitled Board';
         const mediaItems = getMediaItems(board);
@@ -110,6 +110,7 @@ export const FollowingTabCards: React.FC<FollowingTabCardsProps> = ({ boards, lo
         return (
           <FollowingCard
             key={board.id}
+            priority={index === 0}
             userName={getCreatorName(board)}
             userAvatar={getCreatorAvatar(board)}
             title={displayTitle}

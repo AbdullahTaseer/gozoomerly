@@ -64,6 +64,7 @@ const ShoppeView = () => {
                   alt={category.name}
                   fill
                   className="object-cover rounded-full"
+                  sizes="64px"
                 />
               </div>
               <span className="text-xs text-black font-medium text-center">{category.name}</span>
@@ -85,7 +86,7 @@ const ShoppeView = () => {
           {topSelling.map((item) => (
             <div key={item.id} className="min-w-[140px] bg-white rounded-lg overflow-hidden border border-gray-200 hover:border-pink-500 transition-colors cursor-pointer shadow-sm">
               <div className="w-full h-32 bg-gray-100 flex items-center justify-center relative">
-                <Image src={item.image} alt={item.name} fill className="object-cover" />
+                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="200px" />
               </div>
               <div className="p-3">
                 <p className="text-xs text-gray-700 mb-1 line-clamp-2">{item.name}</p>
@@ -109,7 +110,7 @@ const ShoppeView = () => {
           {newIn.map((item) => (
             <div key={item.id} className="min-w-[140px] bg-white rounded-lg overflow-hidden border border-gray-200 hover:border-pink-500 transition-colors cursor-pointer shadow-sm">
               <div className="w-full h-32 bg-gray-100 flex items-center justify-center relative">
-                <Image src={item.image} alt={item.name} fill className="object-cover" />
+                <Image src={item.image} alt={item.name} fill className="object-cover" sizes="200px" />
               </div>
               <div className="p-3">
                 <p className="text-xs text-gray-700 mb-1 line-clamp-2">{item.name}</p>

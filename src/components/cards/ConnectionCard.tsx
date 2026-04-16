@@ -34,6 +34,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
             alt={name}
             fill
             className='rounded-full object-cover'
+            sizes="44px"
           />
         </div>
         <div className='flex-1'>

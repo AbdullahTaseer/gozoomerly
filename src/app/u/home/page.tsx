@@ -219,9 +219,10 @@ const Home = () => {
                   <div key={i} className='min-w-[370px] h-[350px] bg-gray-100 rounded-[12px] animate-pulse' />
                 ))
               ) : spotlightBoards.length > 0 ? (
-                spotlightBoards.map((board) => (
+                spotlightBoards.map((board, index) => (
                   <SpotLightCard
                     key={board.id}
+                    priority={index === 0}
                     name={board.name}
                     description={board.description}
                     spotLightImg={board.spotlight_img || ProfileAvatar}
@@ -305,6 +306,7 @@ const Home = () => {
                               imageHeightPx={exploreCardImageHeightPx(colIdx, rowIdx)}
                               onClick={() => setExploreModalCard(board)}
                               onAvatarsClick={() => setParticipantsModalCard(board)}
+                              priority={colIdx === 0 && rowIdx === 0}
                             />
                           );
                         })}

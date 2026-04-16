@@ -38,6 +38,7 @@ const ChatCard = ({
           alt={name}
           fill
           className='rounded-full object-cover'
+          sizes="45px"
           onError={(e) => {
             const target = e.currentTarget as HTMLImageElement;
             target.src = ProfileAvatar.src || ProfileAvatar;

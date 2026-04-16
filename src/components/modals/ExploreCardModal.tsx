@@ -303,6 +303,7 @@ const ExploreCardModal = ({
               alt={creatorName}
               fill
               className="object-cover"
+              sizes="44px"
               unoptimized
             />
           ) : (
@@ -412,7 +413,8 @@ const ExploreCardModal = ({
               unoptimized
               priority
               fill
-              className='h-full object-cover'
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 650px"
             />
           )}
 

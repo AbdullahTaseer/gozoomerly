@@ -71,7 +71,7 @@ export default function FavoriteBoardRow({ item, onOpen, onUnfavorite }: Props) 
                 unoptimized
               />
             ) : (
-              <Image src={ProfileAvatar} alt="" fill className="object-cover" />
+              <Image src={ProfileAvatar} alt="" fill className="object-cover" sizes="32px" />
             )}
           </div>
           <div className="min-w-0">

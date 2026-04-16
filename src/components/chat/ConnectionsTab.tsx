@@ -395,6 +395,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     alt={getConversationName(selectedConversation)}
                     fill
                     className='rounded-full object-cover'
+                    sizes="40px"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       target.src = ProfileAvatar.src || ProfileAvatar;
@@ -485,6 +486,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                               alt={draft.fileName}
                               fill
                               className='object-cover rounded'
+                              sizes="80px"
                               unoptimized
                             />
                           </div>

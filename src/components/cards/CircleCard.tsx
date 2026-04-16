@@ -44,7 +44,13 @@ const CircleCard = ({ title, backgroundImage, avatars, memberCount, onClick, onE
     <div onClick={onClick} className='relative w-full h-[400px] rounded-2xl overflow-hidden group cursor-pointer shadow-xl'>
       {isImageUrl ? (
         <>
-          <Image src={backgroundImage} alt={title} fill className='object-cover transition-transform duration-300 group-hover:scale-105' />
+          <Image
+            src={backgroundImage}
+            alt={title}
+            fill
+            className='object-cover transition-transform duration-300 group-hover:scale-105'
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
+          />
           <div className='absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/70' />
         </>
       ) : (

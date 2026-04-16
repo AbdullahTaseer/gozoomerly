@@ -65,7 +65,13 @@ const BoardCard: React.FC<BoardCardProps> = ({
 
       <div className="flex items-center gap-3 mt-2">
         <div className="relative h-[55px] w-[55px]">
-          <Image src={avatar} alt={title} fill className="rounded-full object-cover shrink-0" />
+          <Image
+            src={avatar}
+            alt={title}
+            fill
+            className="rounded-full object-cover shrink-0"
+            sizes="56px"
+          />
         </div>
         <div>
           <p

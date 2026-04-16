@@ -38,7 +38,13 @@ const ContributionCard = ({ birthdayNumber, birthdayTo, desc, gift, imgSrc, ifra
 
       {imgSrc && !iframeSrc && (
         <div className='h-[270px] max-[1024px]:h-[210px] relative'>
-          <Image src={imgSrc} alt='image' fill />
+          <Image
+            src={imgSrc}
+            alt='image'
+            fill
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 800px"
+          />
         </div>
       )}
 
@@ -47,8 +53,9 @@ const ContributionCard = ({ birthdayNumber, birthdayTo, desc, gift, imgSrc, ifra
           <Image
             src={thumbnail || DefaulftThumbnail}
             alt="video-thumbnail"
-            className="w-full h-full object-cover"
+            className="object-cover"
             fill
+            sizes="(max-width: 1024px) 100vw, 800px"
           />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <PlayCircle size={64} className="text-white opacity-90 hover:opacity-100 transition" />

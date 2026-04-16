@@ -45,7 +45,7 @@ const LikesCommentsGiftsCard = ({
       <div className='flex justify-between mt-2 items-center p-2'>
         <div className='flex items-center gap-2'>
           <div className='relative h-11 w-11 rounded-full shrink-0 overflow-hidden'>
-            <Image src={whoLikeAvatar} alt='img' fill className='object-cover' />
+            <Image src={whoLikeAvatar} alt='img' fill className='object-cover' sizes="44px" />
           </div>
           <span className='flex items-center gap-1'>
             <p className='font-semibold line-clamp-1 text-ellipsis'>{name}</p>
@@ -73,7 +73,7 @@ const LikesCommentsGiftsCard = ({
         <div className='px-6 py-2'>
           <div className='flex gap-2 items-center'>
             <div className='relative h-8 w-8 rounded-full shrink-0 overflow-hidden'>
-              <Image src={whoCommentsAvatar} alt='img' fill className='object-cover' />
+              <Image src={whoCommentsAvatar} alt='img' fill className='object-cover' sizes="44px" />
             </div>
             <span className='flex items-center gap-4'>
               <p className='font-semibold text-sm'>{whoCommentsName}</p>

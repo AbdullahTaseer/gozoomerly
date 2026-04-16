@@ -76,6 +76,7 @@ const ImageEditorSection: React.FC<Props> = ({
                 alt="preview"
                 fill
                 className="object-cover select-none pointer-events-none"
+                sizes="(max-width: 768px) 100vw, 640px"
               />
             </div>
 

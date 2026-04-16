@@ -28,6 +28,7 @@ export type DynamicBoardCardProps = {
   onInviteClick?: () => void;
   slug?: string;
   className?: string;
+  priority?: boolean;
 };
 
 const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
@@ -54,6 +55,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
   onNameClick,
   slug,
   className,
+  priority = false,
 }) => {
   const progress = target > 0 ? Math.min((raised / target) * 100, 100) : 0;
 
@@ -99,6 +101,8 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
             alt={name}
             fill
             className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            priority={priority}
           />
         </div>
 
@@ -112,6 +116,8 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
                 alt={name}
                 fill
                 className="rounded-full object-cover border-2 border-white/50"
+                sizes="56px"
+                priority={priority}
               />
             </div>
             <div className="flex-1">

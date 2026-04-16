@@ -132,6 +132,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
                 alt={userName}
                 fill
                 className="rounded-full object-cover"
+                sizes="50px"
                 onError={(e) => {
                   const target = e.currentTarget as HTMLImageElement;
                   target.src = ProfileAvatar.src || ProfileAvatar;
@@ -143,6 +144,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
                 alt={userName}
                 fill
                 className="rounded-full object-cover"
+                sizes="50px"
               />
             )}
           </div>
@@ -208,6 +210,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
                     alt={title}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 350px) 100vw, 150px"
                     unoptimized
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors">
@@ -248,6 +251,7 @@ const FeedCard: React.FC<FeedCardProps> = ({
                     alt={title || 'Media'}
                     fill
                     className="object-cover"
+                    sizes="80px"
                     unoptimized
                   />
                 </div>
@@ -281,7 +285,9 @@ const FeedCard: React.FC<FeedCardProps> = ({
                     alt={title}
                     width={800}
                     height={500}
-                    className="w-full h-auto max-h-[500px] object-cover"
+                    className="max-h-[500px] object-cover"
+                    style={{ width: '100%', height: 'auto' }}
+                    sizes="(max-width: 768px) 100vw, 800px"
                     unoptimized
                   />
                   {currentMedia?.type === 'video' && (

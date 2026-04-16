@@ -317,6 +317,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
             alt={currentStory.caption || 'Story'}
             fill
             className="object-contain"
+            sizes="100vw"
             unoptimized
           />
         )}

@@ -310,11 +310,12 @@ const Boards = () => {
           </div>
         ) : activeTab === 'birthday' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {boards.map((board) => {
+            {boards.map((board, index) => {
               const data = getBoardCardData(board);
               return (
                 <DynamicBoardCard
                   key={board.id}
+                  priority={index === 0}
                   title={board.title}
                   avatar={data.honoreeProfilePhoto}
                   name={data.honoreeName}
