@@ -23,6 +23,7 @@ import EditProfileModalContent from '@/components/modals/EditProfileModal';
 import FollowersModalContent from '@/components/modals/FollowersModalContent';
 import FollowingModalContent from '@/components/modals/FollowingModalContent';
 import { recalculateFollowingCount, recalculateFollowersCount } from '@/lib/supabase/followUtils';
+import { getUserStats } from '@/lib/supabase/profile';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalButton from '@/components/buttons/GlobalButton';
@@ -84,11 +85,17 @@ const Profile = () => {
       setUser(currentUser);
 
       const supabase = createClient();
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
+      const [
+        { data: profileData, error: profileError },
+        { data: userStats },
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single(),
+        getUserStats(currentUser.id, null),
+      ]);
 
       if (profileError && profileError.code !== 'PGRST116') {
         setError(`Failed to load profile data: ${profileError.message}`);
@@ -101,7 +108,12 @@ const Profile = () => {
         const updatedProfile = {
           ...profileData,
           following_count: actualFollowingCount,
-          followers_count: actualFollowersCount
+          followers_count: actualFollowersCount,
+          yours_boards_count:
+            userStats?.boardStats?.yours ??
+            userStats?.boardStats?.total ??
+            profileData?.yours_boards_count ??
+            0,
         };
         setProfile(updatedProfile);
       } else {
@@ -122,6 +134,10 @@ const Profile = () => {
           followers_count: 0,
           following_count: 0,
           boards_created_count: 0,
+          yours_boards_count:
+            userStats?.boardStats?.yours ??
+            userStats?.boardStats?.total ??
+            0,
         };
 
         const { data: insertedProfile, error: insertError } = await supabase
