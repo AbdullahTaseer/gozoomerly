@@ -72,6 +72,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
           onClose={() => setIsSidebarOpen(false)}
         />
 
+        {isSidebarOpen && (
+          <div onClick={() => setIsSidebarOpen(false)} className='absolute z-40 inset-0 bg-black/60 min-h-screen' />
+        )}
+
         <div className="flex-1 lg:ml-[272px] px-4 lg:px-6 min-w-0">
           <AdminNavbar onMenuClick={() => setIsSidebarOpen((prev) => !prev)} />
           {children}

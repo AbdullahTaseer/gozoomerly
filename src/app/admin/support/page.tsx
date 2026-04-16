@@ -158,8 +158,8 @@ const AdminSupport = () => {
         </div>
       )}
 
-      <div className="max-[500px]:grid grid-cols-2 flex justify-end gap-4 my-6">
-        <div className="flex items-center gap-2">
+      <div className="flex md:justify-end gap-4 overflow-x-auto my-6 scrollbar-hide">
+        <div className="flex items-center shrink-0 gap-2">
           {['', 'open', 'pending', 'resolved', 'closed'].map((s) => (
             <button
               key={s}
@@ -179,7 +179,7 @@ const AdminSupport = () => {
           selectedFilters={selectedFilters}
           onFiltersChange={setSelectedFilters}
         />
-        <div className="max-[500px]:w-full w-[180px] bg-white relative">
+        <div className="shrink-0 w-[180px] bg-white relative">
           <GlobalInput
             id="search"
             type="text"

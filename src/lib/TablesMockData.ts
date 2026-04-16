@@ -196,6 +196,306 @@ export const mockGifts: Gift[] = [
     date: 'Dec 10, 2025',
     status: 'Paid'
   },
+  {
+    id: 6,
+    giftId: 'W006',
+    boardId: 'Board-126',
+    sender: 'David Park',
+    receiver: 'Nina Patel',
+    amount: '$120.00',
+    date: 'Dec 11, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 7,
+    giftId: 'W007',
+    boardId: 'Board-127',
+    sender: 'Sophie Turner',
+    receiver: 'Chris Lee',
+    amount: '$45.50',
+    date: 'Dec 11, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 8,
+    giftId: 'W008',
+    boardId: 'Board-128',
+    sender: 'Marcus Webb',
+    receiver: 'Anna Kowalski',
+    amount: '$200.00',
+    date: 'Dec 12, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 9,
+    giftId: 'W009',
+    boardId: 'Board-129',
+    sender: 'Priya Sharma',
+    receiver: "James O'Neill",
+    amount: '$15.00',
+    date: 'Dec 12, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 10,
+    giftId: 'W010',
+    boardId: 'Board-130',
+    sender: 'Tom Rivera',
+    receiver: 'Tom Rivera',
+    amount: '$60.00',
+    date: 'Dec 13, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 11,
+    giftId: 'W011',
+    boardId: 'Board-131',
+    sender: 'Olivia Brown',
+    receiver: 'Ethan Wright',
+    amount: '$95.00',
+    date: 'Dec 13, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 12,
+    giftId: 'W012',
+    boardId: 'Board-132',
+    sender: 'Kevin Ng',
+    receiver: 'Maria Santos',
+    amount: '$42.25',
+    date: 'Dec 14, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 13,
+    giftId: 'W013',
+    boardId: 'Board-133',
+    sender: 'Hannah Kim',
+    receiver: 'Daniel Foster',
+    amount: '$175.00',
+    date: 'Dec 14, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 14,
+    giftId: 'W014',
+    boardId: 'Board-134',
+    sender: 'Ryan Cooper',
+    receiver: 'Julia Martin',
+    amount: '$33.00',
+    date: 'Dec 15, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 15,
+    giftId: 'W015',
+    boardId: 'Board-135',
+    sender: 'Isabella Ruiz',
+    receiver: 'Noah Bennett',
+    amount: '$88.75',
+    date: 'Dec 15, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 16,
+    giftId: 'W016',
+    boardId: 'Board-136',
+    sender: 'Alex Murphy',
+    receiver: 'Sam Taylor',
+    amount: '$22.00',
+    date: 'Dec 16, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 17,
+    giftId: 'W017',
+    boardId: 'Board-137',
+    sender: 'Grace Liu',
+    receiver: 'Ben Carter',
+    amount: '$310.00',
+    date: 'Dec 16, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 18,
+    giftId: 'W018',
+    boardId: 'Board-138',
+    sender: "Liam O'Connor",
+    receiver: 'Zoe Mitchell',
+    amount: '$54.99',
+    date: 'Dec 17, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 19,
+    giftId: 'W019',
+    boardId: 'Board-139',
+    sender: 'Chloe Davis',
+    receiver: 'Owen Hughes',
+    amount: '$67.00',
+    date: 'Dec 17, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 20,
+    giftId: 'W020',
+    boardId: 'Board-140',
+    sender: 'Victor Hayes',
+    receiver: 'Maya Singh',
+    amount: '$125.50',
+    date: 'Dec 18, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 21,
+    giftId: 'W021',
+    boardId: 'Board-141',
+    sender: 'Elena Rossi',
+    receiver: 'Felix Braun',
+    amount: '$39.00',
+    date: 'Dec 18, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 22,
+    giftId: 'W022',
+    boardId: 'Board-142',
+    sender: 'Jordan Blake',
+    receiver: 'Casey Jordan',
+    amount: '$500.00',
+    date: 'Dec 19, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 23,
+    giftId: 'W023',
+    boardId: 'Board-143',
+    sender: 'Aisha Moore',
+    receiver: 'Derek Stone',
+    amount: '$18.50',
+    date: 'Dec 19, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 24,
+    giftId: 'W024',
+    boardId: 'Board-144',
+    sender: 'Peter Walsh',
+    receiver: 'Laura Chen',
+    amount: '$72.00',
+    date: 'Dec 20, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 25,
+    giftId: 'W025',
+    boardId: 'Board-145',
+    sender: 'Natalie Fox',
+    receiver: 'Greg Powell',
+    amount: '$99.99',
+    date: 'Dec 20, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 26,
+    giftId: 'W026',
+    boardId: 'Board-146',
+    sender: 'Henry Scott',
+    receiver: 'Beth Young',
+    amount: '$44.00',
+    date: 'Dec 21, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 27,
+    giftId: 'W027',
+    boardId: 'Board-147',
+    sender: 'Yuki Tanaka',
+    receiver: 'Rob Vega',
+    amount: '$156.25',
+    date: 'Dec 21, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 28,
+    giftId: 'W028',
+    boardId: 'Board-148',
+    sender: 'Camila Ortiz',
+    receiver: 'Steve Reid',
+    amount: '$28.75',
+    date: 'Dec 22, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 29,
+    giftId: 'W029',
+    boardId: 'Board-149',
+    sender: 'Frank Dubois',
+    receiver: 'Irene Novak',
+    amount: '$210.00',
+    date: 'Dec 22, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 30,
+    giftId: 'W030',
+    boardId: 'Board-150',
+    sender: 'Sara Lind',
+    receiver: 'Matt Brooks',
+    amount: '$11.00',
+    date: 'Dec 23, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 31,
+    giftId: 'W031',
+    boardId: 'Board-151',
+    sender: 'Diego Alvarez',
+    receiver: 'Whitney Cole',
+    amount: '$340.00',
+    date: 'Dec 23, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 32,
+    giftId: 'W032',
+    boardId: 'Board-152',
+    sender: 'Mei Lin',
+    receiver: 'Paul Graham',
+    amount: '$62.40',
+    date: 'Dec 24, 2025',
+    status: 'Pending'
+  },
+  {
+    id: 33,
+    giftId: 'W033',
+    boardId: 'Board-153',
+    sender: 'Russell Kane',
+    receiver: 'Dana Price',
+    amount: '$77.00',
+    date: 'Dec 24, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 34,
+    giftId: 'W034',
+    boardId: 'Board-154',
+    sender: 'Tessa Ford',
+    receiver: 'Nick Archer',
+    amount: '$145.00',
+    date: 'Dec 25, 2025',
+    status: 'Paid'
+  },
+  {
+    id: 35,
+    giftId: 'W035',
+    boardId: 'Board-155',
+    sender: 'Quinn Ellis',
+    receiver: 'Riley Shaw',
+    amount: '$55.55',
+    date: 'Dec 25, 2025',
+    status: 'Pending'
+  },
 ];
 
 export const mockReportedContent: ReportedContent[] = [

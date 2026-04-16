@@ -190,7 +190,7 @@ const AdminFaqs = () => {
 
       <div className="w-full h-[calc(100vh-190px)] max-h-[100vh]">
         <div className="relative rounded-[10px] w-full border border-[#DBDADE] bg-white overflow-hidden">
-          <div className="h-[calc(100vh-170px)] md:h-[calc(100vh-190px)] max-h-[100vh] w-full overflow-x-auto overflow-y-auto">
+          <div className="h-[calc(100vh-230px)] md:h-[calc(100vh-250px)] max-h-[100vh] w-full overflow-x-auto overflow-y-auto">
             <table className="min-w-full">
               <thead className="bg-black text-white border-b border-[#E9E9E9] text-lg sticky top-[0px] z-30">
                 <tr>

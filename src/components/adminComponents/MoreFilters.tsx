@@ -70,7 +70,7 @@ const MoreFilters = ({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center outline-0 h-[42px] gap-2 px-4 py-[9px] border border-gray-900 rounded-[5px] text-sm text-gray-900 bg-white hover:bg-gray-50 transition-colors">
+        <button className="flex items-center justify-center outline-0 h-[42px] gap-2 px-4 py-[9px] border border-gray-900 rounded-[5px] text-sm text-gray-900 bg-white hover:bg-gray-50 transition-colors">
           <ListFilter size={16} className="text-gray-900" />
           <span className='whitespace-nowrap'>More Filters</span>
           <ChevronDown size={16} className="text-gray-900" />

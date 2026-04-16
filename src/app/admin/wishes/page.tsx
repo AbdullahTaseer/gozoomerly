@@ -243,9 +243,9 @@ const AdminWishes = () => {
         )}
       </div>
 
-      <div className="w-full h-[calc(100vh-190px)] max-h-[100vh]">
+      <div className="w-full">
         <div className="relative rounded-[10px] w-full border border-[#DBDADE] bg-white overflow-hidden">
-          <div className="h-[calc(100vh-170px)] md:h-[calc(100vh-190px)] max-h-[100vh] w-full overflow-x-auto overflow-y-auto">
+          <div className="h-[calc(100vh-320px)] md:h-[calc(100vh-340px)] w-full overflow-x-auto overflow-y-auto">
             <table className="min-w-full">
               <thead className="bg-black text-white border-b border-[#E9E9E9] text-lg sticky top-[0px] z-30">
                 <tr>
@@ -360,29 +360,28 @@ const AdminWishes = () => {
               </tbody>
             </table>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 py-4 text-sm text-gray-700">
-          <span>
-            Page {page + 1}
-            {rows.length > 0 ? ` · ${rows.length} shown` : ''}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={!canGoPrev || loading}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="px-4 py-2 rounded-[5px] border border-gray-900 bg-white text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              disabled={!canGoNext || loading}
-              onClick={() => setPage((p) => p + 1)}
-              className="px-4 py-2 rounded-[5px] border border-gray-900 bg-white text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Next
-            </button>
+          <div className="flex items-center justify-between px-6 py-3 border-t border-[#E9E9E9] bg-white">
+            <span className="text-sm text-gray-500">
+              Showing {adminListOffset(page) + 1}–{adminListOffset(page) + rows.length} results
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={!canGoPrev || loading}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={!canGoNext || loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="px-3 py-1.5 rounded-md text-sm font-medium border border-[#DBDADE] bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
           </div>
         </div>
       </div>
