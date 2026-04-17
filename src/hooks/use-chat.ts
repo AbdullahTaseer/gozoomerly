@@ -70,9 +70,15 @@ export const useChat = () => {
   const [boardSearchResults, setBoardSearchResults] = useState<GlobalBoardSearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searching, setSearching] = useState(false);
+  /** True while debounce timer is pending — keeps spinner without sync-flipping on each key (mobile keyboards). */
+  const [searchDebouncing, setSearchDebouncing] = useState(false);
   const [selectedTab, setSelectedTab] = useState<ChatTab>('All');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  /** Latest query for debounced search — avoids applying stale API results after the user keeps typing. */
+  const latestSearchQueryRef = useRef('');
+  /** Bumped when a new search run supersedes in-flight work so only the latest fetch clears `searching`. */
+  const searchGenerationRef = useRef(0);
   const isSettingProgrammaticallyRef = useRef(false);
   
   const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
@@ -627,36 +633,62 @@ export const useChat = () => {
   }, [sendTyping]);
 
   useEffect(() => {
+    latestSearchQueryRef.current = searchQuery;
+
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
     if (!searchQuery.trim() || !currentUserId) {
+      searchGenerationRef.current += 1;
       setSearchResults([]);
       setBoardSearchResults([]);
       setShowSearchResults(false);
+      setSearching(false);
+      setSearchDebouncing(false);
       return;
     }
 
-    setSearching(true);
+    setSearchDebouncing(true);
     searchTimeoutRef.current = setTimeout(async () => {
-      const q = searchQuery.trim();
-      const [{ users, error: userErr }, { boards, error: boardErr }] = await Promise.all([
-        searchUsers(q, currentUserId),
-        searchBoardsGlobal(q, { limit: 20, offset: 0 }),
-      ]);
-      if (!userErr) {
-        setSearchResults(users || []);
-      } else {
-        setSearchResults([]);
+      const q = latestSearchQueryRef.current.trim();
+      if (!q || !currentUserId) {
+        setSearching(false);
+        setSearchDebouncing(false);
+        return;
       }
-      if (!boardErr) {
-        setBoardSearchResults(boards || []);
-      } else {
-        setBoardSearchResults([]);
+
+      searchGenerationRef.current += 1;
+      const runGen = searchGenerationRef.current;
+
+      setSearchDebouncing(false);
+      setSearching(true);
+      try {
+        const [{ users, error: userErr }, { boards, error: boardErr }] = await Promise.all([
+          searchUsers(q, currentUserId),
+          searchBoardsGlobal(q, { limit: 20, offset: 0 }),
+        ]);
+
+        if (latestSearchQueryRef.current.trim() !== q || runGen !== searchGenerationRef.current) {
+          return;
+        }
+
+        if (!userErr) {
+          setSearchResults(users || []);
+        } else {
+          setSearchResults([]);
+        }
+        if (!boardErr) {
+          setBoardSearchResults(boards || []);
+        } else {
+          setBoardSearchResults([]);
+        }
+        setShowSearchResults(true);
+      } finally {
+        if (runGen === searchGenerationRef.current) {
+          setSearching(false);
+        }
       }
-      setShowSearchResults(true);
-      setSearching(false);
     }, 300);
 
     return () => {
@@ -1365,7 +1397,7 @@ export const useChat = () => {
     groupListLoading,
     messages,
     isTyping,
-    searching,
+    searching: searching || searchDebouncing,
     uploading,
     newMessage,
     formatTime,

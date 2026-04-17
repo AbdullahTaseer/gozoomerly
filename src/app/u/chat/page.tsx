@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { Search, X, Plus } from 'lucide-react';
@@ -27,6 +27,8 @@ const ChatPageContent = () => {
   /** When set, group details modal loads this thread (e.g. from Group Chats list info button). */
   const [groupInfoConversationId, setGroupInfoConversationId] = useState<string | null>(null);
   const [loadedFromUrl, setLoadedFromUrl] = useState<string | null>(null);
+  const chatSearchInputRef = useRef<HTMLInputElement>(null);
+  const prevSearchLoadingRef = useRef(false);
 
   const {
     currentUserId,
@@ -72,6 +74,15 @@ const ChatPageContent = () => {
     draftMedia,
     removeDraftMedia,
   } = useChat();
+
+  useLayoutEffect(() => {
+    const wasLoading = prevSearchLoadingRef.current;
+    const loading = searching;
+    if (wasLoading && !loading && searchQuery.trim()) {
+      chatSearchInputRef.current?.focus({ preventScroll: true });
+    }
+    prevSearchLoadingRef.current = loading;
+  }, [searching, searchQuery]);
 
   useEffect(() => {
     const conversationId = searchParams.get('conversationId');
@@ -154,11 +165,14 @@ const ChatPageContent = () => {
               <div className="relative">
                 <Search size={18} className='absolute top-3 left-3 text-gray-400' />
                 <GlobalInput
+                  ref={chatSearchInputRef}
                   placeholder="Search"
                   height='42px'
                   width='100%'
                   borderRadius='100px'
                   inputClassName="pl-10 pr-10 border-[#EAEAEA]"
+                  autoComplete="off"
+                  enterKeyHint="search"
                   value={searchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setSearchQuery(e.target.value);

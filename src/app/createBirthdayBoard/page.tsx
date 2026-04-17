@@ -36,6 +36,7 @@ import { createClient } from '@/lib/supabase/client';
 import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
 import * as Switch from '@radix-ui/react-switch';
 import toast from 'react-hot-toast';
+import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
 const CreateBirthdayBoard = () => {
 
@@ -60,6 +61,7 @@ const CreateBirthdayBoard = () => {
   /** Draft wish for step 3 uploads — storage path is `{boardId}/{wishId}/…` */
   const [draftWishId, setDraftWishId] = useState<string | null>(null);
   const [openingWishModal, setOpeningWishModal] = useState(false);
+  const [boardPublishedFromFlow, setBoardPublishedFromFlow] = useState(false);
   const profilePhotoInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -136,6 +138,10 @@ const CreateBirthdayBoard = () => {
       router.push('/compaign');
     }
   }, []);
+
+  useEffect(() => {
+    setBoardPublishedFromFlow(false);
+  }, [boardId]);
 
   const checkAuth = async () => {
     const user = await authService.getUser();
@@ -506,11 +512,9 @@ const CreateBirthdayBoard = () => {
 
       localStorage.removeItem('boardTypeFields');
       localStorage.removeItem('currentBoardId');
-      setCustomFieldValues({});
-      setProfilePhotoPreview(null);
 
       toast.success('Board published successfully!');
-      router.push('/u/home');
+      setBoardPublishedFromFlow(true);
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -1287,8 +1291,20 @@ const CreateBirthdayBoard = () => {
 
                 {step === 7 &&
                   <YourBoardIsLive
-                    onPublish={handlePublishBoard}
+                    onPublish={boardPublishedFromFlow ? undefined : handlePublishBoard}
                     isPublishing={creating}
+                    isPublished={boardPublishedFromFlow}
+                    shareUrl={
+                      boardPublishedFromFlow && boardId ? buildBoardUrl(boardId) : undefined
+                    }
+                    onDashboardNavigate={
+                      boardPublishedFromFlow
+                        ? () => {
+                            setCustomFieldValues({});
+                            setProfilePhotoPreview(null);
+                          }
+                        : undefined
+                    }
                     boardData={{
                       title: customFieldValues.title,
                       firstName: customFieldValues.first_name,

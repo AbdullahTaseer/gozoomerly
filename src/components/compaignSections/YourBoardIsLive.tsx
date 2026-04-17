@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Heart, MessageCircle } from 'lucide-react';
 
 import GlobalButton from '../buttons/GlobalButton';
+import ShareModalTrigger from '@/components/modals/ShareModalTrigger';
 
 import Avatar from "@/assets/svgs/Sam.svg";
 import FarahImg from "@/assets/svgs/Farah.svg";
@@ -35,12 +36,26 @@ type CreatorData = {
 type Props = {
   onPublish?: () => void;
   isPublishing?: boolean;
+  /** After a successful publish — same screen, share flow as `/u/boards/[id]`. */
+  isPublished?: boolean;
+  shareUrl?: string;
+  /** Called when the user follows the dashboard link (e.g. clear wizard state after publish). */
+  onDashboardNavigate?: () => void;
   boardData?: BoardData;
   creatorData?: CreatorData;
   uploadedMedia?: MediaItem[];
 };
 
-const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uploadedMedia }: Props) => {
+const YourBoardIsLive = ({
+  onPublish,
+  isPublishing,
+  isPublished,
+  shareUrl,
+  onDashboardNavigate,
+  boardData,
+  creatorData,
+  uploadedMedia,
+}: Props) => {
   const fullName = boardData?.firstName && boardData?.lastName
     ? `${boardData.firstName} ${boardData.lastName}`
     : boardData?.firstName || boardData?.lastName || 'Birthday Star';
@@ -59,14 +74,18 @@ const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uplo
 
   const firstMedia = uploadedMedia && uploadedMedia.length > 0 ? uploadedMedia[0] : null;
 
+  const showShare = Boolean(isPublished && shareUrl);
+
   return (
     <div className="bg-white border border-pink-200 rounded-2xl p-6 max-[420px]:p-4 mx-auto space-y-6">
       <div>
         <p className="text-center text-[20px] max-[600px]:text-[16px] font-bold">
-          Your board is ready! 🥳
+          {showShare ? 'Your board is live! 🥳' : 'Your board is ready! 🥳'}
         </p>
         <p className="text-sm text-center mt-1 text-gray-600">
-          Your board is created and saved as a draft. Click "Publish Board" to make it live and start inviting people!
+          {showShare
+            ? 'Share your board link so friends and family can send wishes, gifts, and memories.'
+            : 'Your board is created and saved as a draft. Click "Publish Board" to make it live and start inviting people!'}
         </p>
       </div>
 
@@ -163,19 +182,29 @@ const YourBoardIsLive = ({ onPublish, isPublishing, boardData, creatorData, uplo
       </div>
 
       <div className="space-y-3">
-        {onPublish && (
-          <GlobalButton
-            title={isPublishing ? "Publishing..." : "Publish Board"}
-            height="48px"
+        {showShare && shareUrl ? (
+          <ShareModalTrigger
+            shareUrl={shareUrl}
+            title={boardTitle}
+            triggerStyle="primary"
+            buttonTitle="Share"
             className="mt-6"
-            onClick={onPublish}
-            disabled={isPublishing}
           />
+        ) : (
+          onPublish && (
+            <GlobalButton
+              title={isPublishing ? 'Publishing...' : 'Publish Board'}
+              height="48px"
+              className="mt-6"
+              onClick={onPublish}
+              disabled={isPublishing}
+            />
+          )
         )}
 
-        <Link href="/u/home">
+        <Link href="/u/home" onClick={() => onDashboardNavigate?.()}>
           <GlobalButton
-            title="Save as Draft & Go to Dashboard"
+            title={showShare ? 'Go to Dashboard' : 'Save as Draft & Go to Dashboard'}
             height="48px"
             bgColor="#E5E5E5"
             color="#333333"
