@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { StaticImageData } from 'next/image';
 import { authService } from '@/lib/supabase/auth';
-import { uploadStoryMedia, createStory } from '@/lib/supabase/stories';
+import { uploadStoryMedia, createStory, isStoryVideoFile } from '@/lib/supabase/stories';
 import toast from 'react-hot-toast';
 
 export interface UseAddStatusSubmitOptions {
@@ -29,7 +29,7 @@ export function useAddStatusSubmit(options?: UseAddStatusSubmitOptions) {
           return;
         }
 
-        const contentType = file.type.startsWith('video/') ? 'video' : 'image';
+        const contentType = isStoryVideoFile(file) ? 'video' : 'image';
 
         const { data: story, error: createError } = await createStory(user.id, {
           content_type: contentType,
@@ -71,7 +71,7 @@ export function useAddStatusSubmit(options?: UseAddStatusSubmitOptions) {
             throw new Error(`Failed to upload story media: ${uploadError?.message || 'Unknown error'}`);
           }
 
-          const contentType = file.type.startsWith('video/') ? 'video' : 'image';
+          const contentType = isStoryVideoFile(file) ? 'video' : 'image';
 
           const { data: story, error: createError } = await createStory(user.id, {
             content_type: contentType,

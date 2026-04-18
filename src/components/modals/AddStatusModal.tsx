@@ -5,6 +5,7 @@ import Image, { StaticImageData } from 'next/image';
 import { X, Camera, Send, ALargeSmall, Music, CirclePlus } from 'lucide-react';
 import { statusImages } from '@/lib/MockData';
 import GlobalInput from '../inputs/GlobalInput';
+import { isStoryVideoFile } from '@/lib/supabase/stories';
 
 interface StoryItem {
   id: string;
@@ -231,7 +232,7 @@ const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose,
             {stories.map((story, index) => (
               <div key={story.id} className='relative rounded-lg border-2 border-pink-500 overflow-hidden'>
                 <div className='relative w-full aspect-square'>
-                  {story.file.type.startsWith('video/') ? (
+                  {isStoryVideoFile(story.file) ? (
                     <video
                       src={story.preview}
                       className='w-full h-full object-cover'
@@ -290,6 +291,13 @@ const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose,
       ) : selectedImage && (
         <>
           <div className='flex-1 relative overflow-hidden mb-4 rounded-lg border-2 border-pink-500 min-h-[400px] max-h-[500px]'>
+            {selectedFile && isStoryVideoFile(selectedFile) && typeof selectedImage === 'string' ? (
+              <video
+                src={selectedImage}
+                className="absolute inset-0 w-full h-full object-cover"
+                controls
+              />
+            ) : (
             <Image
               src={selectedImage}
               alt="Selected status"
@@ -297,6 +305,7 @@ const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose,
               className='object-cover'
               sizes="(max-width: 768px) 100vw, 500px"
             />
+            )}
             <div className='absolute top-4 right-4 flex flex-col gap-3 z-10'>
               <button className='w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-gray-800/90 transition-colors'>
                 <ALargeSmall size={20} className='text-white' />

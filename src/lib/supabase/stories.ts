@@ -1,6 +1,78 @@
 import { createClient } from './client';
 import { STORAGE_BUCKETS } from './storageBuckets';
 
+/** Browsers often omit MIME for .mov or use application/octet-stream — infer from extension. */
+const VIDEO_EXT_TO_MIME: Record<string, string> = {
+  mp4: 'video/mp4',
+  /** Use video/mp4, not video/quicktime — Supabase Storage allowlists often reject QuickTime (415 invalid_mime_type). */
+  mov: 'video/mp4',
+  webm: 'video/webm',
+  m4v: 'video/x-m4v',
+  ogv: 'video/ogg',
+  ogm: 'video/ogg',
+  avi: 'video/x-msvideo',
+  mkv: 'video/x-matroska',
+};
+
+const IMAGE_EXT_TO_MIME: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+  heic: 'image/heic',
+  heif: 'image/heif',
+};
+
+function extensionFromFilename(name: string): string | undefined {
+  const part = name.split('.').pop();
+  return part ? part.toLowerCase() : undefined;
+}
+
+/** Effective type for storage + DB when the browser omits or misreports MIME (common for .mov). */
+export function getEffectiveStoryMimeType(file: File): string {
+  const raw = file.type?.trim();
+  if (raw === 'video/quicktime') {
+    return 'video/mp4';
+  }
+  if (raw && raw !== 'application/octet-stream') {
+    return raw;
+  }
+  const ext = extensionFromFilename(file.name);
+  if (ext && VIDEO_EXT_TO_MIME[ext]) {
+    return VIDEO_EXT_TO_MIME[ext];
+  }
+  if (ext && IMAGE_EXT_TO_MIME[ext]) {
+    return IMAGE_EXT_TO_MIME[ext];
+  }
+  return raw || 'application/octet-stream';
+}
+
+export function isStoryVideoFile(file: File): boolean {
+  if (file.type?.trim().startsWith('video/')) {
+    return true;
+  }
+  const ext = extensionFromFilename(file.name);
+  return ext ? Boolean(VIDEO_EXT_TO_MIME[ext]) : false;
+}
+
+/**
+ * Supabase Storage uploads use FormData + the Blob's `.type` for MIME validation — the
+ * `contentType` option is not applied to Blob bodies. Re-wrap when the effective type differs.
+ */
+export function getFileForStoryUpload(file: File): File {
+  const effectiveMime = getEffectiveStoryMimeType(file);
+  const declared = file.type?.trim() || '';
+  if (effectiveMime === declared) {
+    return file;
+  }
+  return new File([file], file.name, {
+    type: effectiveMime,
+    lastModified: file.lastModified,
+  });
+}
+
 export interface Story {
   id: string;
   user_id: string;
@@ -48,9 +120,16 @@ export async function uploadStoryMedia(
   const fileName = `stories/${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
   const bucketName = STORAGE_BUCKETS.STORY_MEDIA;
 
+  const uploadFile = getFileForStoryUpload(file);
+  const effectiveMime = getEffectiveStoryMimeType(file);
+  const mediaType = isStoryVideoFile(file) ? 'video' : 'image';
+
   const { error: uploadError } = await supabase.storage
     .from(bucketName)
-    .upload(fileName, file);
+    .upload(fileName, uploadFile, {
+      contentType: effectiveMime,
+      upsert: false,
+    });
 
   if (uploadError) {
     return { mediaId: null, url: null, error: uploadError };
@@ -60,8 +139,6 @@ export async function uploadStoryMedia(
     .from(bucketName)
     .getPublicUrl(fileName);
 
-  const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
-
   const { data: mediaData, error: mediaError } = await supabase
     .from('media')
     .insert({
@@ -70,7 +147,7 @@ export async function uploadStoryMedia(
       path: fileName,
       filename: file.name,
       media_type: mediaType,
-      mime_type: file.type,
+      mime_type: effectiveMime,
       size_bytes: file.size,
       cdn_url: publicUrl,
     })

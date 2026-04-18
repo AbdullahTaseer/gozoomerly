@@ -90,7 +90,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
   const progressFillColor = gradientColors[1];
 
   return (
-    <div className={`${className} bg-white rounded-xl overflow-hidden shadow-lg shrink-0 flex flex-col`}>
+    <div onClick={onNameClick} className={`${className} cursor-pointer bg-white rounded-xl overflow-hidden shadow-lg shrink-0 flex flex-col`}>
       <div
         className="text-white p-6 relative overflow-hidden"
         style={topSectionStyle}
@@ -122,8 +122,7 @@ const DynamicBoardCard: React.FC<DynamicBoardCardProps> = ({
             </div>
             <div className="flex-1">
               <p
-                className={`font-semibold text-lg mb-1 ${onNameClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-                onClick={onNameClick}
+                className={`font-semibold text-lg mb-1`}
               >
                 {name}
               </p>
