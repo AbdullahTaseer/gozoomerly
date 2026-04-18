@@ -60,7 +60,7 @@ const ModalOrBottomSlider = ({
   }, [isOpen]);
 
   const header = modalHeader && (
-    <div className="px-3 py-2 flex items-center justify-between gap-4">
+    <div className="px-4 pt-4 flex items-center justify-between gap-4">
       <h3 className="text-black text-[20px] 3sm:text-[18px] 2xs:text-[14px] font-[700]">
         {title}
       </h3>

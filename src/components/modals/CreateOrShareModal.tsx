@@ -53,19 +53,7 @@ const CreateOrShareModalContent: React.FC<CreateOrShareModalContentProps> = ({ o
 
   const content = (
     <>
-      <div className="px-3 flex items-center gap-4 justify-between">
-        <h3 className="text-black text-[20px] 3sm:text-[18px] 2xs:text-[14px] font-[700] tracking-normal">
-          Create or Share
-        </h3>
-        <button
-          onClick={onClose}
-          className="hover:bg-gray-100 border border-black w-[28px] h-[28px] rounded-full flex items-center justify-center cursor-pointer shrink-0"
-        >
-          <X size={18} />
-        </button>
-      </div>
-
-      <div className="space-y-3 mt-4">
+      <div className="space-y-3">
         {actions.map((action, index) => {
           const IconComponent = action.icon;
           return (

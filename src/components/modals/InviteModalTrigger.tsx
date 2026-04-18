@@ -1,6 +1,6 @@
 'use client';
 
-import {  useState  } from 'react';
+import { useState } from 'react';
 import { UserPlus } from 'lucide-react';
 import ModalOrBottomSlider from './ModalOrBottomSlider';
 import InviteToBoardModalContent from './InviteToBoardModal';
@@ -31,7 +31,7 @@ const InviteModalTrigger: React.FC<InviteModalTriggerProps> = ({
       <ModalOrBottomSlider
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        modalHeader={false}
+        title={boardTitle}
         desktopClassName="!w-[450px] max-w-[90vw]"
         contentClassName="!p-0"
       >
@@ -39,7 +39,6 @@ const InviteModalTrigger: React.FC<InviteModalTriggerProps> = ({
           isOpen={isOpen}
           onClose={() => setIsOpen(false)}
           boardId={boardId}
-          boardTitle={boardTitle}
         />
       </ModalOrBottomSlider>
     </>

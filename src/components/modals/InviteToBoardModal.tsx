@@ -12,14 +12,12 @@ interface InviteToBoardModalProps {
   isOpen: boolean;
   onClose: () => void;
   boardId: string;
-  boardTitle?: string;
 }
 
 const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
   isOpen,
   onClose,
   boardId,
-  boardTitle
 }) => {
   const [users, setUsers] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -91,19 +89,8 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
   if (!isOpen) return null;
 
   return (
-      <div className="relative bg-white max-h-[80vh] flex flex-col">
+      <div className="relative bg-white flex flex-col">
       
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-xl font-bold text-black">
-            Invite to {boardTitle || 'Board'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-100 border border-black rounded-full transition-colors"
-          >
-            <X size={16} className="text-gray-600" />
-          </button>
-        </div>
 
         <div className="p-4">
           <div className="relative">

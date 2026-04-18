@@ -36,7 +36,6 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <OnlineStatusProvider>
       <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
-        { }
         <main className="flex-1">
           {children}
         </main>
@@ -45,9 +44,8 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
         <ModalOrBottomSlider
           isOpen={isCreateOrShareModalOpen}
           onClose={() => createOrShareModalState.close()}
-          modalHeader={false}
+          title='Create or Share'
           desktopClassName="max-w-md"
-          contentClassName="px-2 pb-2"
         >
           <CreateOrShareModalContent
             onClose={() => createOrShareModalState.close()}
