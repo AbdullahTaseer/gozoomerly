@@ -11,6 +11,7 @@ import {
   getUserConversations,
   getOrCreateBoardConversation,
   getConversationMessages,
+  getMessageById,
   sendMessage,
   uploadMessageFile,
   markConversationAsRead,
@@ -30,6 +31,7 @@ import {
   isStandaloneGroupConversation,
   type Conversation,
   type MediaType,
+  type Message,
 } from '@/lib/supabase/chat';
 import { rpcCreateGroupConversation } from '@/lib/supabase/groupChat';
 import type { ChatMessageMedia } from '@/hooks/use-realtime-chat';
@@ -40,6 +42,55 @@ import toast from 'react-hot-toast';
 import { useGetUserBoards } from '@/hooks/useGetUserBoards';
 
 const authService = new AuthService();
+
+function messageModelToChatMessage(msg: Message): ChatMessage {
+  const senderName = msg.sender?.name || 'Unknown User';
+  const senderAvatar = msg.sender?.profile_pic_url || undefined;
+
+  let media: ChatMessageMedia[] | undefined;
+  if (msg.media && Array.isArray(msg.media) && msg.media.length > 0) {
+    media = msg.media.map((m) => ({
+      id: m.id,
+      mediaType: m.media_type,
+      url: getMediaPublicUrl(m.bucket, m.path),
+      filename: m.filename,
+      mimeType: m.mime_type,
+      sizeBytes: m.size_bytes,
+      orderIndex: m.order_index,
+    }));
+  }
+
+  const fileUrl = msg.file_url || (media && media.length > 0 ? media[0].url : undefined);
+  const fileName = msg.file_name || (media && media.length > 0 ? media[0].filename : undefined);
+
+  let messageType: ChatMessage['messageType'] = msg.message_type || 'text';
+  if (media && media.length > 0) {
+    if (media.length === 1) {
+      messageType = media[0].mediaType === 'document' ? 'file' : media[0].mediaType;
+    } else {
+      messageType = 'mixed';
+    }
+  }
+
+  return {
+    id: msg.id,
+    content: msg.content || '',
+    createdAt: msg.created_at,
+    user: {
+      id: msg.sender_id,
+      name: senderName,
+      avatar: senderAvatar,
+    },
+    conversationId: msg.conversation_id,
+    senderId: msg.sender_id,
+    messageType,
+    fileUrl,
+    fileName,
+    fileSize: msg.file_size,
+    fileType: msg.file_type,
+    media,
+  };
+}
 
 export const useChat = () => {
   const router = useRouter();
@@ -80,7 +131,9 @@ export const useChat = () => {
   /** Bumped when a new search run supersedes in-flight work so only the latest fetch clears `searching`. */
   const searchGenerationRef = useRef(0);
   const isSettingProgrammaticallyRef = useRef(false);
-  
+  const selectedConversationRef = useRef<Conversation | null>(null);
+  selectedConversationRef.current = selectedConversation;
+
   const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
   const fetchUserBoardsRef = useRef(fetchUserBoards);
   
@@ -329,45 +382,67 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
+  // Only re-fetch the thread when the *conversation id* changes. Updating `last_message` / etc.
+  // on the same chat used to re-run this effect and replace `messages` from the server, which
+  // masked broken realtime and caused “I only see their messages after I send or reload.”
+  const selectedConversationId = selectedConversation?.id;
   useEffect(() => {
-    if (selectedConversation && currentUserId) {
-      localStorage.setItem('selectedConversationId', selectedConversation.id);
-      
-      const needsFullConversation = selectedConversation.type === 'direct' && 
-        (!selectedConversation.participants || 
-         selectedConversation.participants.length === 0 || 
-         !selectedConversation.participants.some((p: any) => p.user?.name));
-      
-      loadMessages(selectedConversation.id);
-      
-      markConversationAsRead(selectedConversation.id, currentUserId).catch(() => {});
-      
+    if (selectedConversationId && currentUserId) {
+      const conv = selectedConversationRef.current;
+      if (!conv || conv.id !== selectedConversationId) {
+        return;
+      }
+
+      localStorage.setItem('selectedConversationId', selectedConversationId);
+
+      const needsFullConversation =
+        conv.type === 'direct' &&
+        (!conv.participants ||
+          conv.participants.length === 0 ||
+          !conv.participants.some((p: any) => p.user?.name));
+
+      loadMessages(selectedConversationId);
+
+      markConversationAsRead(selectedConversationId, currentUserId).catch(() => {});
+
       if (needsFullConversation) {
-        getConversation(selectedConversation.id, currentUserId).then(({ conversation: fullConv, error }) => {
-          if (!error && fullConv) {
-            setSelectedConversation(prev => prev ? {
-              ...fullConv,
-              last_message: fullConv.last_message || prev.last_message,
-              last_message_at: fullConv.last_message_at || prev.last_message_at,
-              last_message_id: fullConv.last_message_id || prev.last_message_id,
-              last_message_sender_id: fullConv.last_message_sender_id || prev.last_message_sender_id,
-            } : fullConv);
-            setConversations(prev => prev.map(conv =>
-              conv.id === fullConv.id ? {
-                ...fullConv,
-                last_message: fullConv.last_message || conv.last_message,
-                last_message_at: fullConv.last_message_at || conv.last_message_at,
-                last_message_id: fullConv.last_message_id || conv.last_message_id,
-                last_message_sender_id: fullConv.last_message_sender_id || conv.last_message_sender_id,
-              } : conv
-            ));
-          }
-        }).catch(() => {});
+        getConversation(selectedConversationId, currentUserId)
+          .then(({ conversation: fullConv, error }) => {
+            if (!error && fullConv) {
+              setSelectedConversation((prev) =>
+                prev
+                  ? {
+                      ...fullConv,
+                      last_message: fullConv.last_message || prev.last_message,
+                      last_message_at: fullConv.last_message_at || prev.last_message_at,
+                      last_message_id: fullConv.last_message_id || prev.last_message_id,
+                      last_message_sender_id:
+                        fullConv.last_message_sender_id || prev.last_message_sender_id,
+                    }
+                  : fullConv
+              );
+              setConversations((prev) =>
+                prev.map((conv) =>
+                  conv.id === fullConv.id
+                    ? {
+                        ...fullConv,
+                        last_message: fullConv.last_message || conv.last_message,
+                        last_message_at: fullConv.last_message_at || conv.last_message_at,
+                        last_message_id: fullConv.last_message_id || conv.last_message_id,
+                        last_message_sender_id:
+                          fullConv.last_message_sender_id || conv.last_message_sender_id,
+                      }
+                    : conv
+                )
+              );
+            }
+          })
+          .catch(() => {});
       }
     } else {
       localStorage.removeItem('selectedConversationId');
     }
-  }, [selectedConversation, currentUserId, loadMessages]);
+  }, [selectedConversationId, currentUserId, loadMessages]);
 
   useEffect(() => {
     if (!selectedConversation) return;
@@ -580,7 +655,7 @@ export const useChat = () => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
   }, []);
 
-  const { isConnected, error: realtimeError } = useRealtimeChat({
+  const { isConnected, error: realtimeError, broadcastNewMessage } = useRealtimeChat({
     conversationId: selectedConversation?.id || null,
     currentUserId,
     onMessageReceived: handleMessageReceived,
@@ -588,6 +663,55 @@ export const useChat = () => {
     onMessageDeleted: handleMessageDeleted,
     enabled: !!selectedConversation && !!currentUserId,
   });
+
+  /** When postgres_changes / broadcast miss (RLS, replication, or slow subscribe), merge new rows from the API. */
+  useEffect(() => {
+    if (!selectedConversationId || !currentUserId) return;
+
+    const conversationId = selectedConversationId;
+    let cancelled = false;
+
+    const mergeLatestFromServer = async () => {
+      if (cancelled || typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return;
+      }
+      try {
+        const { messages: remote, error } = await getConversationMessages(
+          conversationId,
+          currentUserId,
+          100
+        );
+        if (cancelled || error || !remote?.length) return;
+
+        setMessages((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+          let changed = false;
+          for (const m of remote) {
+            if (!byId.has(m.id)) {
+              byId.set(m.id, messageModelToChatMessage(m));
+              changed = true;
+            }
+          }
+          if (!changed) return prev;
+          return Array.from(byId.values()).sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        });
+
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 80);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const interval = window.setInterval(mergeLatestFromServer, 3500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [selectedConversationId, currentUserId]);
 
   const { typingUsers, sendTyping, isTyping } = useTypingIndicator({
     conversationId: selectedConversation?.id || null,
@@ -906,8 +1030,15 @@ export const useChat = () => {
               last_message_sender_id: currentUserId
             } : prev);
           }
+
+          const { message: fetchedMsg, error: fetchMsgErr } = await getMessageById(
+            rpcResult.message_id,
+            currentUserId
+          );
+          if (!fetchMsgErr && fetchedMsg) {
+            broadcastNewMessage(messageModelToChatMessage(fetchedMsg));
+          }
           
-          // The realtime listener will handle adding the message to the UI
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
           }, 100);
@@ -988,24 +1119,27 @@ export const useChat = () => {
         setSelectedConversation(selectedConversation);
         toast.error('Failed to send message. Please try again.');
       } else if (sentMessage) {
+        const realMessage: ChatMessage = {
+          id: sentMessage.id,
+          content: sentMessage.content || '',
+          createdAt: sentMessage.created_at,
+          user: {
+            id: sentMessage.sender_id,
+            name: sentMessage.sender?.name || 'You',
+            avatar: sentMessage.sender?.profile_pic_url,
+          },
+          conversationId: sentMessage.conversation_id,
+          senderId: sentMessage.sender_id,
+          messageType: sentMessage.message_type || 'text',
+          fileUrl: sentMessage.file_url,
+          fileName: sentMessage.file_name,
+        };
+
+        broadcastNewMessage(realMessage);
+
         setMessages(prev => {
           const filtered = prev.filter(m => m.id !== tempMessageId);
           if (!filtered.some(m => m.id === sentMessage.id)) {
-            const realMessage: ChatMessage = {
-              id: sentMessage.id,
-              content: sentMessage.content || '',
-              createdAt: sentMessage.created_at,
-              user: {
-                id: sentMessage.sender_id,
-                name: sentMessage.sender?.name || 'You',
-                avatar: sentMessage.sender?.profile_pic_url,
-              },
-              conversationId: sentMessage.conversation_id,
-              senderId: sentMessage.sender_id,
-              messageType: sentMessage.message_type || 'text',
-              fileUrl: sentMessage.file_url,
-              fileName: sentMessage.file_name,
-            };
             return [...filtered, realMessage];
           }
           return filtered;
@@ -1041,7 +1175,7 @@ export const useChat = () => {
       setSelectedConversation(selectedConversation);
       toast.error('Failed to send message. Please try again.');
     });
-  }, [newMessage, selectedConversation, currentUserId, draftMedia]);
+  }, [newMessage, selectedConversation, currentUserId, draftMedia, broadcastNewMessage]);
 
   const removeDraftMedia = useCallback(async (mediaId: string) => {
     if (!currentUserId) return;

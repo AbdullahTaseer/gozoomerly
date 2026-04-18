@@ -12,12 +12,15 @@ interface InviteToBoardModalProps {
   isOpen: boolean;
   onClose: () => void;
   boardId: string;
+  /** Shown at the top when the parent does not render a modal header (e.g. ModalOrBottomSlider with modalHeader={false}). */
+  boardTitle?: string;
 }
 
 const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
   isOpen,
   onClose,
   boardId,
+  boardTitle,
 }) => {
   const [users, setUsers] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,7 +93,12 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
 
   return (
       <div className="relative bg-white flex flex-col">
-      
+        {boardTitle ? (
+          <div className="px-4 pt-4 pb-1 border-b border-gray-100">
+            <p className="text-xs text-gray-500 uppercase tracking-wide">Invite to board</p>
+            <p className="font-semibold text-black truncate">{boardTitle}</p>
+          </div>
+        ) : null}
 
         <div className="p-4">
           <div className="relative">

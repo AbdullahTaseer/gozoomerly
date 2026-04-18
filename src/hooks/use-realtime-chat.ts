@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -55,6 +55,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const channelReadyRef = useRef(false);
 
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onMessageUpdatedRef = useRef(onMessageUpdated);
@@ -70,6 +71,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
 
   useEffect(() => {
     if (!enabled || !conversationId || !currentUserId) {
+      channelReadyRef.current = false;
       if (channelRef.current) {
         channelRef.current.unsubscribe();
         channelRef.current = null;
@@ -78,6 +80,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
       return;
     }
 
+    channelReadyRef.current = false;
     if (channelRef.current) {
       channelRef.current.unsubscribe();
       channelRef.current = null;
@@ -87,6 +90,18 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
 
     const channel = supabaseRef.current
       .channel(channelName)
+      .on(
+        'broadcast',
+        { event: 'new_message' },
+        (payload: { payload: unknown }) => {
+          const raw = payload.payload;
+          if (!raw || typeof raw !== 'object') return;
+          const msg = raw as ChatMessage;
+          if (!msg.id || !msg.conversationId) return;
+          if (msg.conversationId !== conversationId) return;
+          onMessageReceivedRef.current?.(msg);
+        }
+      )
       .on(
         'postgres_changes',
         {
@@ -301,36 +316,68 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
       )
       .subscribe(async (status: string, err?: Error) => {
         if (status === 'SUBSCRIBED') {
+          channelReadyRef.current = true;
+          channelRef.current = channel;
           setIsConnected(true);
           setError(null);
         } else if (status === 'CHANNEL_ERROR') {
+          channelReadyRef.current = false;
+          channelRef.current = null;
           setIsConnected(false);
           const error = new Error(`Channel subscription error: ${err?.message || 'Unknown error'}`);
           setError(error);
         } else if (status === 'TIMED_OUT') {
+          channelReadyRef.current = false;
+          channelRef.current = null;
           setIsConnected(false);
           const error = new Error('Channel subscription timed out');
           setError(error);
         } else if (status === 'CLOSED') {
+          channelReadyRef.current = false;
+          channelRef.current = null;
           setIsConnected(false);
         }
       });
 
-    channelRef.current = channel;
-
     return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-        setIsConnected(false);
-      }
+      channelReadyRef.current = false;
+      channelRef.current = null;
+      channel.unsubscribe();
+      setIsConnected(false);
     };
   }, [conversationId, currentUserId, enabled]);
+
+  const broadcastNewMessage = useCallback((message: ChatMessage) => {
+    if (!message?.id || !message.conversationId) return;
+
+    const send = () => {
+      const ch = channelRef.current;
+      if (!ch || !channelReadyRef.current) return false;
+      ch.send({
+        type: 'broadcast',
+        event: 'new_message',
+        payload: message,
+      });
+      return true;
+    };
+
+    if (send()) return;
+
+    let attempts = 0;
+    const maxAttempts = 30;
+    const t = window.setInterval(() => {
+      attempts += 1;
+      if (send() || attempts >= maxAttempts) {
+        window.clearInterval(t);
+      }
+    }, 150);
+  }, []);
 
   return {
     isConnected,
     error,
     channel: channelRef.current,
+    broadcastNewMessage,
   };
 }
 

@@ -134,7 +134,7 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     setMessages(prev => prev.filter(m => m.id !== messageId));
   };
 
-  const { isConnected, error: realtimeError } = useRealtimeChat({
+  const { isConnected, error: realtimeError, broadcastNewMessage } = useRealtimeChat({
     conversationId: conversation?.id || null,
     currentUserId,
     onMessageReceived: handleMessageReceived,
@@ -142,6 +142,63 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
     onMessageDeleted: handleMessageDeleted,
     enabled: !!conversation && !!currentUserId,
   });
+
+  useEffect(() => {
+    if (!conversation?.id || !currentUserId) return;
+
+    const conversationId = conversation.id;
+    let cancelled = false;
+
+    const mergeLatestFromServer = async () => {
+      if (cancelled || document.visibilityState === 'hidden') return;
+      try {
+        const { messages: remote, error } = await getConversationMessages(
+          conversationId,
+          currentUserId,
+          100
+        );
+        if (cancelled || error || !remote?.length) return;
+
+        setMessages((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+          let changed = false;
+          for (const msg of remote) {
+            if (byId.has(msg.id)) continue;
+            const senderName = msg.sender?.name || 'Unknown';
+            const senderAvatar = msg.sender?.profile_pic_url || staticProfileAvatar;
+            byId.set(msg.id, {
+              id: msg.id,
+              content: msg.content || '',
+              createdAt: msg.created_at,
+              user: {
+                id: msg.sender_id,
+                name: senderName,
+                avatar: senderAvatar,
+              },
+              conversationId: msg.conversation_id,
+              senderId: msg.sender_id,
+              messageType: msg.message_type || 'text',
+              fileUrl: msg.file_url,
+              fileName: msg.file_name,
+            });
+            changed = true;
+          }
+          if (!changed) return prev;
+          return Array.from(byId.values()).sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+        });
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const interval = window.setInterval(mergeLatestFromServer, 3500);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [conversation?.id, currentUserId]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -183,6 +240,8 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
           fileUrl: message.file_url,
           fileName: message.file_name,
         };
+
+        broadcastNewMessage(chatMessage);
 
         setMessages(prev => {
           if (prev.some(m => m.id === chatMessage.id)) {

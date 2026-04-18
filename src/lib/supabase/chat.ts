@@ -1267,6 +1267,157 @@ export async function sendMessage(
   return { message: messageWithSender, error: null };
 }
 
+const MESSAGE_DETAIL_SELECT_FULL = `
+  *,
+  sender:sender_id (
+    id,
+    name,
+    profile_pic_url
+  ),
+  message_media (
+    order_index,
+    media:media_id (
+      id,
+      media_type,
+      filename,
+      mime_type,
+      size_bytes,
+      bucket,
+      path,
+      duration_seconds,
+      dimensions,
+      metadata
+    )
+  )
+`;
+
+const MESSAGE_DETAIL_SELECT_NO_MEDIA = `
+  *,
+  sender:sender_id (
+    id,
+    name,
+    profile_pic_url
+  )
+`;
+
+function mapMessagesQueryRowToMessage(msg: any): Message {
+  const message: Message = {
+    id: msg.id,
+    conversation_id: msg.conversation_id,
+    sender_id: msg.sender_id,
+    content: msg.content,
+    message_type: msg.message_type || 'text',
+    file_url: msg.file_url,
+    file_name: msg.file_name,
+    file_size: msg.file_size,
+    file_type: msg.file_type,
+    reply_to_id: msg.reply_to_id,
+    edited_at: msg.edited_at,
+    deleted_at: msg.deleted_at,
+    created_at: msg.created_at,
+    updated_at: msg.updated_at,
+    sender: msg.sender,
+  };
+
+  if (msg.message_media && Array.isArray(msg.message_media) && msg.message_media.length > 0) {
+    message.media = msg.message_media
+      .map((mm: any) => {
+        if (!mm.media) return null;
+        const media = mm.media;
+        return {
+          id: media.id,
+          media_type: media.media_type,
+          filename: media.filename,
+          mime_type: media.mime_type,
+          size_bytes: media.size_bytes,
+          bucket: media.bucket,
+          path: media.path,
+          duration_seconds: media.duration_seconds,
+          dimensions: media.dimensions,
+          metadata: media.metadata,
+          order_index: mm.order_index,
+        } as MessageMedia;
+      })
+      .filter((m: MessageMedia | null) => m !== null)
+      .sort((a: MessageMedia, b: MessageMedia) => (a.order_index || 0) - (b.order_index || 0));
+  }
+
+  return message;
+}
+
+export async function getMessageById(
+  messageId: string,
+  userId: string
+): Promise<{ message: Message | null; error: any }> {
+  const supabase = createClient();
+
+  let result = await supabase
+    .from('messages')
+    .select(MESSAGE_DETAIL_SELECT_FULL)
+    .eq('id', messageId)
+    .maybeSingle();
+
+  if (result.error && (result.error.message?.includes('message_media') || result.error.message?.includes('does not exist'))) {
+    result = await supabase
+      .from('messages')
+      .select(MESSAGE_DETAIL_SELECT_NO_MEDIA)
+      .eq('id', messageId)
+      .maybeSingle();
+  }
+
+  if (result.error && (result.error.message?.includes('deleted_at') || result.error.code === '42703')) {
+    result = await supabase
+      .from('messages')
+      .select(`
+        *,
+        sender:sender_id (
+          id,
+          name,
+          profile_pic_url
+        ),
+        message_media (
+          order_index,
+          media:media_id (
+            id,
+            media_type,
+            filename,
+            mime_type,
+            size_bytes,
+            bucket,
+            path,
+            duration_seconds,
+            dimensions,
+            metadata
+          )
+        )
+      `)
+      .eq('id', messageId)
+      .maybeSingle();
+  }
+
+  if (result.error) {
+    return { message: null, error: result.error };
+  }
+
+  const row = result.data;
+  if (!row) {
+    return { message: null, error: new Error('Message not found') };
+  }
+
+  const { data: participant } = await supabase
+    .from('conversation_participants')
+    .select('id')
+    .eq('conversation_id', row.conversation_id)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!participant) {
+    return { message: null, error: new Error('Not a participant in this conversation') };
+  }
+
+  return { message: mapMessagesQueryRowToMessage(row), error: null };
+}
+
 export async function getConversationMessages(
   conversationId: string,
   userId: string,
@@ -1288,29 +1439,7 @@ export async function getConversationMessages(
 
   let result = await supabase
     .from('messages')
-    .select(`
-      *,
-      sender:sender_id (
-        id,
-        name,
-        profile_pic_url
-      ),
-      message_media (
-        order_index,
-        media:media_id (
-          id,
-          media_type,
-          filename,
-          mime_type,
-          size_bytes,
-          bucket,
-          path,
-          duration_seconds,
-          dimensions,
-          metadata
-        )
-      )
-    `)
+    .select(MESSAGE_DETAIL_SELECT_FULL)
     .eq('conversation_id', conversationId)
     .is('deleted_at', null)
     .order('created_at', { ascending: true })
@@ -1319,14 +1448,7 @@ export async function getConversationMessages(
   if (result.error && (result.error.message?.includes('message_media') || result.error.message?.includes('does not exist'))) {
     result = await supabase
       .from('messages')
-      .select(`
-        *,
-        sender:sender_id (
-          id,
-          name,
-          profile_pic_url
-        )
-      `)
+      .select(MESSAGE_DETAIL_SELECT_NO_MEDIA)
       .eq('conversation_id', conversationId)
       .is('deleted_at', null)
       .order('created_at', { ascending: true })
@@ -1369,50 +1491,7 @@ export async function getConversationMessages(
     return { messages: [], error: result.error };
   }
 
-  const messages: Message[] = (result.data || []).map((msg: any) => {
-    const message: Message = {
-      id: msg.id,
-      conversation_id: msg.conversation_id,
-      sender_id: msg.sender_id,
-      content: msg.content,
-      message_type: msg.message_type || 'text',
-      file_url: msg.file_url,
-      file_name: msg.file_name,
-      file_size: msg.file_size,
-      file_type: msg.file_type,
-      reply_to_id: msg.reply_to_id,
-      edited_at: msg.edited_at,
-      deleted_at: msg.deleted_at,
-      created_at: msg.created_at,
-      updated_at: msg.updated_at,
-      sender: msg.sender,
-    };
-
-    if (msg.message_media && Array.isArray(msg.message_media) && msg.message_media.length > 0) {
-      message.media = msg.message_media
-        .map((mm: any) => {
-          if (!mm.media) return null;
-          const media = mm.media;
-          return {
-            id: media.id,
-            media_type: media.media_type,
-            filename: media.filename,
-            mime_type: media.mime_type,
-            size_bytes: media.size_bytes,
-            bucket: media.bucket,
-            path: media.path,
-            duration_seconds: media.duration_seconds,
-            dimensions: media.dimensions,
-            metadata: media.metadata,
-            order_index: mm.order_index,
-          } as MessageMedia;
-        })
-        .filter((m: MessageMedia | null) => m !== null)
-        .sort((a: MessageMedia, b: MessageMedia) => (a.order_index || 0) - (b.order_index || 0));
-    }
-
-    return message;
-  });
+  const messages: Message[] = (result.data || []).map((msg: any) => mapMessagesQueryRowToMessage(msg));
 
   return { messages, error: null };
 }
