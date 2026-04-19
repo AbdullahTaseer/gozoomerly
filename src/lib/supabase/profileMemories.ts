@@ -19,6 +19,16 @@ export interface ProfileMemoryItem {
   name?: string;
   status?: string;
   cover_image_url?: string | null;
+  cover_image?:
+    | string
+    | {
+        url?: string | null;
+        thumbnail_small?: string | null;
+        thumbnail_medium?: string | null;
+        thumbnail_large?: string | null;
+        [key: string]: unknown;
+      }
+    | null;
   media_url?: string | null;
   thumbnail_url?: string | null;
   created_at?: string | null;
@@ -101,16 +111,72 @@ export function normalizeProfileMemoriesPayload(data: unknown): ProfileMemoryIte
 const PLACEHOLDER_COVER =
   'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80';
 
+function firstMediaUrlFromArray(arr: unknown, preferImage: boolean): string {
+  if (!Array.isArray(arr) || arr.length === 0) return '';
+
+  const readUrl = (row: Record<string, unknown>): string => {
+    const raw = row.cdn_url ?? row.url ?? row.thumbnail_url ?? row.path;
+    return typeof raw === 'string' ? raw.trim() : '';
+  };
+  const isVideoRow = (row: Record<string, unknown>, url: string): boolean => {
+    const t = String(row.media_type ?? row.type ?? row.mime_type ?? '').toLowerCase();
+    if (t) return t.includes('video');
+    return /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url);
+  };
+
+  if (preferImage) {
+    for (const m of arr) {
+      if (!m || typeof m !== 'object') continue;
+      const row = m as Record<string, unknown>;
+      const url = readUrl(row);
+      if (url && !isVideoRow(row, url)) return url;
+    }
+  }
+
+  for (const m of arr) {
+    if (!m || typeof m !== 'object') continue;
+    const url = readUrl(m as Record<string, unknown>);
+    if (url) return url;
+  }
+  return '';
+}
+
+function readCoverImageField(value: unknown): string {
+  if (typeof value === 'string') return value.trim();
+  if (value && typeof value === 'object') {
+    const o = value as Record<string, unknown>;
+    const pick =
+      o.thumbnail_medium ??
+      o.thumbnail_large ??
+      o.url ??
+      o.thumbnail_small;
+    if (typeof pick === 'string') return pick.trim();
+  }
+  return '';
+}
+
 export function getProfileMemoryCoverUrl(item: ProfileMemoryItem): string {
+  const fromItemCover = readCoverImageField(item.cover_image);
+
   const b = item.board;
   const fromBoard =
     (typeof b?.cover_image_url === 'string' && b.cover_image_url) ||
-    (b?.cover_image && typeof b.cover_image === 'object' && (b.cover_image as { url?: string }).url) ||
+    readCoverImageField(b?.cover_image) ||
     '';
+
+  const any = item as Record<string, unknown>;
+  const fromOwnMedia =
+    firstMediaUrlFromArray(any.photos, true) ||
+    firstMediaUrlFromArray(any.media, true) ||
+    firstMediaUrlFromArray(any.videos, false) ||
+    firstMediaUrlFromArray(any.media, false);
+
   return (
+    fromItemCover ||
     (typeof item.cover_image_url === 'string' && item.cover_image_url) ||
     (typeof item.media_url === 'string' && item.media_url) ||
     (typeof item.thumbnail_url === 'string' && item.thumbnail_url) ||
+    fromOwnMedia ||
     fromBoard ||
     PLACEHOLDER_COVER
   );

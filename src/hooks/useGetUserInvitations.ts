@@ -69,6 +69,20 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
             index === self.findIndex((i) => i.id === invitation.id)
         );
 
+        if (typeof window !== 'undefined' && uniqueInvitations.length > 0) {
+          try {
+            console.debug('[get_user_invitations] sample board.cover_image shapes', uniqueInvitations.slice(0, 3).map((inv: any) => ({
+              id: inv?.id,
+              board_id: inv?.board_id ?? inv?.board?.id,
+              cover_image: inv?.board?.cover_image,
+              cover_image_url: inv?.board?.cover_image_url,
+              top_cover_image: inv?.cover_image,
+            })));
+          } catch {
+            // ignore
+          }
+        }
+
         setInvitations(uniqueInvitations);
         setCounts({
           total: uniqueInvitations.length,

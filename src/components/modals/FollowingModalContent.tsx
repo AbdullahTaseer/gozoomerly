@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Search, UserMinus } from "lucide-react";
 import GlobalInput from "../inputs/GlobalInput";
 import FollowCard from "../cards/FollowCard";
@@ -9,13 +10,13 @@ import { getFollowing, type UserConnection } from '@/lib/supabase/followUtils';
 import ModalOrBottomSlider from './ModalOrBottomSlider';
 import ConfirmationModalContent from './ConfirmationModalContent';
 import { unfollowUser } from '@/lib/supabase/followUtils';
-import { authService } from '@/lib/supabase/auth';
 
 type Props = {
   userId?: string;
 };
 
 const FollowingModalContent = ({ userId }: Props) => {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [following, setFollowing] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +91,7 @@ const FollowingModalContent = ({ userId }: Props) => {
               imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
               btnTitle="Following"
               onClickBtn={() => setUnfollowConfirm({ name: user.name || 'Unknown', userId: user.user_id })}
+              onNameClick={() => router.push(`/u/visitProfile/${user.user_id}`)}
             />
           ))
         ) : (

@@ -10,7 +10,6 @@ export type ExploreParticipantsModalContentProps = {
   onClose: () => void;
   participants: PublicBoardMemberPreview[];
   extraCount?: number;
-  /** Called when the user opens a participant profile; use to close the parent explore card. */
   onCloseExploreCard?: () => void;
 };
 

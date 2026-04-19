@@ -29,7 +29,7 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   const [progress, setProgress] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [_elapsedTime, setElapsedTime] = useState(0);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const elapsedTimeRef = useRef(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -75,7 +75,6 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
         }
       };
     } else if (isPaused && progressIntervalRef.current) {
-      // Clear interval when paused
       clearInterval(progressIntervalRef.current);
       progressIntervalRef.current = null;
     }
@@ -92,13 +91,11 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
     }
   }, [isOpen, initialGroupIndex]);
 
-  // Adjust story index if current story group changes (e.g., after deletion)
   useEffect(() => {
     if (currentGroup && currentStoryIndex >= currentGroup.stories.length) {
       if (currentGroup.stories.length > 0) {
         setCurrentStoryIndex(currentGroup.stories.length - 1);
       } else {
-        // No stories left, close modal
         onClose();
       }
     }
@@ -168,7 +165,6 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
     e.stopPropagation();
     setIsPaused(!isPaused);
 
-    // Pause/resume video if it's a video story
     if (videoRef.current) {
       if (isPaused) {
         videoRef.current.play().catch(() => { });

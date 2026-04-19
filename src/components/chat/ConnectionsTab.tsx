@@ -36,6 +36,8 @@ interface ConnectionsTabProps {
   loading: boolean;
   /** Group Chats tab: `get_user_conversations` with conversation_type group */
   groupListLoading?: boolean;
+  /** Header: show skeleton until peer profile and/or initial messages are ready. */
+  chatHeaderLoading?: boolean;
   uploading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   filteredConversations: Conversation[];
@@ -73,6 +75,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   newMessage,
   loading,
   groupListLoading = false,
+  chatHeaderLoading = false,
   uploading,
   messagesEndRef,
   filteredConversations,
@@ -389,39 +392,51 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                   onClick={() => setSelectedConversation(null)}
                   className='cursor-pointer shrink-0 text-black md:hidden'
                 />
-                <div className='relative rounded-full h-10 w-10'>
-                  <Image
-                    src={getConversationAvatar(selectedConversation)}
-                    alt={getConversationName(selectedConversation)}
-                    fill
-                    className='rounded-full object-cover'
-                    sizes="40px"
-                    onError={(e) => {
-                      const target = e.currentTarget as HTMLImageElement;
-                      target.src = ProfileAvatar.src || ProfileAvatar;
-                    }}
-                  />
-                  {(() => {
-                    const otherUserId = getOtherUserId(selectedConversation);
-                    const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
-                    return online ? (
-                      <span className='absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full' />
-                    ) : null;
-                  })()}
-                </div>
-                <div className='flex-1'>
-                  <p className='font-bold text-black'>{getConversationName(selectedConversation)}</p>
-                  {(() => {
-                    const otherUserId = getOtherUserId(selectedConversation);
-                    const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
-                    const lastSeenText = otherUserId && getLastSeenText ? getLastSeenText(otherUserId) : 'Offline';
-                    return (
-                      <p className='text-xs text-gray-500'>
-                        {isTyping ? getTypingText() : online ? 'Online' : lastSeenText}
-                      </p>
-                    );
-                  })()}
-                </div>
+                {chatHeaderLoading ? (
+                  <>
+                    <div className="relative h-10 w-10 shrink-0 rounded-full bg-gray-200 animate-pulse" aria-hidden />
+                    <div className="flex-1 space-y-2 py-0.5 min-w-0">
+                      <div className="h-4 max-w-[10rem] rounded-md bg-gray-200 animate-pulse" />
+                      <div className="h-3 max-w-[5rem] rounded-md bg-gray-100 animate-pulse" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className='relative rounded-full h-10 w-10'>
+                      <Image
+                        src={getConversationAvatar(selectedConversation)}
+                        alt={getConversationName(selectedConversation)}
+                        fill
+                        className='rounded-full object-cover'
+                        sizes="40px"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.src = ProfileAvatar.src || ProfileAvatar;
+                        }}
+                      />
+                      {(() => {
+                        const otherUserId = getOtherUserId(selectedConversation);
+                        const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
+                        return online ? (
+                          <span className='absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full' />
+                        ) : null;
+                      })()}
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <p className='font-bold text-black truncate'>{getConversationName(selectedConversation)}</p>
+                      {(() => {
+                        const otherUserId = getOtherUserId(selectedConversation);
+                        const online = otherUserId && isUserOnline ? isUserOnline(otherUserId) : false;
+                        const lastSeenText = otherUserId && getLastSeenText ? getLastSeenText(otherUserId) : 'Offline';
+                        return (
+                          <p className='text-xs text-gray-500'>
+                            {isTyping ? getTypingText() : online ? 'Online' : lastSeenText}
+                          </p>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
                 {isStandaloneGroupConversation(selectedConversation) && onOpenGroupInfo ? (
                   <button
                     type="button"
@@ -435,10 +450,17 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
 
               <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>
                 {messages.length === 0 ? (
-                  <div className="text-center text-gray-400 mt-8">
-                    <p>No messages yet</p>
-                    <p className="text-xs mt-2">Start the conversation!</p>
-                  </div>
+                  chatHeaderLoading ? (
+                    <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
+                      <div className="animate-spin rounded-full h-9 w-9 border-2 border-gray-200 border-t-pink-500" />
+                      <p className="text-sm mt-4">Loading messages…</p>
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-400 mt-8">
+                      <p>No messages yet</p>
+                      <p className="text-xs mt-2">Start the conversation!</p>
+                    </div>
+                  )
                 ) : (
                   <>
                     {messages.map((msg, index) => (

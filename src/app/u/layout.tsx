@@ -1,16 +1,25 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import DashFooter from '@/components/footer/DashFooter';
 import BottomTabs from '@/components/footer/BottomTabs';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
-import AddStatusModalContent from '@/components/modals/AddStatusModal';
-import CreateOrShareModalContent from '@/components/modals/CreateOrShareModal';
 import { useAddStatusSubmit } from '@/hooks/useAddStatusSubmit';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 import { chatOpenState } from '@/lib/chatOpenState';
 import { OnlineStatusProvider } from '@/components/providers/OnlineStatusProvider';
+
+const AddStatusModalContent = dynamic(
+  () => import('@/components/modals/AddStatusModal'),
+  { ssr: false }
+);
+
+const CreateOrShareModalContent = dynamic(
+  () => import('@/components/modals/CreateOrShareModal'),
+  { ssr: false }
+);
 
 const UserLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname() || '';
@@ -47,10 +56,12 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
           title='Create or Share'
           desktopClassName="max-w-md"
         >
-          <CreateOrShareModalContent
-            onClose={() => createOrShareModalState.close()}
-            onPostStatus={() => setIsAddStatusOpen(true)}
-          />
+          {isCreateOrShareModalOpen ? (
+            <CreateOrShareModalContent
+              onClose={() => createOrShareModalState.close()}
+              onPostStatus={() => setIsAddStatusOpen(true)}
+            />
+          ) : null}
         </ModalOrBottomSlider>
 
         <ModalOrBottomSlider
@@ -60,13 +71,15 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
           desktopClassName="max-w-md"
           contentClassName="px-4 pb-6"
         >
-          <AddStatusModalContent
-            isOpen={isAddStatusOpen}
-            onClose={() => setIsAddStatusOpen(false)}
-            onImageSelect={handleStatusImageSelect}
-            onStoryCreate={handleStoryCreate}
-            onMultipleStoriesCreate={handleMultipleStoriesCreate}
-          />
+          {isAddStatusOpen ? (
+            <AddStatusModalContent
+              isOpen={isAddStatusOpen}
+              onClose={() => setIsAddStatusOpen(false)}
+              onImageSelect={handleStatusImageSelect}
+              onStoryCreate={handleStoryCreate}
+              onMultipleStoriesCreate={handleMultipleStoriesCreate}
+            />
+          ) : null}
         </ModalOrBottomSlider>
       </div>
     </OnlineStatusProvider>

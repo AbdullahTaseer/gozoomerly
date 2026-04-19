@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, UserMinus } from 'lucide-react';
 import GlobalInput from '../inputs/GlobalInput';
 import FollowCard from '../cards/FollowCard';
@@ -16,6 +17,7 @@ type Props = {
 };
 
 const FollowersModalContent = ({ userId }: Props) => {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [followers, setFollowers] = useState<UserConnection[]>([]);
   const [loading, setLoading] = useState(true);
@@ -137,6 +139,7 @@ const FollowersModalContent = ({ userId }: Props) => {
               imgSrc={user.profile_pic || user.profile_pic_url || Avatar}
               btnTitle={followingStatus[user.user_id] ? "Following" : "Follow"}
               onClickBtn={() => handleToggleFollow(user.user_id, user.name || 'Unknown')}
+              onNameClick={() => router.push(`/u/visitProfile/${user.user_id}`)}
             />
           ))
         ) : (

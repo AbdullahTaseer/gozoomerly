@@ -284,7 +284,7 @@ export default function MemoriesViewClient() {
                       {item.isVideo ? (
                         <video src={item.url} className="absolute inset-0 h-full w-full object-cover" muted playsInline />
                       ) : (
-                        <img src={item.url} alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                        <img src={item.url} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
                       )}
                     </button>
                   );

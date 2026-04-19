@@ -10,6 +10,10 @@ interface ImageWithFallbackProps {
   height: number;
   className?: string;
   fallbackSrc?: string | any;
+  /** Defaults to lazy for below-the-fold images */
+  loading?: 'lazy' | 'eager';
+  priority?: boolean;
+  sizes?: string;
 }
 
 export default function ImageWithFallback({
@@ -19,6 +23,9 @@ export default function ImageWithFallback({
   height,
   className = '',
   fallbackSrc,
+  loading = 'lazy',
+  priority,
+  sizes,
 }: ImageWithFallbackProps) {
   const [imgSrc, setImgSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
@@ -38,6 +45,9 @@ export default function ImageWithFallback({
       height={height}
       className={className}
       onError={handleError}
+      loading={loading}
+      priority={priority}
+      sizes={sizes}
     />
   );
 }

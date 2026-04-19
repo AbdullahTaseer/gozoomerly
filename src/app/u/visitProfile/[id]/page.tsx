@@ -196,6 +196,11 @@ const VisitProfilePage = () => {
     if (boardId) router.push(`/u/boards/${boardId}`);
   };
 
+  const handleStartConversation = () => {
+    if (!profile?.id) return;
+    router.push(`/u/chat?userId=${encodeURIComponent(profile.id)}`);
+  };
+
   const RenderPosts = () => {
     const posts = activeTab === 'photos' ? photoItems : videoItems;
 
@@ -328,7 +333,11 @@ const VisitProfilePage = () => {
               {followLoading ? 'Loading...' : (isFollowing ? "Following" : "Follow")}
             </button>
 
-            <button className="border px-4 py-1 rounded-md text-sm cursor-pointer font-medium hover:bg-gray-100">
+            <button
+              type="button"
+              onClick={handleStartConversation}
+              className="border px-4 py-1 rounded-md text-sm cursor-pointer font-medium hover:bg-gray-100"
+            >
               Message
             </button>
           </div>

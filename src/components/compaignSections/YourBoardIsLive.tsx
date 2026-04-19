@@ -94,7 +94,7 @@ const YourBoardIsLive = ({
         <p className='text-[42px] max-[768px]:text-[28px] relative text-white'>{boardTitle}</p>
         <div className='relative z-10 flex items-center gap-3 mt-4'>
           {typeof profilePhoto === 'string' ? (
-            <img src={profilePhoto} alt={fullName} height={50} width={50} className='rounded-full border-3 border-pink-100 h-[50px] w-[50px] object-cover' />
+            <img src={profilePhoto} alt={fullName} height={50} width={50} loading="lazy" decoding="async" className='rounded-full border-3 border-pink-100 h-[50px] w-[50px] object-cover' />
           ) : (
             <Image src={profilePhoto} alt={fullName} height={50} width={50} className='rounded-full border-3 border-pink-100' />
           )}
@@ -137,7 +137,7 @@ const YourBoardIsLive = ({
             <div className='p-4 border border-[#B2B2B2] bg-[#DDCFDB] rounded-lg mt-4'>
               <div className='flex gap-2 items-center flex-wrap text-sm'>
                 {typeof creatorAvatar === 'string' ? (
-                  <img src={creatorAvatar} alt={creatorName} height={35} width={35} className='rounded-full h-[35px] w-[35px] object-cover' />
+                  <img src={creatorAvatar} alt={creatorName} height={35} width={35} loading="lazy" decoding="async" className='rounded-full h-[35px] w-[35px] object-cover' />
                 ) : (
                   <Image src={creatorAvatar} alt={creatorName} height={35} width={35} className='rounded-full' />
                 )}

@@ -10,9 +10,7 @@ type Props = {
   shareUrl: string;
   title?: string;
   className?: string;
-  /** Icon-only (board header) vs. full-width CTA (e.g. post-publish screen). */
   triggerStyle?: 'icon' | 'primary';
-  /** Label when triggerStyle is primary */
   buttonTitle?: string;
 };
 

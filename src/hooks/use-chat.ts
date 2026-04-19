@@ -98,6 +98,15 @@ export const useChat = () => {
   const [currentUserName, setCurrentUserName] = useState<string | undefined>(undefined);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  /** True while opening a new direct chat before `getConversation` fills participant profiles (avoids "Unknown User" flash). */
+  const [directPeerProfileLoading, setDirectPeerProfileLoading] = useState(false);
+  /** True while the initial `getConversationMessages` fetch runs for the selected thread (keeps header skeleton until messages are ready). */
+  const [threadMessagesLoading, setThreadMessagesLoading] = useState(false);
+
+  const setSelectedConversationFromUi = useCallback((conv: Conversation | null) => {
+    setDirectPeerProfileLoading(false);
+    setSelectedConversation(conv);
+  }, []);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -280,6 +289,7 @@ export const useChat = () => {
   const loadMessages = useCallback(async (conversationId: string) => {
     if (!currentUserId) return;
 
+    setThreadMessagesLoading(true);
     try {
       const { messages: msgs, error } = await getConversationMessages(
         conversationId,
@@ -373,12 +383,19 @@ export const useChat = () => {
             });
           }
         }
+        if (selectedConversationRef.current?.id !== conversationId) {
+          return;
+        }
         setMessages(chatMessages);
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       }
     } catch (err) {
+    } finally {
+      if (selectedConversationRef.current?.id === conversationId) {
+        setThreadMessagesLoading(false);
+      }
     }
   }, [currentUserId]);
 
@@ -401,7 +418,8 @@ export const useChat = () => {
           conv.participants.length === 0 ||
           !conv.participants.some((p: any) => p.user?.name));
 
-      loadMessages(selectedConversationId);
+      setMessages([]);
+      void loadMessages(selectedConversationId);
 
       markConversationAsRead(selectedConversationId, currentUserId).catch(() => {});
 
@@ -441,6 +459,7 @@ export const useChat = () => {
       }
     } else {
       localStorage.removeItem('selectedConversationId');
+      setThreadMessagesLoading(false);
     }
   }, [selectedConversationId, currentUserId, loadMessages]);
 
@@ -835,6 +854,7 @@ export const useChat = () => {
         isSettingProgrammaticallyRef.current = true;
         setSearchQuery('');
         setShowSearchResults(false);
+        setDirectPeerProfileLoading(false);
         setSelectedConversation(existingConversation);
         setTimeout(() => {
           isSettingProgrammaticallyRef.current = false;
@@ -871,28 +891,44 @@ export const useChat = () => {
         return [newConversation, ...unique];
       });
 
+      setDirectPeerProfileLoading(true);
       setSelectedConversation(newConversation);
 
-      getConversation(newConversation.id, currentUserId).then(({ conversation: fullConversation, error: fetchError }) => {
-        if (!fetchError && fullConversation) {
-          setSelectedConversation(prev => prev ? {
-            ...fullConversation,
-            last_message: fullConversation.last_message || prev.last_message,
-            last_message_at: fullConversation.last_message_at || prev.last_message_at,
-            last_message_id: fullConversation.last_message_id || prev.last_message_id,
-            last_message_sender_id: fullConversation.last_message_sender_id || prev.last_message_sender_id,
-          } : fullConversation);
-          setConversations(prev => prev.map(conv =>
-            conv.id === fullConversation.id ? {
-              ...fullConversation,
-              last_message: fullConversation.last_message || conv.last_message,
-              last_message_at: fullConversation.last_message_at || conv.last_message_at,
-              last_message_id: fullConversation.last_message_id || conv.last_message_id,
-              last_message_sender_id: fullConversation.last_message_sender_id || conv.last_message_sender_id,
-            } : conv
-          ));
-        }
-      }).catch(() => {});
+      getConversation(newConversation.id, currentUserId)
+        .then(({ conversation: fullConversation, error: fetchError }) => {
+          if (!fetchError && fullConversation) {
+            setSelectedConversation(prev =>
+              prev && prev.id === fullConversation.id
+                ? {
+                    ...fullConversation,
+                    last_message: fullConversation.last_message || prev.last_message,
+                    last_message_at: fullConversation.last_message_at || prev.last_message_at,
+                    last_message_id: fullConversation.last_message_id || prev.last_message_id,
+                    last_message_sender_id:
+                      fullConversation.last_message_sender_id || prev.last_message_sender_id,
+                  }
+                : prev
+            );
+            setConversations(prev =>
+              prev.map(conv =>
+                conv.id === fullConversation.id
+                  ? {
+                      ...fullConversation,
+                      last_message: fullConversation.last_message || conv.last_message,
+                      last_message_at: fullConversation.last_message_at || conv.last_message_at,
+                      last_message_id: fullConversation.last_message_id || conv.last_message_id,
+                      last_message_sender_id:
+                        fullConversation.last_message_sender_id || conv.last_message_sender_id,
+                    }
+                  : conv
+              )
+            );
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          setDirectPeerProfileLoading(false);
+        });
 
       setTimeout(() => {
         isSettingProgrammaticallyRef.current = false;
@@ -1526,6 +1562,13 @@ export const useChat = () => {
       new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime() > 300000; 
   }, [messages]);
 
+  const chatHeaderLoading = useMemo(() => {
+    if (!selectedConversation) return false;
+    const peerPending =
+      selectedConversation.type === 'direct' && directPeerProfileLoading;
+    return peerPending || threadMessagesLoading;
+  }, [selectedConversation, directPeerProfileLoading, threadMessagesLoading]);
+
   return {
     loading,
     groupListLoading,
@@ -1571,7 +1614,8 @@ export const useChat = () => {
     handleStartConversation,
     handleStartBoardConversation,
     handleCreateGroupConversation,
-    setSelectedConversation,
+    setSelectedConversation: setSelectedConversationFromUi,
+    chatHeaderLoading,
     getLastMessageWithSender,
     setNewMessage: handleNewMessageChange,
   };

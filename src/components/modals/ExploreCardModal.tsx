@@ -370,7 +370,7 @@ const ExploreCardModal = ({
           {currentMedia ? (
             <>
               {currentMedia.mediaType === 'image' && (
-                <img src={currentMedia.url} alt={currentMedia.filename || title} className="h-full w-full object-cover" />
+                <img src={currentMedia.url} alt={currentMedia.filename || title} decoding="async" className="h-full w-full object-cover" />
               )}
               {currentMedia.mediaType === 'video' && (
                 <video
@@ -390,7 +390,7 @@ const ExploreCardModal = ({
               {currentMedia.mediaType === 'document' && (
                 <div className="h-full w-full flex flex-col items-center justify-center gap-4 text-white px-6 text-center">
                   {currentMedia.thumbnailUrl ? (
-                    <img src={currentMedia.thumbnailUrl} alt={currentMedia.filename || 'Document preview'} className="max-h-[60%] rounded-lg object-cover" />
+                    <img src={currentMedia.thumbnailUrl} alt={currentMedia.filename || 'Document preview'} loading="lazy" decoding="async" className="max-h-[60%] rounded-lg object-cover" />
                   ) : (
                     <div className="w-24 h-24 rounded-xl bg-white/15 flex items-center justify-center text-3xl">DOC</div>
                   )}

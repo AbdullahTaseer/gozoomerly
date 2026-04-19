@@ -101,7 +101,6 @@ const Navbar = () => {
           <AnimatedButton
             title="Get Zoomerly"
             width="160px"
-            // onClick={() => router.push('/u')}
           />
         </div>
 
@@ -109,7 +108,6 @@ const Navbar = () => {
           <AnimatedButton
             title="Get Zoomerly"
             width="150px"
-            // onClick={() => router.push('/u')}
           />
         </div>
       </div>

@@ -9,9 +9,11 @@ type props = {
   data: string,
   btnTitle: string,
   onClickBtn?: () => void;
+  /** Opens that user's profile (e.g. follower / following lists). */
+  onNameClick?: () => void;
 }
 
-const FollowCard = ({ imgSrc, name, data, btnTitle, onClickBtn }: props) => {
+const FollowCard = ({ imgSrc, name, data, btnTitle, onClickBtn, onNameClick }: props) => {
   const [imgError, setImgError] = useState(false);
   const [fallbackSrc, setFallbackSrc] = useState<string | StaticImport>(imgSrc);
 
@@ -44,7 +46,17 @@ const FollowCard = ({ imgSrc, name, data, btnTitle, onClickBtn }: props) => {
         )}
       </div>
       <div className="flex-1 min-w-0 whitespace-nowrap">
-        <p className='font-semibold text-md max-[500px]:text-sm'>{name}</p>
+        {onNameClick ? (
+          <button
+            type="button"
+            onClick={onNameClick}
+            className='font-semibold text-md max-[500px]:text-sm text-left w-full truncate hover:underline text-black cursor-pointer'
+          >
+            {name}
+          </button>
+        ) : (
+          <p className='font-semibold text-md max-[500px]:text-sm'>{name}</p>
+        )}
         <p className='font-light text-sm max-[500px]:text-xs text-ellipsis line-clamp-1 overflow-hidden'>{data}</p>
       </div>
       <p onClick={onClickBtn} className='ml-auto cursor-pointer hover:bg-black/80 bg-black px-6 py-2 text-sm text-white rounded-full'>{btnTitle}</p>

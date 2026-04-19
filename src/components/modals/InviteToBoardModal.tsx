@@ -12,7 +12,6 @@ interface InviteToBoardModalProps {
   isOpen: boolean;
   onClose: () => void;
   boardId: string;
-  /** Shown at the top when the parent does not render a modal header (e.g. ModalOrBottomSlider with modalHeader={false}). */
   boardTitle?: string;
 }
 

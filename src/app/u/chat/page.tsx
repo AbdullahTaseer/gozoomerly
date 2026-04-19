@@ -46,6 +46,7 @@ const ChatPageContent = () => {
     selectedTab,
     messagesEndRef,
     setSelectedConversation,
+    chatHeaderLoading,
     setNewMessage,
     setSearchQuery,
     setShowSearchResults,
@@ -282,6 +283,7 @@ const ChatPageContent = () => {
           messagesEndRef={messagesEndRef}
           filteredConversations={filteredConversations}
           setSelectedConversation={setSelectedConversation}
+          chatHeaderLoading={chatHeaderLoading}
           setNewMessage={setNewMessage}
           handleSend={handleSend}
           handleFileUpload={handleFileUpload}

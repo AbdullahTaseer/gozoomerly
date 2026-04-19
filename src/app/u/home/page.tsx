@@ -128,14 +128,14 @@ const Home = () => {
   };
 
   const tabs = [
-    { key: 'newInvites', label: 'New Invites' },
-    { key: 'spotlight', label: 'Spotlight Boards' },
-    { key: 'following', label: 'Following' },
     { key: 'explore', label: 'Explore' },
+    { key: 'following', label: 'Following' },
+    { key: 'spotlight', label: 'Spotlight Boards' },
+    { key: 'newInvites', label: 'New Invites' },
   ] as const;
 
   type TabKey = (typeof tabs)[number]['key'];
-  const [activeTab, setActiveTab] = useState<TabKey>('newInvites');
+  const [activeTab, setActiveTab] = useState<TabKey>('explore');
   const [exploreSearch, setExploreSearch] = useState('');
 
   const filteredExploreBoards = exploreSearch.trim()
@@ -175,7 +175,7 @@ const Home = () => {
 
           {activeTab === 'newInvites' && (
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-              {invitationsLoading ? (
+              {loading || invitationsLoading ? (
                 [1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className='h-[200px] bg-gray-100 rounded-2xl animate-pulse' />
                 ))
@@ -184,9 +184,9 @@ const Home = () => {
                   <InvitationBoardCard
                     key={invitation.id}
                     title={invitation.board?.title || 'Board Invitation'}
-                    backgroundImage={invitation.board?.cover_image || invitation.invited_by?.Profile_Picture || ProfileAvatar}
-                    profileImage={invitation.invited_by?.Profile_Picture || ProfileAvatar}
-                    inviterName={invitation.invited_by?.name || 'Unknown'}
+                    backgroundImage={invitation.board?.cover_image}
+                    profileImage={invitation.inviter?.profile_pic_url || invitation.invited_by?.Profile_Picture || ProfileAvatar}
+                    inviterName={invitation.inviter?.name || invitation.invited_by?.name || 'Unknown'}
                     gradientClass='bg-gradient-to-b from-[#cf6c71]/80 to-[#BEA250]/80'
                     onAccept={async () => {
                       await acceptInvitation(invitation.id);

@@ -13,6 +13,7 @@ import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import MobileHeader from '@/components/navbar/MobileHeader';
 
 const NewInvites = () => {
+  const [initialInvitesLoadDone, setInitialInvitesLoadDone] = useState(false);
   const {
     invitations,
     isLoading: invitationsLoading,
@@ -37,6 +38,8 @@ const NewInvites = () => {
       });
     } catch (err) {
       console.error('Failed to load invitations:', err);
+    } finally {
+      setInitialInvitesLoadDone(true);
     }
   };
 
@@ -57,7 +60,7 @@ const NewInvites = () => {
           </div>
 
           <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full flex-wrap max-[769px]:flex-col'>
-            {invitationsLoading ? (
+            {!initialInvitesLoadDone || invitationsLoading ? (
               [1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className='min-w-[350px] h-[220px] bg-gray-100 rounded-[13px] animate-pulse' />
               ))
@@ -66,9 +69,9 @@ const NewInvites = () => {
                 <InvitationBoardCard
                   key={invitation.id}
                   title={invitation.board?.title || 'Board Invitation'}
-                  backgroundImage={invitation.board?.cover_image || ProfileAvatar}
-                  profileImage={invitation.invited_by?.Profile_Picture || ProfileAvatar}
-                  inviterName={invitation.invited_by?.name || 'Unknown'}
+                  backgroundImage={invitation.board?.cover_image}
+                  profileImage={invitation.inviter?.profile_pic_url || invitation.invited_by?.Profile_Picture || ProfileAvatar}
+                  inviterName={invitation.inviter?.name || invitation.invited_by?.name || 'Unknown'}
                   gradientClass='bg-gradient-to-br from-[#cf6c71]/80 to-[#d9777c]/80'
                   onAccept={async () => {
                     await acceptInvitation(invitation.id);

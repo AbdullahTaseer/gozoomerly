@@ -65,7 +65,7 @@ const MemoryDetailsCardContent = ({
           {current.isVideo ? (
             <video key={current.id} src={current.url} controls autoPlay playsInline className="max-h-full max-w-full object-contain" />
           ) : (
-            <img key={current.id} src={current.url} alt="" className="max-h-full max-w-full object-contain" draggable={false} />
+            <img key={current.id} src={current.url} alt="" decoding="async" className="max-h-full max-w-full object-contain" draggable={false} />
           )}
         </div>
 

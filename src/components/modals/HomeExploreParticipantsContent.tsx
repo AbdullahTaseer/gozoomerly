@@ -36,7 +36,7 @@ const HomeExploreParticipantsContent = ({
                 <Link href={`/u/visitProfile/${p.id}`} className={rowClass} onClick={onClose}>
                   <div className="relative w-11 h-11 rounded-full border-2 border-gray-100 overflow-hidden bg-gray-200 shrink-0">
                     {p.profile_pic_url ? (
-                      <img src={p.profile_pic_url} alt="" className="object-cover w-full h-full" />
+                      <img src={p.profile_pic_url} alt="" loading="lazy" decoding="async" className="object-cover w-full h-full" />
                     ) : null}
                   </div>
                   <span className="font-medium text-gray-900 truncate">{label}</span>
@@ -45,7 +45,7 @@ const HomeExploreParticipantsContent = ({
                 <div className={rowClass}>
                   <div className="relative w-11 h-11 rounded-full border-2 border-gray-100 overflow-hidden bg-gray-200 shrink-0">
                     {p.profile_pic_url ? (
-                      <img src={p.profile_pic_url} alt="" className="object-cover w-full h-full" />
+                      <img src={p.profile_pic_url} alt="" loading="lazy" decoding="async" className="object-cover w-full h-full" />
                     ) : null}
                   </div>
                   <span className="font-medium text-gray-900 truncate">{label}</span>

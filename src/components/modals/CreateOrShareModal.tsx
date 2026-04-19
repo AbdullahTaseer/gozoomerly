@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 interface CreateOrShareModalContentProps {
   onClose: () => void;
-  /** When set, "Post status" opens Add Status instead of navigating away. */
   onPostStatus?: () => void;
 }
 

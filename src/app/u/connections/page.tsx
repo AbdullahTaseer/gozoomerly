@@ -39,7 +39,7 @@ const Connections = () => {
   const router = useRouter();
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [searchValue, setSearchValue] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [circles, setCircles] = useState<CircleWithDetails[]>([]);
   const [circleMembers, setCircleMembers] = useState<Record<string, string[]>>({});
   const [followersList, setFollowersList] = useState<any[]>([]);
@@ -84,12 +84,33 @@ const Connections = () => {
   }, []);
 
   useEffect(() => {
-    if (currentUser?.id) {
-      fetchCircles();
-      fetchFollowers();
-      fetchFollowing();
-      fetchStories();
-    }
+    if (!currentUser?.id) return;
+    fetchCircles();
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [followers, following] = await Promise.all([
+          getFollowers(currentUser.id),
+          getFollowing(currentUser.id),
+        ]);
+        if (!cancelled) {
+          setFollowersList(followers || []);
+          setFollowingList(following || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setFollowersList([]);
+          setFollowingList([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    fetchStories();
+    return () => {
+      cancelled = true;
+    };
   }, [currentUser?.id, fetchStories]);
 
   useEffect(() => {
@@ -101,6 +122,7 @@ const Connections = () => {
   const fetchCurrentUser = async () => {
     const user = await authService.getUser();
     if (!user) {
+      setLoading(false);
       router.push('/signin');
       return;
     }
@@ -495,7 +517,7 @@ const Connections = () => {
         </div>
 
         <div className='max-w-[748px] mx-auto'>
-          {loading && combinedConnections.length === 0 ? (
+          {!currentUser || (loading && combinedConnections.length === 0) ? (
             <div className='flex flex-col items-center justify-center py-12'>
               <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-4'></div>
               <p className='text-gray-500'>Loading connections...</p>
@@ -505,7 +527,7 @@ const Connections = () => {
               <p className='text-gray-500'>
                 {searchValue
                   ? `No connections found matching "${searchValue}"`
-                  : 'No connections yet'}
+                  : 'No connections found'}
               </p>
             </div>
           ) : (
