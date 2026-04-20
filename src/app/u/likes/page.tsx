@@ -25,6 +25,8 @@ const PAGE_SIZE = 10;
 type UiLikeItem = {
   id: string;
   wishId: string | null;
+  /** Underlying board id so the card can navigate to the board detail page. */
+  boardId: string | null;
   imgSrc: string | StaticImport;
   whoLikeAvatar: string | StaticImport;
   name: string;
@@ -69,6 +71,12 @@ const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem =>
   const wishId =
     pickString(wish, ['id']) ??
     pickString(item, ['wish_id']) ??
+    null;
+
+  const boardId =
+    pickString(board, ['id', 'board_id']) ??
+    pickString(wish, ['board_id']) ??
+    pickString(item, ['board_id']) ??
     null;
 
   const id =
@@ -117,6 +125,7 @@ const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem =>
   return {
     id,
     wishId,
+    boardId,
     imgSrc,
     whoLikeAvatar,
     creator: {
@@ -266,6 +275,9 @@ const LikesPage = () => {
                 like.wishId ? () => void handleUnlike(like.wishId as string) : undefined
               }
               isUnliking={like.wishId != null && unlikingWishId === like.wishId}
+              onCardClick={
+                like.boardId ? () => router.push(`/u/boards/${like.boardId}`) : undefined
+              }
             />
           ))}
           {isLoading &&

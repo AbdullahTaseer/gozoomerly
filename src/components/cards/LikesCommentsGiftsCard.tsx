@@ -11,6 +11,12 @@ type props = {
   /** When set, the heart is clickable to remove your like from this wish. */
   onUnlike?: () => void;
   isUnliking?: boolean;
+  /**
+   * Fires when any non-interactive part of the card is clicked. Intended for
+   * navigating to the underlying board detail. Nested buttons (unlike, delete
+   * comment, etc.) stop propagation so they keep working independently.
+   */
+  onCardClick?: () => void;
   comment?: string;
   whoCommentsAvatar?: string | StaticImport;
   whoCommentsName?: string;
@@ -31,6 +37,7 @@ const LikesCommentsGiftsCard = ({
   wishMessage,
   onUnlike,
   isUnliking = false,
+  onCardClick,
   comment,
   whoCommentsAvatar,
   whoCommentsName,
@@ -39,8 +46,26 @@ const LikesCommentsGiftsCard = ({
   giftsArray = [],
 
 }: props) => {
+  const isClickable = typeof onCardClick === 'function';
+
+  const handleCardActivate = (event: React.MouseEvent | React.KeyboardEvent) => {
+    if (!isClickable) return;
+    if (event.type === 'keydown') {
+      const key = (event as React.KeyboardEvent).key;
+      if (key !== 'Enter' && key !== ' ') return;
+      event.preventDefault();
+    }
+    onCardClick?.();
+  };
+
   return (
-    <div className={`rounded-[5px] ${whoCommentsAvatar || whoGiftsAvatar ? "bg-[#F7F7F7]" : "bg-white"}`}>
+    <div
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleCardActivate : undefined}
+      onKeyDown={isClickable ? handleCardActivate : undefined}
+      className={`rounded-[5px] ${whoCommentsAvatar || whoGiftsAvatar ? "bg-[#F7F7F7]" : "bg-white"} ${isClickable ? "cursor-pointer transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-[#F43C83] focus-visible:outline-offset-2" : ""}`}
+    >
       <Image src={imgSrc} alt='img' className='rounded-[5px] w-full' />
       <div className='flex justify-between mt-2 items-center p-2'>
         <div className='flex items-center gap-2'>
@@ -56,7 +81,10 @@ const LikesCommentsGiftsCard = ({
         {onUnlike ? (
           <button
             type="button"
-            onClick={onUnlike}
+            onClick={(e) => {
+              e.stopPropagation();
+              onUnlike();
+            }}
             disabled={isUnliking}
             aria-label={isUnliking ? 'Removing like' : 'Unlike'}
             className="shrink-0 rounded-md p-1 text-[#F43C83] hover:opacity-80 disabled:opacity-50"
@@ -77,7 +105,11 @@ const LikesCommentsGiftsCard = ({
             </div>
             <span className='flex items-center gap-4'>
               <p className='font-semibold text-sm'>{whoCommentsName}</p>
-              <Trash2 className='cursor-pointer' size={15} />
+              <Trash2
+                className='cursor-pointer'
+                size={15}
+                onClick={(e) => e.stopPropagation()}
+              />
             </span>
           </div>
           <p className='text-sm mt-2 ml-1'>{comment}</p>

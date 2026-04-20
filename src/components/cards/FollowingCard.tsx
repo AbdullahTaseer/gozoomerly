@@ -176,13 +176,26 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   const goNext = () =>
     setCarouselIndex((prev) => Math.min(prev + 1, mediaItems.length - 1));
 
+  /**
+   * Carousel nav only swallows clicks on the left/right thirds when there's
+   * more than one media item. Everything else (single media, or a click in
+   * the center third of a carousel) bubbles up so `onCardClick` can open the
+   * board detail — otherwise the card's main image area, which is the largest
+   * hit target, would never navigate.
+   */
   const handleMediaClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
     if (!hasCarousel) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    if (x < rect.width / 3) goPrev();
-    else if (x > (2 * rect.width) / 3) goNext();
+    const leftZoneEnd = rect.width / 3;
+    const rightZoneStart = (2 * rect.width) / 3;
+    if (x < leftZoneEnd) {
+      e.stopPropagation();
+      goPrev();
+    } else if (x > rightZoneStart) {
+      e.stopPropagation();
+      goNext();
+    }
   };
 
   const handleLikeClick = (e: React.MouseEvent) => {

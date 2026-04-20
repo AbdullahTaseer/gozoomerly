@@ -5,13 +5,6 @@ type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & {
   as?: keyof React.JSX.IntrinsicElements;
 };
 
-/**
- * Low-level skeleton primitive. Renders an animated placeholder block that
- * inherits its size from the surrounding layout or from utility classes.
- *
- * Prefer composing these inside the higher-level skeletons under
- * `@/components/skeletons/*` when representing a real UI element.
- */
 function Skeleton({
   className,
   as: Tag = "div",
@@ -31,10 +24,6 @@ function Skeleton({
   );
 }
 
-/**
- * Circle-shaped skeleton. Handy for avatars and icon slots.
- * Sizes default to a 40px circle — override with `className` (e.g. `h-12 w-12`).
- */
 function SkeletonCircle({
   className,
   ...props
@@ -47,10 +36,6 @@ function SkeletonCircle({
   );
 }
 
-/**
- * Single text-line skeleton. Defaults to a 14px-tall rounded bar.
- * Use `className` to control width (e.g. `w-1/2`, `max-w-[10rem]`).
- */
 function SkeletonText({
   className,
   ...props
