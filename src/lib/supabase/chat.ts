@@ -1096,6 +1096,7 @@ export async function getOrCreateBoardConversation(
   }
 }
 
+
 export async function markConversationAsRead(
   conversationId: string,
   userId: string,
@@ -1103,19 +1104,33 @@ export async function markConversationAsRead(
 ): Promise<{ error: any }> {
   const supabase = createClient();
 
-  const updateData: any = {
-    last_read_at: new Date().toISOString()
+  const updateData: Record<string, unknown> = {
+    last_read_at: new Date().toISOString(),
+    unread_count: 0,
   };
 
   if (lastReadMessageId) {
     updateData.last_read_message_id = lastReadMessageId;
   }
 
-  const { error } = await supabase
+  let { error } = await supabase
     .from('conversation_participants')
     .update(updateData)
     .eq('conversation_id', conversationId)
     .eq('user_id', userId);
+
+  // Back-compat: if `unread_count` column doesn't exist yet (older databases
+  // without the trigger), retry without it so reads still advance the
+  // timestamp pointer.
+  if (error && (error.code === '42703' || /unread_count/i.test(error.message || ''))) {
+    delete updateData.unread_count;
+    const retry = await supabase
+      .from('conversation_participants')
+      .update(updateData)
+      .eq('conversation_id', conversationId)
+      .eq('user_id', userId);
+    error = retry.error;
+  }
 
   return { error };
 }

@@ -3,74 +3,72 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
-import type { ChatMessage, ChatMessageMedia } from './use-realtime-chat';
 
 /**
  * User-wide realtime inbox.
  *
- * Subscribes to every INSERT/UPDATE/DELETE on `public.messages` for the
- * current user — with NO `conversation_id` filter. Supabase Realtime honors
- * the authenticated user's RLS SELECT policy server-side, so we only receive
- * rows for conversations the user participates in. That gives us a single
- * long-lived channel (one per user, not one per open thread) that stays live
- * no matter which conversation is currently selected.
+ * Fires `onRealtimeEvent` the instant any signal we can pick up tells us
+ * the user's conversation list may have changed. Caller re-runs
+ * `get_user_conversations` and the RPC is the source of truth.
  *
- * Why this replaces the old polling:
- *   - 5s `loadConversations` poll existed because the old per-conversation
- *     channel only fired for the open thread. With a user-wide subscription
- *     every conversation's preview / unread badge / ordering updates live.
- *   - 3.5s `mergeLatestFromServer` poll existed as a safety net for missed
- *     inserts in the open thread. With the same stream covering the open
- *     thread too, that safety net only needs to run once on reconnect.
+ * We open THREE independent channels, each with a single simple
+ * subscription. Independent channels — not bindings on one channel —
+ * because Supabase Realtime drops events on channels that carry many
+ * bindings (hitting the per-channel binding ceiling silently). Three
+ * separate channels each with 1–2 bindings stays well under any limit.
+ *
+ *   Channel A — `inbox-messages:<me>`
+ *     `postgres_changes` INSERT on `public.messages` (no filter).
+ *     Supabase Realtime evaluates row-level security per user, so this
+ *     only streams messages the user is allowed to SELECT.
+ *
+ *   Channel B — `inbox-participants:<me>`
+ *     `postgres_changes` UPDATE + INSERT on `public.conversation_participants`
+ *     where `user_id = <me>`. The existing `update_conversation_unread_count`
+ *     trigger writes to this row on every message insert, so UPDATE fires
+ *     deterministically; INSERT fires when the user is added to a new
+ *     conversation.
+ *
+ *   Channel C — `inbox-conversations:<me>`
+ *     `postgres_changes` UPDATE on `public.conversations` (no filter).
+ *     Many apps have a trigger that bumps `last_message_at` / `last_message`
+ *     on the conversations row when a new message arrives. If yours does,
+ *     this fires; if not, it stays silent and doesn't hurt.
+ *
+ * Any one delivering is enough. If your Supabase publication only has one
+ * of these tables enabled, the inbox still works.
+ *
+ * Prerequisite: at least ONE of these tables must be in the
+ * `supabase_realtime` publication. Enable via Supabase dashboard →
+ * Database → Replication. No SQL or function edits required.
  */
 export interface UseRealtimeInboxOptions {
   currentUserId: string | null;
-  onMessageReceived?: (message: ChatMessage) => void;
-  onMessageUpdated?: (message: ChatMessage) => void;
-  /**
-   * Fired for soft-delete (UPDATE with deleted_at) and hard-delete (DELETE).
-   * `conversationId` may be null for hard-delete on databases that don't
-   * stream the full old row (REPLICA IDENTITY != FULL).
-   */
-  onMessageDeleted?: (messageId: string, conversationId: string | null) => void;
-  /**
-   * Fired once per successful (re)subscribe. Use it to close gaps that may
-   * have occurred while the socket was dropped — typically a single
-   * `loadConversations` + `loadMessages(openConvId)` call.
-   */
+  /** Fired immediately on any inbox-affecting realtime event. */
+  onRealtimeEvent?: (reason: string) => void;
+  /** Fired once per successful (re)subscribe on any of the three channels. */
   onResume?: () => void;
   enabled?: boolean;
 }
 
 export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
-  const {
-    currentUserId,
-    onMessageReceived,
-    onMessageUpdated,
-    onMessageDeleted,
-    onResume,
-    enabled = true,
-  } = options;
+  const { currentUserId, onRealtimeEvent, onResume, enabled = true } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  const onMessageReceivedRef = useRef(onMessageReceived);
-  const onMessageUpdatedRef = useRef(onMessageUpdated);
-  const onMessageDeletedRef = useRef(onMessageDeleted);
+  const channelsRef = useRef<RealtimeChannel[]>([]);
+  const onRealtimeEventRef = useRef(onRealtimeEvent);
   const onResumeRef = useRef(onResume);
 
   useEffect(() => {
-    onMessageReceivedRef.current = onMessageReceived;
-    onMessageUpdatedRef.current = onMessageUpdated;
-    onMessageDeletedRef.current = onMessageDeleted;
+    onRealtimeEventRef.current = onRealtimeEvent;
     onResumeRef.current = onResume;
-  }, [onMessageReceived, onMessageUpdated, onMessageDeleted, onResume]);
+  }, [onRealtimeEvent, onResume]);
 
   const supabaseRef = useRef(createClient());
 
-  /** Bumped on visibility/online/focus events to force a re-subscribe cycle (mobile browsers drop WS on background). */
+  /** Bumped on visibility/online/focus so mobile browsers re-subscribe on wake. */
   const [reconnectTick, setReconnectTick] = useState(0);
 
   useEffect(() => {
@@ -92,127 +90,40 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
     };
   }, []);
 
-  /**
-   * Hydrate a raw `messages` row into the shape the UI expects:
-   *   - sender profile (name + avatar)
-   *   - attached media (with public URLs)
-   *
-   * Kept here (not in chat.ts) to avoid a circular dep and because realtime
-   * payloads are always single rows — we don't need the RPC batch semantics.
-   */
-  const hydrateMessage = useCallback(
-    async (message: any): Promise<ChatMessage | null> => {
-      if (!message || !message.id) return null;
+  const fireEvent = useCallback((reason: string) => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.log(`[inbox] realtime event → ${reason}`);
+    }
+    onRealtimeEventRef.current?.(reason);
+  }, []);
 
-      const supabase = supabaseRef.current;
-
-      let senderName = 'Unknown User';
-      let senderAvatar: string | undefined;
-
+  const teardown = useCallback(() => {
+    for (const ch of channelsRef.current) {
       try {
-        const { data: senderData } = await supabase
-          .from('profiles')
-          .select('id, name, profile_pic_url')
-          .eq('id', message.sender_id)
-          .single();
-
-        if (senderData) {
-          senderName = senderData.name || senderData.id || 'Unknown User';
-          senderAvatar = senderData.profile_pic_url || undefined;
-        } else {
-          senderName = `User ${String(message.sender_id || '').substring(0, 8)}`;
-        }
+        ch.unsubscribe();
       } catch {
-        senderName = `User ${String(message.sender_id || '').substring(0, 8)}`;
+        /* ignore */
       }
-
-      let media: ChatMessageMedia[] | undefined;
-      if (message.message_type && message.message_type !== 'text') {
-        try {
-          const { data: messageMediaData } = await supabase
-            .from('message_media')
-            .select(
-              `
-                order_index,
-                media:media_id (
-                  id,
-                  media_type,
-                  filename,
-                  mime_type,
-                  size_bytes,
-                  bucket,
-                  path
-                )
-              `
-            )
-            .eq('message_id', message.id)
-            .order('order_index', { ascending: true });
-
-          if (messageMediaData && messageMediaData.length > 0) {
-            const { getMediaPublicUrl } = await import('@/lib/supabase/chat');
-            media = messageMediaData
-              .map((mm: any) => {
-                if (!mm.media) return null;
-                return {
-                  id: mm.media.id,
-                  mediaType: mm.media.media_type,
-                  url: getMediaPublicUrl(mm.media.bucket, mm.media.path),
-                  filename: mm.media.filename,
-                  mimeType: mm.media.mime_type,
-                  sizeBytes: mm.media.size_bytes,
-                  orderIndex: mm.order_index,
-                };
-              })
-              .filter((m: any) => m !== null) as ChatMessageMedia[];
-          }
-        } catch {
-          /* fall back to legacy file_url below */
-        }
-      }
-
-      const chatMessage: ChatMessage = {
-        id: message.id,
-        content: message.content || '',
-        createdAt: message.created_at,
-        user: {
-          id: message.sender_id,
-          name: senderName,
-          avatar: senderAvatar,
-        },
-        conversationId: message.conversation_id,
-        senderId: message.sender_id,
-        messageType: message.message_type || 'text',
-        fileUrl: message.file_url,
-        fileName: message.file_name,
-        fileSize: message.file_size,
-        fileType: message.file_type,
-        media,
-      };
-
-      return chatMessage;
-    },
-    []
-  );
+    }
+    channelsRef.current = [];
+  }, []);
 
   useEffect(() => {
     if (!enabled || !currentUserId) {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-        setIsConnected(false);
-      }
+      teardown();
+      setIsConnected(false);
       return;
     }
 
-    if (channelRef.current) {
-      channelRef.current.unsubscribe();
-      channelRef.current = null;
-    }
+    teardown();
 
-    // One channel per user, not per conversation. RLS filters the stream to
-    // only rows in conversations this user is a participant of.
-    const channel = supabaseRef.current
-      .channel(`inbox:${currentUserId}`)
+    const supabase = supabaseRef.current;
+    let anySubscribed = false;
+
+    // ── Channel A: messages INSERT (RLS-gated, no filter) ──
+    const channelA = supabase
+      .channel(`inbox-messages:${currentUserId}`)
       .on(
         'postgres_changes',
         {
@@ -220,81 +131,119 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
           schema: 'public',
           table: 'messages',
         },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          try {
-            const hydrated = await hydrateMessage(payload.new);
-            if (hydrated) onMessageReceivedRef.current?.(hydrated);
-          } catch (err) {
-            setError(err as Error);
-          }
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          const row = payload.new as any;
+          fireEvent(
+            `A:messages INSERT (conv=${String(row?.conversation_id || '').slice(0, 8)}, sender=${String(row?.sender_id || '').slice(0, 8)})`
+          );
         }
       )
+      .subscribe((status: string, err?: Error) => {
+        if (typeof window !== 'undefined') {
+          // eslint-disable-next-line no-console
+          console.log(`[inbox] A:messages ${status}`, err || '');
+        }
+        if (status === 'SUBSCRIBED') {
+          if (!anySubscribed) {
+            anySubscribed = true;
+            setIsConnected(true);
+            setError(null);
+            onResumeRef.current?.();
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setError(new Error(`A:messages ${status}: ${err?.message || ''}`));
+        }
+      });
+
+    // ── Channel B: conversation_participants UPDATE + INSERT (filter user_id=me) ──
+    const channelB = supabase
+      .channel(`inbox-participants:${currentUserId}`)
       .on(
         'postgres_changes',
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'messages',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${currentUserId}`,
         },
-        async (payload: RealtimePostgresChangesPayload<any>) => {
-          try {
-            const row = payload.new as any;
-            if (row?.deleted_at) {
-              onMessageDeletedRef.current?.(row.id, row.conversation_id ?? null);
-              return;
-            }
-            const hydrated = await hydrateMessage(row);
-            if (hydrated) onMessageUpdatedRef.current?.(hydrated);
-          } catch (err) {
-            setError(err as Error);
-          }
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          const row = payload.new as any;
+          fireEvent(
+            `B:participant UPDATE (conv=${String(row?.conversation_id || '').slice(0, 8)}, unread=${row?.unread_count})`
+          );
         }
       )
       .on(
         'postgres_changes',
         {
-          event: 'DELETE',
+          event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${currentUserId}`,
         },
         (payload: RealtimePostgresChangesPayload<any>) => {
-          const old = payload.old as any;
-          if (old && typeof old === 'object' && 'id' in old) {
-            onMessageDeletedRef.current?.(
-              old.id as string,
-              (old.conversation_id as string) ?? null
-            );
-          }
+          const row = payload.new as any;
+          fireEvent(
+            `B:participant INSERT (conv=${String(row?.conversation_id || '').slice(0, 8)})`
+          );
         }
       )
       .subscribe((status: string, err?: Error) => {
+        if (typeof window !== 'undefined') {
+          // eslint-disable-next-line no-console
+          console.log(`[inbox] B:participants ${status}`, err || '');
+        }
         if (status === 'SUBSCRIBED') {
-          channelRef.current = channel;
-          setIsConnected(true);
-          setError(null);
-          onResumeRef.current?.();
-        } else if (status === 'CHANNEL_ERROR') {
-          channelRef.current = null;
-          setIsConnected(false);
-          setError(
-            new Error(`Inbox channel error: ${err?.message || 'Unknown error'}`)
-          );
-        } else if (status === 'TIMED_OUT') {
-          channelRef.current = null;
-          setIsConnected(false);
-          setError(new Error('Inbox channel subscription timed out'));
-        } else if (status === 'CLOSED') {
-          channelRef.current = null;
-          setIsConnected(false);
+          if (!anySubscribed) {
+            anySubscribed = true;
+            setIsConnected(true);
+            setError(null);
+            onResumeRef.current?.();
+          }
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setError(new Error(`B:participants ${status}: ${err?.message || ''}`));
         }
       });
 
+    // ── Channel C: conversations UPDATE (no filter, optional) ──
+    const channelC = supabase
+      .channel(`inbox-conversations:${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+        },
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          const row = payload.new as any;
+          fireEvent(
+            `C:conversation UPDATE (id=${String(row?.id || '').slice(0, 8)})`
+          );
+        }
+      )
+      .subscribe((status: string, err?: Error) => {
+        if (typeof window !== 'undefined') {
+          // eslint-disable-next-line no-console
+          console.log(`[inbox] C:conversations ${status}`, err || '');
+        }
+        if (status === 'SUBSCRIBED') {
+          if (!anySubscribed) {
+            anySubscribed = true;
+            setIsConnected(true);
+            setError(null);
+            onResumeRef.current?.();
+          }
+        }
+      });
+
+    channelsRef.current = [channelA, channelB, channelC];
+
     return () => {
-      channelRef.current = null;
-      channel.unsubscribe();
+      teardown();
       setIsConnected(false);
     };
-  }, [currentUserId, enabled, reconnectTick, hydrateMessage]);
+  }, [currentUserId, enabled, reconnectTick, fireEvent, teardown]);
 
   return {
     isConnected,
