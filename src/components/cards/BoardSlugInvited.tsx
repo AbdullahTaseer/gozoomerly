@@ -11,6 +11,7 @@ import {
   type BoardInvitation,
 } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
+import { SkeletonParticipantRow } from '@/components/skeletons';
 
 interface BoardSlugInvitedProps {
   boardId: string;
@@ -107,8 +108,10 @@ const BoardSlugInvited: React.FC<BoardSlugInvitedProps> = ({
 
   if (loading && invites.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500" />
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <SkeletonParticipantRow key={i} />
+        ))}
       </div>
     );
   }

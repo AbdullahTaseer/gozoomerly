@@ -1,18 +1,14 @@
 import dynamic from "next/dynamic";
 import Navbar from "@/components/navbar/Navbar";
 import HeroSection from "@/components/sections/HeroSection";
+import {
+  SkeletonLandingSection,
+  Skeleton,
+} from "@/components/skeletons";
 
-function LandingSectionSkeleton() {
-  return (
-    <div className="w-full py-12 md:py-16" aria-hidden>
-      <div className="mx-auto max-w-6xl px-4">
-        <div className="mb-6 h-8 w-48 animate-pulse rounded-lg bg-neutral-200/80" />
-        <div className="mb-4 h-4 max-w-2xl animate-pulse rounded bg-neutral-100" />
-        <div className="h-64 w-full animate-pulse rounded-2xl bg-neutral-100/80" />
-      </div>
-    </div>
-  );
-}
+const LandingSectionSkeleton = () => (
+  <SkeletonLandingSection minHeightPx={256} />
+);
 
 const WhyWeCreatedZoomerly = dynamic(
   () => import("@/components/sections/WhyWeCreatedZoomerly"),
@@ -71,10 +67,7 @@ const StartYourFirstCelebration = dynamic(
 
 const Footer = dynamic(() => import("@/components/footer/Footer"), {
   loading: () => (
-    <div
-      className="mt-8 h-24 w-full animate-pulse bg-neutral-900/10"
-      aria-hidden
-    />
+    <Skeleton className="mt-8 h-24 w-full rounded-none bg-neutral-900/10" />
   ),
 });
 

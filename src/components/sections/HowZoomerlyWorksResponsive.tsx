@@ -2,15 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import { SkeletonLandingSection } from "@/components/skeletons";
 
-function WorksSkeleton() {
-  return (
-    <div
-      className="min-h-[400px] w-full animate-pulse rounded-2xl bg-neutral-100/70"
-      aria-hidden
-    />
-  );
-}
+const WorksSkeleton = () => <SkeletonLandingSection withCopy={false} />;
 
 const HowZoomerlyWorksDesktop = dynamic(
   () => import("@/components/sections/HowZoomerlyWorksDesktop"),

@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import DynamicBoardCard from '@/components/cards/DynamicBoardCard';
+import { SkeletonBoardCard } from '@/components/skeletons';
 
 interface BoardsListProps {
   boards: Board[];
@@ -43,9 +44,9 @@ export const BoardsList: React.FC<BoardsListProps> = ({ boards, loading = false 
 
   if (loading) {
     return (
-      <div className='grid grid-cols-3 mt-6 gap-6 h-full'>
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className='min-w-[340px] h-[400px] bg-gray-100 rounded-lg animate-pulse' />
+      <div className='grid sm:grid-cols-2 lg:grid-cols-3 mt-6 gap-6 h-full'>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonBoardCard key={i} className='min-w-[340px] h-[400px]' />
         ))}
       </div>
     );

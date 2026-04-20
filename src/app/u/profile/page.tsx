@@ -28,6 +28,7 @@ import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import BellIconIndicator from '@/components/cards/BellIconIndicator';
+import { SkeletonProfilePage } from '@/components/skeletons';
 
 interface UserProfile {
   id: string;
@@ -183,11 +184,8 @@ const Profile = () => {
       <MobileHeader homeRight={true} titleColor='bg-clip-text text-transparent bg-linear-to-r from-[#E5408A] to-[#845CBA]' />
       <div className='px-[5%] max-[768px]:px-4'>
         {loading ? (
-          <div className='flex items-center justify-center min-h-[400px]'>
-            <div className='text-center'>
-              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto'></div>
-              <p className='mt-4 text-gray-600'>Loading profile...</p>
-            </div>
+          <div className='mt-6'>
+            <SkeletonProfilePage featureTileCount={6} />
           </div>
         ) : error ? (
           <div className='flex items-center justify-center min-h-[400px]'>

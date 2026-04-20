@@ -6,6 +6,7 @@ import { spotlightCampaigns } from '@/lib/MockData';
 import { authService } from '@/lib/supabase/auth';
 import BoardCategoryCard from '@/components/cards/BoardCategoryCard';
 import { useGetUserBoards } from '@/hooks/useGetUserBoards';
+import { SkeletonBoardCategoryCard } from '@/components/skeletons';
 
 const AllBoards = () => {
   const [counts, setCounts] = useState({
@@ -82,8 +83,8 @@ const AllBoards = () => {
     <div className='px-[7%] max-[769px]:px-3 py-8'>
         {loading ? (
           <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-6'>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className='h-48 bg-gray-100 rounded-2xl animate-pulse' />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonBoardCategoryCard key={i} />
             ))}
           </div>
         ) : (

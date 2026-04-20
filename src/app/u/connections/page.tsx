@@ -24,6 +24,7 @@ import { getUserCircles, getCircleMembers, addCircleMember, CircleWithDetails } 
 import { getStoriesGroupedByUser, Story } from '@/lib/supabase/stories';
 import toast from 'react-hot-toast';
 import GlobalButton from '@/components/buttons/GlobalButton';
+import { SkeletonConnectionCard } from '@/components/skeletons';
 
 interface Connection {
   id: string;
@@ -518,9 +519,10 @@ const Connections = () => {
 
         <div className='max-w-[748px] mx-auto'>
           {!currentUser || (loading && combinedConnections.length === 0) ? (
-            <div className='flex flex-col items-center justify-center py-12'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mb-4'></div>
-              <p className='text-gray-500'>Loading connections...</p>
+            <div className='space-y-4 mt-4'>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonConnectionCard key={i} />
+              ))}
             </div>
           ) : combinedConnections.length === 0 ? (
             <div className='text-center py-12'>

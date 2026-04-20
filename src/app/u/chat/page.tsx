@@ -18,6 +18,7 @@ import InviteChatModal from '@/components/chat/InviteChatModal';
 import BoardChatCard from '@/components/cards/BoardChatCard';
 import { getConversation, getUserConversations } from '@/lib/supabase/chat';
 import { chatOpenState } from '@/lib/chatOpenState';
+import { SkeletonPageCenter, SkeletonListItem } from '@/components/skeletons';
 
 const ChatPageContent = () => {
   const searchParams = useSearchParams();
@@ -205,9 +206,10 @@ const ChatPageContent = () => {
               {showSearchResults && searchQuery.trim() && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-200 max-h-64 overflow-y-auto z-50">
                   {searching ? (
-                    <div className="p-4 text-center text-gray-400">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
-                      <p className="mt-2 text-sm">Searching...</p>
+                    <div className="space-y-2 p-3">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <SkeletonListItem key={i} />
+                      ))}
                     </div>
                   ) : searchResults.length > 0 || boardSearchResults.length > 0 ? (
                     <div className="py-2">
@@ -350,11 +352,7 @@ const ChatPageContent = () => {
 
 const ChatPage = () => {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-      </div>
-    }>
+    <Suspense fallback={<SkeletonPageCenter />}>
       <ChatPageContent />
     </Suspense>
   );

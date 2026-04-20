@@ -18,6 +18,7 @@ import { unlikeWish } from '@/lib/supabase/boards';
 import { getUserWishLikes, UserWishLikeRpcItem } from '@/lib/supabase/likes';
 import { ArrowLeft } from 'lucide-react';
 import MobileHeader from '@/components/navbar/MobileHeader';
+import { SkeletonLikeCard } from '@/components/skeletons';
 
 const PAGE_SIZE = 10;
 
@@ -136,7 +137,17 @@ const mapRpcItemToUi = (item: UserWishLikeRpcItem, index: number): UiLikeItem =>
 
 const LikesPage = () => {
   const [likes, setLikes] = useState<UiLikeItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  // `isLoading` starts as `true` because we kick off auth + fetchLikes as soon
+  // as the component mounts. Starting at `false` caused the empty state ("No
+  // likes found yet.") to flash briefly on first paint before the loader ran.
+  const [isLoading, setIsLoading] = useState(true);
+  /**
+   * Guards the empty state so "No likes found yet." only appears after we've
+   * actually completed a fetch. Without this, any transient `isLoading=false`
+   * window between effects (auth resolve → fetchLikes start) shows the empty
+   * message with no data yet.
+   */
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -156,6 +167,7 @@ const LikesPage = () => {
     if (likesError) {
       setError(likesError.message || 'Failed to fetch likes.');
       setIsLoading(false);
+      setHasLoaded(true);
       return;
     }
 
@@ -164,21 +176,24 @@ const LikesPage = () => {
     setHasMore(mappedLikes.length === PAGE_SIZE);
     setOffset(nextOffset + mappedLikes.length);
     setIsLoading(false);
+    setHasLoaded(true);
   }, [userId]);
 
   useEffect(() => {
     const initializeLikes = async () => {
-      setIsLoading(true);
       const { data, error: authError } = await supabase.auth.getUser();
 
       if (authError || !data?.user?.id) {
         setError('Unable to identify current user.');
         setIsLoading(false);
+        setHasLoaded(true);
         return;
       }
 
+      // Keep `isLoading` true here — the `userId`-dependent effect below will
+      // immediately call `fetchLikes`, which keeps the skeleton on screen
+      // continuously from first paint through the initial data load.
       setUserId(data.user.id);
-      setIsLoading(false);
     };
 
     void initializeLikes();
@@ -234,7 +249,7 @@ const LikesPage = () => {
           <p className="text-red-500 mt-4">{error}</p>
         )}
 
-        {!error && !isLoading && likes.length === 0 && (
+        {!error && hasLoaded && !isLoading && likes.length === 0 && (
           <p className="text-gray-500 mt-4 text-center">No likes found yet.</p>
         )}
 
@@ -253,11 +268,11 @@ const LikesPage = () => {
               isUnliking={like.wishId != null && unlikingWishId === like.wishId}
             />
           ))}
+          {isLoading &&
+            Array.from({ length: likes.length === 0 ? 6 : 3 }).map((_, i) => (
+              <SkeletonLikeCard key={`skeleton-${i}`} />
+            ))}
         </div>
-
-        {isLoading && (
-          <p className="text-gray-500 mt-4 text-center">Loading likes...</p>
-        )}
 
         <div className='flex justify-center'>
           {!isLoading && hasMore && likes.length > 0 && (

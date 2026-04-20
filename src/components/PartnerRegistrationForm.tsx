@@ -11,6 +11,7 @@ import FloatingSearchSelect from '@/components/inputs/FloatingSearchSelect';
 import PhoneInput from '@/components/inputs/PhoneInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import { Country, State, City } from 'country-state-city';
+import { Skeleton } from '@/components/skeletons';
 
 interface PartnerRegistrationFormProps {
   partnerId: number;
@@ -341,9 +342,11 @@ export const PartnerRegistrationForm: React.FC<PartnerRegistrationFormProps> = (
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E3418B]"></div>
-        <span className="ml-2 text-gray-600">Loading form...</span>
+      <div className="space-y-4 py-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full rounded-lg" />
+        ))}
+        <Skeleton className="h-11 w-full rounded-full" />
       </div>
     );
   }

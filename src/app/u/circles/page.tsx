@@ -15,6 +15,7 @@ import FloatingInput from '@/components/inputs/FloatingInput';
 import AddCircleModal from '@/components/modals/AddCircleModal';
 import { CircleWithDetails, getUserCircles, deleteCircle } from '@/lib/supabase/circles';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import { SkeletonCircleCard } from '@/components/skeletons';
 
 interface Circle {
   id: string;
@@ -137,10 +138,9 @@ const Circles = () => {
 
           <div className='grid max-[700px]:grid-cols-1 grid-cols-2 gap-6'>
             {loading ? (
-              <div className='col-span-full text-center py-8'>
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-                <p>Loading your circles...</p>
-              </div>
+              Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCircleCard key={i} />
+              ))
             ) : error ? (
               <div className='col-span-full text-center py-8'>
                 <div className='bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto'>

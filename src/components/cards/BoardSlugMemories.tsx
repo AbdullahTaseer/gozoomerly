@@ -7,6 +7,7 @@ import WishCommentsModalContent from '@/components/cards/WishCommentsModal';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import { getBoardMemories, likeWish, unlikeWish, type BoardMemory } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
+import { SkeletonFeedCard } from '@/components/skeletons';
 
 interface BoardSlugMemoriesProps {
   boardId: string;
@@ -207,8 +208,10 @@ const BoardSlugMemories: React.FC<BoardSlugMemoriesProps> = ({
 
   if (loading && memories.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+      <div className="space-y-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <SkeletonFeedCard key={i} />
+        ))}
       </div>
     );
   }

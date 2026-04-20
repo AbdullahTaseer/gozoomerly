@@ -9,6 +9,7 @@ import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
 import { Camera, Video } from 'lucide-react';
 import DashNavbar from '@/components/navbar/DashNavbar';
+import { SkeletonProfilePage, SkeletonMediaGrid } from '@/components/skeletons';
 import {
   getProfileMemories,
   expandProfileMemoriesToGridItems,
@@ -205,11 +206,7 @@ const VisitProfilePage = () => {
     const posts = activeTab === 'photos' ? photoItems : videoItems;
 
     if (memoriesLoading && memories.length === 0) {
-      return (
-        <div className="flex justify-center py-16 mt-6">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
-        </div>
-      );
+      return <SkeletonMediaGrid count={6} className="mt-6" />;
     }
     if (memoriesError) {
       return <p className="text-red-500 mt-6 text-center">{memoriesError}</p>;
@@ -274,12 +271,7 @@ const VisitProfilePage = () => {
       <DashNavbar hide={false} />
       <div className="px-[7%] max-[769px]:px-6 py-6">
         {loading ? (
-          <div className='flex items-center justify-center min-h-[400px]'>
-            <div className='text-center'>
-              <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto'></div>
-              <p className='mt-4 text-gray-600'>Loading profile...</p>
-            </div>
-          </div>
+          <SkeletonProfilePage featureTileCount={4} />
         ) : error || !profile ? (
           <div className='flex items-center justify-center min-h-[400px]'>
             <div className='text-center'>

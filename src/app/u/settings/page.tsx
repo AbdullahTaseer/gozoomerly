@@ -23,6 +23,7 @@ import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import ConfirmationModalContent from '@/components/modals/ConfirmationModalContent';
 import EmailChangeForm from '@/components/modals/EmailChangeModal';
 import PasswordChangeForm from '@/components/modals/PasswordChangeModal';
+import { Skeleton } from '@/components/skeletons';
 
 const Settings = () => {
   const router = useRouter();
@@ -68,8 +69,11 @@ const Settings = () => {
           onBackClick={() => router.push('/u/profile')}
           profileRight={true}
         />
-        <div className="flex justify-center items-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500" />
+        <div className="mx-auto max-w-3xl px-[7%] py-6 space-y-4">
+          <Skeleton className="h-8 w-40" />
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-2xl" />
+          ))}
         </div>
       </>
     );

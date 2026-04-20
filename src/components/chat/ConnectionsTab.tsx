@@ -16,6 +16,11 @@ import type { MediaType } from '@/lib/supabase/chat';
 import { cancelChatMedia } from '@/lib/supabase/chat';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
+import {
+  SkeletonChatHeader,
+  SkeletonListItem,
+  SkeletonChatMessages,
+} from '@/components/skeletons';
 
 interface DraftMedia {
   mediaId: string;
@@ -213,9 +218,10 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   const renderChatList = () => {
     if (loading) {
       return (
-        <div className="p-4 text-center text-black flex flex-col items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-          <p className="mt-4 text-sm">Loading conversations...</p>
+        <div className="space-y-2 p-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonListItem key={i} />
+          ))}
         </div>
       );
     }
@@ -356,8 +362,10 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
             )}
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-3 mb-1">Your boards</p>
             {loadingBoards ? (
-              <div className="p-4 text-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
+              <div className="space-y-2 p-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonListItem key={i} />
+                ))}
               </div>
             ) : (
               <div className="space-y-1">
@@ -396,13 +404,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                   className='cursor-pointer shrink-0 text-black md:hidden'
                 />
                 {chatHeaderLoading ? (
-                  <>
-                    <div className="relative h-10 w-10 shrink-0 rounded-full bg-gray-200 animate-pulse" aria-hidden />
-                    <div className="flex-1 space-y-2 py-0.5 min-w-0">
-                      <div className="h-4 max-w-[10rem] rounded-md bg-gray-200 animate-pulse" />
-                      <div className="h-3 max-w-[5rem] rounded-md bg-gray-100 animate-pulse" />
-                    </div>
-                  </>
+                  <SkeletonChatHeader className="flex-1" />
                 ) : (
                   <>
                     <div className='relative rounded-full h-10 w-10'>
@@ -454,10 +456,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
               <div className='flex-1 text-sm p-3 overflow-y-auto space-y-2'>
                 {messages.length === 0 ? (
                   chatHeaderLoading ? (
-                    <div className="flex flex-col items-center justify-center min-h-[200px] text-gray-500">
-                      <div className="animate-spin rounded-full h-9 w-9 border-2 border-gray-200 border-t-pink-500" />
-                      <p className="text-sm mt-4">Loading messages…</p>
-                    </div>
+                    <SkeletonChatMessages count={5} />
                   ) : (
                     <div className="text-center text-gray-400 mt-8">
                       <p>No messages yet</p>

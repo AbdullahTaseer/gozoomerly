@@ -8,6 +8,7 @@ import { getBoardParticipants, type BoardParticipant } from "@/lib/supabase/boar
 import { followUser, unfollowUser } from "@/lib/supabase/followUtils";
 import { authService } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/client";
+import { SkeletonParticipantRow } from "@/components/skeletons";
 
 interface BoardSlugParticipantsProps {
   boardId: string;
@@ -209,8 +210,10 @@ const BoardSlugParticipants: React.FC<BoardSlugParticipantsProps> = ({ boardId }
 
   if (loading && participants.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+      <div className="space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonParticipantRow key={i} />
+        ))}
       </div>
     );
   }

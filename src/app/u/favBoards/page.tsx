@@ -16,6 +16,7 @@ import FavoriteBoardRow from '@/components/boards/FavoriteBoardRow';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import ConfirmationModalContent from '@/components/modals/ConfirmationModalContent';
 import MobileHeader from '@/components/navbar/MobileHeader';
+import { SkeletonFavBoardRow } from '@/components/skeletons';
 
 const PAGE_SIZE = 20;
 
@@ -142,9 +143,13 @@ export default function FavBoardsPage() {
         </div>
 
         {loading && !boards.length ? (
-          <div className="flex justify-center py-20">
-            <div className="h-10 w-10 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
-          </div>
+          <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li key={i}>
+                <SkeletonFavBoardRow />
+              </li>
+            ))}
+          </ul>
         ) : boards.length === 0 ? (
           <p className="text-center text-gray-500 py-16">No favorite boards yet.</p>
         ) : (

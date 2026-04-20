@@ -11,6 +11,7 @@ import { useGetUserInvitations } from '@/hooks/useGetUserInvitations';
 import { authService } from '@/lib/supabase/auth';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import MobileHeader from '@/components/navbar/MobileHeader';
+import { SkeletonInvitationCard } from '@/components/skeletons';
 
 const NewInvites = () => {
   const [initialInvitesLoadDone, setInitialInvitesLoadDone] = useState(false);
@@ -61,8 +62,8 @@ const NewInvites = () => {
 
           <div className='flex mt-6 gap-6 overflow-x-auto scrollbar-hide h-full flex-wrap max-[769px]:flex-col'>
             {!initialInvitesLoadDone || invitationsLoading ? (
-              [1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className='min-w-[350px] h-[220px] bg-gray-100 rounded-[13px] animate-pulse' />
+              Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonInvitationCard key={i} className='min-w-[350px]' />
               ))
             ) : invitations.length > 0 ? (
               invitations.map((invitation: any) => (

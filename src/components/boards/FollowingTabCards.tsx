@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { type Board } from '@/lib/supabase/boards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import FollowingCard, { type MediaItem } from '@/components/cards/FollowingCard';
+import { SkeletonFollowingCard } from '@/components/skeletons';
 
 const placeholderCoverImage = 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80';
 
@@ -54,9 +55,9 @@ export const FollowingTabCards: React.FC<FollowingTabCardsProps> = ({ boards, lo
 
   if (loading) {
     return (
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 mt-6 gap-6">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="h-[380px] bg-gray-100 rounded-xl animate-pulse" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <SkeletonFollowingCard key={i} />
         ))}
       </div>
     );

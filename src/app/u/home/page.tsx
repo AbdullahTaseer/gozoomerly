@@ -23,6 +23,11 @@ import GlobalInput from '@/components/inputs/GlobalInput';
 import { Search } from 'lucide-react';
 import { useGetPublicBoards, type PublicBoard } from '@/hooks/useGetPublicBoards';
 import { useExploreColumnCount, splitIntoRoundRobinColumns } from '@/hooks/useExploreColumnCount';
+import {
+  SkeletonInvitationCard,
+  SkeletonSpotlightCard,
+  SkeletonExploreCard,
+} from '@/components/skeletons';
 
 function exploreCardImageHeightPx(colIdx: number, rowIdx: number): 160 | 210 {
   const isEvenNumberedColumn = colIdx % 2 === 1;
@@ -176,8 +181,8 @@ const Home = () => {
           {activeTab === 'newInvites' && (
             <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
               {loading || invitationsLoading ? (
-                [1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className='h-[200px] bg-gray-100 rounded-2xl animate-pulse' />
+                Array.from({ length: 6 }).map((_, i) => (
+                  <SkeletonInvitationCard key={i} />
                 ))
               ) : invitations.length > 0 ? (
                 invitations.map((invitation: any) => (
@@ -215,8 +220,8 @@ const Home = () => {
           {activeTab === 'spotlight' && (
             <div className='grid max-[550px]:grid-cols-1 max-[900px]:grid-cols-2 grid-cols-3'>
               {spotlightLoading ? (
-                [1, 2, 3].map((i) => (
-                  <div key={i} className='min-w-[370px] h-[350px] bg-gray-100 rounded-[12px] animate-pulse' />
+                Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonSpotlightCard key={i} className='min-w-[370px] h-[350px]' />
                 ))
               ) : spotlightBoards.length > 0 ? (
                 spotlightBoards.map((board, index) => (
@@ -276,10 +281,9 @@ const Home = () => {
                   {exploreSkeletonColumns.map((col, colIdx) => (
                     <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
                       {col.map((slot, rowIdx) => (
-                        <div
+                        <SkeletonExploreCard
                           key={slot}
-                          className="shrink-0 rounded-lg bg-gray-100 animate-pulse"
-                          style={{ height: exploreCardImageHeightPx(colIdx, rowIdx) }}
+                          heightPx={exploreCardImageHeightPx(colIdx, rowIdx)}
                         />
                       ))}
                     </div>

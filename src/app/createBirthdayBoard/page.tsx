@@ -35,6 +35,7 @@ import { CreateBirthdayBoardInput } from '@/types/board';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { createClient } from '@/lib/supabase/client';
 import { STORAGE_BUCKETS } from '@/lib/supabase/storageBuckets';
+import { Skeleton } from '@/components/skeletons';
 import * as Switch from '@radix-ui/react-switch';
 import toast from 'react-hot-toast';
 import { buildBoardUrl } from '@/lib/utils/siteUrl';
@@ -846,7 +847,16 @@ const CreateBirthdayBoard = () => {
 
           <div className="mt-4">
             {loading ? (
-              <div className="text-center py-8">Loading...</div>
+              <div className="bg-white rounded-xl p-6 max-[420px]:p-4 shadow-lg border border-pink-200 space-y-4">
+                <Skeleton className="h-6 w-2/3 mx-auto" />
+                <Skeleton className="h-4 w-1/2 mx-auto" />
+                <div className="space-y-3 pt-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                  ))}
+                </div>
+                <Skeleton className="h-11 w-full rounded-full" />
+              </div>
             ) : (
               <>
                 {step === 1 && (

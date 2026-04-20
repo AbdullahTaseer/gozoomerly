@@ -7,6 +7,7 @@ import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { getWishComments, addWishComment, type WishComment } from '@/lib/supabase/boards';
 import { authService } from '@/lib/supabase/auth';
 import { useRouter } from 'next/navigation';
+import { SkeletonComment } from '@/components/skeletons';
 
 export interface WishCommentsModalContentProps {
   wishId: string;
@@ -183,8 +184,10 @@ const WishCommentsModalContent: React.FC<WishCommentsModalContentProps> = ({
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonComment key={i} />
+            ))}
           </div>
         ) : comments.length === 0 ? (
           <div className="text-center py-8 text-gray-500">

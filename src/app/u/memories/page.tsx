@@ -9,6 +9,7 @@ import MobileHeader from '@/components/navbar/MobileHeader';
 import { authService } from '@/lib/supabase/auth';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { getProfileMemories, getProfileMemoryBoardId, getProfileMemoryCoverUrl, getProfileMemoryTitle, type ProfileMemoryItem, type ProfileMemoryStatusFilter } from '@/lib/supabase/profileMemories';
+import { SkeletonFeedCard } from '@/components/skeletons';
 
 const PAGE_SIZE = 20;
 
@@ -270,8 +271,10 @@ const Memories = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonFeedCard key={i} />
+            ))}
           </div>
         ) : error ? (
           <p className="text-center text-red-500 py-12">{error}</p>

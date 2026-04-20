@@ -15,6 +15,7 @@ import { PartnerRegistrationForm } from '@/components/PartnerRegistrationForm';
 
 import CelebrtionImg from "@/assets/svgs/bomb.svg";
 import { ArrowLeft } from 'lucide-react';
+import { SkeletonPageCenter } from '@/components/skeletons';
 
 const SignupContent = () => {
   const searchParams = useSearchParams();
@@ -273,9 +274,7 @@ const Signup = () => {
   return (
     <Suspense fallback={
       <AuthLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E3418B]"></div>
-        </div>
+        <SkeletonPageCenter />
       </AuthLayout>
     }>
       <SignupContent />

@@ -11,6 +11,7 @@ import { getProfileMemories } from '@/lib/supabase/profileMemories';
 import { useExploreColumnCount, splitIntoRoundRobinColumns } from '@/hooks/useExploreColumnCount';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import MemoryDetailsCardContent from '@/components/modals/MemoryDetailsCardModal';
+import { SkeletonExploreCard } from '@/components/skeletons';
 
 type MemoryMedia = {
   id: string;
@@ -254,8 +255,20 @@ export default function MemoriesViewClient() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-500" />
+          <div className="flex gap-2">
+            {splitIntoRoundRobinColumns(
+              Array.from({ length: 8 }, (_, i) => i),
+              Math.max(1, columnCount),
+            ).map((col, colIdx) => (
+              <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
+                {col.map((slot, rowIdx) => (
+                  <SkeletonExploreCard
+                    key={slot}
+                    heightPx={memoryCardImageHeightPx(colIdx, rowIdx)}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
         ) : error ? (
           <p className="text-center text-red-500 py-12">{error}</p>

@@ -6,6 +6,7 @@ import TitleCard from '@/components/cards/TitleCard';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import { useGetSpotlightBoards } from '@/hooks/useGetSpotlightBoards';
 import ProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
+import { SkeletonSpotlightCard } from '@/components/skeletons';
 
 const SpotlightCampaigns = () => {
   const {
@@ -36,8 +37,8 @@ const SpotlightCampaigns = () => {
         <TitleCard title='Spotlight Campaigns' className='text-left' />
         <div className='flex mt-4 gap-6 max-[500px]:gap-4 overflow-x-auto scrollbar-hide h-full flex-wrap max-[769px]:flex-col'>
           {spotlightLoading ? (
-            [1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className='min-w-[370px] h-[350px] bg-gray-100 rounded-[12px] animate-pulse' />
+            Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonSpotlightCard key={i} className='min-w-[370px] h-[350px]' />
             ))
           ) : spotlightBoards.length > 0 ? (
             spotlightBoards.map((board) => (

@@ -8,6 +8,7 @@ import ConnectionCard from '@/components/cards/ConnectionCard';
 import { createClient } from '@/lib/supabase/client';
 import { AuthService } from '@/lib/supabase/auth';
 import { inviteContacts } from '@/lib/MockData';
+import { SkeletonConnectionCard } from '@/components/skeletons';
 
 interface User {
   id: string;
@@ -115,9 +116,10 @@ const InviteChatModal: React.FC<InviteChatModalProps> = ({
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-          <p className="mt-4 text-sm text-gray-600">Loading contacts...</p>
+        <div className="space-y-3 py-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <SkeletonConnectionCard key={i} />
+          ))}
         </div>
       ) : (
         <div className="space-y-6">

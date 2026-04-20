@@ -6,6 +6,7 @@ import StripePaymentModal from '@/components/supplyPartnerCards/StripePaymentMod
 import { useSubscriptionPlans } from '@/hooks/useSubscriptionPlans';
 import GlobalModal from '@/components/modals/GlobalModal';
 import PlanCard from '@/components/cards/PlanCard';
+import { SkeletonPlanCard } from '@/components/skeletons';
 
 const Subscriptionplan = () => {
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
@@ -34,9 +35,10 @@ const Subscriptionplan = () => {
         <p>Choose a plan that suits you and start earning passive income.</p>
 
         {isLoading ? (
-          <div className="flex items-center h-[calc(100vh-200px)] justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FE7151]"></div>
-            <span className="ml-3 text-gray-600">Loading subscription plans...</span>
+          <div className="grid grid-cols-3 max-[950px]:grid-cols-2 max-[600px]:grid-cols-1 gap-6 mx-auto mt-10">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonPlanCard key={i} />
+            ))}
           </div>
         ) : (
           plans.length === 0 ? (

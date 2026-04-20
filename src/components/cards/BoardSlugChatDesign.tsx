@@ -13,6 +13,7 @@ import {
 import { useRealtimeChat, ChatMessage } from "@/hooks/use-realtime-chat";
 import staticProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import ImageWithFallback from "@/components/images/ImageWithFallback";
+import { SkeletonChatHeader, SkeletonChatMessages } from "@/components/skeletons";
 
 const authService = new AuthService();
 
@@ -306,10 +307,12 @@ const BoardSlugChatDesign = ({ boardId, boardName }: BoardSlugChatDesignProps) =
 
   if (loading) {
     return (
-      <div className="w-full h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-neutral-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading chat...</p>
+      <div className="w-full h-screen bg-white flex flex-col">
+        <div className="border-b border-gray-200 p-3.5">
+          <SkeletonChatHeader />
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <SkeletonChatMessages count={7} />
         </div>
       </div>
     );

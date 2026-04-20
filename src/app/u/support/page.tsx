@@ -17,6 +17,7 @@ import {
 import { listFaqs } from '@/lib/supabase/faqs';
 import { createSupportTicket } from '@/lib/supabase/support';
 import type { FaqItem } from '@/lib/faqsStore';
+import { Skeleton } from '@/components/skeletons';
 
 const SupportPage = () => {
   const router = useRouter();
@@ -176,8 +177,10 @@ const SupportPage = () => {
         <section className="pt-6">
           <h2 className="text-xl font-bold text-black mb-4">Faq</h2>
           {faqLoading ? (
-            <div className="flex justify-center py-10">
-              <div className="h-8 w-8 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
             </div>
           ) : faqs.length === 0 ? (
             <p className="text-gray-500 text-sm">No FAQs available right now.</p>

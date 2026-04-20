@@ -16,6 +16,7 @@ import CoverCard from '@/components/cards/CoverCard';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
 import GlobalInput from '@/components/inputs/GlobalInput';
+import { SkeletonBoardCard, SkeletonInvitationCard } from '@/components/skeletons';
 
 type BoardsListTab = 'birthday' | 'inviteSent' | 'decline';
 
@@ -291,8 +292,14 @@ const Boards = () => {
         )}
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500">
-            Loading boards...
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) =>
+              activeTab === 'birthday' ? (
+                <SkeletonBoardCard key={i} />
+              ) : (
+                <SkeletonInvitationCard key={i} />
+              ),
+            )}
           </div>
         ) : error ? (
           <div className="text-center py-12 text-red-500">{error}</div>

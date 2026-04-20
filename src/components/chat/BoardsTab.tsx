@@ -14,6 +14,7 @@ import type { MediaType } from '@/lib/supabase/chat';
 import { cancelChatMedia } from '@/lib/supabase/chat';
 import { useCallback } from 'react';
 import toast from 'react-hot-toast';
+import { SkeletonListItem } from '@/components/skeletons';
 
 interface DraftMedia {
   mediaId: string;
@@ -170,9 +171,10 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
           <div className="p-4 border-b border-gray-200">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">Active Boards</h3>
             {loadingBoards ? (
-              <div className="p-4 text-center text-gray-400">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-500 mx-auto"></div>
-                <p className="mt-2 text-xs">Loading active boards...</p>
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkeletonListItem key={i} lines={1} />
+                ))}
               </div>
             ) : (
               <div className="space-y-2">
@@ -202,9 +204,10 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
           <h3 className="text-sm font-semibold text-gray-700 mb-3">Conversations</h3>
         </div>
         {loading ? (
-          <div className="p-4 text-center text-black flex flex-col items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-            <p className="mt-4 text-sm">Loading board conversations...</p>
+          <div className="space-y-2 p-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonListItem key={i} />
+            ))}
           </div>
         ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-gray-400">

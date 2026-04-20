@@ -7,6 +7,7 @@ import { inviteUserToBoard } from '@/lib/supabase/boards';
 import { X, Search, Check, Loader2 } from 'lucide-react';
 import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import { getAllUserConnections, type UserConnection } from '@/lib/supabase/connections';
+import { SkeletonListItem } from '@/components/skeletons';
 
 interface InviteToBoardModalProps {
   isOpen: boolean;
@@ -114,8 +115,10 @@ const InviteToBoardModalContent: React.FC<InviteToBoardModalProps> = ({
 
         <div className="flex-1 overflow-y-auto px-4 pb-4">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 size={32} className="animate-spin text-gray-400" />
+            <div className="space-y-3 py-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <SkeletonListItem key={i} />
+              ))}
             </div>
           ) : filteredUsers.length > 0 ? (
             <div className="space-y-3">

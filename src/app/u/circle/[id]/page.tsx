@@ -11,6 +11,7 @@ import DashNavbar from "@/components/navbar/DashNavbar";
 import MobileHeader from "@/components/navbar/MobileHeader";
 import { Plus } from "lucide-react";
 import DefaultAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
+import { Skeleton, SkeletonConnectionCard } from "@/components/skeletons";
 
 interface CircleMember {
   id: string;
@@ -118,9 +119,13 @@ const CircleById = ({ params }: CircleByIdProps) => {
       <MobileHeader title="Family" RightIcon={Plus} rightIconClick={() => setIsMemberModalOpen(true)} />
       <div className="px-[7%] max-[769px]:px-4 py-3">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-            <p>Loading circle details...</p>
+          <div className="space-y-6 py-4">
+            <Skeleton className="h-8 w-48" />
+            <div className="space-y-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <SkeletonConnectionCard key={i} />
+              ))}
+            </div>
           </div>
         ) : error || !circle ? (
           <div className="text-center py-8">

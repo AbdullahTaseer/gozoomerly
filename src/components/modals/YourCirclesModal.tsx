@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import GlobalButton from "../buttons/GlobalButton";
 import { getUserCircles, CircleWithDetails } from "@/lib/supabase/circles";
+import { SkeletonListItem } from "@/components/skeletons";
 
 interface YourCirclesModalProps {
   onCircleSelect: (circle: CircleWithDetails) => void;
@@ -58,9 +59,10 @@ const YourCirclesModal: React.FC<YourCirclesModalProps> = ({
       )}
 
       {loading ? (
-        <div className="py-10 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading circles...</p>
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonListItem key={i} />
+          ))}
         </div>
       ) : circles.length === 0 ? (
         <div className="py-10 text-center">

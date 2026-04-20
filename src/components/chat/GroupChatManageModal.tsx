@@ -15,6 +15,7 @@ import {
   type GroupInvitePolicy,
 } from '@/lib/supabase/groupChat';
 import toast from 'react-hot-toast';
+import { SkeletonListItem } from '@/components/skeletons';
 
 type GroupChatManageModalProps = {
   isOpen: boolean;
@@ -172,8 +173,10 @@ const GroupChatManageModal: React.FC<GroupChatManageModalProps> = ({
         </div>
 
         {loading ? (
-          <div className="py-12 flex justify-center">
-            <div className="h-8 w-8 border-2 border-gray-200 border-t-pink-500 rounded-full animate-spin" />
+          <div className="space-y-3 py-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonListItem key={i} />
+            ))}
           </div>
         ) : (
           <>

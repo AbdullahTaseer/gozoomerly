@@ -9,6 +9,7 @@ import { getAllUserConnections, UserConnection } from "@/lib/supabase/connection
 import { getCircleMembers, addCircleMember } from "@/lib/supabase/circles";
 import { authService } from "@/lib/supabase/auth";
 import defaultAvatar from "@/assets/svgs/avatar-list-icon-1.svg"
+import { SkeletonListItem } from "@/components/skeletons";
 
 interface AddCircleMemberModalProps {
   circleId?: string;
@@ -114,9 +115,10 @@ const AddCircleMemberModal = ({ circleId, onMemberAdded }: AddCircleMemberModalP
   };
   if (loading) {
     return (
-      <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-        <p>Loading connections...</p>
+      <div className="space-y-3 py-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <SkeletonListItem key={i} />
+        ))}
       </div>
     );
   }

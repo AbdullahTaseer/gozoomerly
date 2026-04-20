@@ -11,6 +11,7 @@ import ModalOrBottomSlider from './ModalOrBottomSlider';
 import ConfirmationModalContent from './ConfirmationModalContent';
 import { followUser, unfollowUser } from '@/lib/supabase/followUtils';
 import { authService } from '@/lib/supabase/auth';
+import { SkeletonListItem } from '@/components/skeletons';
 
 type Props = {
   userId?: string;
@@ -124,9 +125,10 @@ const FollowersModalContent = ({ userId }: Props) => {
 
       <div className="space-y-3 h-[65vh] overflow-y-auto scrollbar-hide">
         {loading ? (
-          <div className="text-center text-gray-500 mt-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
-            <p className="mt-2">Loading followers...</p>
+          <div className="space-y-3 mt-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <SkeletonListItem key={i} />
+            ))}
           </div>
         ) : error ? (
           <p className="text-center text-red-500 mt-10">{error}</p>
