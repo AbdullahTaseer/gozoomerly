@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { StaticImport } from 'next/dist/shared/lib/get-img-props';
 import { ChatMessage, useRealtimeChat } from '@/hooks/use-realtime-chat';
+import { useRealtimeInbox } from '@/hooks/use-realtime-inbox';
 import { useTypingIndicator } from '@/hooks/use-typing-indicator';
 import { useGlobalOnlineStatus } from '@/components/providers/OnlineStatusProvider';
 import { useLastSeen } from '@/hooks/use-last-seen';
@@ -142,6 +143,21 @@ export const useChat = () => {
   const isSettingProgrammaticallyRef = useRef(false);
   const selectedConversationRef = useRef<Conversation | null>(null);
   selectedConversationRef.current = selectedConversation;
+  /**
+   * Latest `conversations` snapshot — read inside realtime handlers so the
+   * callback identity doesn't churn on every list update (which would
+   * needlessly re-subscribe the realtime channel).
+   */
+  const conversationsRef = useRef<Conversation[]>([]);
+  conversationsRef.current = conversations;
+
+  /**
+   * Timestamps (ms) of the last time we called `markConversationAsRead` per conversation.
+   * Used to ignore stale server `unread_count` values returned by the silent poll before
+   * the server has finished processing the read ack (otherwise the badge flickers back).
+   */
+  const recentlyReadRef = useRef<Record<string, number>>({});
+  const READ_ACK_GRACE_MS = 8000;
 
   const { boards, fetchUserBoards, isLoading: loadingBoards } = useGetUserBoards();
   const fetchUserBoardsRef = useRef(fetchUserBoards);
@@ -212,48 +228,112 @@ export const useChat = () => {
     getCurrentUser();
   }, [router]);
 
-  const loadConversations = useCallback(async (userId: string) => {
-    try {
-      setLoading(true);
-      const { conversations: convs, error } = await getUserConversations(userId);
-      if (error) {
-        const diagnostics = await checkChatTablesSetup();
-        if (!diagnostics.tablesExist) {
-          toast.error('Chat tables are not set up correctly. Please run the SQL setup script in your Supabase dashboard.');
-        }
-      } else {
-        let uniqueConversations = (convs || []).filter((conv, index, self) =>
-          index === self.findIndex(c => c.id === conv.id)
-        );
-
-        if (currentUserId) {
-          const seenPairs = new Set<string>();
-          uniqueConversations = uniqueConversations.filter(conv => {
-            if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
-              return true; 
+  const loadConversations = useCallback(
+    async (userId: string, opts?: { silent?: boolean }) => {
+      const silent = opts?.silent === true;
+      try {
+        if (!silent) setLoading(true);
+        const { conversations: convs, error } = await getUserConversations(userId);
+        if (error) {
+          if (!silent) {
+            const diagnostics = await checkChatTablesSetup();
+            if (!diagnostics.tablesExist) {
+              toast.error(
+                'Chat tables are not set up correctly. Please run the SQL setup script in your Supabase dashboard.'
+              );
             }
+          }
+        } else {
+          let uniqueConversations = (convs || []).filter((conv, index, self) =>
+            index === self.findIndex((c) => c.id === conv.id)
+          );
 
-            const participantIds = conv.participants
-              .map((p: any) => p.user_id)
-              .sort()
-              .join('-');
+          if (currentUserId) {
+            const seenPairs = new Set<string>();
+            uniqueConversations = uniqueConversations.filter((conv) => {
+              if (conv.type !== 'direct' || !conv.participants || conv.participants.length !== 2) {
+                return true;
+              }
 
-            if (seenPairs.has(participantIds)) {
-              return false;
-            }
+              const participantIds = conv.participants
+                .map((p: any) => p.user_id)
+                .sort()
+                .join('-');
 
-            seenPairs.add(participantIds);
-            return true;
-          });
+              if (seenPairs.has(participantIds)) {
+                return false;
+              }
+
+              seenPairs.add(participantIds);
+              return true;
+            });
+          }
+
+          if (silent) {
+            // Silent refresh: merge with existing state instead of replacing, so
+            // locally-optimistic fields (e.g. freshly-bumped last_message) don't flicker
+            // back. We still trust the server's `unread_count` in almost every case —
+            // except during a short grace window right after `markConversationAsRead`
+            // fires, where the server RPC may still return the pre-read count.
+            setConversations((prev) => {
+              if (prev.length === 0) return uniqueConversations;
+              const byId = new Map(prev.map((c) => [c.id, c]));
+              const now = Date.now();
+              for (const incoming of uniqueConversations) {
+                const existing = byId.get(incoming.id);
+                if (!existing) {
+                  byId.set(incoming.id, incoming);
+                  continue;
+                }
+                // Prefer whichever side has the newer last_message_at for metadata.
+                const ta = existing.last_message_at
+                  ? new Date(existing.last_message_at).getTime()
+                  : 0;
+                const tb = incoming.last_message_at
+                  ? new Date(incoming.last_message_at).getTime()
+                  : 0;
+                const newer = tb >= ta ? incoming : existing;
+
+                // Unread count resolution:
+                //   1. Currently selected thread → always 0 (user is reading it).
+                //   2. Thread we just marked read within grace window → prefer local 0
+                //      so a stale server response doesn't resurrect the badge.
+                //   3. Otherwise → trust the server.
+                const isSelected = selectedConversationRef.current?.id === incoming.id;
+                const lastReadAt = recentlyReadRef.current[incoming.id];
+                const withinReadGrace =
+                  !!lastReadAt && now - lastReadAt < READ_ACK_GRACE_MS;
+                const serverUnread = incoming.unread_count ?? 0;
+                const unread = isSelected
+                  ? 0
+                  : withinReadGrace
+                    ? Math.min(existing.unread_count ?? 0, serverUnread)
+                    : serverUnread;
+
+                byId.set(incoming.id, {
+                  ...existing,
+                  ...newer,
+                  unread_count: unread,
+                });
+              }
+              return Array.from(byId.values()).sort((a, b) => {
+                const ta = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+                const tb = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+                return tb - ta;
+              });
+            });
+          } else {
+            setConversations(uniqueConversations);
+          }
         }
-
-        setConversations(uniqueConversations);
+      } catch (err) {
+        /* ignore */
+      } finally {
+        if (!silent) setLoading(false);
       }
-    } catch (err) {
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUserId]);
+    },
+    [currentUserId]
+  );
 
   /** Group Chats tab: dedicated RPC list (p_conversation_type: group, limit 20). Merges into `conversations`. */
   const loadGroupChatsFromApi = useCallback(async () => {
@@ -421,6 +501,14 @@ export const useChat = () => {
       setMessages([]);
       void loadMessages(selectedConversationId);
 
+      // Optimistically clear the unread badge as soon as the user opens the thread.
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === selectedConversationId ? { ...c, unread_count: 0 } : c
+        )
+      );
+      recentlyReadRef.current[selectedConversationId] = Date.now();
+
       markConversationAsRead(selectedConversationId, currentUserId).catch(() => {});
 
       if (needsFullConversation) {
@@ -573,9 +661,61 @@ export const useChat = () => {
     };
   }, [conversations, currentUserId, boardTitleById, resolvedBoardTitles]);
 
+  /**
+   * Central router for every incoming realtime message — covers both the
+   * currently-open thread and every other conversation the user participates
+   * in (since the inbox channel is user-scoped, not conversation-scoped).
+   *
+   * Responsibilities, in order:
+   *   1. If the message is for the open thread → dedup + append to `messages`
+   *      and scroll. Also ack read.
+   *   2. Update the conversations list preview (last message, reorder,
+   *      unread bump) — but only for threads that aren't open.
+   *   3. If the conversation is unknown (first-ever DM from a stranger, just
+   *      added to a group), fetch it via `getConversation` and inject it so
+   *      it shows up without waiting for any poll.
+   */
   const handleMessageReceived = useCallback((message: ChatMessage) => {
+    const selected = selectedConversationRef.current;
+    const isOpenThread = !!selected && selected.id === message.conversationId;
+    const isOwn = message.senderId === currentUserId;
+    const isIncoming = !isOwn;
 
-    if (selectedConversation && message.conversationId !== selectedConversation.id) {
+    if (isOpenThread) {
+      setMessages(prev => {
+        const filtered = prev.filter(m => {
+          // Replace our own optimistic `temp-...` echo with the real row.
+          if (
+            m.id.startsWith('temp-') &&
+            m.senderId === currentUserId &&
+            m.senderId === message.senderId &&
+            m.content === message.content &&
+            Math.abs(new Date(m.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000
+          ) {
+            return false;
+          }
+          if (m.id === message.id) return false;
+          return true;
+        });
+        const updated = [...filtered, message];
+        return updated.sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
+
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+
+      if (isIncoming && currentUserId) {
+        recentlyReadRef.current[selected!.id] = Date.now();
+        markConversationAsRead(selected!.id, currentUserId).catch(() => {});
+      }
+    }
+
+    const known = conversationsRef.current.some(c => c.id === message.conversationId);
+
+    if (known) {
       setConversations(prev => {
         const updated = prev.map(conv =>
           conv.id === message.conversationId
@@ -584,85 +724,67 @@ export const useChat = () => {
                 last_message: message.content || message.fileName || 'Media',
                 last_message_at: message.createdAt,
                 last_message_id: message.id,
-                last_message_sender_id: message.senderId
+                last_message_sender_id: message.senderId,
+                unread_count: isOpenThread
+                  ? 0
+                  : isIncoming
+                    ? (conv.unread_count ?? 0) + 1
+                    : conv.unread_count ?? 0,
               }
             : conv
         );
         const updatedConv = updated.find(c => c.id === message.conversationId);
         if (updatedConv) {
-          return [updatedConv, ...updated.filter(c => c.id !== message.conversationId)];
+          const others = updated.filter(c => c.id !== message.conversationId);
+          const sortedOthers = others.sort((a, b) => {
+            const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+            const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+            return timeB - timeA;
+          });
+          return [updatedConv, ...sortedOthers];
         }
         return updated;
       });
-      return;
-    }
 
-    setMessages(prev => {
-      const filtered = prev.filter(m => {
-        if (m.id.startsWith('temp-') &&
-          m.senderId === currentUserId &&
-          m.senderId === message.senderId &&
-          m.content === message.content &&
-          Math.abs(new Date(m.createdAt).getTime() - new Date(message.createdAt).getTime()) < 5000) {
-          return false;
-        }
-        if (m.id === message.id) {
-          return false;
-        }
-        return true;
-      });
-
-      const updated = [...filtered, message];
-      const sorted = updated.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      return sorted;
-    });
-
-    setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
-
-    if (message.senderId !== currentUserId && selectedConversation) {
-      markConversationAsRead(selectedConversation.id, currentUserId!);
-    }
-
-    setConversations(prev => {
-      const updated = prev.map(conv =>
-        conv.id === message.conversationId
-          ? {
-              ...conv,
+      if (isOpenThread) {
+        setSelectedConversation(prev => {
+          if (prev && message.conversationId === prev.id) {
+            return {
+              ...prev,
               last_message: message.content || message.fileName || 'Media',
               last_message_at: message.createdAt,
               last_message_id: message.id,
-              last_message_sender_id: message.senderId
-            }
-          : conv
-      );
-      const updatedConv = updated.find(c => c.id === message.conversationId);
-      if (updatedConv) {
-        const others = updated.filter(c => c.id !== message.conversationId);
-        const sortedOthers = others.sort((a, b) => {
-          const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-          const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-          return timeB - timeA;
+              last_message_sender_id: message.senderId,
+            };
+          }
+          return prev;
         });
-        return [updatedConv, ...sortedOthers];
       }
-      return updated;
-    });
-
-    setSelectedConversation(prev => {
-      if (prev && message.conversationId === prev.id) {
-        return {
-          ...prev,
-          last_message: message.content || message.fileName || 'Media',
-          last_message_at: message.createdAt,
-          last_message_id: message.id,
-          last_message_sender_id: message.senderId,
-        };
-      }
-      return prev;
-    });
-  }, [currentUserId, selectedConversation]);
+    } else if (currentUserId) {
+      // Unknown conversation: realtime delivered a row for a thread we've
+      // never fetched. Pull the full conversation so the sidebar shows it
+      // with the right name / avatar / participants — no polling needed.
+      getConversation(message.conversationId, currentUserId)
+        .then(({ conversation, error }) => {
+          if (error || !conversation) return;
+          const hydrated: Conversation = {
+            ...conversation,
+            last_message: message.content || message.fileName || 'Media',
+            last_message_at: message.createdAt,
+            last_message_id: message.id,
+            last_message_sender_id: message.senderId,
+            unread_count: isIncoming ? 1 : 0,
+          };
+          setConversations(prev => {
+            if (prev.some(c => c.id === hydrated.id)) {
+              return prev.map(c => (c.id === hydrated.id ? hydrated : c));
+            }
+            return [hydrated, ...prev];
+          });
+        })
+        .catch(() => {});
+    }
+  }, [currentUserId]);
 
   const handleMessageUpdated = useCallback((message: ChatMessage) => {
     setMessages(prev =>
@@ -674,33 +796,31 @@ export const useChat = () => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
   }, []);
 
-  const { isConnected, error: realtimeError, broadcastNewMessage } = useRealtimeChat({
-    conversationId: selectedConversation?.id || null,
-    currentUserId,
-    onMessageReceived: handleMessageReceived,
-    onMessageUpdated: handleMessageUpdated,
-    onMessageDeleted: handleMessageDeleted,
-    enabled: !!selectedConversation && !!currentUserId,
-  });
+  /**
+   * Single gap-closer: runs once every time the realtime channel (re)connects.
+   * Replaces the old 5s + 3.5s polling pair. If the socket stayed healthy the
+   * whole time this is a no-op because the inbox already delivered every row;
+   * if the socket was dropped (mobile sleep / network blip) this catches the
+   * gap in one silent fetch.
+   */
+  const handleRealtimeResume = useCallback(() => {
+    if (!currentUserId) return;
+    void loadConversations(currentUserId, { silent: true });
 
-  /** When postgres_changes / broadcast miss (RLS, replication, or slow subscribe), merge new rows from the API. */
-  useEffect(() => {
-    if (!selectedConversationId || !currentUserId) return;
+    const openId = selectedConversationRef.current?.id;
+    if (!openId) return;
 
-    const conversationId = selectedConversationId;
-    let cancelled = false;
-
-    const mergeLatestFromServer = async () => {
-      if (cancelled || typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
+    // Merge any messages the socket may have missed for the open thread,
+    // without replacing what's already there (optimistic / hydrated rows stay).
+    (async () => {
       try {
         const { messages: remote, error } = await getConversationMessages(
-          conversationId,
+          openId,
           currentUserId,
           100
         );
-        if (cancelled || error || !remote?.length) return;
+        if (error || !remote?.length) return;
+        if (selectedConversationRef.current?.id !== openId) return;
 
         setMessages((prev) => {
           const byId = new Map(prev.map((m) => [m.id, m]));
@@ -716,21 +836,46 @@ export const useChat = () => {
             (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
         });
-
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 80);
       } catch {
         /* ignore */
       }
-    };
+    })();
+  }, [currentUserId, loadConversations]);
 
-    const interval = window.setInterval(mergeLatestFromServer, 3500);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, [selectedConversationId, currentUserId]);
+  /**
+   * Two realtime sources, same handler:
+   *   1) `useRealtimeChat` — scoped to the currently-open conversation. Uses
+   *      a tight `conversation_id=eq.` filter on `postgres_changes` and also
+   *      opens a broadcast event on that same channel, so peer-to-peer sends
+   *      echo near-instantly in addition to the DB-replicated row. This is
+   *      the path that was working before the refactor and is the safety net
+   *      for the open thread.
+   *   2) `useRealtimeInbox` — user-wide, unfiltered `postgres_changes` on
+   *      `messages` (RLS filters per-row). Keeps every *other* conversation's
+   *      sidebar preview / unread / ordering live without polling.
+   *
+   * Both pipe into the same `handleMessageReceived`. The dedup inside that
+   * handler (filter by `temp-…` and by real `id`) makes duplicate events
+   * idempotent — so if a row arrives via both sources it's a no-op, not a
+   * double render.
+   */
+  const { isConnected, error: realtimeError, broadcastNewMessage } = useRealtimeChat({
+    conversationId: selectedConversation?.id || null,
+    currentUserId,
+    onMessageReceived: handleMessageReceived,
+    onMessageUpdated: handleMessageUpdated,
+    onMessageDeleted: handleMessageDeleted,
+    enabled: !!selectedConversation && !!currentUserId,
+  });
+
+  useRealtimeInbox({
+    currentUserId,
+    onMessageReceived: handleMessageReceived,
+    onMessageUpdated: handleMessageUpdated,
+    onMessageDeleted: handleMessageDeleted,
+    onResume: handleRealtimeResume,
+    enabled: !!currentUserId,
+  });
 
   const { typingUsers, sendTyping, isTyping } = useTypingIndicator({
     conversationId: selectedConversation?.id || null,
@@ -1067,14 +1212,34 @@ export const useChat = () => {
             } : prev);
           }
 
+          // Unlike the text path, media sends don't add an optimistic `temp-…`
+          // row to `messages` (the draft previews live in `draftMedia` until
+          // the RPC returns). So the sender's own thread would stay empty
+          // until `postgres_changes` delivers the INSERT — if that event is
+          // even slightly delayed or missed, the photo/video appears to "not
+          // send" from the sender's POV. Fix: hydrate the real row right now,
+          // drop it into local state, then broadcast. The realtime INSERT
+          // still fires later; `handleMessageReceived` dedups by `id`.
           const { message: fetchedMsg, error: fetchMsgErr } = await getMessageById(
             rpcResult.message_id,
             currentUserId
           );
           if (!fetchMsgErr && fetchedMsg) {
-            broadcastNewMessage(messageModelToChatMessage(fetchedMsg));
+            const hydrated = messageModelToChatMessage(fetchedMsg);
+
+            if (selectedConversationRef.current?.id === selectedConversation.id) {
+              setMessages(prev => {
+                if (prev.some(m => m.id === hydrated.id)) return prev;
+                return [...prev, hydrated].sort(
+                  (a, b) =>
+                    new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+                );
+              });
+            }
+
+            broadcastNewMessage(hydrated);
           }
-          
+
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
           }, 100);
@@ -1211,7 +1376,7 @@ export const useChat = () => {
       setSelectedConversation(selectedConversation);
       toast.error('Failed to send message. Please try again.');
     });
-  }, [newMessage, selectedConversation, currentUserId, draftMedia, broadcastNewMessage]);
+  }, [newMessage, selectedConversation, currentUserId, draftMedia, messages, broadcastNewMessage]);
 
   const removeDraftMedia = useCallback(async (mediaId: string) => {
     if (!currentUserId) return;

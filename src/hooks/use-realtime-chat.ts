@@ -56,6 +56,8 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
   const [error, setError] = useState<Error | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const channelReadyRef = useRef(false);
+  /** Bumped on visibility/online/focus events to force a re-subscribe cycle (mobile browsers drop WS on background). */
+  const [reconnectTick, setReconnectTick] = useState(0);
 
   const onMessageReceivedRef = useRef(onMessageReceived);
   const onMessageUpdatedRef = useRef(onMessageUpdated);
@@ -68,6 +70,28 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
   }, [onMessageReceived, onMessageUpdated, onMessageDeleted]);
 
   const supabaseRef = useRef(createClient());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const bump = () => {
+      setReconnectTick((t) => t + 1);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') bump();
+    };
+
+    window.addEventListener('online', bump);
+    window.addEventListener('focus', bump);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('online', bump);
+      window.removeEventListener('focus', bump);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     if (!enabled || !conversationId || !currentUserId) {
@@ -345,7 +369,7 @@ export function useRealtimeChat(options: UseRealtimeChatOptions) {
       channel.unsubscribe();
       setIsConnected(false);
     };
-  }, [conversationId, currentUserId, enabled]);
+  }, [conversationId, currentUserId, enabled, reconnectTick]);
 
   const broadcastNewMessage = useCallback((message: ChatMessage) => {
     if (!message?.id || !message.conversationId) return;

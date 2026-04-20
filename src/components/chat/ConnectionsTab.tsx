@@ -256,6 +256,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     time={formatTime(lastMessageTime)}
                     isActive={selectedConversation?.id === conv.id}
                     isOnline={userOnline}
+                    unreadCount={conv.unread_count ?? 0}
                     onClick={() => setSelectedConversation(conv)}
                   />
                 );
@@ -300,6 +301,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                     message={getLastMessageWithSender(conv)}
                     time={formatTime(lastMessageTime)}
                     isActive={selectedConversation?.id === conv.id}
+                    unreadCount={conv.unread_count ?? 0}
                     onClick={() => setSelectedConversation(conv)}
                     trailing={
                       onOpenGroupInfo ? (
@@ -344,6 +346,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                         message={getLastMessageWithSender(conv)}
                         time={formatTime(lastMessageTime)}
                         isActive={selectedConversation?.id === conv.id}
+                        unreadCount={conv.unread_count ?? 0}
                         onClick={() => setSelectedConversation(conv)}
                       />
                     );
