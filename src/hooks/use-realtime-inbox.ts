@@ -4,49 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
-/**
- * User-wide realtime inbox.
- *
- * Fires `onRealtimeEvent` the instant any signal we can pick up tells us
- * the user's conversation list may have changed. Caller re-runs
- * `get_user_conversations` and the RPC is the source of truth.
- *
- * We open THREE independent channels, each with a single simple
- * subscription. Independent channels — not bindings on one channel —
- * because Supabase Realtime drops events on channels that carry many
- * bindings (hitting the per-channel binding ceiling silently). Three
- * separate channels each with 1–2 bindings stays well under any limit.
- *
- *   Channel A — `inbox-messages:<me>`
- *     `postgres_changes` INSERT on `public.messages` (no filter).
- *     Supabase Realtime evaluates row-level security per user, so this
- *     only streams messages the user is allowed to SELECT.
- *
- *   Channel B — `inbox-participants:<me>`
- *     `postgres_changes` UPDATE + INSERT on `public.conversation_participants`
- *     where `user_id = <me>`. The existing `update_conversation_unread_count`
- *     trigger writes to this row on every message insert, so UPDATE fires
- *     deterministically; INSERT fires when the user is added to a new
- *     conversation.
- *
- *   Channel C — `inbox-conversations:<me>`
- *     `postgres_changes` UPDATE on `public.conversations` (no filter).
- *     Many apps have a trigger that bumps `last_message_at` / `last_message`
- *     on the conversations row when a new message arrives. If yours does,
- *     this fires; if not, it stays silent and doesn't hurt.
- *
- * Any one delivering is enough. If your Supabase publication only has one
- * of these tables enabled, the inbox still works.
- *
- * Prerequisite: at least ONE of these tables must be in the
- * `supabase_realtime` publication. Enable via Supabase dashboard →
- * Database → Replication. No SQL or function edits required.
- */
 export interface UseRealtimeInboxOptions {
   currentUserId: string | null;
-  /** Fired immediately on any inbox-affecting realtime event. */
   onRealtimeEvent?: (reason: string) => void;
-  /** Fired once per successful (re)subscribe on any of the three channels. */
   onResume?: () => void;
   enabled?: boolean;
 }
@@ -68,7 +28,6 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
 
   const supabaseRef = useRef(createClient());
 
-  /** Bumped on visibility/online/focus so mobile browsers re-subscribe on wake. */
   const [reconnectTick, setReconnectTick] = useState(0);
 
   useEffect(() => {
@@ -91,10 +50,6 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
   }, []);
 
   const fireEvent = useCallback((reason: string) => {
-    if (typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
-      console.log(`[inbox] realtime event → ${reason}`);
-    }
     onRealtimeEventRef.current?.(reason);
   }, []);
 
@@ -121,7 +76,15 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
     const supabase = supabaseRef.current;
     let anySubscribed = false;
 
-    // ── Channel A: messages INSERT (RLS-gated, no filter) ──
+    const markSubscribed = () => {
+      if (!anySubscribed) {
+        anySubscribed = true;
+        setIsConnected(true);
+        setError(null);
+        onResumeRef.current?.();
+      }
+    };
+
     const channelA = supabase
       .channel(`inbox-messages:${currentUserId}`)
       .on(
@@ -134,28 +97,18 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
         (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as any;
           fireEvent(
-            `A:messages INSERT (conv=${String(row?.conversation_id || '').slice(0, 8)}, sender=${String(row?.sender_id || '').slice(0, 8)})`
+            `A:messages INSERT (conv=${String(row?.conversation_id || '').slice(0, 8)})`
           );
         }
       )
       .subscribe((status: string, err?: Error) => {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log(`[inbox] A:messages ${status}`, err || '');
-        }
         if (status === 'SUBSCRIBED') {
-          if (!anySubscribed) {
-            anySubscribed = true;
-            setIsConnected(true);
-            setError(null);
-            onResumeRef.current?.();
-          }
+          markSubscribed();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setError(new Error(`A:messages ${status}: ${err?.message || ''}`));
         }
       });
 
-    // ── Channel B: conversation_participants UPDATE + INSERT (filter user_id=me) ──
     const channelB = supabase
       .channel(`inbox-participants:${currentUserId}`)
       .on(
@@ -169,7 +122,7 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
         (payload: RealtimePostgresChangesPayload<any>) => {
           const row = payload.new as any;
           fireEvent(
-            `B:participant UPDATE (conv=${String(row?.conversation_id || '').slice(0, 8)}, unread=${row?.unread_count})`
+            `B:participant UPDATE (conv=${String(row?.conversation_id || '').slice(0, 8)})`
           );
         }
       )
@@ -189,23 +142,13 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
         }
       )
       .subscribe((status: string, err?: Error) => {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log(`[inbox] B:participants ${status}`, err || '');
-        }
         if (status === 'SUBSCRIBED') {
-          if (!anySubscribed) {
-            anySubscribed = true;
-            setIsConnected(true);
-            setError(null);
-            onResumeRef.current?.();
-          }
+          markSubscribed();
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setError(new Error(`B:participants ${status}: ${err?.message || ''}`));
         }
       });
 
-    // ── Channel C: conversations UPDATE (no filter, optional) ──
     const channelC = supabase
       .channel(`inbox-conversations:${currentUserId}`)
       .on(
@@ -222,19 +165,8 @@ export function useRealtimeInbox(options: UseRealtimeInboxOptions) {
           );
         }
       )
-      .subscribe((status: string, err?: Error) => {
-        if (typeof window !== 'undefined') {
-          // eslint-disable-next-line no-console
-          console.log(`[inbox] C:conversations ${status}`, err || '');
-        }
-        if (status === 'SUBSCRIBED') {
-          if (!anySubscribed) {
-            anySubscribed = true;
-            setIsConnected(true);
-            setError(null);
-            onResumeRef.current?.();
-          }
-        }
+      .subscribe((status: string) => {
+        if (status === 'SUBSCRIBED') markSubscribed();
       });
 
     channelsRef.current = [channelA, channelB, channelC];

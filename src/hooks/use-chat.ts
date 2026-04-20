@@ -143,26 +143,11 @@ export const useChat = () => {
   const isSettingProgrammaticallyRef = useRef(false);
   const selectedConversationRef = useRef<Conversation | null>(null);
   selectedConversationRef.current = selectedConversation;
-  /**
-   * Latest `conversations` snapshot — read inside realtime handlers so the
-   * callback identity doesn't churn on every list update (which would
-   * needlessly re-subscribe the realtime channel).
-   */
   const conversationsRef = useRef<Conversation[]>([]);
   conversationsRef.current = conversations;
-  /**
-   * Latest `messages` snapshot — read inside visibility handlers to pick up
-   * the newest message id without re-registering the listener on every
-   * message (which would thrash event-listener registration).
-   */
   const messagesRef = useRef<ChatMessage[]>([]);
   messagesRef.current = messages;
 
-  /**
-   * Timestamps (ms) of the last time we called `markConversationAsRead` per conversation.
-   * Used to ignore stale server `unread_count` values returned by the silent poll before
-   * the server has finished processing the read ack (otherwise the badge flickers back).
-   */
   const recentlyReadRef = useRef<Record<string, number>>({});
   const READ_ACK_GRACE_MS = 8000;
 
@@ -486,16 +471,19 @@ export const useChat = () => {
     }
   }, [currentUserId]);
 
-  // Only re-fetch the thread when the *conversation id* changes. Updating `last_message` / etc.
-  // on the same chat used to re-run this effect and replace `messages` from the server, which
-  // masked broken realtime and caused “I only see their messages after I send or reload.”
   const selectedConversationId = selectedConversation?.id;
+  const lastLoadedConversationIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (selectedConversationId && currentUserId) {
       const conv = selectedConversationRef.current;
       if (!conv || conv.id !== selectedConversationId) {
         return;
       }
+
+      if (lastLoadedConversationIdRef.current === selectedConversationId) {
+        return;
+      }
+      lastLoadedConversationIdRef.current = selectedConversationId;
 
       localStorage.setItem('selectedConversationId', selectedConversationId);
 
@@ -508,10 +496,6 @@ export const useChat = () => {
       setMessages([]);
       void loadMessages(selectedConversationId);
 
-      // WhatsApp-like: opening the thread clears its unread count. We update
-      // the UI optimistically first and then tell the server, passing the
-      // `last_message_id` we already know so the read pointer is recorded
-      // against a specific message (useful for other devices / reporting).
       setConversations((prev) =>
         prev.map((c) =>
           c.id === selectedConversationId ? { ...c, unread_count: 0 } : c
@@ -562,6 +546,7 @@ export const useChat = () => {
     } else {
       localStorage.removeItem('selectedConversationId');
       setThreadMessagesLoading(false);
+      lastLoadedConversationIdRef.current = null;
     }
   }, [selectedConversationId, currentUserId, loadMessages]);
 
@@ -675,31 +660,12 @@ export const useChat = () => {
     };
   }, [conversations, currentUserId, boardTitleById, resolvedBoardTitles]);
 
-  /**
-   * Central router for every incoming realtime message — covers both the
-   * currently-open thread and every other conversation the user participates
-   * in (since the inbox channel is user-scoped, not conversation-scoped).
-   *
-   * Responsibilities, in order:
-   *   1. If the message is for the open thread → dedup + append to `messages`
-   *      and scroll. Also ack read.
-   *   2. Update the conversations list preview (last message, reorder,
-   *      unread bump) — but only for threads that aren't open.
-   *   3. If the conversation is unknown (first-ever DM from a stranger, just
-   *      added to a group), fetch it via `getConversation` and inject it so
-   *      it shows up without waiting for any poll.
-   */
   const handleMessageReceived = useCallback((message: ChatMessage) => {
     const selected = selectedConversationRef.current;
     const isOpenThread = !!selected && selected.id === message.conversationId;
     const isOwn = message.senderId === currentUserId;
     const isIncoming = !isOwn;
 
-    // WhatsApp-like read semantics: the message only counts as "read" if the
-    // thread is open AND the tab is actually visible. A backgrounded tab (phone
-    // locked, switched to another app, chat in a non-focused tab) must let the
-    // unread counter keep growing — the server's `update_conversation_unread_count`
-    // trigger has already incremented it, and we mirror that locally.
     const tabVisible =
       typeof document === 'undefined' || document.visibilityState === 'visible';
     const isEffectivelyRead = isOpenThread && tabVisible;
@@ -707,7 +673,6 @@ export const useChat = () => {
     if (isOpenThread) {
       setMessages(prev => {
         const filtered = prev.filter(m => {
-          // Replace our own optimistic `temp-...` echo with the real row.
           if (
             m.id.startsWith('temp-') &&
             m.senderId === currentUserId &&
@@ -784,9 +749,6 @@ export const useChat = () => {
         });
       }
     } else if (currentUserId) {
-      // Unknown conversation: realtime delivered a row for a thread we've
-      // never fetched. Pull the full conversation so the sidebar shows it
-      // with the right name / avatar / participants — no polling needed.
       getConversation(message.conversationId, currentUserId)
         .then(({ conversation, error }) => {
           if (error || !conversation) return;
@@ -819,13 +781,6 @@ export const useChat = () => {
     setMessages(prev => prev.filter(msg => msg.id !== messageId));
   }, []);
 
-  /**
-   * Single gap-closer: runs once every time the realtime channel (re)connects.
-   * Replaces the old 5s + 3.5s polling pair. If the socket stayed healthy the
-   * whole time this is a no-op because the inbox already delivered every row;
-   * if the socket was dropped (mobile sleep / network blip) this catches the
-   * gap in one silent fetch.
-   */
   const handleRealtimeResume = useCallback(() => {
     if (!currentUserId) return;
     void loadConversations(currentUserId, { silent: true });
@@ -833,8 +788,6 @@ export const useChat = () => {
     const openId = selectedConversationRef.current?.id;
     if (!openId) return;
 
-    // Merge any messages the socket may have missed for the open thread,
-    // without replacing what's already there (optimistic / hydrated rows stay).
     (async () => {
       try {
         const { messages: remote, error } = await getConversationMessages(
@@ -865,25 +818,6 @@ export const useChat = () => {
     })();
   }, [currentUserId, loadConversations]);
 
-  /**
-   * Two realtime sources, different responsibilities:
-   *
-   *   1) `useRealtimeChat` — per-conversation, scoped to the currently-open
-   *      thread. Tight `conversation_id=eq.` filter on `messages` for
-   *      INSERT/UPDATE/DELETE plus a broadcast channel for instant
-   *      peer-to-peer echo. Drives the *open thread* — appending new bubbles,
-   *      editing, deleting.
-   *
-   *   2) `useRealtimeInbox` — user-scoped. Listens to any of:
-   *        a) `conversation_participants` UPDATE (`user_id=eq.<me>`)
-   *        b) `conversation_participants` INSERT (`user_id=eq.<me>`)
-   *        c) `messages` INSERT (no filter, RLS-gated)
-   *      Any one of them firing triggers a single debounced
-   *      `get_user_conversations` refresh. The three sources are
-   *      belt-and-suspenders: whichever the Supabase Realtime publication
-   *      actually delivers for this project will keep the sidebar live.
-   *      Drives the *sidebar* — unread badges, last-message preview, order.
-   */
   const { isConnected, error: realtimeError, broadcastNewMessage } = useRealtimeChat({
     conversationId: selectedConversation?.id || null,
     currentUserId,
@@ -893,24 +827,12 @@ export const useChat = () => {
     enabled: !!selectedConversation && !!currentUserId,
   });
 
-  /**
-   * Timestamp of the last realtime event. Used by the safety poll below
-   * to skip itself when realtime is actively keeping the list fresh.
-   */
   const lastRealtimeEventAtRef = useRef<number>(0);
 
-  /**
-   * Any realtime event that could affect the conversation list triggers
-   * an immediate `get_user_conversations` refresh.
-   */
   const handleInboxEvent = useCallback(
-    (reason: string) => {
+    (_reason: string) => {
       if (!currentUserId) return;
       lastRealtimeEventAtRef.current = Date.now();
-      if (typeof window !== 'undefined') {
-        // eslint-disable-next-line no-console
-        console.log(`[chat] loadConversations() fired by realtime (${reason})`);
-      }
       void loadConversations(currentUserId, { silent: true });
     },
     [currentUserId, loadConversations]
@@ -923,24 +845,6 @@ export const useChat = () => {
     enabled: !!currentUserId,
   });
 
-  /**
-   * Safety-net poll.
-   *
-   * Supabase Realtime's `postgres_changes` only delivers events for tables
-   * that are enabled in the `supabase_realtime` publication AND have RLS
-   * policies simple enough for Realtime to evaluate. We can't guarantee
-   * either from the frontend, so this acts as a backstop:
-   *
-   *   - Runs only when the tab is visible (no wasted requests in the
-   *     background).
-   *   - Skips itself if realtime fired within the last 8 s — if events
-   *     are flowing, this is a no-op and costs nothing.
-   *   - Fires every 10 s (adjust below if you want tighter coverage).
-   *
-   * Once you confirm realtime is delivering events (console shows
-   * `[inbox] realtime event →` lines), you can safely raise `POLL_MS` to
-   * 30000 or higher — it'll almost never actually refetch.
-   */
   const POLL_MS = 3_000;
   const REALTIME_SKIP_WINDOW_MS = 2_500;
 
@@ -958,8 +862,6 @@ export const useChat = () => {
 
     const interval = window.setInterval(tick, POLL_MS);
 
-    // Also run a single refresh on tab return / network recovery so users
-    // don't wait the full poll interval after waking up.
     const onVisibility = () => {
       if (document.visibilityState === 'visible') tick();
     };
@@ -975,16 +877,6 @@ export const useChat = () => {
     };
   }, [currentUserId, loadConversations]);
 
-  /**
-   * WhatsApp-style "returned to the app" read flush.
-   *
-   * When the user was backgrounded with a thread open, any incoming messages
-   * kept incrementing `unread_count` (see the visibility check in
-   * `handleMessageReceived`). As soon as the tab becomes visible again and the
-   * same thread is still selected, those messages are effectively read — so
-   * we reset the counter locally and on the server in one shot, using the
-   * latest message id we already have as the read pointer.
-   */
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
@@ -1353,14 +1245,6 @@ export const useChat = () => {
             } : prev);
           }
 
-          // Unlike the text path, media sends don't add an optimistic `temp-…`
-          // row to `messages` (the draft previews live in `draftMedia` until
-          // the RPC returns). So the sender's own thread would stay empty
-          // until `postgres_changes` delivers the INSERT — if that event is
-          // even slightly delayed or missed, the photo/video appears to "not
-          // send" from the sender's POV. Fix: hydrate the real row right now,
-          // drop it into local state, then broadcast. The realtime INSERT
-          // still fires later; `handleMessageReceived` dedups by `id`.
           const { message: fetchedMsg, error: fetchMsgErr } = await getMessageById(
             rpcResult.message_id,
             currentUserId
@@ -1875,13 +1759,6 @@ export const useChat = () => {
     return peerPending || threadMessagesLoading;
   }, [selectedConversation, directPeerProfileLoading, threadMessagesLoading]);
 
-  /**
-   * Global unread-message count across every conversation the user is in.
-   * Use this for a nav badge / browser tab title. Derived from the same
-   * `conversations` state the sidebar renders, so it updates live whenever
-   * the realtime inbox bumps a per-conversation counter or
-   * `markConversationAsRead` resets one.
-   */
   const totalUnreadCount = useMemo(
     () =>
       conversations.reduce(

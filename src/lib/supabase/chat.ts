@@ -1119,9 +1119,6 @@ export async function markConversationAsRead(
     .eq('conversation_id', conversationId)
     .eq('user_id', userId);
 
-  // Back-compat: if `unread_count` column doesn't exist yet (older databases
-  // without the trigger), retry without it so reads still advance the
-  // timestamp pointer.
   if (error && (error.code === '42703' || /unread_count/i.test(error.message || ''))) {
     delete updateData.unread_count;
     const retry = await supabase
