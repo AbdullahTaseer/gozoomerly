@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import LayerImg from "@/assets/svgs/hero-layer.svg";
 import GlobalButton from '../buttons/GlobalButton';
 import BgImg from "@/assets/svgs/hero-bg-img.svg";
@@ -6,6 +9,7 @@ import ArrowRight from "@/assets/svgs/ArrowRight-black.svg";
 import messageIcon from "@/assets/svgs/ChatCircle.svg";
 
 const HeroSection = () => {
+  const router = useRouter();
   return (
     <div className='px-[5%] max-[769px]:px-4 max-[768px]:px-0 pt-2 max-[768px]:pt-1'>
       <div className='relative min-h-[calc(100vh-160px)] max-[1024px]:min-h-[400px] py-10 px-10 max-[768px]:px-6 flex justify-center items-center rounded-2xl max-[768px]:rounded-none overflow-clip'>
@@ -19,7 +23,7 @@ const HeroSection = () => {
             <div className='w-[230px] max-[520px]:w-full'>
               <GlobalButton title='Start Messaging' icon={messageIcon} height='56px' className='!text-[20px]' />
             </div>
-            <div className='w-[230px] max-[520px]:w-full'>
+            <div onClick={() => router.push('/u')} className='w-[230px] max-[520px]:w-full'>
               <GlobalButton title='Get Zoomerly' icon={ArrowRight} bgColor='white' color='black' height='56px' className='!text-[20px] flex-row-reverse' hover={{ bgColor: "white" }} />
             </div>
           </div>

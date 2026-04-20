@@ -36,10 +36,9 @@ const DateInputWithIcon = ({
 
   return (
     <div
-      className={`relative w-full rounded-[5px] border border-[#2E2C39] bg-white ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className ?? ""}`}
+      className={`relative w-full box-border min-w-0 max-w-full overflow-hidden rounded-[5px] border border-[#2E2C39] bg-white ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className ?? ""}`}
       style={{ width, height }}
     >
-      {/* Visual only — taps pass through to the native date input above */}
       <div
         className="pointer-events-none absolute inset-0 z-0 flex items-center gap-2 pl-4 pr-3"
         aria-hidden
@@ -64,7 +63,7 @@ const DateInputWithIcon = ({
         onChange={(e) => onChange(e.target.value)}
         aria-label={hint}
         style={{ height, width: "100%" }}
-        className="absolute inset-0 z-10 box-border cursor-pointer border-0 bg-transparent p-0 opacity-0
+        className="absolute inset-0 z-10 box-border w-full min-w-0 max-w-full cursor-pointer border-0 bg-transparent p-0 opacity-0
           text-base
           [-webkit-appearance:none] [appearance:none]
           disabled:cursor-not-allowed
