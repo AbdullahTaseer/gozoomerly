@@ -1,9 +1,9 @@
 'use client';
 
-import {  useState  } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock } from 'lucide-react';
+import { Eye, EyeClosed, Lock, Mail } from 'lucide-react';
 import AppLogo from "@/assets/svgs/Zoomerly.svg";
 import { authService } from '@/lib/supabase/auth';
 
@@ -11,6 +11,7 @@ const AdminLogin = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -98,13 +99,22 @@ const AdminLogin = () => {
                   </div>
                   <input
                     id="password"
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-transparent"
+                    className="w-full pl-10 pr-11 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-transparent"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute border p-1.5 rounded-full cursor-pointer right-3 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition-colors"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? <EyeClosed size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
 
