@@ -38,6 +38,7 @@ export interface UserInvitation {
   id: string;
   board_id: string;
   inviter_id: string;
+  invitee_user_id?: string | null;
   invitee_id?: string;
   invitee_email?: string;
   invitee_phone?: string;

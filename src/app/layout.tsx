@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Jost, Poppins } from "next/font/google";
+import Script from "next/script";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
@@ -32,6 +33,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${jost.variable} ${poppins.variable} antialiased`}>
+        <Script
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+        />
         <Toaster position="top-center" />
         {children}
       </body>

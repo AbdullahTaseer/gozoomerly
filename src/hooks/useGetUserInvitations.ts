@@ -7,6 +7,7 @@ import {
   InvitationPaginationMetadata,
   InvitationStatus
 } from '../types/userInvitations';
+import { notifyBoardInvitationResponse } from '@/lib/notifications/boardInvitation';
 
 interface UseGetUserInvitationsReturn {
   invitations: UserInvitation[];
@@ -129,6 +130,8 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
         accepted: prev.accepted + 1
       }));
 
+      notifyBoardInvitationResponse({ invitationId, accepted: true });
+
       return { success: true, data };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to accept invitation';
@@ -155,6 +158,8 @@ export const useGetUserInvitations = (): UseGetUserInvitationsReturn => {
         pending: prev.pending - 1,
         declined: prev.declined + 1
       }));
+
+      notifyBoardInvitationResponse({ invitationId, accepted: false });
 
       return { success: true, data };
     } catch (err: unknown) {

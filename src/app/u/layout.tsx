@@ -10,6 +10,8 @@ import { useAddStatusSubmit } from '@/hooks/useAddStatusSubmit';
 import { createOrShareModalState } from '@/lib/createOrShareModalState';
 import { chatOpenState } from '@/lib/chatOpenState';
 import { OnlineStatusProvider } from '@/components/providers/OnlineStatusProvider';
+import { OneSignalProvider } from '@/components/providers/OneSignalProvider';
+import { NotificationToastProvider } from '@/components/providers/NotificationToastProvider';
 
 const AddStatusModalContent = dynamic(
   () => import('@/components/modals/AddStatusModal'),
@@ -44,6 +46,8 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <OnlineStatusProvider>
+      <OneSignalProvider>
+      <NotificationToastProvider>
       <div className={`min-h-screen flex flex-col ${!shouldHideBottomTabs ? 'max-[769px]:pb-20' : ''}`}>
         <main className="flex-1">
           {children}
@@ -82,6 +86,8 @@ const UserLayout = ({ children }: { children: React.ReactNode }) => {
           ) : null}
         </ModalOrBottomSlider>
       </div>
+      </NotificationToastProvider>
+      </OneSignalProvider>
     </OnlineStatusProvider>
   );
 };

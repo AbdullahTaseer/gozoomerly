@@ -1,5 +1,6 @@
 import { createClient } from './client';
 import { STORAGE_BUCKETS } from './storageBuckets';
+import { notifyChatMessageRecipients } from '@/lib/notifications/chat';
 
 function safeLastMessage(lastMessage: any): string | undefined {
   if (!lastMessage) return undefined;
@@ -48,9 +49,7 @@ export interface Conversation {
   last_message_sender_id?: string;
   participants?: ConversationParticipant[];
   unread_count?: number;
-  /** Present on group conversations from RPC when supported */
   group_invite_policy?: GroupInvitePolicy;
-  /** Present on board-linked conversations when backend sends it */
   board_id?: string | null;
   other_user?: {
     user_id?: string;
@@ -65,7 +64,6 @@ const BOARD_GROUP_NAME_PREFIX = 'board_';
 const BOARD_ID_IN_NAME_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Legacy: group conv whose `name` is `board_<uuid>` (board chat before explicit `board` type). */
 export function parseBoardIdFromGroupConversationName(name: string): string | null {
   if (!name?.startsWith(BOARD_GROUP_NAME_PREFIX)) return null;
   const id = name.slice(BOARD_GROUP_NAME_PREFIX.length);
@@ -99,7 +97,6 @@ export interface ConversationParticipant {
   joined_at: string;
   last_read_at?: string;
   last_read_message_id?: string;
-  /** From `get_user_conversations` / `other_participants` when present */
   role?: string;
   user?: {
     id: string;
@@ -364,7 +361,6 @@ export async function getUserConversationsWithPagination(
       };
     }
 
-    // Handle RPC response - could be data.data or data directly
     const rpcConversations = data?.data || (Array.isArray(data) ? data : []);
     
     if (!rpcConversations || !Array.isArray(rpcConversations) || rpcConversations.length === 0) {
@@ -1276,6 +1272,22 @@ export async function sendMessage(
   } catch (updateErr: any) {
   }
 
+  notifyChatMessageRecipients({
+    conversationId: input.conversation_id,
+    senderId,
+    messageId: message.id,
+    content: input.content ?? null,
+    messageType: (input.message_type as
+      | 'text'
+      | 'image'
+      | 'video'
+      | 'audio'
+      | 'file'
+      | null
+      | undefined) ?? 'text',
+    fileName: input.file_name ?? null,
+  });
+
   return { message: messageWithSender, error: null };
 }
 
@@ -1825,7 +1837,18 @@ export async function sendMessageWithMedia(
       return { data: null, error };
     }
 
-    return { data: data as SendMessageWithMediaResponse, error: null };
+    const result = data as SendMessageWithMediaResponse;
+
+    notifyChatMessageRecipients({
+      conversationId,
+      senderId,
+      messageId: result?.message_id ?? null,
+      content,
+      messageType: mediaIds.length > 0 ? 'mixed' : 'text',
+      mediaCount: mediaIds.length,
+    });
+
+    return { data: result, error: null };
   } catch (err: any) {
     return {
       data: null,

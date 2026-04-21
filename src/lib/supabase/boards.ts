@@ -1,5 +1,6 @@
 import { createClient } from './client';
 import { STORAGE_BUCKETS } from './storageBuckets';
+import { notifyBoardInvitationSent } from '@/lib/notifications/boardInvitation';
 
 export interface BoardType {
   id: string;
@@ -489,10 +490,6 @@ export async function updateBoardDetails(input: UpdateBoardDetailsInput) {
 }
 
 export type UpdateBoardOptions = {
-  /**
-   * Media row id from `media.id` — passed to `update_board_details` as `p_cover_media_id`
-   * whenever you update the board (e.g. after upload).
-   */
   coverMediaId?: string | null;
 };
 
@@ -690,19 +687,13 @@ export interface CreateGiftPaymentIntentInput {
   userId: string;
   amount: number;
   currency?: string;
-  /** FK → board_gift_options.id (optional for custom amounts) */
   boardGiftOptionId?: string | null;
   giftMessage?: string | null;
   provider?: GiftPaymentProvider;
-  /**
-   * Unique per attempt key used server-side to prevent duplicate charges
-   * when the same request is retried. Auto-generated when omitted.
-   */
   idempotencyKey?: string;
   providerMetadata?: Record<string, unknown>;
 }
 
-/** Raw RPC response — keep loose; fields depend on provider. */
 export interface CreateGiftPaymentIntentResponse {
   success?: boolean;
   payment_intent_id?: string;
@@ -715,15 +706,6 @@ export interface CreateGiftPaymentIntentResponse {
   [key: string]: unknown;
 }
 
-/**
- * Calls `create_gift_payment_intent` RPC to open a payment intent for a gift
- * contribution. Returns the intent payload (e.g. `client_secret`) which the
- * caller then hands to the payment provider (Stripe Elements, etc.) to
- * complete the charge.
- *
- * Always generates a fresh idempotency key if one isn't passed — this is what
- * guards the server against duplicate inserts on retry.
- */
 export async function createGiftPaymentIntent(input: CreateGiftPaymentIntentInput) {
   const supabase = createClient();
 
@@ -821,7 +803,6 @@ export interface GetBoardGiftsResult {
 export interface GetBoardGiftsOptions {
   limit?: number;
   offset?: number;
-  /** null → all statuses; default 'completed' to match server behavior. */
   status?: GiftStatus | null;
 }
 
@@ -883,11 +864,6 @@ function unwrapBoardGiftsPayload(data: unknown): {
   return { gifts, total, total_amount, pagination };
 }
 
-/**
- * Calls `get_board_gifts` RPC. `viewerId` is required because the server
- * uses it to decide what metadata the current user is allowed to see.
- * `status` defaults to `'completed'`; pass `null` to include all statuses.
- */
 export async function getBoardGifts(
   boardId: string,
   viewerId: string,
@@ -1642,10 +1618,6 @@ export async function getBoardWishes(
   }
 }
 
-/**
- * Parse wish id from `create_wish` RPC payload. Handles composite/SETOF rows as arrays,
- * nested `{ data }` / `{ wish }` wrappers, and common key names from Postgres/PostgREST.
- */
 export function wishIdFromCreateWishResponse(data: unknown): string | null {
   const tryRecord = (o: Record<string, unknown>): string | null => {
     for (const key of [
@@ -2192,6 +2164,26 @@ export async function inviteUserToBoard({
     return { success: false, error: error.message, data: null };
   }
 
+  if (inviteeUserId) {
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      const inviterId = auth.user?.id;
+      if (inviterId) {
+        const invitationIdFromRpc =
+          (data as { invitation_id?: string; id?: string } | null)?.invitation_id ||
+          (data as { invitation_id?: string; id?: string } | null)?.id ||
+          null;
+        notifyBoardInvitationSent({
+          boardId,
+          inviterId,
+          inviteeUserId,
+          invitationId: invitationIdFromRpc,
+        });
+      }
+    } catch {
+    }
+  }
+
   return { success: true, data, error: null };
 }
 
@@ -2226,7 +2218,6 @@ export async function getBoardInvitations(boardId: string) {
   return { invitations: list, error: null };
 }
 
-/** Profile → Boards → "Birthday boards" tab (mobile: get_user_boards, p_status: yours). */
 export async function getUserBoardsYours(
   userId: string,
   opts?: { limit?: number; offset?: number; search?: string | null }
@@ -2252,7 +2243,6 @@ export async function getUserBoardsYours(
   return { boards, pagination, error: null };
 }
 
-/** Profile → Boards → "Invite sent" / "Decline Boards" (mobile: get_user_invitations). */
 export async function getUserInvitationsForList(params: {
   p_status?: string | null;
   p_direction?: string | null;
