@@ -5,13 +5,26 @@ import ArrowRightIcon from "@/assets/svgs/ArrowRight.svg";
 import GlobalInput from "../inputs/GlobalInput";
 import Image from "next/image";
 import { giftsData } from "@/lib/MockData";
-import { addGiftContribution } from "@/lib/supabase/boards";
+import {
+  createGiftPaymentIntent,
+  CreateGiftPaymentIntentResponse,
+} from "@/lib/supabase/boards";
 import { authService } from "@/lib/supabase/auth";
+
+export interface AddGiftSavedData {
+  amount: number;
+  label: string;
+  message: string;
+  isCustom: boolean;
+  /** Present only when a payment intent was created (boardId provided). */
+  paymentIntent?: CreateGiftPaymentIntentResponse | null;
+  idempotencyKey?: string;
+}
 
 type props = {
   goToPayment: () => void;
   boardId?: string;
-  onGiftSaved?: (giftData: any) => void;
+  onGiftSaved?: (giftData: AddGiftSavedData) => void;
 }
 
 const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
@@ -52,17 +65,9 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
     }
 
     if (!boardId) {
-      const giftData = {
-        amount,
-        label: giftLabel,
-        message,
-        isCustom
-      };
-
       if (onGiftSaved) {
-        onGiftSaved(giftData);
+        onGiftSaved({ amount, label: giftLabel, message, isCustom });
       }
-
       goToPayment();
       return;
     }
@@ -76,53 +81,38 @@ const AddGift = ({ goToPayment, boardId, onGiftSaved }: props) => {
         return;
       }
 
-      let amount = 0;
-      let isCustom = false;
-
-      if (customAmount) {
-        amount = parseFloat(customAmount);
-        if (isNaN(amount) || amount <= 0) {
-          alert('Please enter a valid amount');
-          setLoading(false);
-          return;
-        }
-        isCustom = true;
-      } else if (selectedGift) {
-        const selectedGiftData = giftsData.find(g => g.id === selectedGift);
-        if (selectedGiftData) {
-          amount = selectedGiftData.price;
-        }
-      }
-
-      if (amount <= 0) {
-        alert('Please select a valid gift or enter a valid amount');
-        setLoading(false);
-        return;
-      }
-
-      let giftLabel = '';
-      if (isCustom) {
-        giftLabel = `Custom Gift - $${amount}`;
-      } else if (selectedGift) {
-        const selectedGiftData = giftsData.find(g => g.id === selectedGift);
-        giftLabel = selectedGiftData?.label || '';
-      }
-
-      const { data, error } = await addGiftContribution(boardId, user.id, {
+      const { data, error, idempotencyKey } = await createGiftPaymentIntent({
+        boardId,
+        userId: user.id,
         amount,
-        gift_option_id: giftLabel,
-        message: message || undefined,
-        is_custom: isCustom,
+        currency: 'USD',
+        giftMessage: message || null,
+        provider: 'stripe',
+        providerMetadata: {
+          source: 'web_checkout',
+          gift_label: giftLabel,
+          is_custom: isCustom,
+        },
       });
 
-      if (error) {
-        alert('Failed to save gift. Please try again.');
+      if (error || !data) {
+        const msg =
+          (error as { message?: string } | null)?.message ||
+          'Failed to start payment. Please try again.';
+        alert(msg);
         setLoading(false);
         return;
       }
 
       if (onGiftSaved) {
-        onGiftSaved(data);
+        onGiftSaved({
+          amount,
+          label: giftLabel,
+          message,
+          isCustom,
+          paymentIntent: data,
+          idempotencyKey,
+        });
       }
 
       goToPayment();

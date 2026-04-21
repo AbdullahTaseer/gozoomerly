@@ -548,7 +548,7 @@ export default async function BoardPage(props: any) {
 
       <BoardSlugTabsCard
         wishesChildren={<BoardSlugWishes boardId={board?.id || ''} boardTitle={boardTitle} boardSlug={boardId} />}
-        giftsChildren={<BoardSlugGifts />}
+        giftsChildren={<BoardSlugGifts boardId={board?.id || ''} />}
         memoriesChildren={<BoardSlugMemories boardId={board?.id || ''} boardTitle={boardTitle} boardSlug={boardId} />}
         chatsChildren={<BoardSlugChatDesign boardId={board?.id || ''} boardName={boardTitle} />}
         participantsChildren={<BoardSlugParticipants boardId={board?.id || ''} />}

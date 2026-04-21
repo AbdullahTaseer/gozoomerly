@@ -417,7 +417,10 @@ const CreateBirthdayBoard = () => {
     setCreating(true);
 
     try {
-      if (savedGiftData) {
+      // Only seed the board with a preset gift option when the user did NOT
+      // create a payment intent in step 4. If a payment intent exists, the
+      // selection represents a real contribution, not a board-level option.
+      if (savedGiftData && !savedGiftData.paymentIntent) {
         const giftOptionData = [{
           amount: savedGiftData.amount,
           label: savedGiftData.label,
@@ -1177,7 +1180,7 @@ const CreateBirthdayBoard = () => {
                   <div className="space-y-4">
                     <AddGift
                       goToPayment={handleGiftPayment}
-                      boardId={undefined}
+                      boardId={boardId ?? undefined}
                       onGiftSaved={handleGiftSaved}
                     />
                     <div className="flex justify-center">

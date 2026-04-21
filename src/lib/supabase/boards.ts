@@ -683,6 +683,244 @@ export async function getBoardGiftOptions(boardId: string) {
   return { data, error: null };
 }
 
+export type GiftPaymentProvider = 'stripe' | 'paypal' | 'apple_pay' | 'google_pay';
+
+export interface CreateGiftPaymentIntentInput {
+  boardId: string;
+  userId: string;
+  amount: number;
+  currency?: string;
+  /** FK → board_gift_options.id (optional for custom amounts) */
+  boardGiftOptionId?: string | null;
+  giftMessage?: string | null;
+  provider?: GiftPaymentProvider;
+  /**
+   * Unique per attempt key used server-side to prevent duplicate charges
+   * when the same request is retried. Auto-generated when omitted.
+   */
+  idempotencyKey?: string;
+  providerMetadata?: Record<string, unknown>;
+}
+
+/** Raw RPC response — keep loose; fields depend on provider. */
+export interface CreateGiftPaymentIntentResponse {
+  success?: boolean;
+  payment_intent_id?: string;
+  client_secret?: string;
+  status?: string;
+  provider?: GiftPaymentProvider;
+  amount?: number;
+  currency?: string;
+  idempotency_key?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Calls `create_gift_payment_intent` RPC to open a payment intent for a gift
+ * contribution. Returns the intent payload (e.g. `client_secret`) which the
+ * caller then hands to the payment provider (Stripe Elements, etc.) to
+ * complete the charge.
+ *
+ * Always generates a fresh idempotency key if one isn't passed — this is what
+ * guards the server against duplicate inserts on retry.
+ */
+export async function createGiftPaymentIntent(input: CreateGiftPaymentIntentInput) {
+  const supabase = createClient();
+
+  if (!input.boardId) {
+    return {
+      data: null,
+      error: { message: 'boardId is required to create a gift payment intent' },
+    };
+  }
+  if (!input.userId) {
+    return {
+      data: null,
+      error: { message: 'userId is required to create a gift payment intent' },
+    };
+  }
+  if (!(typeof input.amount === 'number' && input.amount > 0)) {
+    return {
+      data: null,
+      error: { message: 'A positive amount is required to create a gift payment intent' },
+    };
+  }
+
+  const idempotencyKey =
+    input.idempotencyKey ??
+    (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `gift_${Date.now()}_${Math.random().toString(36).slice(2)}`);
+
+  const rpcParams: Record<string, unknown> = {
+    p_board_id: input.boardId,
+    p_user_id: input.userId,
+    p_amount: input.amount,
+    p_currency: input.currency ?? 'USD',
+    p_board_gift_option_id: input.boardGiftOptionId ?? null,
+    p_gift_message: input.giftMessage ?? null,
+    p_provider: input.provider ?? 'stripe',
+    p_idempotency_key: idempotencyKey,
+    p_provider_metadata: input.providerMetadata ?? {},
+  };
+
+  const { data, error } = await supabase.rpc('create_gift_payment_intent', rpcParams);
+
+  if (error) {
+    return { data: null, error, idempotencyKey };
+  }
+
+  return {
+    data: data as CreateGiftPaymentIntentResponse,
+    error: null,
+    idempotencyKey,
+  };
+}
+
+export type GiftStatus = 'completed' | 'pending' | 'failed' | 'refunded';
+
+export interface BoardGift {
+  id: string;
+  board_id: string;
+  amount: number;
+  currency: string;
+  status: GiftStatus | string;
+  message?: string | null;
+  gift_message?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+  board_gift_option_id?: string | null;
+  /** When available, the option label (e.g. "Cake Treat"). */
+  gift_option_label?: string | null;
+  provider?: string | null;
+  payment_intent_id?: string | null;
+  gifter?: {
+    id: string;
+    name?: string | null;
+    profile_pic_url?: string | null;
+    is_verified?: boolean | null;
+  } | null;
+  /** Allow passthrough of unexpected RPC fields. */
+  [key: string]: unknown;
+}
+
+export interface GetBoardGiftsPagination {
+  total?: number;
+  limit?: number;
+  offset?: number;
+  has_more?: boolean;
+}
+
+export interface GetBoardGiftsResult {
+  gifts: BoardGift[];
+  total: number;
+  total_amount: number;
+  pagination: GetBoardGiftsPagination | null;
+}
+
+export interface GetBoardGiftsOptions {
+  limit?: number;
+  offset?: number;
+  /** null → all statuses; default 'completed' to match server behavior. */
+  status?: GiftStatus | null;
+}
+
+function unwrapBoardGiftsPayload(data: unknown): {
+  gifts: BoardGift[];
+  total: number;
+  total_amount: number;
+  pagination: GetBoardGiftsPagination | null;
+} {
+  const empty = { gifts: [] as BoardGift[], total: 0, total_amount: 0, pagination: null };
+  if (data == null) return empty;
+
+  if (Array.isArray(data)) {
+    const gifts = data.filter((r) => r && typeof r === 'object') as BoardGift[];
+    return {
+      gifts,
+      total: gifts.length,
+      total_amount: gifts.reduce((sum, g) => sum + (Number(g.amount) || 0), 0),
+      pagination: null,
+    };
+  }
+
+  if (typeof data !== 'object') return empty;
+  const o = data as Record<string, unknown>;
+
+  const inner =
+    (o.success === true && o.data != null ? o.data : undefined) ?? o.data ?? o;
+  const innerObj = (inner && typeof inner === 'object' ? inner : {}) as Record<
+    string,
+    unknown
+  >;
+
+  const rawGifts =
+    (Array.isArray(innerObj.gifts) && innerObj.gifts) ||
+    (Array.isArray(innerObj.items) && innerObj.items) ||
+    (Array.isArray(innerObj.rows) && innerObj.rows) ||
+    (Array.isArray(innerObj.results) && innerObj.results) ||
+    [];
+
+  const gifts = (rawGifts as unknown[]).filter(
+    (r) => r && typeof r === 'object'
+  ) as BoardGift[];
+
+  const pagination =
+    innerObj.pagination && typeof innerObj.pagination === 'object'
+      ? (innerObj.pagination as GetBoardGiftsPagination)
+      : null;
+
+  const total =
+    typeof innerObj.total === 'number'
+      ? innerObj.total
+      : pagination?.total ?? gifts.length;
+
+  const total_amount =
+    typeof innerObj.total_amount === 'number'
+      ? innerObj.total_amount
+      : gifts.reduce((sum, g) => sum + (Number(g.amount) || 0), 0);
+
+  return { gifts, total, total_amount, pagination };
+}
+
+/**
+ * Calls `get_board_gifts` RPC. `viewerId` is required because the server
+ * uses it to decide what metadata the current user is allowed to see.
+ * `status` defaults to `'completed'`; pass `null` to include all statuses.
+ */
+export async function getBoardGifts(
+  boardId: string,
+  viewerId: string,
+  options?: GetBoardGiftsOptions
+): Promise<{ data: GetBoardGiftsResult | null; error: unknown }> {
+  const supabase = createClient();
+
+  if (!boardId) {
+    return { data: null, error: { message: 'boardId is required' } };
+  }
+  if (!viewerId) {
+    return { data: null, error: { message: 'viewerId is required' } };
+  }
+
+  const status = options?.status === undefined ? 'completed' : options.status;
+
+  const rpcParams: Record<string, unknown> = {
+    p_board_id: boardId,
+    p_viewer_id: viewerId,
+    p_limit: options?.limit ?? 10,
+    p_offset: options?.offset ?? 0,
+    p_status: status,
+  };
+
+  const { data, error } = await supabase.rpc('get_board_gifts', rpcParams);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: unwrapBoardGiftsPayload(data), error: null };
+}
+
 export async function addGiftContribution(
   boardId: string,
   contributorId: string,

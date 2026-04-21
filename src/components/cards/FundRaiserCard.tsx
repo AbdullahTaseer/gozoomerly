@@ -4,7 +4,10 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { giftsData } from "@/lib/MockData";
-import { addGiftContribution } from "@/lib/supabase/boards";
+import {
+  createGiftPaymentIntent,
+  CreateGiftPaymentIntentResponse,
+} from "@/lib/supabase/boards";
 import { authService } from "@/lib/supabase/auth";
 
 type GiftOption = {
@@ -19,6 +22,17 @@ type TopContributor = {
   amount: number;
 };
 
+export interface GiftSelectedPayload {
+  boardId: string;
+  amount: number;
+  label: string;
+  isCustom: boolean;
+  /** board_gift_options.id when the picked option came from the DB. */
+  boardGiftOptionId?: string | null;
+  paymentIntent: CreateGiftPaymentIntentResponse;
+  idempotencyKey?: string;
+}
+
 type FundRaiserCardProps = {
   raised?: number;
   target?: number;
@@ -26,6 +40,13 @@ type FundRaiserCardProps = {
   topContributors?: TopContributor[];
   boardId?: string;
   description?: string;
+  /**
+   * Called after a gift payment intent is created. Parent is responsible for
+   * advancing to the payment step (e.g. opening a Stripe modal using the
+   * returned client_secret).
+   */
+  onGiftSelected?: (payload: GiftSelectedPayload) => void;
+  /** Legacy callback kept for backwards compatibility. */
   onGiftAdded?: () => void;
 };
 
@@ -36,6 +57,7 @@ const FundRaiserCard = ({
   topContributors = [],
   boardId,
   description,
+  onGiftSelected,
   onGiftAdded
 }: FundRaiserCardProps) => {
   const [selectedGift, setSelectedGift] = useState<string | null>(null);
@@ -55,8 +77,15 @@ const FundRaiserCard = ({
     return gift?.icon || giftsData[0]?.icon;
   };
 
-  const displayGifts = giftOptions.length > 0
+  const displayGifts: Array<{
+    id?: string;
+    label: string;
+    amount: number;
+    icon: any;
+    isCustom: boolean;
+  }> = giftOptions.length > 0
     ? giftOptions.map(g => ({
+      id: g.id,
       label: g.label || `$${g.amount}`,
       amount: g.amount,
       icon: getGiftIcon(g.label || ''),
@@ -91,22 +120,41 @@ const FundRaiserCard = ({
         return;
       }
 
-      const { data, error } = await addGiftContribution(boardId, user.id, {
+      const { data, error, idempotencyKey } = await createGiftPaymentIntent({
+        boardId,
+        userId: user.id,
         amount: gift.amount,
-        gift_option_id: gift.label,
-        is_custom: false,
+        currency: 'USD',
+        boardGiftOptionId: gift.id ?? null,
+        provider: 'stripe',
+        providerMetadata: {
+          source: 'web_checkout',
+          gift_label: gift.label,
+        },
       });
 
-      if (error) {
-        alert('Failed to add gift. Please try again.');
+      if (error || !data) {
+        const msg =
+          (error as { message?: string } | null)?.message ||
+          'Failed to start payment. Please try again.';
+        alert(msg);
         setIsAddingGift(false);
         return;
       }
 
-      setLocalRaised(prev => prev + gift.amount);
       setSelectedGift(gift.label);
 
-      if (onGiftAdded) {
+      if (onGiftSelected) {
+        onGiftSelected({
+          boardId,
+          amount: gift.amount,
+          label: gift.label,
+          isCustom: false,
+          boardGiftOptionId: gift.id ?? null,
+          paymentIntent: data,
+          idempotencyKey,
+        });
+      } else if (onGiftAdded) {
         onGiftAdded();
       } else {
         router.refresh();
