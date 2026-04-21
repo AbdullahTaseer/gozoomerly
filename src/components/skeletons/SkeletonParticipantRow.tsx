@@ -5,30 +5,24 @@ type SkeletonParticipantRowProps = {
   className?: string;
 };
 
-/**
- * Placeholder for a participant / invitee row used in board-slug tabs
- * (`BoardSlugParticipants`, `BoardSlugInvited`). Mirrors: light-gray pill row
- * with avatar, name + meta lines, and a trailing follow/view button.
- */
-export default function SkeletonParticipantRow({
-  className,
-}: SkeletonParticipantRowProps) {
+/** Board participant list row. */
+export default function SkeletonParticipantRow({ className }: SkeletonParticipantRowProps) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 rounded-[12px] bg-[#F4F4F4] px-4 py-3",
-        className
+        "flex items-center justify-between gap-3 rounded-xl border border-neutral-200/70 bg-white p-3",
+        className,
       )}
       aria-hidden
     >
-      <div className="flex flex-1 min-w-0 items-center gap-3">
-        <SkeletonCircle className="h-12 w-12 shrink-0 bg-neutral-300/70" />
-        <div className="flex-1 min-w-0 space-y-2">
-          <SkeletonText className="h-4 max-w-[50%] bg-neutral-300/70" />
-          <SkeletonText className="h-3 max-w-[70%] bg-neutral-300/50" />
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <SkeletonCircle tone="steel" className="h-12 w-12 shrink-0" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <SkeletonText tone="steel" className="h-4 max-w-[50%]" />
+          <SkeletonText tone="steelMuted" className="h-3 max-w-[70%]" />
         </div>
       </div>
-      <Skeleton className="h-8 w-24 rounded-full bg-neutral-300/70" />
+      <Skeleton tone="steel" className="h-8 w-24 shrink-0 rounded-full" />
     </div>
   );
 }

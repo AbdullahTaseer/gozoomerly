@@ -1,6 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import SkeletonProfileHeader from "./SkeletonProfileHeader";
+import { Skeleton, SkeletonRepeat } from "@/components/ui/skeleton";
 import SkeletonMediaGrid from "./SkeletonMediaGrid";
+import SkeletonProfileHeader from "./SkeletonProfileHeader";
 import { cn } from "@/lib/utils";
 
 type SkeletonProfilePageProps = {
@@ -15,19 +15,15 @@ export default function SkeletonProfilePage({
   className,
 }: SkeletonProfilePageProps) {
   return (
-    <div
-      className={cn("max-w-[748px] mx-auto space-y-6", className)}
-      aria-hidden
-    >
+    <div className={cn("max-w-[748px] mx-auto space-y-6", className)} aria-hidden>
       <SkeletonProfileHeader />
 
       <div className="grid grid-cols-2 gap-3">
-        {Array.from({ length: featureTileCount }).map((_, i) => (
-          <Skeleton
-            key={i}
-            className="h-[72px] rounded-xl border border-gray-200 bg-white"
-          />
-        ))}
+        <SkeletonRepeat count={featureTileCount}>
+          {() => (
+            <Skeleton tone="soft" className="h-[72px] rounded-xl border border-gray-200 bg-white" />
+          )}
+        </SkeletonRepeat>
       </div>
 
       <div className="flex items-center gap-2 border-b border-gray-200">

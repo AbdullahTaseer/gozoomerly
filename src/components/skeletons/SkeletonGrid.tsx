@@ -1,4 +1,5 @@
-import * as React from "react";
+import type { ReactNode } from "react";
+import { SkeletonRepeat } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type SkeletonGridProps = {
@@ -6,7 +7,7 @@ type SkeletonGridProps = {
    * A render function that returns a skeleton for a single cell. Called `count`
    * times with the zero-based index of each cell.
    */
-  renderItem: (index: number) => React.ReactNode;
+  renderItem: (index: number) => ReactNode;
   /** Number of skeleton cells to render. */
   count: number;
   /** Extra classes for the grid container (Tailwind `grid-cols-*`, gaps, etc.). */
@@ -31,9 +32,7 @@ export default function SkeletonGrid({
 }: SkeletonGridProps) {
   return (
     <div className={cn("grid", className)} aria-hidden>
-      {Array.from({ length: count }).map((_, i) => (
-        <React.Fragment key={i}>{renderItem(i)}</React.Fragment>
-      ))}
+      <SkeletonRepeat count={count}>{(i) => renderItem(i)}</SkeletonRepeat>
     </div>
   );
 }

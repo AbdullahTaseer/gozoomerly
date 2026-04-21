@@ -2,41 +2,37 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type SkeletonChatMessagesProps = {
-  /** How many message bubbles to render. Defaults to 6. */
   count?: number;
   className?: string;
 };
 
-/**
- * Placeholder for a chat message list. Renders an alternating stack of
- * message "bubbles" so the transcript has visible structure while the real
- * messages load.
- */
+const OUTGOING_WIDTHS = ["w-[58%]", "w-[72%]", "w-[48%]", "w-[65%]", "w-[52%]", "w-[68%]"] as const;
+const INCOMING_WIDTHS = ["w-[55%]", "w-[70%]", "w-[50%]", "w-[62%]", "w-[45%]", "w-[66%]"] as const;
+
+/** Alternating chat bubbles while messages load. */
 export default function SkeletonChatMessages({
   count = 6,
   className,
 }: SkeletonChatMessagesProps) {
   return (
     <div className={cn("flex flex-col gap-3 p-3", className)} aria-hidden>
-      {Array.from({ length: count }).map((_, i) => {
-        const isOutgoing = i % 2 === 0;
-        const width = 40 + ((i * 17) % 40);
+      {Array.from({ length: count }, (_, i) => {
+        const outgoing = i % 2 === 0;
+        const widthClass = outgoing
+          ? OUTGOING_WIDTHS[i % OUTGOING_WIDTHS.length]
+          : INCOMING_WIDTHS[i % INCOMING_WIDTHS.length];
         return (
           <div
             key={i}
-            className={cn(
-              "flex",
-              isOutgoing ? "justify-end" : "justify-start"
-            )}
+            className={cn("flex", outgoing ? "justify-end" : "justify-start")}
           >
             <Skeleton
+              tone={outgoing ? "blush" : "default"}
               className={cn(
                 "h-10 rounded-2xl",
-                isOutgoing
-                  ? "bg-pink-200/50 rounded-br-sm"
-                  : "bg-neutral-200/70 rounded-bl-sm"
+                widthClass,
+                outgoing ? "rounded-br-sm" : "rounded-bl-sm",
               )}
-              style={{ width: `${width}%` }}
             />
           </div>
         );

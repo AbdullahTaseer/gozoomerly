@@ -5,29 +5,20 @@ type SkeletonFavBoardRowProps = {
   className?: string;
 };
 
-/**
- * Placeholder for `FavoriteBoardRow` (and the similar compact rows used in
- * `u/boards`): rectangular cover thumbnail on the left + two stacked text
- * lines + trailing star button on the right.
- */
-export default function SkeletonFavBoardRow({
-  className,
-}: SkeletonFavBoardRowProps) {
+/** Favorites row: thumb + lines + trailing icon. */
+export default function SkeletonFavBoardRow({ className }: SkeletonFavBoardRowProps) {
   return (
     <div
-      className={cn(
-        "flex w-full items-start gap-3 rounded-xl bg-gray-100 p-3",
-        className
-      )}
+      className={cn("flex items-center gap-3 rounded-lg border border-neutral-200/70 bg-white p-3", className)}
       aria-hidden
     >
-      <Skeleton className="h-[70px] w-[100px] shrink-0 rounded bg-neutral-300/70" />
-      <div className="flex-1 min-w-0 space-y-2 py-0.5">
-        <SkeletonText className="h-4 w-2/3 bg-neutral-300/70" />
-        <SkeletonText className="h-3 w-1/2 bg-neutral-300/50" />
-        <SkeletonText className="h-3 w-1/3 bg-neutral-300/50" />
+      <Skeleton tone="steel" className="h-[70px] w-[100px] shrink-0 rounded" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <SkeletonText tone="steel" className="h-4 w-2/3" />
+        <SkeletonText tone="steelMuted" className="h-3 w-1/2" />
+        <SkeletonText tone="steelMuted" className="h-3 w-1/3" />
       </div>
-      <Skeleton className="h-8 w-8 rounded-full bg-neutral-300/70" />
+      <Skeleton tone="steel" className="h-8 w-8 shrink-0 rounded-full" />
     </div>
   );
 }

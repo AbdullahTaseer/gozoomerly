@@ -1,11 +1,20 @@
 /**
- * Re-exports every skeleton loader in one place so consumers can do:
- *   import { SkeletonBoardCard, SkeletonGrid } from "@/components/skeletons";
+ * Screen-level skeletons + primitives.
  *
- * The low-level `Skeleton`, `SkeletonCircle`, and `SkeletonText` primitives
- * live in `@/components/ui/skeleton` — re-exported here for convenience.
+ * Primitives (`Skeleton`, `tone`, `SkeletonRepeat`, …) live in
+ * `@/components/ui/skeleton` and are re-exported here for convenience.
+ *
+ * Prefer `tone="inset"` / `tone="steel"` over long `bg-…` strings, and
+ * `<SkeletonRepeat count={n}>{(i) => …}</SkeletonRepeat>` over `Array.from`.
  */
-export { Skeleton, SkeletonCircle, SkeletonText } from "@/components/ui/skeleton";
+export {
+  Skeleton,
+  SkeletonCircle,
+  SkeletonRepeat,
+  SkeletonText,
+  SKELETON_TONES,
+} from "@/components/ui/skeleton";
+export type { SkeletonTone } from "@/components/ui/skeleton";
 
 export { default as SkeletonGrid } from "./SkeletonGrid";
 

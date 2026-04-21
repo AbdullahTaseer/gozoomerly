@@ -5,28 +5,24 @@ type SkeletonConnectionCardProps = {
   className?: string;
 };
 
-/**
- * Placeholder for `ConnectionCard` (also a good fit for follower / following /
- * chat-contact / circle-member rows). Mirrors: grey rounded row with avatar,
- * two stacked lines, and an action button on the right.
- */
-export default function SkeletonConnectionCard({
-  className,
-}: SkeletonConnectionCardProps) {
+/** Placeholder for connection list rows. */
+export default function SkeletonConnectionCard({ className }: SkeletonConnectionCardProps) {
   return (
     <div
       className={cn(
-        "flex items-center gap-4 rounded-[8px] bg-[#F7F7F7] p-4",
-        className
+        "flex items-center justify-between gap-3 rounded-xl border border-neutral-200/70 bg-white p-3",
+        className,
       )}
       aria-hidden
     >
-      <SkeletonCircle className="h-11 w-11 shrink-0 bg-neutral-300/70" />
-      <div className="flex-1 min-w-0 space-y-2">
-        <SkeletonText className="h-5 max-w-[60%] bg-neutral-300/70" />
-        <SkeletonText className="h-3 max-w-[40%] bg-neutral-300/50" />
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <SkeletonCircle tone="steel" className="h-11 w-11 shrink-0" />
+        <div className="min-w-0 flex-1 space-y-2">
+          <SkeletonText tone="steel" className="h-5 max-w-[60%]" />
+          <SkeletonText tone="steelMuted" className="h-3 max-w-[40%]" />
+        </div>
       </div>
-      <Skeleton className="h-9 w-20 rounded-full bg-neutral-300/70" />
+      <Skeleton tone="steel" className="h-9 w-20 shrink-0 rounded-full" />
     </div>
   );
 }
