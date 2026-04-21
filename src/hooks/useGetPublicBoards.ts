@@ -292,7 +292,7 @@ function mapResponseToBoards(data: any[]): PublicBoard[] {
 
 export const useGetPublicBoards = (): UseGetPublicBoardsReturn => {
   const [boards, setBoards] = useState<PublicBoard[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);

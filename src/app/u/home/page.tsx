@@ -149,10 +149,6 @@ const Home = () => {
 
   const exploreColumnCount = useExploreColumnCount();
   const exploreColumns = splitIntoRoundRobinColumns(filteredExploreBoards, exploreColumnCount);
-  const exploreSkeletonColumns = splitIntoRoundRobinColumns(
-    Array.from({ length: 8 }, (_, i) => i),
-    exploreColumnCount
-  );
 
   return (
     <div>
@@ -275,16 +271,11 @@ const Home = () => {
                   onChange={(e) => setExploreSearch(e.target.value)}
                 />
               </div>
-              {exploreLoading ? (
-                <div className="flex gap-2">
-                  {exploreSkeletonColumns.map((col, colIdx) => (
-                    <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
-                      {col.map((slot, rowIdx) => (
-                        <SkeletonExploreCard
-                          key={slot}
-                          heightPx={exploreCardImageHeightPx(colIdx, rowIdx)}
-                        />
-                      ))}
+              {loading || exploreLoading ? (
+                <div className="gap-2 [column-gap:0.5rem] columns-3 min-[550px]:columns-4 min-[900px]:columns-5 lg:columns-6 xl:columns-8">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="mb-2 break-inside-avoid">
+                      <SkeletonExploreCard heightPx={i % 3 === 0 ? 160 : 210} />
                     </div>
                   ))}
                 </div>

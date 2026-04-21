@@ -48,37 +48,45 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
   }, [currentStory?.id]);
 
   useEffect(() => {
-    if (isOpen && currentStory && !isPaused) {
-      if (currentUserId && currentStory.id) {
-        viewStory(currentStory.id, currentUserId).catch(() => { });
+    if (!isOpen || !currentStory || isPaused) {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
       }
-
-      const duration = 5000;
-      const interval = 100;
-
-      progressIntervalRef.current = setInterval(() => {
-        elapsedTimeRef.current += interval;
-        setElapsedTime(elapsedTimeRef.current);
-        const newProgress = Math.min((elapsedTimeRef.current / duration) * 100, 100);
-        setProgress(newProgress);
-
-        if (elapsedTimeRef.current >= duration) {
-          elapsedTimeRef.current = 0;
-          setElapsedTime(0);
-          handleNextStory();
-        }
-      }, interval);
-
-      return () => {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-      };
-    } else if (isPaused && progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = null;
+      return;
     }
-  }, [isOpen, currentGroupIndex, currentStoryIndex, currentStory?.id, currentUserId, isPaused]);
+
+    if (currentUserId && currentStory.id) {
+      viewStory(currentStory.id, currentUserId).catch(() => { });
+    }
+
+    if (currentStory.content_type === 'video') {
+      return;
+    }
+
+    const duration = 5000;
+    const interval = 100;
+
+    progressIntervalRef.current = setInterval(() => {
+      elapsedTimeRef.current += interval;
+      setElapsedTime(elapsedTimeRef.current);
+      const newProgress = Math.min((elapsedTimeRef.current / duration) * 100, 100);
+      setProgress(newProgress);
+
+      if (elapsedTimeRef.current >= duration) {
+        elapsedTimeRef.current = 0;
+        setElapsedTime(0);
+        handleNextStory();
+      }
+    }, interval);
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    };
+  }, [isOpen, currentGroupIndex, currentStoryIndex, currentStory?.id, currentStory?.content_type, currentUserId, isPaused]);
 
   useEffect(() => {
     if (isOpen) {
@@ -325,7 +333,22 @@ const StoryViewerModalContent: React.FC<StoryViewerModalProps> = ({
             className="w-full h-full object-contain"
             controls={false}
             autoPlay
+            playsInline
             loop={false}
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              video.currentTime = 0;
+              setProgress(0);
+              if (!isPaused) {
+                video.play().catch(() => { });
+              }
+            }}
+            onTimeUpdate={(e) => {
+              const video = e.currentTarget;
+              if (!video.duration || !isFinite(video.duration)) return;
+              const pct = Math.min((video.currentTime / video.duration) * 100, 100);
+              setProgress(pct);
+            }}
             onEnded={handleNextStory}
           />
         )}

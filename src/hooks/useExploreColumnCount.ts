@@ -1,18 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-export function useExploreColumnCount(): number {
-  const [columns, setColumns] = useState(3);
+import { useEffect, useLayoutEffect, useState } from 'react';
 
-  useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      if (w >= 1280) setColumns(8);
-      else if (w >= 1024) setColumns(6);
-      else if (w >= 900) setColumns(5);
-      else if (w >= 550) setColumns(4);
-      else setColumns(3);
-    };
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+function computeColumnCount(): number {
+  if (typeof window === 'undefined') return 0;
+  const w = window.innerWidth;
+  if (w >= 1280) return 8;
+  if (w >= 1024) return 6;
+  if (w >= 900) return 5;
+  if (w >= 550) return 4;
+  return 3;
+}
+
+export function useExploreColumnCount(): number {
+  const [columns, setColumns] = useState(0);
+
+  useIsomorphicLayoutEffect(() => {
+    const update = () => setColumns(computeColumnCount());
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -22,6 +29,7 @@ export function useExploreColumnCount(): number {
 }
 
 export function splitIntoRoundRobinColumns<T>(items: T[], columnCount: number): T[][] {
+  if (columnCount <= 0) return [];
   const cols: T[][] = Array.from({ length: columnCount }, () => []);
   items.forEach((item, i) => {
     cols[i % columnCount].push(item);
