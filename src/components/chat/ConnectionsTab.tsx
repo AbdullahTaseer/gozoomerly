@@ -218,8 +218,8 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   const renderChatList = () => {
     if (loading) {
       return (
-        <div className="space-y-2 p-3">
-          {Array.from({ length: 6 }).map((_, i) => (
+        <div className="space-y-6 p-3">
+          {Array.from({ length: 10 }).map((_, i) => (
             <SkeletonListItem key={i} />
           ))}
         </div>
@@ -583,9 +583,8 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
                       placeholder={uploading ? 'Uploading...' : 'Write your message...'}
                       height='40px'
                       width='100%'
-                      borderRadius='100px'
                       bgColor='white'
-                      inputClassName="pl-4 pr-12 border-none"
+                      inputClassName="pl-4 pr-12 border-none rounded-full!"
                       value={newMessage}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
                       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {

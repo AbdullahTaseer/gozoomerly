@@ -270,8 +270,7 @@ const Home = () => {
                   placeholder="Search here..."
                   height="44px"
                   width="100%"
-                  borderRadius="100px"
-                  inputClassName="pl-11 border-[#EAEAEA]"
+                  inputClassName="pl-11 border-[#EAEAEA] rounded-full!"
                   value={exploreSearch}
                   onChange={(e) => setExploreSearch(e.target.value)}
                 />

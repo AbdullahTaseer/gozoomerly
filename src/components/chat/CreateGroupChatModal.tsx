@@ -146,10 +146,9 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({
           placeholder="Up to 200 characters"
           height="44px"
           width="100%"
-          borderRadius="12px"
           value={name}
           onChange={handleNameChange}
-          inputClassName="border-gray-200"
+          inputClassName="border-gray-200 rounded-full!"
         />
 
         <p className="text-sm font-medium text-gray-700 mt-4 mb-2">Who can add members?</p>
@@ -179,10 +178,9 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({
           placeholder="Search users by name or email"
           height="44px"
           width="100%"
-          borderRadius="12px"
           value={query}
           onChange={handleQueryChange}
-          inputClassName="border-gray-200"
+          inputClassName="border-gray-200 rounded-full!"
         />
 
         <div className="mt-2 max-h-40 overflow-y-auto border border-gray-100 rounded-xl">
@@ -220,7 +218,7 @@ const CreateGroupChatModal: React.FC<CreateGroupChatModalProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="shrink-0 rounded-full border border-gray-200 bg-gray-100 px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-500"
+            className="shrink-0 rounded-full border border-gray-200 bg-gray-100 px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition-colors hover:bg-gray-200 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-pink-500"
           >
             Cancel
           </button>

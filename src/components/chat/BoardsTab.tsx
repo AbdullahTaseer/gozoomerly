@@ -392,9 +392,8 @@ const BoardsTab: React.FC<BoardsTabProps> = ({
                     placeholder={uploading ? 'Uploading...' : 'Write your message...'}
                     height='40px'
                     width='100%'
-                    borderRadius='100px'
                     bgColor='white'
-                    inputClassName="pl-4 pr-12 border-none"
+                    inputClassName="pl-4 pr-12 border-none rounded-full!"
                     value={newMessage}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewMessage(e.target.value)}
                     onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {

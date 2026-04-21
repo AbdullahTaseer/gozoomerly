@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search } from 'lucide-react';
 import StatusCard from '@/components/cards/StatusCard';
@@ -491,8 +490,7 @@ const Connections = () => {
               placeholder='Search'
               height='42px'
               width='100%'
-              borderRadius='100px'
-              inputClassName="pl-10 border-[#EAEAEA]"
+              inputClassName="pl-10 border-[#EAEAEA] rounded-full!"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
             />

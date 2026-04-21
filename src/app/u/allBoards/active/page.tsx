@@ -104,7 +104,7 @@ const ActiveBoards = () => {
           <div className='flex gap-4 items-center max-[870px]:mx-auto max-[870px]:hidden'>
             <div className='relative w-[260px]'>
               <Search size={18} className='absolute top-3 left-3' />
-              <GlobalInput placeholder='Search...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
+              <GlobalInput placeholder='Search...' height='42px' width='100%' inputClassName="pl-10 rounded-full!" />
             </div>
             <Image src={FilterSliderIcon} alt='' height={45} width={45} />
           </div>

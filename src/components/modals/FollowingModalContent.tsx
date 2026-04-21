@@ -68,8 +68,7 @@ const FollowingModalContent = ({ userId }: Props) => {
           placeholder="Search Following..."
           height="42px"
           width="100%"
-          borderRadius="100px"
-          inputClassName="pl-10"
+          inputClassName="pl-10 rounded-full!"
           value={search}
           onChange={(e: any) => setSearch(e.target.value)}
         />

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { CalendarDays } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export type DateInputWithIconProps = {
   id?: string;
@@ -11,6 +12,8 @@ export type DateInputWithIconProps = {
   disabled?: boolean;
   width?: string;
   height?: string;
+  /** Matches bordered inputs (e.g. GlobalInput `borderRadius`). */
+  borderRadius?: string;
   className?: string;
 };
 
@@ -36,7 +39,11 @@ const DateInputWithIcon = ({
 
   return (
     <div
-      className={`relative w-full box-border min-w-0 max-w-full overflow-hidden rounded-[5px] border border-[#2E2C39] bg-white ${disabled ? "cursor-not-allowed opacity-60" : ""} ${className ?? ""}`}
+      className={cn(
+        "relative box-border min-w-0 max-w-full w-full overflow-hidden rounded-md border border-[#2E2C39] bg-white",
+        disabled && "cursor-not-allowed opacity-60",
+        className,
+      )}
       style={{ width, height }}
     >
       <div

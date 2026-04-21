@@ -474,13 +474,14 @@ export default async function BoardPage(props: any) {
                 <div className="flex items-center gap-2 mt-6 cursor-pointer hover:opacity-80 transition-opacity">
                   <p className="text-white text-[15px]">Created by</p>
                   <div className="flex items-center gap-2">
-                    <Image
-                      src={creatorAvatar}
-                      alt={creatorName}
-                      width={32}
-                      height={32}
-                      className="rounded-full object-cover"
-                    />
+                    <div className='h-10 w-10 shrink-0 overflow-clip rounded-full relative'>
+                      <Image
+                        src={creatorAvatar}
+                        alt={creatorName}
+                        fill
+                        className="object-cover object-top"
+                      />
+                    </div>
                     <p className="text-white font-semibold text-sm">{creatorName}</p>
                   </div>
                 </div>

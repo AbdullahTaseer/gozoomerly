@@ -20,9 +20,8 @@ const MarketplaceTab = () => {
               placeholder="Search products services..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              inputClassName="pl-10 pr-4 bg-gray-50 border-gray-200"
+              inputClassName="pl-10 pr-4 bg-gray-50 rounded-[8px]! border-gray-200"
               bgColor="#F9FAFB"
-              borderRadius="8px"
             />
           </div>
           <button className="p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-pink-500 transition-colors">

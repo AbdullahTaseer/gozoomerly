@@ -280,8 +280,7 @@ const Boards = () => {
               height='46px'
               type='search'
               width='100%'
-              borderRadius='100px'
-              inputClassName="pl-10"
+              inputClassName="pl-10 rounded-full!"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />

@@ -255,12 +255,11 @@ const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose,
                   </button>
                   <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3'>
                     <GlobalInput
-                      borderRadius='20px'
                       placeholder={`Caption for story ${index + 1}...`}
                       onChange={(e) => handleUpdateStoryCaption(story.id, e.target.value)}
                       value={story.caption}
                       disabled={isUploading}
-                      className='bg-white/90'
+                      className='bg-white/90 rounded-full!'
                     />
                   </div>
                 </div>
@@ -319,7 +318,7 @@ const AddStatusModalContent: React.FC<AddStatusModalProps> = ({ isOpen, onClose,
             </div>
           </div>
           <div className='flex-shrink-0 flex items-center gap-3'>
-            <GlobalInput borderRadius='40px' placeholder='Add a caption..' onChange={(e) => setCaption(e.target.value)} value={caption} disabled={isUploading} />
+            <GlobalInput inputClassName='rounded-full!' placeholder='Add a caption..' onChange={(e) => setCaption(e.target.value)} value={caption} disabled={isUploading} />
             <button
               onClick={handleSend}
               disabled={isUploading}

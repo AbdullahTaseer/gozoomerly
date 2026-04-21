@@ -123,8 +123,7 @@ const SupportPage = () => {
                 }}
                 height="44px"
                 width="100%"
-                borderRadius="8px"
-                inputClassName="bg-white! border-[#C4C4C4]"
+                inputClassName="bg-white! border-[#C4C4C4] rounded-[8px]!"
                 error={errors.name}
               />
               <GlobalInput
@@ -139,8 +138,7 @@ const SupportPage = () => {
                 }}
                 height="44px"
                 width="100%"
-                borderRadius="8px"
-                inputClassName="bg-white! border-[#C4C4C4]"
+                inputClassName="bg-white! border-[#C4C4C4] rounded-[8px]!"
                 error={errors.phone}
               />
             </div>

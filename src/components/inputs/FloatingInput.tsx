@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import DateInputWithIcon from "@/components/inputs/DateInputWithIcon";
 
 type props = {
   id?: any;
@@ -83,6 +84,33 @@ const FloatingInput = ({
       if (onChange) onChange(e);
     }
   };
+
+  if (type === "date") {
+    const dateClassName = typeof inputClassName === "string" ? inputClassName : undefined;
+    return (
+      <div className={`relative w-full ${className ?? ""}`}>
+        <DateInputWithIcon
+          id={id}
+          value={String(value ?? "")}
+          onChange={(v) => {
+            setLocalError(null);
+            if (onChange) {
+              onChange({ target: { value: v } } as React.ChangeEvent<HTMLInputElement>);
+            }
+          }}
+          placeholder={title ? String(title) : "Select date"}
+          height={height}
+          width={width}
+          className={dateClassName}
+        />
+        {(error || localError) && (
+          <div className="mt-1">
+            <span className="text-sm text-red-500">{error || localError}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`relative w-full ${className}`}>

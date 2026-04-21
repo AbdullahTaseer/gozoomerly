@@ -122,7 +122,7 @@ const Circles = () => {
           <div className='flex gap-4 max-[580px]:gap-2 max-[350px]:gap-1 items-center max-[1200px]:mx-auto'>
             <div className='relative w-[300px] max-[580px]:w-[170px]'>
               <Search size={18} className='absolute top-3 left-3' />
-              <GlobalInput placeholder='Search circles...' height='42px' width='100%' borderRadius='100px' inputClassName="pl-10" />
+              <GlobalInput placeholder='Search circles...' height='42px' width='100%' inputClassName="pl-10 rounded-full!" />
             </div>
             <Image src={FilterSliderIcon} alt='' height={45} width={45} />
             <GlobalButton onClick={() => setIsCreateCircleModalOpen(true)} title='Create Circle' height='42px' className='w-[164px] max-[580px]:w-[120px]' />

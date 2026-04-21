@@ -109,8 +109,7 @@ const YourBoards = () => {
                 placeholder='Search...'
                 height='42px'
                 width='100%'
-                borderRadius='100px'
-                inputClassName="pl-10"
+                inputClassName="pl-10 rounded-full!"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
               />

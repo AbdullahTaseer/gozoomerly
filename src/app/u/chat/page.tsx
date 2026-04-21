@@ -171,8 +171,7 @@ const ChatPageContent = () => {
                   placeholder="Search"
                   height='42px'
                   width='100%'
-                  borderRadius='100px'
-                  inputClassName="pl-10 pr-10 border-[#EAEAEA]"
+                  inputClassName="px-10 rounded-full! border-[#EAEAEA]"
                   autoComplete="off"
                   enterKeyHint="search"
                   value={searchQuery}

@@ -234,10 +234,9 @@ const GroupChatManageModal: React.FC<GroupChatManageModalProps> = ({
                   placeholder="Search users"
                   height="40px"
                   width="100%"
-                  borderRadius="12px"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  inputClassName="border-gray-200"
+                  inputClassName="border-gray-200 rounded-[12px]!"
                 />
                 <div className="mt-1 max-h-32 overflow-y-auto border border-gray-100 rounded-xl">
                   {searching ? (

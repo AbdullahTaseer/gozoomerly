@@ -20,11 +20,11 @@ export default function SkeletonListItem({
       className={cn("flex items-center gap-3", className)}
       aria-hidden
     >
-      <SkeletonCircle />
+      <SkeletonCircle className="h-12 w-12" />
       <div className="flex-1 space-y-2">
         <SkeletonText className="h-4 max-w-[60%]" />
-        {lines >= 2 && <SkeletonText className="h-3 max-w-[40%]" />}
-        {lines >= 3 && <SkeletonText className="h-3 max-w-[30%]" />}
+        {lines >= 2 && <SkeletonText className="h-4 max-w-[40%]" />}
+        {lines >= 3 && <SkeletonText className="h-4 max-w-[30%]" />}
       </div>
     </div>
   );
