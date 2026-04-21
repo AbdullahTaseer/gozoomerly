@@ -1,10 +1,9 @@
 "use client";
 import React, { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import TitleCard from "@/components/cards/TitleCard";
 import GlobalButton from "@/components/buttons/GlobalButton";
 import AddCircleCard from "@/components/cards/AddCircleCard";
-import GlobalModal from "@/components/modals/GlobalModal";
+import ModalOrBottomSlider from "@/components/modals/ModalOrBottomSlider";
 import AddCircleMemberModal from "@/components/modals/AddCircleMemberModal";
 import { getCircleById, getCircleMembers, removeCircleMember, Circle } from "@/lib/supabase/circles";
 import DashNavbar from "@/components/navbar/DashNavbar";
@@ -116,7 +115,7 @@ const CircleById = ({ params }: CircleByIdProps) => {
   return (
     <>
       <DashNavbar />
-      <MobileHeader title="Family" RightIcon={Plus} rightIconClick={() => setIsMemberModalOpen(true)} />
+      <MobileHeader title={circle?.name} RightIcon={Plus} rightIconClick={() => setIsMemberModalOpen(true)} />
       <div className="px-[7%] max-[769px]:px-4 py-3">
         {loading ? (
           <div className="space-y-6 py-4">
@@ -151,121 +150,126 @@ const CircleById = ({ params }: CircleByIdProps) => {
         ) : (
           <>
 
-        <div className="flex justify-between items-center flex-wrap gap-2 max-[769px]:hidden">
-          <TitleCard title={circle.name} />
-          <GlobalButton
-            title="Add Member"
-            bgColor="black"
-            width="140px"
-            hover={{ bgColor: "black" }}
-            onClick={() => setIsMemberModalOpen(true)}
-          />
-        </div>
-
-        {}
-        {circle.description && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <p className="text-gray-700">{circle.description}</p>
-          </div>
-        )}
-
-        {}
-        <div className="mt-4">
-          <p className="text-sm text-gray-600 mb-2">
-            {members.length} {members.length === 1 ? 'member' : 'members'}
-          </p>
-        </div>
-
-        {}
-        <div className="mt-2">
-          {members.length === 0 ? (
-            <div className="text-center py-8">
-              <div className="max-w-md mx-auto">
-                <div className="text-6xl mb-4">👥</div>
-                <p className="text-xl font-semibold text-gray-700 mb-2">No Members Yet</p>
-                <p className="text-gray-500 mb-6">This circle doesn't have any members yet. Add some members to get started!</p>
-                <GlobalButton
-                  title="Add First Member"
-                  onClick={() => setIsMemberModalOpen(true)}
-                />
-              </div>
-            </div>
-          ) : (
-            members.map((member) => {
-              // Handle both nested profiles and flat structure
-              const profilePic = member.profiles?.profile_pic_url || member.profile_pic_url || DefaultAvatar;
-              const memberName = member.profiles?.name || member.name || member.profiles?.email || member.email || 'Unknown';
-              const memberEmail = member.profiles?.email || member.email || '';
-              // Try different possible field names for user ID
-              const memberId = member.user_id || member.member_user_id || member.id;
-
-              return (
-                <AddCircleCard
-                  key={member.id}
-                  avatar={profilePic}
-                  name={memberName}
-                  time={member.role || 'Member'}
-                  message={memberEmail}
-                  onDelete={() => handleDeleteMember(memberId, memberName)}
-                />
-              );
-            })
-          )}
-        </div>
-
-        <GlobalModal
-          title="Add Member"
-          isOpen={memberModalOpen}
-          onClose={() => setIsMemberModalOpen(false)}
-          className="w-[500px] max-[550px]:w-[95vw]"
-        >
-          <AddCircleMemberModal
-            circleId={circleId}
-            onMemberAdded={() => {
-              fetchCircleData();
-              setIsMemberModalOpen(false);
-            }}
-          />
-        </GlobalModal>
-
-        <GlobalModal
-          title="Remove Member"
-          isOpen={deleteModalOpen}
-          onClose={() => {
-            if (!deletingMember) {
-              setDeleteModalOpen(false);
-              setMemberToDelete(null);
-            }
-          }}
-          className="w-[450px] max-[500px]:w-[95vw]"
-        >
-          <div className="space-y-6">
-            <p className="text-gray-700">
-              Are you sure you want to remove <span className="font-semibold">{memberToDelete?.name}</span> from this circle?
-            </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex justify-between items-center flex-wrap gap-2 max-[769px]:hidden mt-4">
+              <span className="text-3xl font-bold">{circle.name}</span>
               <GlobalButton
-                title="Cancel"
-                bgColor="#E5E7EB"
-                width="100px"
-                hover={{ bgColor: "#D1D5DB" }}
-                onClick={() => {
+                title="Add Member"
+                bgColor="black"
+                width="120px"
+                hover={{ bgColor: "black" }}
+                onClick={() => setIsMemberModalOpen(true)}
+              />
+            </div>
+
+            { }
+            {circle.description && (
+              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-700">{circle.description}</p>
+              </div>
+            )}
+
+            { }
+            <div className="mt-4">
+              <p className="text-sm text-gray-600 mb-2">
+                {members.length} {members.length === 1 ? 'member' : 'members'}
+              </p>
+            </div>
+
+            { }
+            <div className="mt-2">
+              {members.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="max-w-md mx-auto">
+                    <div className="text-6xl mb-4">👥</div>
+                    <p className="text-xl font-semibold text-gray-700 mb-2">No Members Yet</p>
+                    <p className="text-gray-500 mb-6">This circle doesn't have any members yet. Add some members to get started!</p>
+                    <GlobalButton
+                      title="Add First Member"
+                      onClick={() => setIsMemberModalOpen(true)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                members.map((member) => {
+                  // Handle both nested profiles and flat structure
+                  const profilePic = member.profiles?.profile_pic_url || member.profile_pic_url || DefaultAvatar;
+                  const memberName = member.profiles?.name || member.name || member.profiles?.email || member.email || 'Unknown';
+                  const memberEmail = member.profiles?.email || member.email || '';
+                  // Try different possible field names for user ID
+                  const memberId = member.user_id || member.member_user_id || member.id;
+
+                  return (
+                    <AddCircleCard
+                      key={member.id}
+                      avatar={profilePic}
+                      name={memberName}
+                      time={member.role || 'Member'}
+                      message={memberEmail}
+                      onDelete={() => handleDeleteMember(memberId, memberName)}
+                    />
+                  );
+                })
+              )}
+            </div>
+
+            <ModalOrBottomSlider
+              title="Add Member"
+              isOpen={memberModalOpen}
+              onClose={() => setIsMemberModalOpen(false)}
+              desktopClassName="w-[500px] max-[550px]:w-[95vw]"
+            >
+              <AddCircleMemberModal
+                circleId={circleId}
+                onMemberAdded={() => {
+                  fetchCircleData();
+                  setIsMemberModalOpen(false);
+                }}
+              />
+            </ModalOrBottomSlider>
+
+            <ModalOrBottomSlider
+              title="Remove Member"
+              isOpen={deleteModalOpen}
+              onClose={() => {
+                if (!deletingMember) {
                   setDeleteModalOpen(false);
                   setMemberToDelete(null);
-                }}
-                disabled={deletingMember}
-              />
-              <GlobalButton
-                title={deletingMember ? "Removing..." : "Remove"}
-                bgColor="#EF4444"
-                width="120px"
-                hover={{ bgColor: "#DC2626" }}
-                onClick={confirmDeleteMember}
-                disabled={deletingMember}
-              />
-            </div>
-          </div>
-        </GlobalModal>
+                }
+              }}
+              desktopClassName="w-[450px] max-[500px]:w-[95vw]"
+            >
+              <div className="space-y-6">
+                <p className="text-gray-700">
+                  Are you sure you want to remove <span className="font-semibold">{memberToDelete?.name}</span> from this circle?
+                </p>
+                <div className="flex gap-3 max-[769px]:grid grid-cols-2  justify-end">
+                  <GlobalButton
+                    title="Cancel"
+                    bgColor="white"
+                    borderColor='black'
+                    borderWidth='1px'
+                    color='black'
+                    height="46px"
+                    className="px-6"
+                    hover={{ bgColor: "white" }}
+                    onClick={() => {
+                      setDeleteModalOpen(false);
+                      setMemberToDelete(null);
+                    }}
+                    disabled={deletingMember}
+                  />
+                  <GlobalButton
+                    title={deletingMember ? "Removing..." : "Remove"}
+                    bgColor="#EF4444"
+                    height="46px"
+                    className="px-10"
+                    hover={{ bgColor: "#DC2626" }}
+                    onClick={confirmDeleteMember}
+                    disabled={deletingMember}
+                  />
+                </div>
+              </div>
+            </ModalOrBottomSlider>
           </>
         )}
       </div>

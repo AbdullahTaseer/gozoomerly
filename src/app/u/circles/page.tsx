@@ -1,21 +1,20 @@
 'use client';
 
-import {  useEffect, useState  } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { Search } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import TitleCard from '@/components/cards/TitleCard';
 import CircleCard from '@/components/cards/CircleCard';
 import GlobalInput from '@/components/inputs/GlobalInput';
 import GlobalButton from '@/components/buttons/GlobalButton';
 import FilterSliderIcon from "@/assets/svgs/filter-slider.svg";
 import { authService } from '@/lib/supabase/auth';
-import GlobalModal from '@/components/modals/GlobalModal';
-import FloatingInput from '@/components/inputs/FloatingInput';
 import AddCircleModal from '@/components/modals/AddCircleModal';
+import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import { CircleWithDetails, getUserCircles, deleteCircle } from '@/lib/supabase/circles';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import { SkeletonCircleCard } from '@/components/skeletons';
+import MobileHeader from '@/components/navbar/MobileHeader';
 
 interface Circle {
   id: string;
@@ -114,20 +113,30 @@ const Circles = () => {
 
   return (
     <>
-      <DashNavbar hide={false}/>
-      <div className='px-[7%] max-[769px]:px-4 py-4'>
+      <DashNavbar />
+      <MobileHeader
+        title="Circles"
+        showBack={true}
+        onBackClick={() => router.push('/u')}
+        profileRight={true}
+      />
 
-        <div className='flex justify-between max-[1200px]:flex-col gap-6'>
-          <TitleCard title='My Circles' className='text-left' />
-          <div className='flex gap-4 max-[580px]:gap-2 max-[350px]:gap-1 items-center max-[1200px]:mx-auto'>
-            <div className='relative w-[300px] max-[580px]:w-[170px]'>
-              <Search size={18} className='absolute top-3 left-3' />
-              <GlobalInput placeholder='Search circles...' height='42px' width='100%' inputClassName="pl-10 rounded-full!" />
-            </div>
-            <Image src={FilterSliderIcon} alt='' height={45} width={45} />
-            <GlobalButton onClick={() => setIsCreateCircleModalOpen(true)} title='Create Circle' height='42px' className='w-[164px] max-[580px]:w-[120px]' />
+      <div className="flex max-[769px]:justify-center justify-between items-center px-[5%] pb-4 pt-8">
+        <button onClick={() => router.push('/u')} className="flex items-center gap-2 text-black max-[769px]:hidden">
+          <ArrowLeft size={24} />
+          <span className="text-3xl font-bold">Circles</span>
+        </button>
+        <div className='flex gap-4 max-[580px]:gap-2 max-[350px]:gap-1 items-center'>
+          <div className='relative w-[300px] max-[580px]:w-[170px]'>
+            <Search size={18} className='absolute top-3 left-3' />
+            <GlobalInput placeholder='Search circles...' height='42px' width='100%' inputClassName="pl-10 rounded-full!" />
           </div>
+          <Image src={FilterSliderIcon} alt='' height={45} width={45} />
+          <GlobalButton onClick={() => setIsCreateCircleModalOpen(true)} title='Create Circle' height='42px' className='w-[120px]' />
         </div>
+      </div>
+
+      <div className='px-[5%] max-[769px]:px-4'>
 
         <div className='mt-4'>
           {!loading && !error && circles.length > 0 && (
@@ -160,7 +169,7 @@ const Circles = () => {
                   <div className='text-6xl mb-4'>👥</div>
                   <p className='text-xl font-semibold text-gray-700 mb-2'>No Circles Yet</p>
                   <p className='text-gray-500 mb-6'>You haven't joined any circles yet. Create your first circle to get started!</p>
-                  <GlobalButton title='Create Your First Circle' onClick={() => {}} />
+                  <GlobalButton title='Create Your First Circle' onClick={() => { }} />
                 </div>
               </div>
             ) : (
@@ -180,11 +189,11 @@ const Circles = () => {
           </div>
         </div>
 
-        <GlobalModal
+        <ModalOrBottomSlider
           title='Create Circle'
           isOpen={createCircleModalOpen}
           onClose={() => setIsCreateCircleModalOpen(false)}
-          className="w-[500px] max-[550px]:w-[95vw]"
+          desktopClassName="w-[500px] max-[550px]:w-[95vw]"
         >
           <AddCircleModal
             onCircleCreated={() => {
@@ -192,16 +201,16 @@ const Circles = () => {
               setIsCreateCircleModalOpen(false);
             }}
           />
-        </GlobalModal>
+        </ModalOrBottomSlider>
 
-        <GlobalModal
+        <ModalOrBottomSlider
           title='Edit Circle'
           isOpen={editCircleModalOpen}
           onClose={() => {
             setEditCircleModalOpen(false);
             setCircleToEdit(null);
           }}
-          className="w-[500px] max-[550px]:w-[95vw]"
+          desktopClassName="w-[500px] max-[550px]:w-[95vw]"
         >
           <AddCircleModal
             editMode={true}
@@ -222,9 +231,9 @@ const Circles = () => {
               setCircleToEdit(null);
             }}
           />
-        </GlobalModal>
+        </ModalOrBottomSlider>
 
-        <GlobalModal
+        <ModalOrBottomSlider
           title="Delete Circle"
           isOpen={deleteModalOpen}
           onClose={() => {
@@ -233,18 +242,20 @@ const Circles = () => {
               setCircleToDelete(null);
             }
           }}
-          className="w-[450px] max-[500px]:w-[95vw]"
+          desktopClassName="w-[450px] max-[500px]:w-[95vw]"
         >
           <div className="space-y-6">
             <p className="text-gray-700">
               Are you sure you want to delete <span className="font-semibold">{circleToDelete?.name}</span>?
             </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex max-[769px]:grid grid-cols-2 gap-3 justify-end">
               <GlobalButton
                 title="Cancel"
-                bgColor="#E5E7EB"
-                width="100px"
-                hover={{ bgColor: "#D1D5DB" }}
+                bgColor="white"
+                borderColor='black'
+                borderWidth='1px'
+                color='black'
+                hover={{ bgColor: "white" }}
                 onClick={() => {
                   setDeleteModalOpen(false);
                   setCircleToDelete(null);
@@ -254,14 +265,14 @@ const Circles = () => {
               <GlobalButton
                 title={deletingCircle ? "Deleting..." : "Delete"}
                 bgColor="#EF4444"
-                width="120px"
                 hover={{ bgColor: "#DC2626" }}
                 onClick={confirmDeleteCircle}
                 disabled={deletingCircle}
+                className='px-5'
               />
             </div>
           </div>
-        </GlobalModal>
+        </ModalOrBottomSlider>
       </div>
     </>
   );

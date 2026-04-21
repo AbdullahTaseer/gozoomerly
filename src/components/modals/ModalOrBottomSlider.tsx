@@ -93,7 +93,7 @@ const ModalOrBottomSlider = ({
       />
 
       <div
-        className={`max-[769px]:block hidden fixed bottom-0 left-0 right-0 z-[60001] bg-white rounded-t-2xl shadow-2xl
+        className={`max-[768.98px]:block hidden fixed bottom-0 left-0 right-0 z-[60001] bg-white rounded-t-2xl shadow-2xl
         pb-[env(safe-area-inset-bottom,0px)]
         transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-y-0 pointer-events-auto' : 'translate-y-[100dvh] pointer-events-none'}
@@ -111,7 +111,7 @@ const ModalOrBottomSlider = ({
       </div>
 
       <div
-        className={`min-[770px]:flex hidden fixed inset-0 z-[60001] items-center justify-center p-4
+        className={`min-[769px]:flex hidden fixed inset-0 z-[60001] items-center justify-center p-4
         transition-opacity duration-300
         ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}

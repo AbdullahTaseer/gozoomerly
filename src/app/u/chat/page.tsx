@@ -351,7 +351,7 @@ const ChatPageContent = () => {
 
 const ChatPage = () => {
   return (
-    <Suspense fallback={<SkeletonPageCenter />}>
+    <Suspense fallback={null}>
       <ChatPageContent />
     </Suspense>
   );

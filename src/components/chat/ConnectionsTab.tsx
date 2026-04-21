@@ -389,7 +389,7 @@ const ConnectionsTab: React.FC<ConnectionsTabProps> = ({
   };
 
   return (
-    <div className='max-w-[1180px] mx-auto h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-110px)] my-6'>
+    <div className='h-[calc(100vh-190px)] max-[1024px]:h-[calc(100vh-160px)] max-[768px]:h-[calc(100vh-110px)] my-6'>
       <div className="h-full md:flex md:gap-4">
         <div className={`${selectedConversation ? 'hidden md:block' : 'block'} w-full h-full md:w-[360px] lg:w-[390px] md:shrink-0 py-3 border border-gray-200 rounded-xl bg-white overflow-y-auto scrollbar-hide`}>
           {renderChatList()}
