@@ -8,9 +8,9 @@ import ProfileAvatar from '@/assets/svgs/avatar-list-icon-1.svg';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
 import ShareBoardModalContent from '@/components/modals/ShareBoardModal';
 import InviteToBoardModalContent from '@/components/modals/InviteToBoardModal';
-import WishModalContent from '@/components/modals/WishModal';
 import { createClient } from '@/lib/supabase/client';
 import { authService } from '@/lib/supabase/auth';
+import { getBoardWishes, likeWish, unlikeWish } from '@/lib/supabase/boards';
 import {
   isBoardFavorited,
   rpcFavoriteBoard,
@@ -24,6 +24,15 @@ export interface MediaItem {
   url: string;
   thumbnail?: string;
 }
+
+type WishMediaMeta = {
+  wishId?: string;
+  senderName?: string;
+  senderAvatar?: string;
+  content?: string;
+  likesCount?: number;
+  isLiked?: boolean;
+};
 
 export interface FollowingCardProps {
   userName?: string;
@@ -88,16 +97,23 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [wishModalOpen, setWishModalOpen] = useState(false);
-  const [localLikes, setLocalLikes] = useState(likes);
+  const [localLiked, setLocalLiked] = useState(isLiked);
   const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(!!boardId);
   const [favoriteToggling, setFavoriteToggling] = useState(false);
+  const [wishMetaByUrl, setWishMetaByUrl] = useState<Record<string, WishMediaMeta>>({});
+  const [wishLikeStateById, setWishLikeStateById] = useState<Record<string, { isLiked: boolean; likesCount: number }>>({});
+  const [wishLikePendingId, setWishLikePendingId] = useState<string | null>(null);
+
+  const normalizeMediaUrl = useCallback((value?: string) => {
+    if (!value) return '';
+    return value.trim().split('?')[0];
+  }, []);
 
   useEffect(() => {
-    setLocalLikes(likes);
-  }, [likes]);
+    setLocalLiked(isLiked);
+  }, [isLiked]);
 
   useEffect(() => {
     if (!boardId) {
@@ -126,6 +142,53 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
       cancelled = true;
     };
   }, [boardId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!boardId) {
+        setWishMetaByUrl({});
+        return;
+      }
+      const user = await authService.getUser();
+      if (!user?.id || cancelled) {
+        setWishMetaByUrl({});
+        return;
+      }
+      const { data } = await getBoardWishes(boardId, user.id, { limit: 200, offset: 0 });
+      if (cancelled) return;
+      const map: Record<string, WishMediaMeta> = {};
+      const likeState: Record<string, { isLiked: boolean; likesCount: number }> = {};
+      (data || []).forEach((wish: any) => {
+        const wishId = typeof wish?.id === 'string' ? wish.id : undefined;
+        if (wishId) {
+          likeState[wishId] = {
+            isLiked: !!wish?.isLiked,
+            likesCount: Number.isFinite(wish?.likesCount) ? Number(wish.likesCount) : 0,
+          };
+        }
+        const meta: WishMediaMeta = {
+          wishId,
+          senderName: wish?.sender?.name || undefined,
+          senderAvatar: wish?.sender?.profile_pic_url || undefined,
+          content: typeof wish?.content === 'string' ? wish.content.trim() : undefined,
+          likesCount: Number.isFinite(wish?.likesCount) ? Number(wish.likesCount) : 0,
+          isLiked: !!wish?.isLiked,
+        };
+        (wish?.media || []).forEach((m: any) => {
+          const key = normalizeMediaUrl(String(m?.cdn_url || m?.url || ''));
+          if (key && !map[key]) {
+            map[key] = meta;
+          }
+        });
+      });
+      setWishMetaByUrl(map);
+      setWishLikeStateById(likeState);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [boardId, normalizeMediaUrl]);
 
   const toggleFavorite = useCallback(async () => {
     if (!favoriteUserId || !boardId || favoriteToggling || favoriteLoading) return;
@@ -171,6 +234,14 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
   const mediaSrc = currentIsVideo
     ? currentMedia?.thumbnail || currentMedia?.url || videoThumbnail || coverImage
     : currentMedia?.url || currentMedia?.thumbnail || coverImage;
+  const currentMeta = wishMetaByUrl[normalizeMediaUrl(currentMedia?.url)];
+  const activeUserName = currentMeta?.senderName || userName;
+  const activeUserAvatar = currentMeta?.senderAvatar || userAvatar;
+  const activeDisplayTitle = (currentMeta?.content || title || '').trim() || title;
+  const activeWishId = currentMeta?.wishId;
+  const activeWishLikeState = activeWishId ? wishLikeStateById[activeWishId] : null;
+  const displayLiked = activeWishLikeState?.isLiked ?? localLiked;
+  const displayLikes = activeWishLikeState?.likesCount ?? likes;
 
   const goPrev = () => setCarouselIndex((prev) => Math.max(prev - 1, 0));
   const goNext = () =>
@@ -204,12 +275,44 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
       onLikeClick();
       return;
     }
-    if (!boardId) return;
-    if (!supportsWishes) {
-      toast.error('Wishes are not enabled for this board');
+    if (!activeWishId) {
+      setLocalLiked((prev) => !prev);
       return;
     }
-    setWishModalOpen(true);
+    if (wishLikePendingId === activeWishId) return;
+
+    const prevState = wishLikeStateById[activeWishId] || { isLiked: false, likesCount: 0 };
+    const nextLiked = !prevState.isLiked;
+    const nextLikes = nextLiked ? prevState.likesCount + 1 : Math.max(0, prevState.likesCount - 1);
+
+    setWishLikeStateById((prev) => ({
+      ...prev,
+      [activeWishId]: { isLiked: nextLiked, likesCount: nextLikes },
+    }));
+    setWishLikePendingId(activeWishId);
+
+    const request = nextLiked ? likeWish(activeWishId) : unlikeWish(activeWishId);
+    request.then(({ error }) => {
+      if (error) {
+        setWishLikeStateById((prev) => ({
+          ...prev,
+          [activeWishId]: prevState,
+        }));
+        const msg =
+          typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message?: string }).message || 'Failed to update like')
+            : 'Failed to update like';
+        toast.error(msg);
+      }
+    }).catch(() => {
+      setWishLikeStateById((prev) => ({
+        ...prev,
+        [activeWishId]: prevState,
+      }));
+      toast.error('Failed to update like');
+    }).finally(() => {
+      setWishLikePendingId((prev) => (prev === activeWishId ? null : prev));
+    });
   };
 
   const handleCommentClick = (e: React.MouseEvent) => {
@@ -245,8 +348,8 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
               }`}
           >
             <Image
-              src={userAvatar || ProfileAvatar}
-              alt={userName}
+              src={activeUserAvatar || ProfileAvatar}
+              alt={activeUserName}
               fill
               className="object-cover"
               sizes="40px"
@@ -258,9 +361,9 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
               }}
             />
           </div>
-          <p className="font-medium text-sm text-[#1B1D26]">{userName}</p>
+          <p className="font-medium text-sm text-[#1B1D26]">{activeUserName}</p>
         </div>
-        <h3 className="font-medium text-sm text-[#1B1D26]">{title}</h3>
+        <h3 className="font-medium text-sm text-[#1B1D26]">{activeDisplayTitle}</h3>
       </div>
 
       <div
@@ -270,7 +373,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
         {mediaSrc ? (
           <Image
             src={mediaSrc}
-            alt={title || ''}
+            alt={activeDisplayTitle || ''}
             fill
             className="object-cover object-top"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -310,15 +413,16 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
           <button
             type="button"
             onClick={handleLikeClick}
-            className={`flex items-center gap-1 text-sm transition-colors ${isLiked ? 'text-pink-500' : 'hover:text-pink-500'
+            disabled={!!activeWishId && wishLikePendingId === activeWishId}
+            className={`flex items-center gap-1 text-sm transition-colors disabled:opacity-50 ${displayLiked ? 'text-pink-500' : 'hover:text-pink-500'
               }`}
           >
             <Heart
               size={18}
               strokeWidth={2}
-              className={isLiked ? 'fill-pink-500 stroke-pink-500' : ''}
+              className={displayLiked ? 'fill-pink-500 stroke-pink-500' : ''}
             />
-            <span>{localLikes}</span>
+            <span>{displayLikes}</span>
           </button>
           <button
             type="button"
@@ -378,7 +482,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
         <ShareBoardModalContent
           onClose={() => setIsShareModalOpen(false)}
           shareUrl={generatedShareUrl}
-          title={title}
+          title={activeDisplayTitle}
         />
       </ModalOrBottomSlider>
       {boardId ? (
@@ -398,23 +502,6 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
         </ModalOrBottomSlider>
       ) : null}
 
-      {boardId ? (
-        <ModalOrBottomSlider
-          isOpen={wishModalOpen}
-          onClose={() => setWishModalOpen(false)}
-          modalHeader={false}
-          desktopClassName="!w-[450px] max-w-[95vw]"
-          contentClassName="!p-0"
-        >
-          <WishModalContent
-            isOpen={wishModalOpen}
-            onClose={() => setWishModalOpen(false)}
-            boardId={boardId}
-            honoreeName={honoreeName || title}
-            onSubmit={() => setLocalLikes((c) => c + 1)}
-          />
-        </ModalOrBottomSlider>
-      ) : null}
     </>
   );
 };

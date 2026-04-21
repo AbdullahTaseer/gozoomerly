@@ -7,11 +7,10 @@ import { useRouter } from 'next/navigation';
 import { X, Heart, MessageCircle, Share2, MapPin } from 'lucide-react';
 import type { PublicBoardMemberPreview } from '@/hooks/useGetPublicBoards';
 import ModalOrBottomSlider from '@/components/modals/ModalOrBottomSlider';
-import WishModalContent from '@/components/modals/WishModal';
 import ExploreParticipantsModalContent from '@/components/modals/ExploreParticipantsModalContent';
 import ShareButtons from '@/components/buttons/ShareButtons';
 import { authService } from '@/lib/supabase/auth';
-import { getBoardMedia } from '@/lib/supabase/boards';
+import { getBoardMedia, getBoardWishes } from '@/lib/supabase/boards';
 import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
 type ExploreCardModalProps = {
@@ -40,6 +39,19 @@ type ExploreModalMediaItem = {
   url: string;
   thumbnailUrl?: string;
   filename?: string;
+  creatorId?: string;
+  creatorName?: string;
+  creatorAvatar?: string;
+  wishContent?: string;
+  wishCreatedAt?: string;
+};
+
+type WishAuthorMeta = {
+  creatorId?: string;
+  creatorName?: string;
+  creatorAvatar?: string;
+  wishContent?: string;
+  wishCreatedAt?: string;
 };
 
 const FALLBACK_MODAL_IMAGE =
@@ -73,8 +85,32 @@ function readNestedString(row: Record<string, unknown>, containers: string[], ke
   return '';
 }
 
+function readCreatorId(row: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = row[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
 function getSafeModalImageSrc(src: string): string {
   return typeof src === 'string' && src.trim() ? src : FALLBACK_MODAL_IMAGE;
+}
+
+function formatRelativeTime(iso?: string, fallback = ''): string {
+  if (!iso) return fallback;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return fallback;
+  const diffMs = Date.now() - d.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
 }
 
 const ExploreCardModal = ({
@@ -98,10 +134,11 @@ const ExploreCardModal = ({
 }: ExploreCardModalProps) => {
   const router = useRouter();
   const [participantsListOpen, setParticipantsListOpen] = useState(false);
-  const [wishModalOpen, setWishModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [localLikesCount, setLocalLikesCount] = useState(likesCount);
+  const [liked, setLiked] = useState(false);
   const [mediaItems, setMediaItems] = useState<ExploreModalMediaItem[]>([]);
+  const [wishAuthors, setWishAuthors] = useState<WishAuthorMeta[]>([]);
   const [mediaIndex, setMediaIndex] = useState(0);
   const [isMediaLoading, setIsMediaLoading] = useState(false);
 
@@ -110,8 +147,14 @@ const ExploreCardModal = ({
   }, [isOpen, likesCount]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    setLiked(false);
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) {
       setMediaItems([]);
+      setWishAuthors([]);
       setMediaIndex(0);
       return;
     }
@@ -135,17 +178,63 @@ const ExploreCardModal = ({
         return;
       }
 
-      const { data, error } = await getBoardMedia({
-        boardId,
-        viewerId,
-        limit: 20,
-        offset: 0,
-        scope: 'all',
-        orderBy: 'created_at',
-        orderDir: 'desc',
-      });
+      const [{ data, error }, { data: wishesData }] = await Promise.all([
+        getBoardMedia({
+          boardId,
+          viewerId,
+          limit: 20,
+          offset: 0,
+          scope: 'all',
+          orderBy: 'created_at',
+          orderDir: 'desc',
+        }),
+        getBoardWishes(boardId, viewerId, { limit: 200, offset: 0 }),
+      ]);
 
       if (cancelled || error) {
+        setIsMediaLoading(false);
+        return;
+      }
+
+      const wishMediaItems = (wishesData || [])
+        .flatMap((wish: any, wishIdx: number) => {
+          const wishCreatorId = wish?.sender?.id || undefined;
+          const wishCreatorName = wish?.sender?.name || undefined;
+          const wishCreatorAvatar = wish?.sender?.profile_pic_url || undefined;
+          const wishContent = typeof wish?.content === 'string' ? wish.content.trim() : '';
+          const wishCreatedAt = typeof wish?.created_at === 'string' ? wish.created_at : undefined;
+          const wishMedia = Array.isArray(wish?.media) ? wish.media : [];
+          return wishMedia.map((m: any, mIdx: number) => {
+            const wishUrl = String(m?.cdn_url || m?.url || m?.thumbnail_url || '').trim();
+            if (!wishUrl) return null;
+            return {
+              id: String(m?.id || `wish-${wishIdx}-media-${mIdx}`),
+              mediaType: normalizeMediaType(m?.media_type ?? m?.mime_type ?? m?.content_type ?? m?.file_type),
+              url: wishUrl,
+              thumbnailUrl: String(m?.thumbnail_url || '').trim() || undefined,
+              filename: String(m?.filename || m?.file_name || m?.name || '').trim() || undefined,
+              creatorId: wishCreatorId,
+              creatorName: wishCreatorName,
+              creatorAvatar: wishCreatorAvatar,
+              wishContent: wishContent || undefined,
+              wishCreatedAt,
+            } as ExploreModalMediaItem;
+          });
+        })
+        .filter((item: ExploreModalMediaItem | null): item is ExploreModalMediaItem => item !== null);
+
+      const wishAuthorRows: WishAuthorMeta[] = (wishesData || []).map((wish: any) => ({
+        creatorId: wish?.sender?.id || undefined,
+        creatorName: wish?.sender?.name || undefined,
+        creatorAvatar: wish?.sender?.profile_pic_url || undefined,
+        wishContent: typeof wish?.content === 'string' ? wish.content.trim() : undefined,
+        wishCreatedAt: typeof wish?.created_at === 'string' ? wish.created_at : undefined,
+      }));
+      setWishAuthors(wishAuthorRows);
+
+      if (wishMediaItems.length > 0) {
+        setMediaItems(wishMediaItems);
+        setMediaIndex(0);
         setIsMediaLoading(false);
         return;
       }
@@ -210,13 +299,57 @@ const ExploreCardModal = ({
           ]);
           const filename = readString(row, ['filename', 'file_name', 'name', 'title']);
           const id = readString(row, ['id', 'media_id']) || `${idx}`;
+          const mediaCreatorName = readString(row, [
+            'wisher_name',
+            'sender_name',
+            'creator_name',
+            'user_name',
+            'author_name',
+            'full_name',
+          ]) || readNestedString(
+            row,
+            ['wisher', 'sender', 'creator', 'user', 'profile', 'profiles', 'owner'],
+            ['name', 'full_name', 'display_name', 'username']
+          );
+          const mediaCreatorAvatar = readString(row, [
+            'wisher_profile_pic_url',
+            'sender_profile_pic_url',
+            'creator_profile_pic_url',
+            'profile_pic_url',
+            'avatar_url',
+            'profile_photo_url',
+          ]) || readNestedString(
+            row,
+            ['wisher', 'sender', 'creator', 'user', 'profile', 'profiles', 'owner'],
+            ['profile_pic_url', 'avatar_url', 'profile_photo_url']
+          );
+          const mediaCreatorId = readCreatorId(row, [
+            'wisher_id',
+            'sender_id',
+            'creator_id',
+            'user_id',
+            'author_id',
+            'owner_id',
+          ]) || readNestedString(
+            row,
+            ['wisher', 'sender', 'creator', 'user', 'profile', 'profiles', 'owner'],
+            ['id', 'user_id', 'profile_id']
+          );
           const mediaType = normalizeMediaType(
             row.media_type ?? row.mime_type ?? row.content_type ?? row.media_kind ?? row.file_type
           );
           const url = directUrl || nestedUrl || thumbnailUrl;
-
           if (!url) return null;
-          return { id, mediaType, url, thumbnailUrl, filename } as ExploreModalMediaItem;
+          return {
+            id,
+            mediaType,
+            url,
+            thumbnailUrl,
+            filename,
+            creatorId: mediaCreatorId || undefined,
+            creatorName: mediaCreatorName || undefined,
+            creatorAvatar: mediaCreatorAvatar || undefined,
+          } as ExploreModalMediaItem;
         })
         .filter(Boolean) as ExploreModalMediaItem[];
 
@@ -238,7 +371,6 @@ const ExploreCardModal = ({
 
   useEffect(() => {
     if (!isOpen) {
-      setWishModalOpen(false);
       setShareModalOpen(false);
     }
   }, [isOpen]);
@@ -248,13 +380,13 @@ const ExploreCardModal = ({
       ? buildBoardUrl(boardId)
       : '';
 
-  const handleWishSuccess = useCallback(() => {
-    setLocalLikesCount((c) => c + 1);
+  const handleToggleLike = useCallback(() => {
+    setLiked((prev) => {
+      const next = !prev;
+      setLocalLikesCount((count) => (next ? count + 1 : Math.max(0, count - 1)));
+      return next;
+    });
   }, []);
-
-  const openWish = useCallback(() => {
-    if (boardId) setWishModalOpen(true);
-  }, [boardId]);
 
   const openShare = useCallback(() => {
     if (boardId) setShareModalOpen(true);
@@ -271,6 +403,12 @@ const ExploreCardModal = ({
   const canOpenParticipantsList = participantCount > 0;
   const canEngage = !!boardId;
   const currentMedia = mediaItems[mediaIndex];
+  const fallbackWishMeta = wishAuthors.length > 0 ? wishAuthors[mediaIndex % wishAuthors.length] : null;
+  const activeCreatorId = currentMedia?.creatorId || fallbackWishMeta?.creatorId || creatorId || null;
+  const activeCreatorName = currentMedia?.creatorName || fallbackWishMeta?.creatorName || creatorName;
+  const activeCreatorAvatar = currentMedia?.creatorAvatar || fallbackWishMeta?.creatorAvatar || creatorAvatar;
+  const activeWishTime = formatRelativeTime(currentMedia?.wishCreatedAt || fallbackWishMeta?.wishCreatedAt, timeAgo);
+  const activeHeaderTitle = (currentMedia?.wishContent || fallbackWishMeta?.wishContent || title || '').trim() || title;
   const hasCarousel = mediaItems.length > 1;
   const fallbackImageSrc = getSafeModalImageSrc(image);
   const goPrevMedia = useCallback(() => {
@@ -297,10 +435,10 @@ const ExploreCardModal = ({
     const creatorRow = (
       <>
         <div className="relative w-11 h-11 rounded-full border-2 border-white/80 overflow-hidden shrink-0">
-          {creatorAvatar ? (
+          {activeCreatorAvatar ? (
             <Image
-              src={creatorAvatar}
-              alt={creatorName}
+              src={activeCreatorAvatar}
+              alt={activeCreatorName}
               fill
               className="object-cover"
               sizes="44px"
@@ -310,9 +448,9 @@ const ExploreCardModal = ({
             <div className="w-full h-full bg-[#c41e3a]" />
           )}
         </div>
-        <div className={`flex flex-col gap-0.5 pb-0.5 ${creatorId ? 'min-w-0' : ''}`}>
-          <p className={`text-white font-semibold text-sm ${creatorId ? 'truncate' : ''}`}>{creatorName}</p>
-          <p className="text-white/90 text-xs">{timeAgo}</p>
+        <div className={`flex flex-col gap-0.5 pb-0.5 ${activeCreatorId ? 'min-w-0' : ''}`}>
+          <p className={`text-white font-semibold text-sm ${activeCreatorId ? 'truncate' : ''}`}>{activeCreatorName}</p>
+          <p className="text-white/90 text-xs">{activeWishTime}</p>
           <div className="flex items-center gap-1.5 text-white/90 text-xs mt-0.5">
             <MapPin size={12} className="shrink-0" />
             <span>{location}</span>
@@ -321,9 +459,9 @@ const ExploreCardModal = ({
       </>
     );
 
-    const creatorSection = creatorId ? (
+    const creatorSection = activeCreatorId ? (
       <Link
-        href={`/u/visitProfile/${creatorId}`}
+        href={`/u/visitProfile/${activeCreatorId}`}
         onClick={onClose}
         className="absolute bottom-5 left-4 z-10 flex items-start gap-3 rounded-xl py-1 pr-3 -ml-1 pl-1 pointer-events-auto text-left transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-white"
       >
@@ -343,13 +481,13 @@ const ExploreCardModal = ({
               type="button"
               onClick={goToBoardComments}
               className="font-bold text-xl md:text-2xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2 cursor-pointer rounded-lg px-2 py-1 -mx-2 transition-opacity hover:opacity-80 hover:underline focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-gray-400"
-              aria-label={`Open board: ${title}`}
+              aria-label={`Open board: ${activeHeaderTitle}`}
             >
-              {title}
+              {activeHeaderTitle}
             </button>
           ) : (
             <h2 className="font-bold text-xl md:text-2xl text-black capitalize text-center max-w-[calc(100%-3.5rem)] line-clamp-2">
-              {title}
+              {activeHeaderTitle}
             </h2>
           )}
           <button
@@ -514,12 +652,17 @@ const ExploreCardModal = ({
               disabled={!canEngage}
               onClick={(e) => {
                 e.stopPropagation();
-                openWish();
+                handleToggleLike();
               }}
               className="flex flex-col items-center gap-1 text-white cursor-pointer hover:opacity-80 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
-              aria-label="Add a wish"
+              aria-label={liked ? 'Unlike board' : 'Like board'}
             >
-              <Heart size={24} className="text-white" strokeWidth={2} fill="transparent" />
+              <Heart
+                size={24}
+                className={liked ? 'text-pink-500 fill-pink-500' : 'text-white'}
+                strokeWidth={2}
+                fill={liked ? 'currentColor' : 'transparent'}
+              />
               <span className="text-xs font-medium">{localLikesCount}</span>
             </button>
             <button
@@ -556,12 +699,15 @@ const ExploreCardModal = ({
               disabled={!canEngage}
               onClick={(e) => {
                 e.stopPropagation();
-                openWish();
+                handleToggleLike();
               }}
               className="flex flex-col items-center gap-1 text-white cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:pointer-events-none"
-              aria-label="Add a wish"
+              aria-label={liked ? 'Unlike board' : 'Like board'}
             >
-              <Heart size={24} fill="white" className="drop-shadow-md" />
+              <Heart
+                size={24}
+                className={liked ? 'fill-pink-500 text-pink-500 drop-shadow-md' : 'fill-white text-white drop-shadow-md'}
+              />
               <span className="text-xs font-medium drop-shadow-md">{localLikesCount}</span>
             </button>
             <button
@@ -615,24 +761,6 @@ const ExploreCardModal = ({
           onCloseExploreCard={onClose}
         />
       </ModalOrBottomSlider>
-
-      {boardId ? (
-        <ModalOrBottomSlider
-          isOpen={wishModalOpen}
-          onClose={() => setWishModalOpen(false)}
-          modalHeader={false}
-          desktopClassName="!w-[450px] max-w-[95vw]"
-          contentClassName="!p-0"
-        >
-          <WishModalContent
-            isOpen={wishModalOpen}
-            onClose={() => setWishModalOpen(false)}
-            boardId={boardId}
-            honoreeName={honoreeName || title}
-            onSubmit={handleWishSuccess}
-          />
-        </ModalOrBottomSlider>
-      ) : null}
 
       {boardId ? (
         <ModalOrBottomSlider

@@ -275,7 +275,7 @@ const Home = () => {
                   onChange={(e) => setExploreSearch(e.target.value)}
                 />
               </div>
-              {loading || exploreLoading ? (
+              {exploreLoading ? (
                 <div className="flex gap-2">
                   {exploreSkeletonColumns.map((col, colIdx) => (
                     <div key={colIdx} className="flex min-w-0 flex-1 flex-col gap-2">
