@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Bell, Check, Star } from 'lucide-react';
 import DashNavbar from '@/components/navbar/DashNavbar';
 import MobileHeader from '@/components/navbar/MobileHeader';
-import SkeletonListItem from '@/components/skeletons/SkeletonListItem';
+import { SkeletonNotificationsPage } from '@/components/skeletons';
 import { useNotifications } from '@/hooks/useNotifications';
 import type { NotificationWithActor } from '@/types/notification';
 
@@ -87,13 +87,7 @@ const Notifications = () => {
           )}
         </div>
 
-        {loading && (
-          <div className="space-y-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonListItem key={i} />
-            ))}
-          </div>
-        )}
+        {loading && <SkeletonNotificationsPage />}
 
         {!loading && notifications.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">

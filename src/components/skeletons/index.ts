@@ -25,6 +25,7 @@ export { default as SkeletonSpotlightCard } from "./SkeletonSpotlightCard";
 export { default as SkeletonExploreCard } from "./SkeletonExploreCard";
 export { default as SkeletonBoardCategoryCard } from "./SkeletonBoardCategoryCard";
 export { default as SkeletonListItem } from "./SkeletonListItem";
+export { default as SkeletonNotificationsPage } from "./SkeletonNotificationsPage";
 export { default as SkeletonChatHeader } from "./SkeletonChatHeader";
 export { default as SkeletonLandingSection } from "./SkeletonLandingSection";
 

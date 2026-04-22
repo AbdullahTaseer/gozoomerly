@@ -40,7 +40,7 @@ const ChatCard = ({
       className={`flex items-center gap-4 p-3 cursor-pointer transition-colors duration-200 rounded-lg
         ${isActive ? 'bg-gray-100' : hasUnread ? 'bg-pink-50/60 hover:bg-pink-50' : 'hover:bg-gray-50'} text-black`}
     >
-      <div className='relative h-[45px] w-[45px] shrink-0 rounded-full overflow-hidden border border-gray-200'>
+      <div className='relative h-[45px] w-[45px] shrink-0 rounded-full border border-gray-200'>
         <Image
           src={imgPath || ProfileAvatar}
           alt={name}
