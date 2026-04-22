@@ -16,6 +16,7 @@ import {
   rpcFavoriteBoard,
   rpcUnfavoriteBoard,
 } from '@/lib/supabase/favoriteBoards';
+import { notifyBoardFavorited } from '@/lib/notifications/boardEngagement';
 import toast from 'react-hot-toast';
 import { buildBoardUrl } from '@/lib/utils/siteUrl';
 
@@ -200,6 +201,7 @@ const FollowingCard: React.FC<FollowingCardProps> = ({
         const { error } = await rpcFavoriteBoard(supabase, favoriteUserId, boardId);
         if (error) throw error;
         setIsFavorite(true);
+        notifyBoardFavorited(boardId, favoriteUserId);
         toast.success('Saved to favorites');
       } else {
         const { error } = await rpcUnfavoriteBoard(supabase, favoriteUserId, boardId);

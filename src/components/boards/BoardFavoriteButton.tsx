@@ -9,6 +9,7 @@ import {
   rpcFavoriteBoard,
   rpcUnfavoriteBoard,
 } from '@/lib/supabase/favoriteBoards';
+import { notifyBoardFavorited } from '@/lib/notifications/boardEngagement';
 import toast from 'react-hot-toast';
 
 type Props = {
@@ -56,6 +57,7 @@ export default function BoardFavoriteButton({ boardId, className = '' }: Props) 
         const { error } = await rpcFavoriteBoard(supabase, userId, boardId);
         if (error) throw error;
         setIsFavorite(true);
+        notifyBoardFavorited(boardId, userId);
         toast.success('Saved to favorites');
       } else {
         const { error } = await rpcUnfavoriteBoard(supabase, userId, boardId);

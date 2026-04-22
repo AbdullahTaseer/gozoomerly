@@ -1,6 +1,11 @@
 import { createClient } from './client';
 import { STORAGE_BUCKETS } from './storageBuckets';
 import { notifyBoardInvitationSent } from '@/lib/notifications/boardInvitation';
+import {
+  notifyBoardGiftReceived,
+  notifyWishCommented,
+  notifyWishLiked,
+} from '@/lib/notifications/boardEngagement';
 
 export interface BoardType {
   id: string;
@@ -728,6 +733,60 @@ export async function createGiftPaymentIntent(input: CreateGiftPaymentIntentInpu
     };
   }
 
+  const { data: boardRow, error: boardFetchError } = await supabase
+    .from('boards')
+    .select('id, creator_id, status')
+    .eq('id', input.boardId)
+    .maybeSingle();
+
+  if (boardFetchError || !boardRow) {
+    return {
+      data: null,
+      error: {
+        message:
+          'This board could not be found. The link may be wrong or the board may have been removed.',
+      },
+    };
+  }
+
+  const creatorId = (boardRow as { creator_id?: string | null }).creator_id;
+  const status = (boardRow as { status?: string | null }).status;
+
+  if (!creatorId) {
+    return {
+      data: null,
+      error: {
+        message:
+          'This board is not ready to receive gifts yet. The organizer needs to finish creating the board.',
+      },
+    };
+  }
+
+  if (status === 'cancelled' || status === 'completed') {
+    return {
+      data: null,
+      error: {
+        message:
+          status === 'completed'
+            ? 'This celebration is already completed and is no longer accepting gifts.'
+            : 'This board is no longer available.',
+      },
+    };
+  }
+
+  // Guests can only gift once the board is out of draft; the organizer may still
+  // run checkout while the board is in draft (e.g. birthday-board wizard).
+  const isOrganizer = input.userId === creatorId;
+  if (status === 'draft' && !isOrganizer) {
+    return {
+      data: null,
+      error: {
+        message:
+          "This board is not live yet. Ask the person who created it to publish it — then you'll be able to send a gift.",
+      },
+    };
+  }
+
   const idempotencyKey =
     input.idempotencyKey ??
     (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
@@ -965,6 +1024,16 @@ export async function addGiftContribution(
     }
   }
 
+  if (data?.id) {
+    notifyBoardGiftReceived({
+      boardId,
+      contributorId,
+      giftOptionRowId: String(data.id),
+      amount: giftData.amount,
+      message: giftData.message ?? null,
+    });
+  }
+
   return { data, error: null };
 }
 
@@ -1030,6 +1099,8 @@ export async function likeWish(wishId: string) {
     if (error) {
       return { data: null, error };
     }
+
+    notifyWishLiked(wishId);
 
     return { data, error: null };
   } catch (err) {
@@ -1174,6 +1245,8 @@ export async function addWishComment(
     if (error) {
       return { data: null, error };
     }
+
+    notifyWishCommented(wishId, parentCommentId || null, content);
 
     return { data: data as { comment_id: string }, error: null };
   } catch (err) {

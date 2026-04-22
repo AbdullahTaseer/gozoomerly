@@ -10,6 +10,7 @@ import {
   wishIdFromCreateWishResponse,
   resolveWishIdAfterCreate,
 } from '@/lib/supabase/boards';
+import { notifyBoardNewWish } from '@/lib/notifications/boardEngagement';
 
 interface WishModalProps {
   isOpen: boolean;
@@ -188,6 +189,7 @@ const WishModalContent: React.FC<WishModalProps> = ({
 
       const baseContent = text || `Happy Birthday, ${honoreeName}!`;
       const audioUrl = selectedMusic?.id !== 'none' ? selectedMusic?.url : null;
+      let createdWishId: string | null = null;
 
       const rpcBase = {
         p_sender_id: user.id,
@@ -223,6 +225,8 @@ const WishModalContent: React.FC<WishModalProps> = ({
             return;
           }
 
+          createdWishId = directData?.id ?? null;
+
           const { error: countError } = await supabase.rpc('increment_board_wishes_count', { p_board_id: boardId });
           if (countError) {
             const { data: boardData } = await supabase
@@ -238,6 +242,10 @@ const WishModalContent: React.FC<WishModalProps> = ({
                 .eq('id', boardId);
             }
           }
+        } else {
+          createdWishId =
+            wishIdFromCreateWishResponse(rpcData) ||
+            (await resolveWishIdAfterCreate(supabase, boardId, user.id));
         }
       } else {
         const { data: rpcData, error: rpcErr } = await supabase.rpc('create_wish', {
@@ -308,6 +316,21 @@ const WishModalContent: React.FC<WishModalProps> = ({
           setError(updateErr.message || 'Failed to attach media to wish');
           return;
         }
+
+        createdWishId = wishId;
+      }
+
+      let wishIdForNotify = createdWishId;
+      if (!wishIdForNotify) {
+        wishIdForNotify = await resolveWishIdAfterCreate(supabase, boardId, user.id);
+      }
+      if (wishIdForNotify) {
+        notifyBoardNewWish({
+          boardId,
+          senderId: user.id,
+          contentPreview: baseContent,
+          wishId: wishIdForNotify,
+        });
       }
 
       onSubmit?.({

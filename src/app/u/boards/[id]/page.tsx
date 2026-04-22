@@ -10,6 +10,7 @@ import FundRaiserCard from '@/components/cards/FundRaiserCard';
 import ShareModalTrigger from '@/components/modals/ShareModalTrigger';
 import InviteModalTrigger from '@/components/modals/InviteModalTrigger';
 import WishButton from '@/components/buttons/WishButton';
+import SendGiftButton from '@/components/buttons/SendGiftButton';
 import staticProfileAvatar from "@/assets/svgs/avatar-list-icon-1.svg";
 import backgroundcake from "@/assets/svgs/background-cake.svg";
 import PostsImagesCarouselCard from '@/components/cards/PostsImagesCarouselCard';
@@ -534,9 +535,7 @@ export default async function BoardPage(props: any) {
           />
 
           <div className="flex items-start w-full flex-wrap gap-2">
-            <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
-              Send Gift
-            </button>
+            <SendGiftButton boardId={board?.id || ''} />
             <WishButton boardId={board?.id || ''} honoreeName={honoreeFirstName || honoreeName} />
             <button className="bg-white text-black px-5 py-2 rounded-full text-sm font-medium shadow">
               Share Memories

@@ -7,6 +7,33 @@ import type {
 
 const NOTIFICATIONS_TABLE = 'notifications';
 
+/** Explicit columns — avoid `*` + embed joins that can make `board_id` ambiguous in PostgREST. */
+const NOTIFICATION_LIST_COLUMNS = `
+  id,
+  user_id,
+  type,
+  title,
+  body,
+  data,
+  actor_id,
+  board_id,
+  wish_id,
+  is_read,
+  is_pushed,
+  pushed_at,
+  created_at,
+  read_at
+`;
+
+const NOTIFICATION_LIST_SELECT = `
+  ${NOTIFICATION_LIST_COLUMNS.trim()},
+  actor:profiles!notifications_actor_id_fkey (
+    id,
+    name,
+    profile_pic_url
+  )
+`;
+
 export interface ListNotificationsOptions {
   limit?: number;
   unreadOnly?: boolean;
@@ -21,9 +48,7 @@ export async function listNotifications(
 
   let query = supabase
     .from(NOTIFICATIONS_TABLE)
-    .select(
-      `*, actor:profiles!notifications_actor_id_fkey(id, name, profile_pic_url)`
-    )
+    .select(NOTIFICATION_LIST_SELECT)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -36,16 +61,19 @@ export async function listNotifications(
     // Fallback without the joined profile (in case FK name differs).
     const fallback = await supabase
       .from(NOTIFICATIONS_TABLE)
-      .select('*')
+      .select(NOTIFICATION_LIST_COLUMNS.trim())
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(limit);
     return {
-      data: (fallback.data as NotificationWithActor[]) || [],
+      data: ((fallback.data ?? []) as unknown) as NotificationWithActor[],
       error: fallback.error as Error | null,
     };
   }
-  return { data: (data as NotificationWithActor[]) || [], error: null };
+  return {
+    data: ((data ?? []) as unknown) as NotificationWithActor[],
+    error: null,
+  };
 }
 
 export async function getUnreadNotificationCount(
@@ -105,11 +133,29 @@ export async function insertNotification(
   const { data, error } = await supabase
     .from(NOTIFICATIONS_TABLE)
     .insert(payload)
-    .select('*')
+    .select('id')
     .single();
 
-  return {
-    data: (data as NotificationRow) || null,
-    error: error as Error | null,
-  };
+  if (error || !data?.id) {
+    return { data: null, error: error as Error | null };
+  }
+
+  const row = {
+    id: data.id,
+    user_id: payload.user_id,
+    type: payload.type,
+    title: payload.title,
+    body: payload.body,
+    data: (payload.data as Record<string, unknown> | null) ?? null,
+    actor_id: payload.actor_id,
+    board_id: payload.board_id,
+    wish_id: payload.wish_id,
+    is_read: payload.is_read ?? false,
+    is_pushed: payload.is_pushed ?? false,
+    pushed_at: null,
+    created_at: new Date().toISOString(),
+    read_at: null,
+  } satisfies NotificationRow;
+
+  return { data: row, error: null };
 }
