@@ -107,19 +107,20 @@ const Notifications = () => {
                 key={n.id}
                 type="button"
                 onClick={() => handleRowClick(n)}
-                className={`w-full text-left p-4 flex items-center gap-4 rounded-[8px] mt-4 transition-colors ${
+                className={`w-full text-left p-4 flex items-center gap-4 rounded-xl mt-4 transition-colors ${
                   isUnread ? 'bg-pink-50' : 'bg-[#F7F7F7] hover:bg-[#efefef]'
                 }`}
               >
                 <div className="bg-white rounded-full p-2 w-12 h-12 flex items-center justify-center overflow-hidden shrink-0">
                   {avatar ? (
+                  <div className="relative shrink-0 fill h-10 w-10">
                     <Image
                       src={avatar}
                       alt={actorName || 'avatar'}
-                      width={40}
-                      height={40}
+                      fill
                       className="rounded-full object-cover"
                     />
+                    </div>
                   ) : (
                     <Star />
                   )}

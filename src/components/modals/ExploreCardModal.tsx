@@ -499,7 +499,7 @@ const ExploreCardModal = ({
           </button>
         </div>
 
-        <div className="relative flex bg-[#1a1a1a] h-[540px] rounded-2xl overflow-hidden">
+        <div className="relative flex bg-[#1a1a1a] h-135 rounded-2xl overflow-hidden">
           {isMediaLoading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30">
               <div className="h-8 w-8 border-2 border-white/50 border-t-white rounded-full animate-spin" />
@@ -564,7 +564,7 @@ const ExploreCardModal = ({
                   e.stopPropagation();
                   goPrevMedia();
                 }}
-                className="absolute inset-y-0 left-0 z-[8] w-[38%] max-w-[200px] cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-offset-[-2px] focus-visible:outline-white"
+                className="absolute inset-y-0 left-0 z-8 w-[38%] max-w-50 cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-white"
                 aria-label="Previous media"
               />
               <button
@@ -573,10 +573,10 @@ const ExploreCardModal = ({
                   e.stopPropagation();
                   goNextMedia();
                 }}
-                className="absolute inset-y-0 z-[8] cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:outline-offset-[-2px] focus-visible:outline-white left-[62%] right-16 min-[770px]:right-14"
+                className="absolute inset-y-0 z-8 cursor-pointer border-0 bg-transparent p-0 focus-visible:outline focus-visible:-outline-offset-2 focus-visible:outline-white left-[62%] right-16 min-[770px]:right-14"
                 aria-label="Next media"
               />
-              <div className="absolute top-3.5 left-1/2 z-20 flex h-[3px] w-[calc(100%-2rem)] -translate-x-1/2 items-stretch gap-1">
+              <div className="absolute top-3.5 left-1/2 z-20 flex h-0.75 w-[calc(100%-2rem)] -translate-x-1/2 items-stretch gap-1">
                 {mediaItems.map((item, idx) => (
                   <button
                     key={`${item.id}-${idx}`}
@@ -585,7 +585,7 @@ const ExploreCardModal = ({
                       e.stopPropagation();
                       setMediaIndex(idx);
                     }}
-                    className={`min-w-[6px] flex-1 rounded-full transition-colors duration-150 ${idx < mediaIndex
+                    className={`min-w-1.5 flex-1 rounded-full transition-colors duration-150 ${idx < mediaIndex
                       ? 'bg-white'
                       : idx === mediaIndex
                         ? 'bg-white'
